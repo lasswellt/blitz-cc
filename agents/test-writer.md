@@ -206,6 +206,65 @@ describe("Firestore Rules", () => {
 
 When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`/_shared/deterministic-test-recipe.md`](/_shared/deterministic-test-recipe.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
 
+## Spec Fix Mode — Pre-Flight Complexity Classifier
+
+When invoked to **fix a failing spec** (not generate new tests), classify the spec BEFORE editing. Six signals → `HARD_SPEC` if ≥2 match, else `SIMPLE_SPEC`:
+
+| # | Signal | Grep (in spec or target code under test) |
+|---|---|---|
+| 1 | Timer mocks | `setTimeout\|setInterval\|requestAnimationFrame\|useFakeTimers` |
+| 2 | Stochastic IO | `Math\.random\|crypto\.randomUUID\|Date\.now\|performance\.now` |
+| 3 | Network calls | `fetch(\|axios\|http\.get\|setupServer` |
+| 4 | Deep async chains | ≥3 `await` keywords in one test body |
+| 5 | Singleton / module state | `let \w\+ =\|export const \w\+ =\|module-scope cache` in target |
+| 6 | Mock-heavy | ≥5 `vi.mock(\|jest.mock(` calls in the spec file |
+
+Classification dictates strategy:
+
+- `SIMPLE_SPEC` → proceed with normal Spec Fix Prompt Template (below).
+- `HARD_SPEC` → BEFORE any edit, consult `/_shared/deterministic-test-recipe.md` AND emit an `INVESTIGATE:` signal to the orchestrator describing which signals tripped. The orchestrator may route through ask-before-code (read-only investigation) per `agents/orchestrator.md` §2 routing matrix.
+
+Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` (pre-flight classifier) + `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3.
+
+## Spec Fix Prompt Template (verification-first oracle)
+
+When invoked to fix a failing spec, structure your working memory as this oracle BEFORE editing any file. Skipping this step is correlated with implementation-shifting (modifying tests instead of code):
+
+```
+Spec file:    <absolute path>
+Test name(s): <ids of failing it()/test() blocks>
+Test source:
+  ```<lang>
+  <verbatim test code from the failing block(s)>
+  ```
+Current actual output:
+  <captured from `npx vitest run <spec>` or `npx jest <spec>`>
+Expected output:
+  <derived from spec assertions; if not derivable, state UNKNOWN explicitly
+   and STOP — emit ESCALATE: oracle-underivable instead of guessing>
+Constraint: fix the IMPLEMENTATION. Do NOT modify test assertions, the
+            `describe`/`it` block names, or the `expect(...)` lines. If the
+            test itself looks wrong, emit ESCALATE: test-assertion-suspect
+            and STOP.
+After fix:  Run the test, show it passes (paste runner output), then stop.
+```
+
+Per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F1 (Anthropic Claude Code best practices: "Claude performs dramatically better when it can verify its own work"). The template is mandatory for every spec-fix attempt — output its filled-in form to your scratchpad before editing.
+
+## Spec Fix — Per-Spec Turn Cap
+
+Hard budget: **10 tool calls per failing spec**. Counter resets when moving to a new spec. On the 10th call without a passing test:
+
+1. STOP editing.
+2. Emit `ESCALATE: spec-investigation-budget-exhausted` with:
+   - The spec path + test name
+   - Last 3 hypotheses tried (one-line each)
+   - The current actual-vs-expected diff
+   - The HARD_SPEC signals that tripped (if classifier ran)
+3. Do NOT retry without orchestrator intervention.
+
+Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to the orchestrator for routing (ask-before-code, operator pairing, or skip-with-block_reason). Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
+
 ## Quality Gates
 
 Before considering your work complete, verify:

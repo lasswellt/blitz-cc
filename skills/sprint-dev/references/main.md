@@ -337,6 +337,46 @@ if failure_count[agent][story] >= 3:
 - Circuit breaker resets when the agent successfully completes a different story.
 - A blocked story can be retried by a different agent if reassigned.
 
+### `block_reason` Vocabulary (set on circuit-breaker trip or ESCALATE)
+
+When the circuit breaker trips OR when an agent emits an `ESCALATE:` signal, set `block_reason` on the story and persist it to STATE.md so the next `/blitz:next` tick can read it without re-running sprint-dev.
+
+| `block_reason` | When set | Routed by |
+|---|---|---|
+| `hard_spec` | test-writer classified the spec HARD_SPEC and per-spec budget exhausted | `/blitz:next` row 1a → LOOP_ESCALATE |
+| `oracle-underivable` | Spec-fix agent could not derive expected output (test assertions opaque) | `/blitz:next` row 1a → LOOP_ESCALATE |
+| `test-assertion-suspect` | Agent emitted ESCALATE because the test itself looks wrong | `/blitz:next` row 1a → LOOP_ESCALATE (operator reviews the test) |
+| `scope-expansion-needed` | Agent needs a file outside its declared SCOPE_FILES | Orchestrator re-spawns with expanded scope (NOT a loop escalation) |
+| `circuit-breaker` | Generic 3-failure breaker trip with no specific classifier | Sprint-review surfaces; loop continues with next story |
+| `dependency-missing` | Required upstream story did not deliver expected exports | Block until upstream wave completes |
+
+Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md`.
+
+### Per-Story Scope Constraint (atomic+scoped attempts)
+
+When dispatching a story to an agent, declare the file set the agent MAY touch. Derived from the story's `files_touched` frontmatter (if present) or inferred from the story body's mentioned paths:
+
+```bash
+# Per story dispatch
+SCOPE_FILES=$(jq -r '.files_touched[]?' "$STORY_FILE" 2>/dev/null \
+  || grep -oE '[a-zA-Z0-9_/-]+\.(ts|tsx|vue|js|md)' "$STORY_FILE" | sort -u)
+echo "FILES YOU MAY TOUCH:" > "${WORKTREE}/.scope-constraint.txt"
+echo "$SCOPE_FILES" >> "${WORKTREE}/.scope-constraint.txt"
+echo "" >> "${WORKTREE}/.scope-constraint.txt"
+echo "If you need a file not listed above, STOP and emit:" >> "${WORKTREE}/.scope-constraint.txt"
+echo "  ESCALATE: scope-expansion-needed (file: <path>, reason: <one line>)" >> "${WORKTREE}/.scope-constraint.txt"
+echo "Do NOT silently expand scope — that produces spec-fix attempts that pass locally" >> "${WORKTREE}/.scope-constraint.txt"
+echo "but break other stories' assumptions." >> "${WORKTREE}/.scope-constraint.txt"
+```
+
+Inject the contents of `.scope-constraint.txt` into the agent's prompt (Dev Agent Prompt Specification item 10, "wave assignment"). On `ESCALATE: scope-expansion-needed`:
+
+1. Log to activity feed.
+2. Set `block_reason: scope-expansion-needed` on the story.
+3. The orchestrator reviews the requested file. If valid, re-spawn with `SCOPE_FILES` expanded; if invalid, escalate per `/blitz:next` row 1a.
+
+This is **advisory** scoping — counter-evidence from Aider docs (per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F2) confirms that valid cross-file fixes exist; a hard block would over-fit. The escalation surfaces them for operator review rather than letting them happen silently.
+
 ### Dependency Resolution Flow
 
 ```

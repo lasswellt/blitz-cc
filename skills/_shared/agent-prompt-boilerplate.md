@@ -225,6 +225,40 @@ Per docs/_research/2026-05-16_audit-agent-fp-prevention.md.
 
 ---
 
+## Verification-First Oracle (spec-fix agents)
+
+Used by `test-writer` and any agent invoked to fix a failing test/spec. Forces structured oracle construction BEFORE editing — empirically correlated with reduced implementation-shifting (modifying tests instead of code).
+
+```
+VERIFICATION-FIRST ORACLE (spec-fix only):
+Before editing any file, write this oracle to your scratchpad:
+
+  Spec file:    <absolute path>
+  Test name(s): <ids of failing it()/test() blocks>
+  Test source:
+    ```<lang>
+    <verbatim test code from the failing block(s)>
+    ```
+  Current actual output:
+    <captured from `npx vitest run <spec>` or `npx jest <spec>`>
+  Expected output:
+    <derived from spec assertions; if not derivable, state UNKNOWN and STOP —
+     emit ESCALATE: oracle-underivable instead of guessing>
+  Constraint:   Fix the IMPLEMENTATION. Do NOT modify test assertions,
+                describe/it block names, or expect(...) lines. If the test
+                itself looks wrong, emit ESCALATE: test-assertion-suspect
+                and STOP.
+  After fix:    Run the test, paste runner output showing it passes, stop.
+
+Per docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md F1.
+```
+
+**When to use:** every spec-fix dispatch (test-writer in fix mode, sprint-dev wave that targets failing specs, fix-issue when the issue is a failing test). NOT for new test generation (use the Spec Fix Prompt Template only when fixing existing failures).
+
+**Why required:** Anthropic Claude Code best practices: "Claude performs dramatically better when it can verify its own work." The oracle artifact converts implicit goal-inference into explicit derived-state, removing the room for the agent to drift from "make the test pass" to "modify the test to pass."
+
+---
+
 ## Output-Style Reference (NOT extracted — invariant)
 
 The canonical OUTPUT STYLE snippet that closes every Agent() prompt template lives in [spawn-protocol.md §7](spawn-protocol.md#7-output-style-terse-output-protocol). It is **deliberately not extracted into this fragment.** Sprint-review Invariant 5 enforces verbatim presence of that snippet in every `skills/*/references/main.md` agent-prompt template. Deduping it would break the invariant. Each references/main.md must continue to carry the snippet inline.

@@ -244,17 +244,18 @@ Maintain an in-memory tracker:
 agent_tracker = {
   "<agent-name>": {
     "agent_id": "<id>",
-    "status": "active",      // active | stuck | completed
+    "status": "active",       // active | stuck | completed
     "current_story": "S1-003",
     "completed": ["S1-001"],
-    "failed_attempts": 0     // circuit breaker counter
+    "failed_attempts": 0,     // circuit breaker counter
+    "block_reason": null      // set when circuit breaker trips; see below
   }
 }
 ```
 
 Worktree paths are managed by the Agent tool's `isolation: "worktree"` parameter and do not need manual tracking.
 
-**Circuit breaker:** If an agent fails the same story 3 times, mark the story as `blocked`, notify the orchestrator, and move the agent to the next available story.
+**Circuit breaker + `block_reason` + per-story scope:** if an agent fails the same story 3 times OR emits `ESCALATE:`, mark `blocked` and set `block_reason` on the story (persist to STATE.md). Controlled vocabulary + SCOPE_FILES injection pattern in `references/main.md` sections **"`block_reason` Vocabulary"** and **"Per-Story Scope Constraint"**. `hard_spec`/`oracle-underivable`/`test-assertion-suspect` surface via `/blitz:next` row 1a → LOOP_ESCALATE; `scope-expansion-needed` re-spawns with expanded scope.
 
 ---
 

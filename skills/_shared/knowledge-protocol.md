@@ -85,6 +85,7 @@ Skills that don't run autonomously (one-shot slash commands) MAY read but are no
 | `retrospective` | At sprint close | Sprint-level lessons (pace, blockers, surprises) |
 | `code-doctor` | When a framework misuse is discovered | The pattern + correct alternative |
 | `migrate` | After successful library upgrade | Breaking-change gotcha + workaround |
+| `test-writer` | After HARD_SPEC fix succeeded OR per-spec budget exhausted | The HARD_SPEC signals that tripped + the deterministic recipe that resolved (or the failure mode that exhausted the budget). Per `agents/test-writer.md` Spec Fix Mode classifier. |
 
 Other skills MAY write opportunistically.
 

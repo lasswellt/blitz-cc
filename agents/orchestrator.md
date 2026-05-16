@@ -95,6 +95,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | "add tests", "test coverage", "cover X" | `/blitz:test-gen` | Vitest/Jest matching conventions |
 | "generate docs", "API docs", "changelog" | `/blitz:doc-gen` | Source → markdown |
 | "fix issue #N", "resolve issue" | `/blitz:fix-issue <N>` | gh CLI + fix + regression test |
+| "fix this failing spec" + HARD_SPEC signals (timers, mocks≥5, network, async≥3) OR an existing `block_reason: hard_spec` on a story | **ask-before-code**: route to `/blitz:ask` for read-only investigation FIRST, then `/blitz:fix-issue` or operator pairing | Per Aider `/ask` mode + `agents/test-writer.md` Spec Fix Mode classifier; jumping straight to edit on HARD_SPEC empirically thrashes the per-spec budget. The `ask` phase produces a hypothesis + scope before any worktree spawn. |
 | "small fix", "typo", "rename var" | `/blitz:quick` | One-shot |
 | "track this todo", "remember to X" | `/blitz:todo add <text>` | Append-only |
 | "shrink this doc", "compress" | `/blitz:compress` | Token-reduction rewrite |
@@ -166,6 +167,17 @@ State: <one-line current state from §4>
 That's it. Three lines. The user invokes the slash command; the skill takes over.
 
 When doing inline read-only work (questions, lookups), reply directly with the answer. Cite file:line. Keep it tight.
+
+## 6.1 Ask-before-code routing (HARD_SPEC)
+
+When the user request involves fixing a failing test/spec AND the test surface trips the 6-signal classifier in `agents/test-writer.md` Spec Fix Mode (≥2 of: timer mocks, stochastic IO, network calls, ≥3 await chains, singletons, ≥5 mock calls), do NOT route directly to `/blitz:fix-issue` or `/blitz:test-gen`. Instead:
+
+1. Route → `/blitz:ask` with the spec path + failing test name as the question scope. The ask phase is read-only and produces a hypothesis + recommended scope.
+2. After the user (or autonomous loop) accepts the hypothesis, route → `/blitz:fix-issue <N>` or `/blitz:test-gen` with the constrained scope.
+
+If the orchestrator is invoked from `/blitz:next --loop` row 1a (a HARD_SPEC-blocked story already exists), DO NOT auto-route to `/blitz:ask` — the loop has already signaled LOOP_ESCALATE for operator pairing. Print the recommendation as guidance, do not dispatch.
+
+Per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F5 (Aider /ask pattern) + `agents/test-writer.md` Spec Fix Mode.
 
 ## 7. Output style snippet (Invariant 5 compliance)
 

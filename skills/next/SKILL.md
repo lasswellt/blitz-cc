@@ -153,6 +153,22 @@ UNINGESTED_COUNT=$(echo "$UNINGESTED" | grep -c '.' 2>/dev/null || echo 0)
 ls .cc-sessions/*.json 2>/dev/null
 ```
 
+### 0.10 Check for HARD_SPEC-Blocked Stories
+
+Scan the in-progress sprint's STATE.md (and story frontmatter) for any story marked `blocked` with a `block_reason` that signals a hard-spec escalation. These reasons short-circuit auto-resume per row 1a:
+
+```bash
+HARD_SPEC_BLOCKERS=""
+if [ -f "${SPRINT_DIR}/STATE.md" ]; then
+  # block_reason field is recorded by sprint-dev when test-writer emits
+  # ESCALATE: spec-investigation-budget-exhausted or ESCALATE: oracle-underivable.
+  HARD_SPEC_BLOCKERS=$(grep -E 'block_reason:\s*(hard_spec|oracle-underivable|test-assertion-suspect|scope-expansion-needed)' \
+    "${SPRINT_DIR}/STATE.md" "${SPRINT_DIR}/stories/"*.md 2>/dev/null || true)
+fi
+```
+
+If `$HARD_SPEC_BLOCKERS` is non-empty, row 1a fires before row 1. The HARD_SPEC vocabulary is defined in `agents/test-writer.md` Spec Fix Mode + `skills/sprint-dev/SKILL.md` block_reason field.
+
 ---
 
 ## Phase 1: DETERMINE NEXT ACTION
@@ -163,6 +179,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 |---|-----------|--------|-------------------|-----------------|
 | 0 | `$UNINGESTED_COUNT > 0` (research docs newer than roadmap, scope IDs not yet ingested) | Ingest research first | Invoke `/blitz:roadmap extend`, then exit so next tick re-enters | `/blitz:roadmap extend` |
 | 1 | Sprint `in-progress` + STATE.md exists | Resume implementation | Invoke `/blitz:implement --resume` | `/blitz:implement --resume` |
+| 1a | Sprint `in-progress` + any story `status: blocked` with `block_reason: hard_spec` or `block_reason: oracle-underivable` (see Phase 0.10) | HARD_SPEC blocked — operator pairing or ask-before-code needed; auto-resume would just thrash | Print HARD_SPEC escalation banner with the blocked story id + block_reason + last 3 hypotheses (from STATE.md); exit signal LOOP_ESCALATE | Print same banner; suggest `/blitz:ask` to investigate or operator pair on the blocked spec |
 | 2 | Sprint `in-progress` + no STATE.md | Continue implementation | Invoke `/blitz:implement --sprint N` | `/blitz:implement --sprint N` |
 | 3 | Sprint status `review` | Run review | Invoke `/blitz:review --sprint N` | `/blitz:review --sprint N` |
 | 4 | Sprint status `reviewed` + quality passing | Ship | Invoke `/blitz:ship` | `/blitz:ship` |
@@ -183,6 +200,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 5. Resolve carry-forward escalations (row 6a) — blocks all further progress until human review
 6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
 7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
+8. HARD_SPEC escalation (row 1a) short-circuits resume (row 1) — auto-resuming a sprint with a HARD_SPEC-blocked story burns tokens on the same failing attempt; the loop must escalate to operator instead.
 
 **Why rows 6a-6d exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation.
 
@@ -251,6 +269,8 @@ Map the matched row to a Skill tool invocation. Pass `--mode autonomous` to any 
 # Example dispatches per row
 Row 0:  Skill({ skill: "blitz:roadmap", args: "extend" })
 Row 1:  Skill({ skill: "blitz:implement", args: "--resume" })
+Row 1a: # NO dispatch — print HARD_SPEC escalation banner + exit LOOP_ESCALATE
+        # (banner content: blocked story id, block_reason, last 3 hypotheses)
 Row 2:  Skill({ skill: "blitz:implement", args: "--sprint N" })
 Row 3:  Skill({ skill: "blitz:review", args: "--sprint N" })
 Row 4:  Skill({ skill: "blitz:ship" })
