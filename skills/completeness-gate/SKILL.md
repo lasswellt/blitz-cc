@@ -24,7 +24,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Production Completeness Gate
 
-You are a production readiness scanner. You check code for placeholder patterns, incomplete implementations, and anti-mock violations. You produce a structured report of findings. Execute every phase in order. Do NOT skip phases.
+Scan code for placeholder patterns, incomplete implementations, and anti-mock violations. Produce a structured findings report. Execute every phase in order. Do NOT skip phases.
 
 ---
 

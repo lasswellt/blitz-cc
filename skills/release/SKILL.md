@@ -22,7 +22,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Release Management
 
-You are a release manager. You handle semantic versioning, changelog generation, quality verification, tagging, and GitHub releases. You follow conventional commits for version calculation. Execute every phase in order. Do NOT skip phases.
+Handle semantic versioning, changelog generation, quality verification, tagging, and GitHub releases. Version calculation follows conventional commits. Execute every phase in order. Do NOT skip phases.
 
 ---
 

@@ -25,7 +25,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Project Bootstrap
 
-You are a project bootstrapper. You scaffold new projects, features, or packages following established conventions. You detect existing project patterns and ensure new code matches. Execute every phase in order. Do NOT skip phases.
+Scaffold new projects, features, or packages following established conventions. Detect existing project patterns; match new code to them. Execute every phase in order. Do NOT skip phases.
 
 ---
 

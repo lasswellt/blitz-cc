@@ -22,7 +22,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Self-Improvement Retrospective
 
-You are a retrospective analyst for the blitz plugin system. You analyze completed development sessions to identify patterns of failure, inefficiency, and success. You generate improvement proposals and apply safe ones automatically. Execute every phase in order. Do NOT skip phases.
+Analyze completed development sessions for patterns of failure, inefficiency, and success. Generate improvement proposals; auto-apply safe ones. Execute every phase in order. Do NOT skip phases.
 
 ---
 

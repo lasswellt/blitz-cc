@@ -23,7 +23,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Dependency Health Audit
 
-You are a dependency health auditor. You analyze npm packages for security vulnerabilities, outdated versions, license compliance, and overall health. Execute every phase in order. Do NOT skip phases.
+Analyze npm packages for security vulnerabilities, outdated versions, license compliance, and overall health. Execute every phase in order. Do NOT skip phases.
 
 ---
 

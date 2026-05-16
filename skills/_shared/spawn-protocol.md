@@ -392,7 +392,7 @@ Absence of any item is a BLOCKER, not a suggestion.
 
 ## 7. Output Style (Terse Output Protocol)
 
-Every agent spawn MUST inject the terse-output directive into the prompt so agent-to-orchestrator reports and summaries stay compressed. This reduces cumulative output-token cost 20–40% across a sprint without affecting structured artifacts.
+Every agent spawn MUST inject the terse-output directive. Reduces cumulative output-token cost 20–40% per sprint without affecting structured artifacts.
 
 **Mandatory prompt snippet** — append to every Agent() prompt template:
 
@@ -404,23 +404,13 @@ error codes, dates, version numbers. No preamble. No trailing summary of work
 already evident in the diff or tool output. Format: fragments OK.
 ```
 
-See [/_shared/terse-output.md](terse-output.md) for the full protocol, intensity levels (`lite`/`full`/`ultra`), auto-pause conditions, and examples.
+Full protocol (intensity levels, auto-pause, examples): [/_shared/terse-output.md](terse-output.md).
 
-**Active-intensity interpolation.** The literal word `terse-technical` in the snippet above is a convenience shorthand that resolves to the active intensity at spawn time. Resolution precedence (first hit wins):
+**Active-intensity interpolation.** The literal `terse-technical` resolves at spawn time per precedence: (1) `BLITZ_OUTPUT_INTENSITY` env, (2) `.cc-sessions/developer-profile.json` `output_intensity`, (3) SKILL.md frontmatter `output_intensity`/legacy `output_style`, (4) default `lite`. Orchestrators SHOULD substitute the resolved intensity explicitly.
 
-1. `BLITZ_OUTPUT_INTENSITY` env var (session-scoped override)
-2. `.cc-sessions/developer-profile.json` `output_intensity` (per-user/per-repo)
-3. SKILL.md frontmatter `output_intensity` or legacy `output_style` (per-skill)
-4. Default `lite`
+**Auto-drop exceptions:** security/credential warnings, irreversible-action confirmations, root-cause explanations (reasoning chain must survive).
 
-Orchestrator skills SHOULD substitute the resolved intensity explicitly when building the prompt — e.g. `OUTPUT STYLE: <resolved-intensity> per /_shared/terse-output.md. ...`. See `/_shared/terse-output.md` §Intensity override precedence.
-
-**Exception classes that auto-drop terse mode:**
-- Security warnings, credential risks, irreversible-action confirmations
-- Root-cause explanations where compressed prose would lose the reasoning chain
-- User has explicitly requested normal-style output in this session
-
-Sprint-review enforces this snippet's presence as a **BLOCKER** via Phase 3.6 Invariant 5: any Agent() prompt template that omits the canonical OUTPUT STYLE snippet causes the sprint to fail until the gap is closed. As of Sprint 3, all 7 UNSAFE references/main.md files under `skills/*/references/main.md` carry the snippet; Sprint 5 upgrades the enforcement clause accordingly. Previous WARNING-only semantics are retired.
+Enforced as Invariant 5 in sprint-review Phase 3.6 (BLOCKER) — any SKILL.md or references/main.md (with agent-prompt template) missing the snippet fails the sprint.
 
 ---
 
@@ -560,14 +550,3 @@ Every blitz skill that spawns subagents should add to its Additional Resources b
 - [deviation-protocol.md](deviation-protocol.md) — agent escalation handling
 - [definition-of-done.md](definition-of-done.md) — quality gate standards
 
-## Historical Reference
-
-This doc merges three previously separate files (v1.4.0 consolidation):
-- `subagent-types.md` → Section 1 + 5
-- `agent-workload-sizing.md` → Sections 2 + 3
-- `waves.md` → Section 4
-
-The corresponding research docs remain in `docs/_research/`:
-- `2026-04-16_subagent-type-selection.md`
-- `2026-04-16_agent-reliability.md`
-- `2026-04-16_plugin-agent-strategy.md`
