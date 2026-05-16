@@ -84,6 +84,25 @@ ${EPIC_COUNT} epics. ${SUMMARY_SENTENCE}.
 
 ---
 
+## Automation Coverage
+
+**Deterministic gates passed:** ${DETERMINISTIC_PASSED}/${DETERMINISTIC_TOTAL}
+(type-check, lint, tests, build, ratchet, shortcut-taxonomy, critic)
+
+**Browser smoke (Phase 2.5):** ${full | partial | skipped_unavailable}
+
+**NOT auto-verified — human-judgment review required:**
+- Architectural fitness (right abstraction for the domain)
+- UX correctness (does this make sense to a real user)
+- Business-logic intent (does this do the right business thing)
+- Cross-feature regressions in untested code paths
+
+**Recommendation:** ${auto-merge-safe | needs-human-review}
+
+> Deterministic gates passing does NOT verify architectural fit, UX, or business-logic intent. Human review owns those dimensions.
+
+---
+
 ## Recommendations
 
 ### Before Merge (Required)
@@ -278,6 +297,24 @@ Reviewer agents must format findings consistently.
 **Auto-fixable:** yes | no
 **References:** <link to docs, OWASP rule, etc.>
 ```
+
+### Reviewer Output Schema — Optional Instruction Gaps Section
+
+At the **end** of every reviewer output file (after the last finding), append the optional section below. Empty entries are filtered by the orchestrator and never reach KNOWLEDGE.md — only non-empty Instruction Gaps survive. This creates a feedback channel from reviewer agents back to skill authors (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P7).
+
+```markdown
+## Instruction Gaps (optional)
+
+Did any skill instruction in your prompt cause you to produce a suboptimal
+finding, miss a real issue, or waste effort? Quote the instruction verbatim
+and propose a rewording. Format (one per line):
+
+`<verbatim instruction quote>` | <how it failed you> | <suggested rewording>
+
+Leave empty if no gap. Do NOT pad with "no gaps to report."
+```
+
+Orchestrator post-processing (sprint-review Phase 4 after reading all reviewer files): for each non-empty Instruction Gaps line, append an entry to `.cc-sessions/KNOWLEDGE.md` under heading `## <DATE> · Skill Instruction Drift — <reviewer-role>` following the format in [knowledge-protocol.md](/_shared/knowledge-protocol.md) §1. Entries with empty `<suggested rewording>` are dropped (no value).
 
 ### Severity Guidelines
 
@@ -676,5 +713,91 @@ esac
 ```
 
 REJECT verdict transitions sprint to FAIL. Re-run sprint-review after the issue is addressed by sprint-dev or the user.
+
+---
+
+## Reviewer Spawn Strategy
+
+Phase 2.2.0 of `SKILL.md`. Selects parallel (default) vs sequential reviewer dispatch (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P2).
+
+```bash
+DIFF_LOC=$(git diff --shortstat ${SPRINT_BASE}..HEAD 2>/dev/null \
+  | awk '{print ($4+0)+($6+0)}')
+SEQUENTIAL_REVIEW=false
+if [ "${BLITZ_REVIEW_SEQUENTIAL:-0}" = "1" ] || [ "${DIFF_LOC:-0}" -gt 2000 ]; then
+  SEQUENTIAL_REVIEW=true
+  echo "[sprint-review] sequential reviewer mode (diff=${DIFF_LOC} LOC, env=${BLITZ_REVIEW_SEQUENTIAL:-0})"
+fi
+```
+
+**Sequential mode contract**: spawn reviewers one at a time in order (security → backend → frontend → patterns). After each reviewer completes, append findings to `${SESSION_TMP_DIR}/sprint-${N}-prior-findings.md`. Inject that file's contents into the NEXT reviewer's prompt under `## Prior Reviewer Findings (for cross-cutting awareness)`. Later reviewers may dedupe against prior findings.
+
+**Parallel mode (default)**: continue with the existing single-message multi-spawn flow in Phase 2.2.1.
+
+---
+
+## Phase 2.5 Browser Verification
+
+Phase 2.5.0 of `SKILL.md`. Required when Playwright MCP available; silent skip otherwise (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` F4).
+
+```bash
+PLAYWRIGHT_AVAILABLE=false
+if grep -q 'mcp__plugin_playwright_playwright__browser_navigate' "${SESSION_TMP_DIR}/available-tools.txt" 2>/dev/null \
+   || which playwright >/dev/null 2>&1; then
+  PLAYWRIGHT_AVAILABLE=true
+fi
+echo "[sprint-review] playwright_available=${PLAYWRIGHT_AVAILABLE}"
+```
+
+Coverage tag values (write to gates JSON `phase_2_5_coverage`):
+
+| Value | Condition |
+|---|---|
+| `skipped_unavailable` | `PLAYWRIGHT_AVAILABLE=false`. Not a failure. |
+| `partial` | `PLAYWRIGHT_AVAILABLE=true` but smoke test skipped (other than "no changed routes"). Surface in Phase 4 Recommendations → Before Merge. |
+| `full` | Smoke test completed across all changed routes. |
+
+Smoke procedure: identify changed routes from changed page files. Navigate each via `mcp__plugin_playwright_playwright__browser_navigate`. For each page, check console errors (Critical/Error), placeholder/sample data visible (Warning), broken layouts (Minor). Add findings to review report.
+
+---
+
+## Automation Coverage Block
+
+Phase 3.7 of `SKILL.md`. Declares deterministic-vs-human-judgment boundary (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4).
+
+```bash
+DETERMINISTIC_PASSED=0
+DETERMINISTIC_TOTAL=0
+for gate in type_check lint tests build ratchet shortcut_taxonomy critic; do
+  DETERMINISTIC_TOTAL=$((DETERMINISTIC_TOTAL + 1))
+  PASS=$(jq -r ".gates.${gate}.pass // false" "${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-quality-gates.json")
+  [ "$PASS" = "true" ] && DETERMINISTIC_PASSED=$((DETERMINISTIC_PASSED + 1))
+done
+
+cat <<EOF
+Automation Coverage
+===================
+Deterministic gates: ${DETERMINISTIC_PASSED}/${DETERMINISTIC_TOTAL} passed
+  - type-check, lint, tests, build, ratchet, shortcut-taxonomy, critic (LGTM)
+Browser smoke (Phase 2.5): ${PHASE_2_5_COVERAGE:-skipped_unavailable}
+Human-judgment review required (NOT auto-verified):
+  - Architectural fitness (right abstraction for the domain)
+  - UX correctness (does this make sense to a real user)
+  - Business-logic intent (does this do the right business thing)
+  - Cross-feature regressions in untested code paths
+Recommendation: ${REVIEW_RECOMMENDATION}
+EOF
+```
+
+`REVIEW_RECOMMENDATION` rules:
+
+| Value | Triggered when |
+|---|---|
+| `auto-merge-safe` | ALL deterministic gates pass AND Phase 2.5 coverage = `full` AND zero critical/major findings. |
+| `needs-human-review` | Any deterministic gate fails OR Phase 2.5 coverage = `partial` OR any critical/major findings exist. |
+
+The PR may merge under `auto-merge-safe` for behavior correctness, but human reviewer still owns architecture/UX/business-intent judgment. Frame in the report as honest limitation, not a coverage claim.
+
+The block is written into the review report under the `## Automation Coverage` section between `## Story Status` and `## Recommendations` (template above).
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.

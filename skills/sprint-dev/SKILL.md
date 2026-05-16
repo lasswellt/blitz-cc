@@ -116,7 +116,7 @@ Before any agent writes code, build a conventions guide. Read 2-3 representative
 find . -path '*/composables/*' -o -path '*/utils/*' -o -path '*/shared/*' -o -path '*/components/base/*' | grep -v node_modules | head -30
 ```
 
-Produce a **REUSE THESE — do not recreate** list with file paths and what each provides. Full checklist and conventions-guide schema in `references/main.md` section **"Project Conventions Discovery"**.
+Produce a **REUSE THESE — do not recreate** list with file paths and what each provides. Then load `.cc-sessions/KNOWLEDGE.md` into a slice for injection into dev-agent prompts (spec item 14, counters training-data bias per [knowledge-protocol.md](/_shared/knowledge-protocol.md)). Full checklist + slicing procedure in `references/main.md` §**Project Conventions Discovery** and §**KNOWLEDGE.md Slice Procedure**.
 
 **Gate:** Conventions guide must be complete before spawning agents.
 
@@ -162,6 +162,7 @@ Print the wave execution plan:
 Also identify:
 - **Ready stories**: Wave 0 stories (can start immediately).
 - **Blocked stories**: Stories in Wave 1+ (have dependencies that are not yet complete).
+- **Pre-flight complexity gate**: `complexity_score = story_count * 2 + est_loc / 100`. Warn >40, hard-stop >80 (escape: `BLITZ_SPRINT_COMPLEXITY_OVERRIDE=1`). Script in `references/main.md` §**Pre-Flight Complexity Gate**.
 
 ### 1.5 Load Carry-Forward Items
 

@@ -207,6 +207,12 @@ git diff --stat ${SPRINT_BASE}..HEAD
 
 ### 2.2 Spawn Reviewer Agents via Agent Tool
 
+#### 2.2.0 Strategy selection — Parallel (default) or Sequential
+
+Default parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git diff --shortstat` LOC > 2000. Rationale: per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P2, sequential reviewers passing prior findings catch cross-cutting issues better on token-heavy reviews. Selection script + sequential-mode injection contract in `references/main.md` section **"Reviewer Spawn Strategy"**.
+
+#### 2.2.1 Parallel Spawn (default mode)
+
 Spawn 3-4 specialized reviewers using the `Agent` tool, all in **a single assistant message** so they run concurrently. Each writes findings to session-scoped temp files.
 
 Per-spawn parameters:
@@ -277,29 +283,17 @@ Categorize all findings:
 
 ---
 
-## Phase 2.5: BROWSER VERIFICATION (Best-Effort)
+## Phase 2.5: BROWSER VERIFICATION (Required When Playwright Available)
 
-If Playwright MCP is available and a dev server can start:
+Mitigates F4 (over-confidence — passes checks but functionally unusable) per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md`. Required when Playwright MCP is available; silent skip when unavailable (gap, not failure).
 
-### 2.5.1 Identify Changed Routes
+### 2.5.0 Probe + coverage tagging
 
-From changed page files, determine which routes were added or modified.
+Probe Playwright MCP availability. If unavailable → write `phase_2_5_coverage: skipped_unavailable` to gates JSON, proceed. If available and smoke test is skipped → `phase_2_5_coverage: partial` and surface in Phase 4 Recommendations → Before Merge. Probe script + smoke procedure (changed-route detection, console-error severity mapping, placeholder-data detection) in `references/main.md` section **"Phase 2.5 Browser Verification"**.
 
-### 2.5.2 Smoke Test
+### 2.5.1 Smoke Test
 
-Navigate to each changed route. For each page:
-- Check for console errors (Critical or Error severity)
-- Check for placeholder/sample data visible on screen (Warning)
-- Check for broken layouts or missing content (Warning)
-
-### 2.5.3 Integrate Findings
-
-Add browser findings to the review report:
-- Console errors → Error or Critical severity
-- Placeholder data visible → Warning severity
-- Visual issues → Minor severity
-
-Skip gracefully if Playwright is unavailable — document as a gap in the report, not a failure.
+Navigate changed routes (per references). For each: console errors → Critical/Error; placeholder data visible → Warning; broken layouts → Minor. Write `phase_2_5_coverage: full` on success.
 
 ---
 
@@ -430,6 +424,12 @@ REF_PRESENT=$(grep -lE "$SNIPPET_RE" skills/*/references/main.md 2>/dev/null | w
 ```
 
 The check is total-coverage on SKILL.md (no exemptions) and present-where-needed on references/main.md (only files with embedded agent prompts). Adding a new SKILL.md without the snippet auto-fails the next review.
+
+---
+
+## Phase 3.7: AUTOMATION COVERAGE — Declare Boundary
+
+Per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4, declare the deterministic-vs-human-judgment boundary in the report. Prevents PASS-label over-confidence (F4 — passes checks but functionally unusable). Computes `DETERMINISTIC_PASSED/_TOTAL` from gates JSON, sets `REVIEW_RECOMMENDATION` to `auto-merge-safe` (all gates + Phase 2.5 `full` + zero critical/major) or `needs-human-review` otherwise. Full bash + heredoc + recommendation rules in `references/main.md` section **"Automation Coverage Block"**. Report template section in same file.
 
 ---
 

@@ -554,9 +554,61 @@ Full item definitions for the integration agent (Phase 3.5.2):
 
 ---
 
+## KNOWLEDGE.md Slice Procedure
+
+Phase 0.6 of `SKILL.md`. Build a relevance slice of `.cc-sessions/KNOWLEDGE.md` for injection into every dev-agent prompt (spec item 14). Per [knowledge-protocol.md](/_shared/knowledge-protocol.md).
+
+```bash
+KNOWLEDGE_FILE=".cc-sessions/KNOWLEDGE.md"
+KNOWLEDGE_SLICE_FILE="${SESSION_TMP_DIR}/knowledge-slice.md"
+
+if [ "${BLITZ_SKIP_KNOWLEDGE_INJECTION:-0}" = "1" ]; then
+  : > "$KNOWLEDGE_SLICE_FILE"
+  echo "[sprint-dev] KNOWLEDGE.md injection skipped (BLITZ_SKIP_KNOWLEDGE_INJECTION=1)"
+elif [ -s "$KNOWLEDGE_FILE" ]; then
+  # Default: last 30 lines (recency bias). Future: keyword-grep by story file paths.
+  tail -30 "$KNOWLEDGE_FILE" > "$KNOWLEDGE_SLICE_FILE"
+  echo "[sprint-dev] KNOWLEDGE.md slice: $(wc -l < "$KNOWLEDGE_SLICE_FILE") lines"
+else
+  : > "$KNOWLEDGE_SLICE_FILE"
+  echo "[sprint-dev] KNOWLEDGE.md absent — no project lessons to inject"
+fi
+```
+
+Opt-out (`BLITZ_SKIP_KNOWLEDGE_INJECTION=1`) is for debugging an agent loop suspected to be biased by stale lessons. Default-on otherwise.
+
+Future slicing strategy (not yet implemented): grep entries by topic keywords matching the current sprint's story file paths. For now, tail-30 is the recency proxy.
+
+---
+
+## Pre-Flight Complexity Gate
+
+Phase 1.4.5 of `SKILL.md`. Heuristic scoring to abort over-large sprints before agent spawn (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P5).
+
+```bash
+STORY_COUNT=$(ls -1 "${SPRINT_DIR}/stories/"S*.md 2>/dev/null | wc -l)
+LOC_EST=$(awk '/^estimated_loc:/ {s+=$2} END {print s+0}' "${SPRINT_DIR}/stories/"S*.md 2>/dev/null)
+COMPLEXITY=$(( STORY_COUNT * 2 + LOC_EST / 100 ))
+
+echo "[sprint-dev] complexity_score=${COMPLEXITY} (stories=${STORY_COUNT}, est_loc=${LOC_EST})"
+
+if [ "$COMPLEXITY" -gt 80 ] && [ "${BLITZ_SPRINT_COMPLEXITY_OVERRIDE:-0}" != "1" ]; then
+  echo "[sprint-dev] HARD STOP: complexity=${COMPLEXITY} > 80." >&2
+  echo "[sprint-dev]   Split this sprint into smaller chunks via /blitz:sprint-plan." >&2
+  echo "[sprint-dev]   Override (not recommended): BLITZ_SPRINT_COMPLEXITY_OVERRIDE=1" >&2
+  exit 1
+elif [ "$COMPLEXITY" -gt 40 ]; then
+  echo "[sprint-dev] WARN: complexity=${COMPLEXITY} > 40. Consider splitting." >&2
+fi
+```
+
+Thresholds (40 warn, 80 hard-stop) are heuristic. Calibrate against project history before locking in. Stories without `estimated_loc:` contribute 0 to the LOC term — bias is toward letting work proceed when metadata is missing.
+
+---
+
 ## Dev Agent Prompt Specification
 
-Every dev agent prompt (Phase 2.3) must include all 13 items:
+Every dev agent prompt (Phase 2.3) must include all 14 items:
 
 1. Agent role and responsibilities (see the agent-specific prompt templates in this references/main.md).
 2. List of assigned stories in dependency order, with their `verify` and `done` fields. Capped at 4 stories per wave per agent.
@@ -598,6 +650,16 @@ Every dev agent prompt (Phase 2.3) must include all 13 items:
     asked for that version, OR (b) a peer-compatibility constraint forces it.
     Verify after install: npm view <pkg> version vs the resolved version.
     ```
+14. **Project Lessons block** — inject the KNOWLEDGE.md slice computed in SKILL.md Phase 0.6. Per [knowledge-protocol.md](/_shared/knowledge-protocol.md), this surfaces project-specific gotchas before generation, counteracting training-data bias (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P1/F2). Inject verbatim:
+    ```
+    ## Project Lessons (from .cc-sessions/KNOWLEDGE.md)
+    <contents of ${KNOWLEDGE_SLICE_FILE} — last 30 lines>
+
+    Consult these before generating code. If a lesson applies to your story,
+    follow it. If it conflicts with story instructions, raise via DEVIATION:
+    rather than silently overriding.
+    ```
+    If `KNOWLEDGE_SLICE_FILE` is empty (no KNOWLEDGE.md or `BLITZ_SKIP_KNOWLEDGE_INJECTION=1`), omit this block entirely — do NOT inject an empty header.
 
 ---
 
