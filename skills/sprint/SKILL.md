@@ -1,7 +1,7 @@
 ---
 name: sprint
-description: "Orchestrates the full sprint cycle (plan → implement → review). Use when the user says 'run a sprint', 'do a full sprint', or invokes --loop for autonomous reconciliation. The --loop mode is the canonical entry point for fully autonomous, multi-tick sprint progression."
-argument-hint: "[--epics EP-001,EP-002] [--plan-only] [--skip-review] [--loop] -- full cycle (plan → implement → review); --epics scopes to specific epics; --plan-only stops after sprint-plan; --skip-review skips quality gate; --loop iterates the reconciliation engine until done"
+description: "Orchestrates the full sprint cycle (plan → implement → review). Use when the user says 'run a sprint', 'do a full sprint'. Since v1.13.0, --loop is a backwards-compat alias that dispatches /blitz:next --loop (the canonical autonomous reconciliation engine, which handles the full project lifecycle, not just sprints)."
+argument-hint: "[--epics EP-001,EP-002] [--plan-only] [--skip-review] [--loop] -- full cycle (plan → implement → review); --epics scopes to specific epics; --plan-only stops after sprint-plan; --skip-review skips quality gate; --loop alias-routes to /blitz:next --loop (since v1.13.0)"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
 disable-model-invocation: false
 model: opus
@@ -17,7 +17,7 @@ You orchestrate a full sprint cycle: **plan → implement → review**.
 
 **Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[sprint]` prefixed status lines at every phase transition, decision point, and when dispatching to sub-skills. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
-**Carry-forward awareness is mandatory in `--loop` mode.** The reconciliation loop reads `.cc-sessions/carry-forward.jsonl` every tick and treats active/partial entries as load-bearing state. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full protocol. Silent scope drops are prevented by the decision-tree split at rows 6a-6d below.
+**Carry-forward awareness is mandatory in `--loop` mode.** Now lives in `/blitz:next --loop` (see `skills/next/SKILL.md` §Loop Mode rows 6a-6d). The reconciliation engine reads `.cc-sessions/carry-forward.jsonl` every tick and treats active/partial entries as load-bearing state — silent scope drops are prevented by the decision-tree split. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full protocol.
 
 ## Flag Parsing
 
@@ -29,205 +29,30 @@ Parse the following flags from the user's arguments:
 - `--resume`: Resume an interrupted sprint. Skips planning, goes directly to sprint-dev which will detect STATE.md and resume from the last checkpoint. See [checkpoint-protocol.md](/_shared/checkpoint-protocol.md).
 - `--gaps`: Gap closure mode. Chains: sprint-review → sprint-plan --gaps → sprint-dev. Finds quality gaps and generates fix stories automatically.
 - `--mode <autonomous|checkpoint|interactive>`: Execution mode passed through to sprint-dev. `autonomous` (default) runs everything; `checkpoint` pauses after each wave for user review; `interactive` confirms each story before starting.
-- `--loop`: Fully autonomous loop mode. Enables state-based reconciliation: reads current sprint state, executes **one phase**, then exits cleanly so `/loop` can re-invoke. Sets autonomy to `full` — all decisions are auto-approved, no user prompts, no confirmations, no pauses. Designed for use with `/loop <interval> /blitz:sprint --loop` under bypass permissions.
-
-  **Scheduling tiers for `--loop`:**
-  | Tier | How | Persistence | Min interval | Use case |
-  |------|-----|-------------|-------------|---------|
-  | `/loop` + CronCreate | Session-scoped | Requires active session | 1 min | Interactive dev sprints |
-  | Desktop scheduled task | Survives session restart | Requires machine | 1 min | Overnight local runs |
-  | Routine (cloud) | Machine-independent | Fully autonomous | 1 hour | Nightly CI, weekly sweeps |
-
-  **Self-scheduling in loop mode:** After Step 3 (Act) completes, use `ScheduleWakeup` to register the next tick — this keeps the loop alive through idle periods without requiring the user to keep a terminal open:
-  ```
-  ScheduleWakeup(
-    delaySeconds: 270,   # under 5-min cache TTL; adjust per sprint cadence
-    prompt: "/blitz:sprint --loop",
-    reason: "next sprint reconciliation tick"
-  )
-  ```
-  Do NOT use `ScheduleWakeup` if the user explicitly invoked `/loop <interval>` — that already handles scheduling. Use it only when `--loop` is invoked directly (not via `/loop`). Detect via `CLAUDE_CODE_LOOP_MANAGED` env var: if `"1"`, skip `ScheduleWakeup`.
-
-  **Session expiry:** CronCreate-backed sessions expire after 7 days. For runs longer than 7 days, use a cloud Routine (see `/schedule`).
+- `--loop`: **Backwards-compat alias since v1.13.0** — routes to `/blitz:next --loop`. The canonical autonomous reconciliation engine moved to the `next` skill because it handles the full project lifecycle (bootstrap, roadmap creation, ship) in addition to the sprint cycle. Behavior unchanged from the user's perspective: each tick reads state, executes one phase, commits/pushes, exits. See `skills/next/SKILL.md` §Loop Mode for the full reconciliation spec including scheduling tiers, self-scheduling via `ScheduleWakeup`, the 8-row decision tree, and stop signals. `/loop /blitz:sprint --loop` continues to work — each tick alias-routes to `/blitz:next --loop` which executes one phase.
 
 If no flags are provided, run all three phases in sequence.
 
 ---
 
-## Loop Mode: Reconciliation Phase (--loop only)
+## Loop Mode (--loop) — Alias for /blitz:next --loop since v1.13.0
 
-When `--loop` is specified, replace the normal plan → implement → review flow with a **reconciliation loop** that detects current state and advances one phase per invocation. This follows the Observe → Diff → Act → Report pattern.
-
-### Step 1: Observe — Read Current State
-
-Perform fast, read-only state detection:
-
-```bash
-# Sprint registry
-cat sprint-registry.json 2>/dev/null || echo "NO_REGISTRY"
-
-# Latest sprint STATE.md (if in-progress)
-LATEST=$(cat sprint-registry.json 2>/dev/null | grep -o '"number": *[0-9]*' | tail -1 | grep -o '[0-9]*')
-cat "sprints/sprint-${LATEST}/STATE.md" 2>/dev/null | head -10 || echo "NO_STATE"
-
-# Roadmap
-cat roadmap-registry.json 2>/dev/null | head -5 || echo "NO_ROADMAP"
-cat epic-registry.json 2>/dev/null | head -5 || echo "NO_EPICS"
-
-# Carry-forward registry — latest-wins reduction, active/partial only
-# (see skills/_shared/carry-forward-registry.md)
-CF_ACTIVE=$(jq -s '
-  group_by(.id)
-  | map(max_by(.ts))
-  | map(select(.status == "active" or .status == "partial"))
-  | length
-' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "0")
-
-# Carry-forward rollover escalations (rollover_count >= 3)
-CF_ESCALATED=$(jq -s '
-  group_by(.id)
-  | map(max_by(.ts))
-  | map(select((.status == "active" or .status == "partial") and (.rollover_count // 0) >= 3))
-  | length
-' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "0")
-
-# Next-sprint planning inputs auto-injected by previous sprint-review Invariant 4
-NEXT_SPRINT=$((LATEST + 1))
-CF_PENDING_INPUTS=$(test -f "sprints/sprint-${NEXT_SPRINT}-planning-inputs.json" && echo "1" || echo "0")
-
-# Uningested research docs (newer than roadmap-registry.json, not yet in carry-forward)
-INGESTED_IDS=$(jq -rs '[group_by(.id)[] | max_by(.ts).id] | join("\n")' \
-  .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "")
-UNINGESTED=$(find docs/_research -name '*.md' -newer roadmap-registry.json 2>/dev/null \
-  | while read f; do
-      IDS=$(grep -o 'id: cf-[^ ]*' "$f" 2>/dev/null | awk '{print $2}')
-      if [ -z "$IDS" ]; then echo "$f"; continue; fi
-      for id in $IDS; do
-        echo "$INGESTED_IDS" | grep -qx "$id" || { echo "$f"; break; }
-      done
-    done)
-UNINGESTED_COUNT=$(echo "$UNINGESTED" | grep -c '.' 2>/dev/null || echo 0)
-
-# Active sessions (stale cleanup happens via session protocol step 5a)
-ls .cc-sessions/*.json 2>/dev/null
-```
-
-### Step 2: Diff — Determine Next Action
-
-Apply this priority-ordered decision tree (same logic as `/next`):
-
-| # | Condition | Action | Dispatch |
-|---|-----------|--------|----------|
-| 0 | `$UNINGESTED_COUNT > 0` (research docs exist, not yet ingested into roadmap) | Ingest research first | Invoke **roadmap extend**, then exit cleanly so loop re-enters at row 1 |
-| 1 | Sprint `in-progress` + STATE.md exists | Resume implementation | Invoke **sprint-dev** with `--resume` |
-| 2 | Sprint `in-progress` + no STATE.md | Continue implementation | Invoke **sprint-dev** `--sprint N` |
-| 3 | Sprint status `review` | Run review | Invoke **sprint-review** `--sprint N` |
-| 4 | Sprint status `reviewed` + quality passing | Ship it | Invoke **ship** |
-| 5 | Sprint status `planned` | Start implementation | Invoke **sprint-dev** `--sprint N` |
-| 6a | No active sprint + **`CF_ESCALATED > 0`** | Escalate — operator review needed | Print escalation banner with entry ids and exit cleanly |
-| 6b | No active sprint + **`CF_PENDING_INPUTS == 1`** (planning inputs file exists from prior review Invariant 4) | Plan gap-closure sprint against injected entries | Invoke **sprint-plan** (it will honor the planning-inputs file in Phase 0 step 8) |
-| 6c | No active sprint + roadmap with unblocked epics | Plan next sprint | Invoke **sprint-plan** |
-| 6d | No active sprint + **`CF_ACTIVE > 0`** (registry has active/partial entries even though epics look done) | Plan gap-closure sprint against registry | Invoke **sprint-plan** — it will read the registry in Phase 0 step 8 and select parent epics for re-planning |
-| 7 | No active sprint + all epics blocked/done **AND `CF_ACTIVE == 0` AND `CF_PENDING_INPUTS == 0`** | Nothing to do | Print status and exit |
-| 8 | No roadmap exists AND `CF_ACTIVE == 0` | Cannot proceed | Print "No roadmap. Run `/blitz:roadmap` first." and exit |
-
-**Tie-breaking** (if multiple conditions match):
-1. Resume interrupted work (STATE.md exists)
-2. Complete in-progress work
-3. Ship reviewed work
-4. Start planned work
-5. Resolve carry-forward escalations (row 6a) — blocks all further progress until human review
-6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
-7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
-
-**Why rows 6a-6d exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the exact silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and it cannot bounce indefinitely on stuck entries because row 6a short-circuits `rollover_count >= 3` to human escalation.
-
-### Step 3: Act — Execute One Phase
-
-1. Set autonomy to `full` — suppress all user confirmation prompts across all sub-skills. This ensures fully autonomous operation with bypass permissions. The only safety overrides that remain are: `git push` (always logged), rollback to previous sprint state (always logged), deleting user files outside sprint scope (always logged). All other decisions are auto-approved.
-2. Pass `--mode autonomous` to sprint-dev (if dispatching to implementation). Never use `checkpoint` or `interactive` mode in loop.
-3. Dispatch to the identified sub-skill. All sub-skills inherit autonomy `full`.
-4. **Commit and push** — After the sub-skill completes, ensure all changes are committed and pushed to the remote. This is critical in loop mode because each invocation runs in a fresh context — uncommitted/unpushed work would be invisible to the next tick.
-   ```bash
-   git add -A
-   git status --porcelain | head -5  # Check if there's anything to commit
-   git commit -m "feat(sprint-${N}): loop checkpoint — <phase completed>" || true
-   git push origin HEAD || true
-   ```
-5. When the commit/push completes, **exit immediately**. Do NOT continue to the next phase. The next `/loop` tick will re-invoke `/sprint --loop`, which will re-evaluate state and dispatch the next phase.
-
-### Step 4: Report — Log and Exit
-
-Print a concise reconciliation report:
+When `--loop` is specified, this skill immediately dispatches `/blitz:next --loop` and exits. The reconciliation engine, scheduling tiers, decision tree, self-scheduling, and stop signals all live in the `next` skill now.
 
 ```
-[sprint] Loop reconciliation:
-  ├─ Sprint 3: in-progress (8/12 stories, STATE.md checkpoint exists)
-  ├─ DECISION: Resume implementation from checkpoint
-  │  Reason: STATE.md found with 4 remaining stories
-  ├─ Dispatching: sprint-dev --resume
-  └─ Next /loop tick will re-evaluate after completion
+# Pseudo-code for the alias:
+if "--loop" in args:
+    Skill({ skill: "blitz:next", args: "--loop" })
+    exit 0
 ```
 
-If nothing to do:
+**Why the move:** the reconciliation loop is a project-lifecycle engine, not a sprint-cycle engine. It handles bootstrap, roadmap creation, ship orchestration, and carry-forward gap closure in addition to the sprint plan → implement → review cycle. The `next` skill was already the canonical "what should I do next?" advisor; consolidating the autonomous loop there is the cleaner home.
 
-```
-[sprint] Loop reconciliation:
-  ├─ Sprint 3: reviewed (quality: PASS)
-  ├─ All epics: done or blocked
-  ├─ Carry-forward registry: 0 active, 0 partial, 0 pending inputs
-  ├─ DECISION: Nothing to do
-  └─ Idle — waiting for new epics or roadmap changes
-```
+**Backwards compatibility:** `/loop /blitz:sprint --loop` continues to work — each tick alias-routes to `/blitz:next --loop` which executes one phase. Scripted invocations need not change. Direct callers benefit from migrating to `/blitz:next --loop` to skip the alias hop.
 
-If carry-forward work is pending (row 6d):
+**Reference**: full reconciliation spec in `skills/next/SKILL.md` §Loop Mode (Phases 3 + 4).
 
-```
-[sprint] Loop reconciliation:
-  ├─ Sprint 3: reviewed (quality: PASS)
-  ├─ All epics: done in epic-registry.json
-  ├─ Carry-forward registry: 2 active, 1 partial (NOT idle)
-  │    - cf-2026-04-02-modal-consistency: partial, coverage 0.646
-  │    - cf-2026-04-05-api-error-handling: active, coverage 0.0
-  │    - cf-2026-04-07-auth-rate-limits: partial, coverage 0.33
-  ├─ DECISION: Plan gap-closure sprint
-  │    Reason: registry has 3 entries with incomplete scope
-  ├─ Dispatching: sprint-plan (will re-select parent epics)
-  └─ Next /loop tick will re-evaluate after planning completes
-```
-
-If a carry-forward escalation is present (row 6a):
-
-```
-[sprint] Loop reconciliation:
-  ├─ Sprint 3: reviewed (quality: CONDITIONAL)
-  ├─ Carry-forward registry: 1 escalation (rollover_count >= 3)
-  │    - cf-2026-04-02-modal-consistency: rollover_count=3
-  │      Parent: CAP-133 / EPIC-105
-  │      Last touched: sprint-197 (3 sprints ago)
-  │      Reason: repeated auto-waivers; blocked by type-check failures
-  ├─ DECISION: Escalate to human review
-  │    Loop cannot auto-advance while this entry is stuck.
-  │    Resolve with one of:
-  │      a) /blitz:sprint-plan with explicit split targeting this entry
-  │      b) Append `deferred` event to .cc-sessions/carry-forward.jsonl
-  │         with a revisit date in notes
-  │      c) Append `dropped` event with drop_reason + revival_candidate
-  └─ Exiting — /loop will re-evaluate on next tick (will re-escalate
-       until resolved)
-```
-
-### Session Conflict Handling in Loop Mode
-
-If a conflicting session is detected (after stale cleanup from session-protocol step 5a):
-- Do NOT abort with an error. Instead, print a status message and exit cleanly:
-  ```
-  [sprint] Loop reconciliation:
-    ├─ Active session detected: sprint-dev-a3f7c1b2 (started 5m ago)
-    ├─ DECISION: Defer — active session is still working
-    └─ Will retry on next /loop tick
-  ```
-- This prevents `/loop` from treating an active sprint as an error.
+Skip the rest of this skill's normal phases below when `--loop` is set — the alias dispatch is the entire behavior.
 
 ---
 
@@ -244,7 +69,7 @@ Before starting any phase (in both normal and loop mode), verify:
     ```
     Invoke `/blitz:roadmap extend`, then re-read `roadmap-registry.json` / `epic-registry.json` and continue to step 2.
     If `roadmap extend` fails (e.g., malformed `scope:` block), surface the error with the doc path and stop — do not silently continue to sprint.
-    *(In `--loop` mode: handled by row 0 of the decision tree — Pre-Flight skips this check.)*
+    *(In `--loop` mode: alias-routes to /blitz:next --loop, which handles ingestion in its Phase 0.8 + decision-tree row 0.)*
 2. **Epics available**: If `--epics` was specified, confirm each epic ID exists and is unblocked. If no epics are specified, confirm at least one epic has unmet dependencies resolved. *(In loop mode, skip this check — the reconciliation tree handles it.)*
 3. **No conflicting sessions**: Check `.cc-sessions/*.json` for active sprint-plan, sprint-dev, or sprint-review sessions. If a conflict exists, warn the user and stop. *(In loop mode, defer gracefully instead of stopping — see above.)*
 4. **Clean working tree**: Run `git status --porcelain`. If there are uncommitted changes, warn the user. *(In loop mode, warn but do not stop.)*

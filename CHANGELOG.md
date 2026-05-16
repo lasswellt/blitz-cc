@@ -2,6 +2,52 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] — 2026-05-16
+
+`/blitz:next --loop` is now the canonical autonomous reconciliation engine. `/blitz:sprint --loop` becomes a backwards-compat alias that dispatches to it. Same Observe → Diff → Act → Report semantics, same scheduling tiers, same 8-row decision tree, same stop signals — but the engine now lives in the skill whose scope is "what should I do next?" rather than "run a sprint", reflecting that autonomous reconciliation handles the full project lifecycle (bootstrap, roadmap creation, ship, carry-forward gap closure) and not just the sprint cycle.
+
+### Added
+
+- **`/blitz:next --loop`** (`skills/next/SKILL.md`) — new autonomous reconciliation mode. Reads state, executes one phase, commits + pushes, exits. Designed for `/loop /blitz:next --loop` (external loop wrapper) or self-scheduled `ScheduleWakeup` when invoked directly. Sets autonomy to `full` (all sub-skill confirmation prompts auto-approved). Full reconciliation spec: Phases 3 (Act) and 4 (Report) of the skill body. Two new tools in `allowed-tools`: `Skill` (for dispatch) and `ScheduleWakeup` (for self-scheduling).
+- **8-row decision tree** ported into `next` from sprint --loop:
+  - Row 0: uningested research (newer than roadmap-registry.json AND scope-IDs not yet in carry-forward) → dispatch `/blitz:roadmap extend`
+  - Row 1: in-progress sprint + STATE.md → `/blitz:implement --resume`
+  - Row 2: in-progress sprint without STATE.md → `/blitz:implement --sprint N`
+  - Row 3: status `review` → `/blitz:review --sprint N`
+  - Row 4: status `reviewed` + quality passing → `/blitz:ship`
+  - Row 5: status `planned` → `/blitz:implement --sprint N`
+  - Row 6a: `CF_ESCALATED > 0` (rollover_count ≥ 3) → human-review escalation, exit with `LOOP_ESCALATE` marker
+  - Row 6b: `CF_PENDING_INPUTS == 1` (planning-inputs file from prior review Invariant 4) → `/blitz:sprint-plan`
+  - Row 6c: roadmap with unblocked epics → `/blitz:sprint-plan`
+  - Row 6d: `CF_ACTIVE > 0` (carry-forward registry has active/partial entries) → `/blitz:sprint-plan` (re-select parent epics)
+  - Row 7: nothing to do → idle, exit with `LOOP_DONE` marker
+  - Row 8: no roadmap + `CF_ACTIVE == 0` → `/blitz:roadmap full`
+
+  Tie-breaking, carry-forward awareness, and the row 6a-6d split (preventing silent scope drops per `docs/_research/2026-04-08_sprint-carryforward-registry.md`) carry forward unchanged.
+
+- **Stop signals** emitted in the per-tick reconciliation banner so `/loop` wrappers know when to halt:
+  - `LOOP_DONE` (row 7 idle) — external `/loop` MAY halt
+  - `LOOP_ESCALATE` (row 6a) — external `/loop` SHOULD halt (re-firing only re-prints the escalation)
+  - `LOOP_DEFER` (active session conflict) — keep ticking; next tick may find the conflict resolved
+  - (no marker) — phase dispatched; next tick should re-evaluate state
+
+### Changed
+
+- **`/blitz:sprint --loop` is now a thin alias** that dispatches `/blitz:next --loop` via the `Skill` tool and exits. The ~175-line `## Loop Mode: Reconciliation Phase (--loop only)` section in `skills/sprint/SKILL.md` is replaced by a ~15-line alias-and-rationale block. `sprint/SKILL.md` shrunk from 339 → 119 lines (−65%). Scripted `/loop /blitz:sprint --loop` invocations continue to work — each tick alias-routes to `/blitz:next --loop` which executes one phase.
+- **`agents/orchestrator.md` §2 routing** updated: added a dedicated row for "autonomous loop" intents that routes to `/blitz:next --loop`, with a cross-reference noting it supersedes `/blitz:sprint --loop`. The "what should I do next?" row for `/blitz:next` now mentions the `--loop` autonomous mode.
+
+### Migration
+
+No user-facing breaking changes. Drop-in upgrade from v1.12.2.
+
+- **If you scripted `/loop /blitz:sprint --loop`**: continues to work, every tick now alias-hops through one extra layer. Optional: migrate to `/loop /blitz:next --loop` to skip the alias hop.
+- **If you scripted `/blitz:sprint --loop` directly** (no external `/loop`): continues to work, sprint --loop dispatches next --loop which dispatches the appropriate phase. Optional: migrate to `/blitz:next --loop` for the canonical direct invocation.
+- **If you have automation expecting specific reconciliation-banner text**: per-tick report now starts with `[next --loop]` instead of `[sprint] Loop reconciliation`. Update grep patterns accordingly.
+
+### Compatibility
+
+No new env vars. New `allowed-tools` entries on `next/SKILL.md` (`Skill`, `ScheduleWakeup`) — required for the autonomous dispatch + self-scheduling behavior. Drop-in upgrade from v1.12.2.
+
 ## [1.12.2] — 2026-05-16
 
 Token-saving patch — `/blitz:compress` rerun on `skills/sprint-review/references/main.md` after v1.12.0 added substantial content (Phase 0.0 Input Gate, Automation Coverage Block, Reviewer Spawn Strategy, Phase 2.5 Browser Verification, Invariant 6/7 Procedures). Reclaims ~300 tokens per `/blitz:sprint-review` invocation that loads this reference.
@@ -472,6 +518,7 @@ Carry-forward registry format (`.cc-sessions/carry-forward.jsonl`) validated acr
 - Issues closed: #1-#16 (all stories from Sprint 2-5)
 - Research source: 2 April-18 research docs (full absorption + runtime propagation)
 
+[1.13.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.13.0
 [1.12.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.2
 [1.12.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.1
 [1.12.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.0

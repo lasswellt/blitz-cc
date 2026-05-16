@@ -59,7 +59,8 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 ### Sprint pipeline
 | User intent | Skill | Why |
 |---|---|---|
-| "run a full sprint", "autonomous sprint loop" | `/blitz:sprint` | Plan → implement → review meta-orchestrator |
+| "run a full sprint" | `/blitz:sprint` | Plan → implement → review meta-orchestrator (single cycle) |
+| "autonomous loop", "run blitz autonomously", "keep going until done" | `/blitz:next --loop` | **Canonical autonomous reconciliation engine** (since v1.13.0). Reads state, dispatches one phase, commits/pushes, exits. Pair with `/loop /blitz:next --loop` or self-schedules via ScheduleWakeup. Supersedes `/blitz:sprint --loop` (now alias) and handles full project lifecycle (bootstrap, roadmap, ship) — not just sprint cycle. |
 | "plan next sprint", "what should we build" | `/blitz:sprint-plan` | Spawns research agents |
 | "implement sprint", "develop stories", "work the sprint" | `/blitz:sprint-dev` | Spawns parallel backend/frontend/test workers |
 | "implement these stories" (no sprint) | `/blitz:implement` | Routes to sprint-dev |
@@ -102,7 +103,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 ### Diagnostics & meta
 | User intent | Skill | Why |
 |---|---|---|
-| "what should I do next", "where are we" | `/blitz:next` | Read-only state survey |
+| "what should I do next", "where are we" | `/blitz:next` | Read-only state survey + recommendation (default mode); `--loop` makes it the autonomous reconciliation engine — see Sprint pipeline row |
 | "I want to do X but don't know which skill" | `/blitz:ask` | Routes ambiguous intent |
 | "is the plugin healthy" | `/blitz:health` | Diagnostic |
 | "is the project drifted from blitz spec" | `/blitz:conform` | Diagnostic |
