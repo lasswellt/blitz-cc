@@ -14,6 +14,7 @@ compatibility: ">=2.1.71"
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
 - For context window hygiene, see [context-management.md](/_shared/context-management.md)
 - For quantified scope → registry ingestion, see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
+<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 

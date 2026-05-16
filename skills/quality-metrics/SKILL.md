@@ -14,6 +14,7 @@ argument-hint: "<mode> -- collect (snapshot to .cc-sessions/quality-metrics.json
 ## Additional Resources
 - For metric snapshot schema, dashboard templates, trend thresholds, and score calculation details, see:
 !cat skills/quality-metrics/references/main.md
+<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 

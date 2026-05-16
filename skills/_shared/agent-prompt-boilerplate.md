@@ -196,9 +196,19 @@ SELF-FALSIFICATION (audit-style only):
   (not keyword overlap).
 - Confidence: 0=false-positive, 25=might-be-real, 50=real-but-minor,
   75=real-and-important, 100=definitely-real. Orchestrator filters below 80.
+- If Confidence < 50 after falsification: DO NOT record as a finding. Log a
+  one-line entry to a separate `## Discarded Drafts` section at the bottom
+  of the output file: `- <one-line claim> (Confidence N, refuted by <artifact>)`.
+  Reserves finding-slots for actionable items.
+- "No violations found" reports go in a separate `## Verified Clean` section,
+  NOT in findings. Findings are for things to fix; clean checks are for the
+  reader to see what was inspected and passed.
+
 This is artifact construction, NOT self-judgment. Shell decides.
 Per docs/_research/2026-05-16_audit-agent-fp-prevention.md.
 ```
+
+**Output-path resolution.** When the spawning orchestrator gives you an output file path containing `${VAR}` or a `${SESSION_TMP_DIR}` placeholder, resolve it via Bash (e.g., `ls /tmp/blitz-*` or `echo "$SESSION_TMP_DIR"`) BEFORE writing your stub. Do NOT take literal placeholder text (`OUTPUT`, `<dir>`, `$VAR`) as the actual path — find the real one. Failure mode observed 2026-05-16: agent wrote to `/tmp/blitz-audit-test-OUTPUT/findings.md` literally instead of resolving the session dir.
 
 **When to use:** every audit-style spawn (codebase-audit, code-sweep, conventions audit, flow-consistency audit, the meta-audit agents in `/blitz:research` on internal topics). NOT for sprint-dev workers (they generate code, not claims) or sprint-review reviewers (they synthesize cross-cutting findings rather than count occurrences).
 

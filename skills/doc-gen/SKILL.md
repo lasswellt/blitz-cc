@@ -14,6 +14,7 @@ argument-hint: "<mode> -- api (TypeDoc/JSDoc → docs/api/) | components (Vue pr
 ## Additional Resources
 - For documentation templates, Vue SFC parsing patterns, and Mermaid diagram examples, see:
 !cat skills/doc-gen/references/main.md
+<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 

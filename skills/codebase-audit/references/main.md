@@ -59,6 +59,8 @@ Write each finding using this exact format:
    - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
    - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
 3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. Orchestrator filters below 80 (tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`).
+   - Confidence < 50 after falsification: do NOT record as finding; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`.
+   - "No violations found" results: write to a separate `## Verified Clean` section, NOT the findings list. Findings are actionable; clean checks document what was inspected.
 4. Stay within your file cap. Prioritize the most impactful files.
 5. Read files fully before judging — do not flag issues based on file names alone.
 6. Be specific: cite exact file paths, line numbers, and code snippets.
