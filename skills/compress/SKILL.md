@@ -33,6 +33,9 @@ One or more file paths. Supported extensions: `.md`, `.txt`, `.rst`, or extensio
   - Extension is allowed (reject code/config files with a clear message).
   - No existing `<file>.original` sibling (if present, it means the file was already compressed — skip with a notice, do not re-compress).
   - File size ≤ 500KB (soft safety limit).
+  - **Classify by size for Phase 2 mode selection** (see [spawn-protocol.md §2 Output Size](/_shared/spawn-protocol.md#output-size-and-single-write-budget)):
+    - `≤ 40 KB`: single-Write mode (Phase 2.4 below)
+    - `> 40 KB`: sectioned-Edit mode (Phase 2.5 below) — single Write exceeds sonnet per-call budget, will time out at ~7 min with zero output
 
 0.3 If any target is rejected, list the rejected files and continue with accepted ones. If zero targets remain, exit with a summary.
 
@@ -62,7 +65,14 @@ One or more file paths. Supported extensions: `.md`, `.txt`, `.rst`, or extensio
   - Heading text `Grep Patterns by Check`
   - Frontmatter field `output_style: exact` (opt-out signal)
 
-2.4 Write the compressed content back to the target file path.
+2.4 **Single-Write mode** (`≤ 40 KB` target): Write the compressed content back to the target file path in one Write call.
+
+2.5 **Sectioned-Edit mode** (`> 40 KB` target): do NOT issue a single Write. Instead:
+  - Identify section boundaries (top-level `^## ` headings) in the source.
+  - For each section, issue one Edit call replacing the verbose section text with its compressed equivalent. Preserve heading line + structural elements per 2.2.
+  - Process sections in document order so prior Edits remain unique-matchable.
+  - Per-Edit output stays under ~8 KB (sonnet per-call budget); ~10-20 Edits for a 40-70 KB file is normal.
+  - **Anchor**: a single-Write compress on `skills/ui-audit/references/main.md` (70 KB) ran 7m36s with zero output before timing out. The successful `skills/sprint-review/references/main.md` pass (35 KB) used 20 Edits across 14 sections.
 
 ## Phase 3 — Validate
 
@@ -109,6 +119,7 @@ compress: <N> file(s) processed
 - **Target already has `.original` sibling**: skip with notice. To re-compress, operator must manually delete the backup first.
 - **Validation drift after compression**: auto-restore from backup and mark FAILED. Operator must investigate before retrying.
 - **File exceeds 500KB**: reject. This is a safety rail — oversized files suggest the source-of-truth is misplaced (generated files, logs, etc).
+- **File 40-500KB**: auto-route to sectioned-Edit mode (Phase 2.5). Do not attempt single-Write — it will time out with zero output.
 - **Source file contains UNSAFE markers (2.3)**: refuse with classification reference. Operator may override by removing the markers, but the refusal is the default.
 
 ## Testing

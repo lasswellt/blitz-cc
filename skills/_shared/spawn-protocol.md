@@ -114,6 +114,24 @@ Source: `agents/` directory. Verified 2026-04-16.
 - PARTIAL return format: agent emits a PARTIAL block when approaching the turn limit.
 - Turn-budget declaration: agent prompt explicitly states `You have a budget of 40 tool calls. After 35, stop and write PARTIAL.`
 
+### Output Size and Single-Write Budget
+
+Empirically observed per-call output budget (2026-05-16, this repo):
+
+| Model | Safe single Write | Hard ceiling (timeout risk) |
+|---|---|---|
+| sonnet | ≤ 32 KB / ~8K tokens | > 40 KB |
+| opus   | ≤ 48 KB / ~12K tokens | > 64 KB |
+| haiku  | ≤ 16 KB / ~4K tokens | > 24 KB |
+
+**Anchor incident**: a single-Write compress on `skills/ui-audit/references/main.md` (70 KB / 1570 lines) ran 7m36s with 4 tool calls and produced zero output before timing out. A sectioned-Edit pass on `skills/sprint-review/references/main.md` (35 KB) completed via 20 Edits across 14 sections.
+
+**Rules**:
+1. If the agent's expected output exceeds the safe single-Write budget for its model, dispatch as sectioned Edits, not one Write — Edit calls scoped to discrete file sections fit individual budget windows and persist incrementally.
+2. If the target file is larger than the hard ceiling, split the source into sections first (or address one section per agent) instead of issuing the agent a single all-in-one prompt.
+3. Write-as-you-go is the universal mitigation: stubbing the output file before the first tool call + appending findings prevents the zero-output failure mode regardless of total size.
+4. Per-tool-call output is bounded by the model's per-call token budget — large file rewrites are NOT bounded by the agent's "Max output: 150/250/400 ln" caps (those are aggregate). The single-Write ceiling above is the per-call boundary.
+
 ### Banned Patterns
 
 These produce zero-output failures with full token cost. They are BLOCKERs in sprint-review.
@@ -123,6 +141,7 @@ These produce zero-output failures with full token cost. They are BLOCKERs in sp
 3. **"Write the full document at the end, not incrementally"** — guarantees zero output on timeout. (Exception: code-sweep tier agents writing a single JSON array are a structural exception where the array IS the incremental payload; scope already capped by tier.)
 4. **Orchestrator reads agent output with no existence check** — proceeds on missing/empty files and silently produces degraded results.
 5. **Retry without narrowing scope** — retrying the exact same prompt after `error_max_turns` burns tokens identically. Narrow the scope, or do not retry.
+6. **Single Write of >40 KB output (sonnet) / >64 KB (opus)** — exceeds per-call output budget; agent times out with zero file written. Use sectioned Edits instead.
 
 ### Fail-Fast Rationale
 
