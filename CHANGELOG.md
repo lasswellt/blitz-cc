@@ -2,6 +2,23 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.2] — 2026-05-16
+
+Token-saving patch — `/blitz:compress` rerun on `skills/sprint-review/references/main.md` after v1.12.0 added substantial content (Phase 0.0 Input Gate, Automation Coverage Block, Reviewer Spawn Strategy, Phase 2.5 Browser Verification, Invariant 6/7 Procedures). Reclaims ~300 tokens per `/blitz:sprint-review` invocation that loads this reference.
+
+### Changed
+
+- **`skills/sprint-review/references/main.md`** — prose tightened across 14 sections via 20 sectioned Edits. 35,727 → 34,427 bytes (−1,300, 3.6%); 825 → 817 lines (−8). All structural invariants exactly preserved: 40/40 code fences, 90/90 headings, 119/119 table rows, 0/0 URLs. Validates clean against `reference-compression-validate.sh` (v1.12.1 loss-only semantics).
+- **`skills/sprint-review/references/main.md.original`** — refreshed to pre-compress snapshot (the prior v1.12.1 refresh was a same-content sync to clear stale drift; this release's `.original` is a true backup of the v1.12.1 pre-compress content, enabling the validator to detect any future content loss).
+
+### Process note
+
+The /blitz:compress skill works well end-to-end on files ≤ ~35KB but timed out on `skills/ui-audit/references/main.md` (70KB / 1570 lines) — the per-call sonnet output budget cannot produce a single 50KB+ Write. Future work: extend compress to support a chunked (sectioned-Edit) mode for files >40KB. Tracked separately.
+
+### Compatibility
+
+No new env vars. No new APIs. No behavior changes. Drop-in upgrade from v1.12.1.
+
 ## [1.12.1] — 2026-05-16
 
 **Critical patch.** v1.12.0's `reference-compression-validate.sh` PreToolUse hook blocked every blitz user's `git commit` regardless of whether their project had any `references/main.md.original` pairs. Two structural fixes plus drift cleanup.
@@ -455,6 +472,7 @@ Carry-forward registry format (`.cc-sessions/carry-forward.jsonl`) validated acr
 - Issues closed: #1-#16 (all stories from Sprint 2-5)
 - Research source: 2 April-18 research docs (full absorption + runtime propagation)
 
+[1.12.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.2
 [1.12.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.1
 [1.12.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.0
 [1.11.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.2

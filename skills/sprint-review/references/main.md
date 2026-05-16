@@ -141,8 +141,6 @@ ${EPIC_COUNT} epics. ${SUMMARY_SENTENCE}.
 
 ## Quality Gate Checklist
 
-All automated quality gates with pass/fail criteria.
-
 ### Type-Check Gate
 
 | Check | Pass Criteria | Fail Criteria |
@@ -255,7 +253,7 @@ CHANGED_PACKAGES=($(echo "${CHANGED_PACKAGES[@]}" | tr ' ' '\n' | sort -u))
 
 ### Single Package
 
-Non-monorepo: entire project is changed package. Run all checks at root.
+Non-monorepo: run all checks at root.
 
 ### Detection Heuristics
 
@@ -270,7 +268,7 @@ Non-monorepo: entire project is changed package. Run all checks at root.
 
 ### Scope Optimization
 
-Run tests only for changed packages to save time:
+Run tests only for changed packages:
 ```bash
 # pnpm
 pnpm --filter ...[$SPRINT_BASE] run test
@@ -288,8 +286,6 @@ npm run test
 ---
 
 ## Review Finding Format
-
-Reviewer agents must format findings consistently.
 
 ### Finding Schema
 
@@ -322,7 +318,7 @@ Reviewer agents must format findings consistently.
 
 ### Reviewer Output Schema — Optional Instruction Gaps Section
 
-At the **end** of every reviewer output file (after the last finding), append the optional section below. Empty entries are filtered by the orchestrator and never reach KNOWLEDGE.md — only non-empty Instruction Gaps survive. This creates a feedback channel from reviewer agents back to skill authors (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P7).
+Append at the **end** of every reviewer output file (after the last finding). Empty entries are filtered by the orchestrator and never reach KNOWLEDGE.md — only non-empty Instruction Gaps survive. Feedback channel from reviewer agents to skill authors (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P7).
 
 ```markdown
 ## Instruction Gaps (optional)
@@ -336,7 +332,7 @@ and propose a rewording. Format (one per line):
 Leave empty if no gap. Do NOT pad with "no gaps to report."
 ```
 
-Orchestrator post-processing (sprint-review Phase 4 after reading all reviewer files): for each non-empty Instruction Gaps line, append an entry to `.cc-sessions/KNOWLEDGE.md` under heading `## <DATE> · Skill Instruction Drift — <reviewer-role>` following the format in [knowledge-protocol.md](/_shared/knowledge-protocol.md) §1. Entries with empty `<suggested rewording>` are dropped (no value).
+Orchestrator post-processing (Phase 4): for each non-empty Instruction Gaps line, append to `.cc-sessions/KNOWLEDGE.md` under `## <DATE> · Skill Instruction Drift — <reviewer-role>` per [knowledge-protocol.md](/_shared/knowledge-protocol.md) §1. Entries with empty `<suggested rewording>` are dropped.
 
 ### Severity Guidelines
 
@@ -449,7 +445,7 @@ L30: ❓ q: why `Map` over `Record<string, X>` here? Hot path?
 
 ## Registry Invariants — Phase 3.6 Detailed Procedures
 
-**Hard gate**: failing any invariant fails sprint close. Makes silent scope drops impossible by auditing carry-forward registry against current sprint state. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for full protocol and `docs/_research/2026-04-08_sprint-carryforward-registry.md` for motivating incident.
+**Hard gate**: any invariant failure fails sprint close. Audits carry-forward registry against current sprint state to prevent silent scope drops. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
 
 ### 3.6.1 Load the Registry
 
@@ -459,7 +455,7 @@ Reduce `.cc-sessions/carry-forward.jsonl` to latest-wins state:
 REGISTRY=$(jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo '[]')
 ```
 
-Load current sprint's manifest (`sprints/sprint-${SPRINT_NUMBER}/manifest.json`) and `sprint-registry.json`. Load `docs/roadmap/epic-registry.json` if exists. Identify every research doc referenced (directly or transitively) by any story, epic, or capability in this sprint — call this `SPRINT_RESEARCH_DOCS`.
+Load `sprints/sprint-${SPRINT_NUMBER}/manifest.json`, `sprint-registry.json`, and `docs/roadmap/epic-registry.json` (if exists). Identify every research doc referenced (directly or transitively) by any story, epic, or capability in this sprint — call this `SPRINT_RESEARCH_DOCS`.
 
 ### 3.6.2 Invariant 1 — Quantified Scope Has a Registry Entry
 
@@ -468,9 +464,9 @@ For every doc in `SPRINT_RESEARCH_DOCS`:
 1. Scan doc's Summary, Findings, Recommendation sections for quantified language — regex `\d+\s+(files|components|modals|routes|tests|endpoints|pages|views|tables|migrations|fields|records)`.
 
 2. If match found:
-   - **Acceptable case A:** doc has `scope:` YAML frontmatter block covering the match, AND block's `id` exists in registry → pass.
-   - **Acceptable case B:** match inside HTML comment `<!-- no-registry: <reason> -->` → pass.
-   - **Failure case:** neither — **FAIL** this invariant. Print offending file and line range. Require author to either (a) add `scope:` block and re-run `/blitz:roadmap extend` before sprint close or (b) annotate line with `no-registry` comment and reason.
+   - **Case A:** doc has `scope:` YAML frontmatter block covering the match AND block's `id` exists in registry → pass.
+   - **Case B:** match inside `<!-- no-registry: <reason> -->` → pass.
+   - **Failure:** neither → **FAIL**. Print offending file and line range. Author must (a) add `scope:` block and re-run `/blitz:roadmap extend` before sprint close, or (b) annotate with `no-registry` comment.
 
 Record results as `invariant_1: {pass|fail, violations: [...]}` in report.
 
@@ -485,17 +481,15 @@ For every registry entry with `status ∈ {active, partial}`:
   ```jsonl
   {"id":"<entry-id>","ts":"<ISO-8601>","event":"correction","rollover_count":<prev+1>,"notes":"sprint-review Invariant 2: entry not touched in sprint-${SPRINT_NUMBER}"}
   ```
-  Require operator to (a) link story in this sprint that advanced the entry, (b) write `deferred` event with reason, or (c) write `dropped` event with `drop_reason` + `revival_candidate`.
+  Operator must (a) link a story that advanced the entry, (b) write `deferred` event with reason, or (c) write `dropped` event with `drop_reason` + `revival_candidate`.
 
-**Waiver accounting sub-check:** cross-reference manifest `waived_ac_count > 0` against registry. For every sprint with waivers, MUST be at least one `event: "auto_waived"` line written during sprint for entry whose `parent.epic` appears in sprint manifest's `epics` array. Missing mirror → Invariant 2 failure.
+**Waiver accounting sub-check:** cross-reference manifest `waived_ac_count > 0` against registry. For every sprint with waivers, MUST have at least one `event: "auto_waived"` line written during sprint for entry whose `parent.epic` appears in the manifest's `epics` array. Missing mirror → Invariant 2 failure.
 
-**Rollover escalation:** if any entry crosses `rollover_count >= 3`, print loud escalation banner to stdout AND record entry as `blocker: rollover-escalation` in report. Entries no longer eligible for auto-inject in Invariant 4 — require mandatory human review before next sprint can plan around them. Prevents infinite `/loop` bouncing on stuck work.
+**Rollover escalation:** `rollover_count >= 3` → print escalation banner to stdout AND record entry as `blocker: rollover-escalation` in report. Entries no longer eligible for auto-inject in Invariant 4 — require human review before next sprint. Prevents infinite `/loop` bouncing on stuck work.
 
 ### 3.6.4 Invariant 3 — Roadmap Completion Claims Match Registry Coverage
 
-Read `docs/roadmap/roadmap-registry.json` and `docs/roadmap/tracker.md` (if exist); extract completion claims — typically "N/N epics complete" in registry JSON or completion column in tracker.
-
-For every epic marked `status: done|complete` with non-empty `registry_entries` in epic registry:
+Read `docs/roadmap/roadmap-registry.json` and `docs/roadmap/tracker.md` (if exist); extract completion claims. For every epic marked `status: done|complete` with non-empty `registry_entries` in epic registry:
 
 - Every referenced registry id MUST have `status == complete` in latest-wins registry.
 - Any mismatch → **FAIL** with precise delta:
@@ -506,7 +500,7 @@ For every epic marked `status: done|complete` with non-empty `registry_entries` 
     the gap or revert the epic to status=in-progress.
   ```
 
-Fix path: roll epic status back to `in-progress` OR write `dropped`/`deferred` event on offending entry with reason. Do NOT silently change registry entry to `complete` — that's the drop this mechanism prevents.
+Fix: roll epic to `in-progress` OR write `dropped`/`deferred` event with reason. Do NOT silently change registry entry to `complete`.
 
 ### 3.6.5 Invariant 4 — Auto-Inject Uncompleted Active Entries Into Next Sprint
 
@@ -530,9 +524,9 @@ Write entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.json`
 }
 ```
 
-Next `sprint-plan` invocation reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator must explicitly `defer`/`drop` entry before planning runs. **Linear cycle semantics**: nothing silently falls out of view. See [carry-forward-registry.md](/_shared/carry-forward-registry.md).
+Next `sprint-plan` reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator explicitly `defer`/`drop` before planning. **Linear cycle semantics**: nothing silently falls out of view. See [carry-forward-registry.md](/_shared/carry-forward-registry.md).
 
-Partial entries (`status == partial`) not auto-injected here — carry state forward via normal reader path (sprint-plan Phase 0 step 8 reads both active and partial entries). Only `active` with `coverage < 1.0` needs explicit file marker for visibility.
+`status == partial` entries not auto-injected — carried via normal reader path (sprint-plan Phase 0 step 8 reads both active and partial). Only `active` with `coverage < 1.0` needs explicit file marker.
 
 ### 3.6.6 Invariants Report
 
@@ -546,14 +540,12 @@ Write invariants results to sprint review report under `## Registry Invariants` 
 
 **Hard gate decision:**
 
-- **All four invariants pass** → Phase 3.6 passes, proceed to Phase 4 (Report) with `review_status` unchanged.
-- **Any invariant fails** → Phase 3.6 fails. Sprint close transitions to `CONDITIONAL` at best (see Phase 4.2 overall status table); failing invariants listed under `Critical` findings. Sprint CANNOT be marked `PASS` while registry invariants failing. In `autonomy=full`, failures logged to activity feed and sprint marked `CONDITIONAL` — next `/loop` tick must address failures before proceeding.
+- **All four invariants pass** → Phase 3.6 passes; proceed to Phase 4 with `review_status` unchanged.
+- **Any invariant fails** → `CONDITIONAL` at best (see Phase 4.2); failing invariants listed under `Critical`. Sprint CANNOT be `PASS` while registry invariants fail. In `autonomy=full`: log failures, mark `CONDITIONAL` — next `/loop` tick must address before proceeding.
 
 ---
 
 ## Final Output Template
-
-Print summary to user:
 
 ```
 Sprint ${SPRINT_NUMBER} Review Complete: ${STATUS}
@@ -679,7 +671,7 @@ case "$INTENDED:$GEMINI_AVAILABLE" in
 esac
 ```
 
-**The orchestrator MUST emit exactly that bracketed `[critic] mode=...` line before spawning.** Do not improvise the message — earlier sessions hallucinated "critic-gemini.sh not installed in this plugin version" when both the script and the binary were present. The probe above is the source of truth.
+**Orchestrator MUST emit exactly that `[critic] mode=...` line before spawning.** Do not improvise — earlier sessions hallucinated "critic-gemini.sh not installed" when both script and binary were present. The probe above is authoritative.
 
 ### Default (in-Claude)
 
@@ -734,13 +726,13 @@ case "$VERDICT" in
 esac
 ```
 
-REJECT verdict transitions sprint to FAIL. Re-run sprint-review after the issue is addressed by sprint-dev or the user.
+REJECT transitions sprint to FAIL. Re-run sprint-review after sprint-dev addresses the issue.
 
 ---
 
 ## Reviewer Spawn Strategy
 
-Phase 2.2.0 of `SKILL.md`. Selects parallel (default) vs sequential reviewer dispatch (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P2).
+Phase 2.2.0. Selects parallel (default) vs sequential reviewer dispatch (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P2).
 
 ```bash
 DIFF_LOC=$(git diff --shortstat ${SPRINT_BASE}..HEAD 2>/dev/null \
@@ -752,15 +744,15 @@ if [ "${BLITZ_REVIEW_SEQUENTIAL:-0}" = "1" ] || [ "${DIFF_LOC:-0}" -gt 2000 ]; t
 fi
 ```
 
-**Sequential mode contract**: spawn reviewers one at a time in order (security → backend → frontend → patterns). After each reviewer completes, append findings to `${SESSION_TMP_DIR}/sprint-${N}-prior-findings.md`. Inject that file's contents into the NEXT reviewer's prompt under `## Prior Reviewer Findings (for cross-cutting awareness)`. Later reviewers may dedupe against prior findings.
+**Sequential mode**: spawn one at a time (security → backend → frontend → patterns). After each completes, append findings to `${SESSION_TMP_DIR}/sprint-${N}-prior-findings.md` and inject under `## Prior Reviewer Findings (for cross-cutting awareness)` in the next prompt. Later reviewers may dedupe.
 
-**Parallel mode (default)**: continue with the existing single-message multi-spawn flow in Phase 2.2.1.
+**Parallel mode (default)**: single-message multi-spawn per Phase 2.2.1.
 
 ---
 
 ## Phase 2.5 Browser Verification
 
-Phase 2.5.0 of `SKILL.md`. Required when Playwright MCP available; silent skip otherwise (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` F4).
+Phase 2.5.0. Required when Playwright MCP available; silent skip otherwise (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` F4).
 
 ```bash
 PLAYWRIGHT_AVAILABLE=false
@@ -779,13 +771,13 @@ Coverage tag values (write to gates JSON `phase_2_5_coverage`):
 | `partial` | `PLAYWRIGHT_AVAILABLE=true` but smoke test skipped (other than "no changed routes"). Surface in Phase 4 Recommendations → Before Merge. |
 | `full` | Smoke test completed across all changed routes. |
 
-Smoke procedure: identify changed routes from changed page files. Navigate each via `mcp__plugin_playwright_playwright__browser_navigate`. For each page, check console errors (Critical/Error), placeholder/sample data visible (Warning), broken layouts (Minor). Add findings to review report.
+Smoke: identify changed routes from changed page files. Navigate each via `mcp__plugin_playwright_playwright__browser_navigate`. Per page: check console errors (Critical/Error), placeholder/sample data (Warning), broken layouts (Minor). Add findings to review report.
 
 ---
 
 ## Automation Coverage Block
 
-Phase 3.7 of `SKILL.md`. Declares deterministic-vs-human-judgment boundary (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4).
+Phase 3.7. Declares deterministic-vs-human-judgment boundary (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4).
 
 ```bash
 DETERMINISTIC_PASSED=0
@@ -818,8 +810,8 @@ EOF
 | `auto-merge-safe` | ALL deterministic gates pass AND Phase 2.5 coverage = `full` AND zero critical/major findings. |
 | `needs-human-review` | Any deterministic gate fails OR Phase 2.5 coverage = `partial` OR any critical/major findings exist. |
 
-The PR may merge under `auto-merge-safe` for behavior correctness, but human reviewer still owns architecture/UX/business-intent judgment. Frame in the report as honest limitation, not a coverage claim.
+PR may merge under `auto-merge-safe` for behavior correctness; human reviewer owns architecture/UX/business-intent. Frame as honest limitation, not a coverage claim.
 
-The block is written into the review report under the `## Automation Coverage` section between `## Story Status` and `## Recommendations` (template above).
+Written to review report under `## Automation Coverage` between `## Story Status` and `## Recommendations`.
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
