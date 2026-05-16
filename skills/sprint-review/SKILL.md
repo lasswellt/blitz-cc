@@ -34,6 +34,10 @@ Review sprint quality through automated checks and parallel reviewer agents. Run
 
 ---
 
+## Phase 0.0: INPUT GATE — Validate Pipeline Inputs
+
+Hard-fail if required upstream artifacts missing per [state-handoff.md](/_shared/state-handoff.md): `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, `${SPRINT_DIR}/stories/S*.md`. Override (not recommended): `BLITZ_REVIEW_NO_MANIFEST=1`. Bash block in `references/main.md` §**Phase 0.0 Input Gate**.
+
 ## Phase 0: CONTEXT — Load Sprint State
 
 0. **Register session.** Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per verbose-progress.md.
@@ -46,22 +50,14 @@ Review sprint quality through automated checks and parallel reviewer agents. Run
    - `incomplete` — Partially done, flag for attention.
    - `blocked` — Skipped during implementation, note in report.
 
-3. **Build codebase inventory.** Run:
-   ```bash
-   find . -maxdepth 3 -name 'package.json' -not -path '*/node_modules/*' | head -30
-   ```
+3. **Build codebase inventory.** `find . -maxdepth 3 -name 'package.json' -not -path '*/node_modules/*' | head -30`.
 
-4. **Detect changed files.** Compare against the sprint's base commit:
+4. **Detect changed files + packages.**
    ```bash
-   # Find the merge base (commit before sprint started)
    SPRINT_BASE=$(git log --oneline --all | grep -i "sprint-${SPRINT_NUMBER}" | tail -1 | cut -d' ' -f1)
-   # If no sprint commit found, use a reasonable default
    git diff --name-only ${SPRINT_BASE}..HEAD 2>/dev/null || git diff --name-only HEAD~20..HEAD
    ```
-
-5. **Detect changed packages.** From the changed files, determine which packages/workspaces were modified (see references/main.md for detection rules).
-
-6. **Load registry.** Read `sprint-registry.json` for sprint metadata.
+   From the changed files, determine which packages/workspaces were modified (see references/main.md for detection rules). Registry metadata already loaded in Phase 0.0.
 
 **Gate:** At least one story must have `status: done` and changed files must be detectable.
 
@@ -252,8 +248,6 @@ Reviewers write findings to their individual output files. The orchestrator synt
 - Security findings with `unvalidated input` tags are propagated into the Backend Review section of the final report.
 - Pattern findings about component structure are propagated into the Frontend Review section.
 - Backend findings about error handling gaps are propagated into the Frontend Review section.
-
-The previous peer-to-peer `SendMessage CROSS-FINDING:` protocol was removed in v1.4.0 because it had no ack mechanism and findings could be silently truncated when the receiving reviewer was near its output budget. Synthesis-by-orchestrator is structurally safer.
 
 ### 2.6 Collect Review Findings
 

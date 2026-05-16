@@ -5,7 +5,7 @@ argument-hint: "<describe what you want to do>"
 allowed-tools: Read, Bash, Glob, AskUserQuestion
 model: opus
 effort: low
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 ---
 
 

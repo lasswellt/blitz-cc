@@ -4,7 +4,7 @@ description: "Scans code for placeholder patterns (TODO/FIXME/STUB/PLACEHOLDER),
 allowed-tools: Read, Bash, Glob, Grep
 model: sonnet
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<scope: path or 'all'>"
 ---
 

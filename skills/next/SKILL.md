@@ -5,7 +5,7 @@ argument-hint: "(no arguments — reads state automatically)"
 allowed-tools: Read, Bash, Glob, Grep
 model: sonnet
 effort: low
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 ---
 
 

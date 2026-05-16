@@ -4,7 +4,7 @@ description: "Generates tests for target files matching the project's existing t
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<file-path>"
 ---
 

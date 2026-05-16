@@ -174,7 +174,7 @@ Per-spawn parameters:
 - `prompt`: the template from references/main.md "Agent Prompt Templates" filled with epic list, stack profile, and output path
 - `run_in_background: true` (orchestrator polls output files in Phase 2.4)
 
-Cross-cutting findings are synthesized by the orchestrator in Phase 2.4 from the written output files — the previous STEER: SendMessage cross-steering was removed in v1.4.0 because it was advisory-only with no ack mechanism. See [spawn-protocol.md](/_shared/spawn-protocol.md).
+Cross-cutting findings synthesized by orchestrator in Phase 2.4 from output files (not peer-to-peer, per [spawn-protocol.md](/_shared/spawn-protocol.md)).
 
 **Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Each agent prompt MUST include: max 15 file reads, max 8 web searches (0 for codebase-analyst), max 250-line output, 5-minute wall-clock budget, write-as-you-go instruction.
 

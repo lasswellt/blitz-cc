@@ -106,7 +106,7 @@ Per-spawn parameters:
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 
-The previous `TeamCreate`+`SendMessage` spawn mechanism was removed in v1.4.0 — agents no longer send peer-to-peer cross-findings. Cross-pillar patterns are synthesized by the orchestrator in Phase 2 from the individual findings files. See [spawn-protocol.md](/_shared/spawn-protocol.md).
+Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [spawn-protocol.md](/_shared/spawn-protocol.md)).
 
 **Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
 

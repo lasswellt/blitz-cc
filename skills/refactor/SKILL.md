@@ -4,7 +4,7 @@ description: "Performs safe, incremental refactoring with test verification afte
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<target-file-or-module> <refactoring-goal>"
 ---
 

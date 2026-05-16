@@ -129,7 +129,7 @@ Each agent prompt MUST include:
 4. **Research limits** — See below.
 5. **Write-as-you-go rule** — "Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory."
 
-Cross-cutting findings are NOT routed peer-to-peer. The orchestrator synthesizes cross-domain findings in Phase 2 from the written output files. (The previous STEER: SendMessage protocol was removed in v1.4.0 — it was advisory-only, had no ack mechanism, and findings could be silently truncated when the receiving agent was near its output budget.)
+Cross-cutting findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [spawn-protocol.md](/_shared/spawn-protocol.md)).
 
 ### 1.5 Research Limits Per Agent
 
@@ -151,8 +151,6 @@ The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU
 - `web-researcher` — model: haiku. **Contrarian role** assigned (counter-evidence focus to mitigate agent-agreement bias per arxiv 2604.02923).
 - `codebase-analyst` — model: sonnet. Semantic codebase reasoning, no web search. file:LINE cites.
 - `infra-analyst` — model: haiku. **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.
-
-Cross-cutting findings are NOT routed peer-to-peer. The orchestrator synthesizes cross-domain findings in Phase 2 from the written output files. (The previous STEER: SendMessage protocol was removed in v1.4.0 — it was advisory-only, had no ack mechanism, and findings could be silently truncated when the receiving agent was near its output budget.)
 
 ### 1.7 Wait for Completion
 

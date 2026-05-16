@@ -5,7 +5,7 @@ argument-hint: "<describe what you want to change>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: low
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 ---
 
 ## Project Context

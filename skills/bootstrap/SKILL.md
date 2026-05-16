@@ -4,7 +4,7 @@ description: "Scaffolds new projects, features, or packages with project convent
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
 model: opus
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<type: project|feature|package> <name>"
 ---
 

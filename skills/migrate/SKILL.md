@@ -4,7 +4,7 @@ description: "Handles framework, library, and tooling migrations with incrementa
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, SendMessage
 model: opus
 effort: high
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
 ---
 

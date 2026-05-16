@@ -60,6 +60,16 @@ echo "Current branch: $BRANCH"
 
 # 3. Dependencies installed
 [ -d "node_modules" ] && echo "DEPS: installed" || echo "DEPS: missing"
+
+# 4. Upstream sprint-review artifact (state-handoff.md contract)
+if [ -s "sprint-registry.json" ]; then
+  SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
+  SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
+  [ -s "${SPRINT_DIR}/review-report.md" ] || {
+    echo "BLOCK: ship requires ${SPRINT_DIR}/review-report.md. Run /blitz:sprint-review first." >&2
+    exit 1
+  }
+fi
 ```
 
 | Check | Condition | Action |
@@ -70,6 +80,8 @@ echo "Current branch: $BRANCH"
 | Branch | On any other branch | Proceed |
 | Dependencies | `node_modules` exists | Proceed |
 | Dependencies | `node_modules` missing | STOP — ask user to install dependencies |
+| Review report | `${SPRINT_DIR}/review-report.md` present when sprint context exists | Proceed |
+| Review report | Missing when sprint context exists | STOP — invoke `/blitz:sprint-review` first |
 
 If any pre-flight check fails, report the issue and abort.
 

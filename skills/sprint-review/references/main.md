@@ -4,6 +4,28 @@ Templates, checklists, rules for sprint-review skill.
 
 ---
 
+## Phase 0.0 Input Gate
+
+Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [state-handoff.md](/_shared/state-handoff.md) contract.
+
+```bash
+PIPELINE_MISSING=()
+[ -s "sprint-registry.json" ] || PIPELINE_MISSING+=("sprint-registry.json")
+SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
+SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
+[ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
+ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
+if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
+  echo "BLOCK: missing pipeline inputs (see /_shared/state-handoff.md §sprint-review):" >&2
+  printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
+  echo "Producer: /blitz:sprint-plan + /blitz:sprint-dev." >&2
+  echo "Override (not recommended): BLITZ_REVIEW_NO_MANIFEST=1" >&2
+  [ "${BLITZ_REVIEW_NO_MANIFEST:-0}" = "1" ] || exit 1
+fi
+```
+
+---
+
 ## Review Report Template
 
 ```markdown

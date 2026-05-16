@@ -4,7 +4,7 @@ description: "Resolves GitHub issues end-to-end: fetches issue context via gh CL
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, SendMessage
 model: opus
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<issue-number>"
 ---
 

@@ -4,7 +4,7 @@ description: "Tracks development ideas, follow-up items, and technical debt disc
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: low
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<add <description> | list | check | resolve <id>>"
 ---
 

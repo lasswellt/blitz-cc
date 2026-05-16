@@ -4,7 +4,7 @@ description: "Profiles bundle size, runtime performance (Web Vitals), and Lighth
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "<mode> -- bundle (size analysis vs baseline, large-dep detection) | runtime (V8 heap + framework hot paths) | lighthouse (Core Web Vitals on built site) | full (all three with cross-correlation)"
 ---
 

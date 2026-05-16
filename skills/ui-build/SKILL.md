@@ -4,7 +4,7 @@ description: "Researches the codebase's design patterns (component library, layo
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch
 model: opus
 effort: high
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 ---
 
 ## Project Context

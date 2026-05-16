@@ -4,7 +4,7 @@ description: "Automated browser testing, site crawling, and visual analysis via 
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 effort: high
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "[mode] [target] -- modes: full | smoke | page <path> | fix | --loop"
 ---
 

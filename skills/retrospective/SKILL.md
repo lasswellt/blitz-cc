@@ -4,7 +4,7 @@ description: "Analyzes completed sessions to identify improvement patterns. Read
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: medium
-compatibility: ">=2.1.50"
+compatibility: ">=2.1.71"
 argument-hint: "(no arguments — runs analysis automatically)"
 ---
 
