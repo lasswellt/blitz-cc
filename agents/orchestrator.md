@@ -47,27 +47,65 @@ The user then invokes the slash command in the next turn. The slash invocation c
 
 ## 2. Skill routing matrix
 
+Grouped by intent class. Within a group, prefer the most-specific match.
+
+### Greenfield / setup
 | User intent | Skill | Why |
 |---|---|---|
-| "plan next sprint", "what should we build" | `/blitz:sprint-plan` | Planning skill spawns research agents |
+| "scaffold a project", "set up new app/package", "init" | `/blitz:bootstrap` | Greenfield scaffold; auto-detects conventions |
+| "configure blitz for this project", "install hooks" | `/blitz:setup` | Conflict-detection + permissions audit |
+| "extend the roadmap", "plan phases", "ingest research" | `/blitz:roadmap` | Reads docs/_research/ → capability-index + registry |
+
+### Sprint pipeline
+| User intent | Skill | Why |
+|---|---|---|
+| "run a full sprint", "autonomous sprint loop" | `/blitz:sprint` | Plan → implement → review meta-orchestrator |
+| "plan next sprint", "what should we build" | `/blitz:sprint-plan` | Spawns research agents |
 | "implement sprint", "develop stories", "work the sprint" | `/blitz:sprint-dev` | Spawns parallel backend/frontend/test workers |
+| "implement these stories" (no sprint) | `/blitz:implement` | Routes to sprint-dev |
 | "review sprint", "quality gate" | `/blitz:sprint-review` | Spawns parallel reviewer agents |
+| "review the sprint" (synonym) | `/blitz:review` | Routes to sprint-review |
 | "ship", "release", "publish" | `/blitz:ship` | Pipeline of multiple skills |
+| "cut a release", "publish v1.X" | `/blitz:release` | Versioning + changelog + tag |
+
+### Research, audit, quality
+| User intent | Skill | Why |
+|---|---|---|
 | "research X", "investigate Y" | `/blitz:research <topic>` | Spawns parallel research agents |
 | "audit codebase", "5-pillar review" | `/blitz:codebase-audit` | 10 parallel agents |
-| "fix issue #N", "resolve issue" | `/blitz:fix-issue <N>` | One-shot |
-| "small fix", "typo", "rename var" | `/blitz:quick` | One-shot |
-| "what should I do next", "where are we" | `/blitz:next` | Read-only state survey |
+| "what was learned recently", "explain the codebase" | `/blitz:codebase-map` | Read-only |
+| "audit deps", "security check" | `/blitz:dep-health` | npm audit + license + outdated |
+| "check completeness", "production readiness" | `/blitz:completeness-gate` | Placeholder/stub scan |
+| "check API misuse", "framework anti-patterns" | `/blitz:code-doctor` | Read-only Firestore/Vue audit |
+| "sweep code quality", "cleanup", "improve code" | `/blitz:code-sweep` | Iterative ratchet sweep |
+| "check wiring", "integration check", "orphan routes" | `/blitz:integration-check` | Read-only cross-module trace |
+| "quality metrics", "trend dashboard" | `/blitz:quality-metrics` | Snapshot + compare |
+| "audit UI consistency", "cross-page data drift" | `/blitz:ui-audit` | Read-only registry-based |
+| "browse the app", "smoke test" | `/blitz:browse` | Playwright-driven crawl |
+| "profile perf", "lighthouse", "bundle size" | `/blitz:perf-profile` | Vue/Nuxt profiler |
+
+### Development & maintenance
+| User intent | Skill | Why |
+|---|---|---|
 | "build a page/component", "design UI" | `/blitz:ui-build` | Phase 5.4 spawns design-critic |
 | "extract design system", "make DESIGN.md" | `/blitz:design-extract` | One-shot |
-| "audit deps", "security check" | `/blitz:dep-health` | One-shot |
-| "profile perf" | `/blitz:perf-profile` | One-shot |
-| "browse the app", "smoke test" | `/blitz:browse` | One-shot Playwright |
+| "refactor", "extract", "simplify", "rename" | `/blitz:refactor` | Test-snapshot guard each step |
+| "migrate to", "upgrade", "Vue 2→3" | `/blitz:migrate` | Incremental + rollback branch |
+| "add tests", "test coverage", "cover X" | `/blitz:test-gen` | Vitest/Jest matching conventions |
+| "generate docs", "API docs", "changelog" | `/blitz:doc-gen` | Source → markdown |
+| "fix issue #N", "resolve issue" | `/blitz:fix-issue <N>` | gh CLI + fix + regression test |
+| "small fix", "typo", "rename var" | `/blitz:quick` | One-shot |
 | "track this todo", "remember to X" | `/blitz:todo add <text>` | Append-only |
+| "shrink this doc", "compress" | `/blitz:compress` | Token-reduction rewrite |
+| "what did we learn this session", "retrospective" | `/blitz:retrospective` | Activity-feed analysis |
+
+### Diagnostics & meta
+| User intent | Skill | Why |
+|---|---|---|
+| "what should I do next", "where are we" | `/blitz:next` | Read-only state survey |
 | "I want to do X but don't know which skill" | `/blitz:ask` | Routes ambiguous intent |
 | "is the plugin healthy" | `/blitz:health` | Diagnostic |
 | "is the project drifted from blitz spec" | `/blitz:conform` | Diagnostic |
-| "what was learned recently", "explain the codebase" | `/blitz:codebase-map` | Read-only |
 
 When the user's intent matches one of these unambiguously, route. When ambiguous, surface 2 candidates and ask one clarifying question.
 

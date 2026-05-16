@@ -197,89 +197,36 @@ The activity feed is append-only and grows over time. To prevent unbounded growt
 
 ## Sprint Selection Verbosity (Special Case)
 
-Sprint-related skills (sprint, sprint-plan, sprint-dev, sprint-review, implement, review, ship) have additional verbosity requirements because they involve complex multi-step decisions.
+Sprint-family skills (sprint, sprint-plan, sprint-dev, sprint-review, implement, review, ship) require structured decision-tree output at key moments. Use the formats below — adapt the data, keep the shape.
 
-### Epic Selection Reporting
+| Trigger | Format | Required content |
+|---|---|---|
+| Epic selection (sprint-plan) | Tree (`├─ EP-XXX "title" — STATUS → action`) | Every candidate epic + status + reason + selection verdict |
+| Story distribution (sprint-dev) | Tree grouped by agent role | Every story + priority + points + dependencies per agent |
+| Wave progress (sprint-dev) | `Wave N: <progress-bar> N/M stories <state>` per wave | All waves + completion fraction + critical-path note |
+| Sprint dashboard (sprint-dev, every 3 completions or wave boundary) | Box-drawing dashboard with stories %/points %/per-agent rows | Stories, points, per-agent progress, ready/blocked/in-progress lists |
 
-When selecting epics for a sprint, the skill MUST print a full decision tree:
+Canonical examples (copy + adapt):
 
 ```
 [sprint-plan] Epic Selection:
-  ├─ EP-001 "User Authentication" — DONE (completed sprint 1) → skip
-  ├─ EP-002 "User Profiles" — DONE (completed sprint 2) → skip
   ├─ EP-003 "Dashboard" — UNBLOCKED (deps: EP-001 ✓, EP-002 ✓) → SELECTED
-  ├─ EP-004 "Notifications" — UNBLOCKED (no deps) → SELECTED
   ├─ EP-005 "Admin Panel" — BLOCKED (deps: EP-003 pending) → skip
-  ├─ EP-006 "Reporting" — BLOCKED (deps: EP-004 pending) → skip
   └─ EP-007 "API Keys" — UNBLOCKED (no deps) → SELECTED
+  Selected: 3 epics; estimated stories: 12-18
 
-  Selected: 3 epics (EP-003, EP-004, EP-007)
-  Estimated stories: 12-18
-```
-
-### Story Distribution Reporting
-
-When distributing stories to agents:
-
-```
-[sprint-dev] Story Distribution:
-  ├─ backend-dev (5 stories, 18 points):
-  │  ├─ S3-001 "Create dashboard API endpoint" (P1, 3pts)
-  │  ├─ S3-002 "Create notification service" (P1, 5pts)
-  │  ├─ S3-004 "Dashboard data aggregation" (P2, 3pts, depends: S3-001)
-  │  ├─ S3-008 "API key CRUD operations" (P2, 5pts)
-  │  └─ S3-009 "Notification preferences store" (P3, 2pts, depends: S3-002)
-  ├─ frontend-dev (4 stories, 14 points):
-  │  ├─ S3-005 "Dashboard page layout" (P2, 5pts, depends: S3-001)
-  │  ├─ S3-006 "Notification bell component" (P2, 3pts, depends: S3-002)
-  │  ├─ S3-010 "API key management page" (P3, 3pts, depends: S3-008)
-  │  └─ S3-011 "Notification preferences UI" (P3, 3pts, depends: S3-009)
-  └─ test-writer (3 stories, 9 points):
-     ├─ S3-003 "Dashboard API tests" (P2, 3pts, depends: S3-001)
-     ├─ S3-007 "Notification service tests" (P2, 3pts, depends: S3-002)
-     └─ S3-012 "API key CRUD tests" (P3, 3pts, depends: S3-008)
-```
-
-### Wave Progress Reporting
-
-When using wave-based execution (see sprint-dev Phase 1.4), report wave-level progress:
-
-```
 [sprint-dev] Wave Progress:
-  Wave 0: ████████████████████ COMPLETE (3/3 stories)
-  Wave 1: ██████████░░░░░░░░░░ 2/4 stories in progress
-  Wave 2: ░░░░░░░░░░░░░░░░░░░░ PENDING (waiting on Wave 1)
-  Wave 3: ░░░░░░░░░░░░░░░░░░░░ PENDING (waiting on Wave 2)
+  Wave 0: ████████████████████ COMPLETE (3/3)
+  Wave 1: ██████████░░░░░░░░░░ 2/4 in progress
   Critical path: on track (Wave 1 ETA: ~2 more stories)
+
+[sprint-dev] Progress Dashboard:
+  Stories 6/12 (50%) · Points 19/41 (46%) · Wave 2 of 4
+  backend 3/5 · frontend 1/4 · test 2/3
+  Ready: S3-010, S3-011 · Blocked: S3-012 (waits S3-008) · In-progress: S3-004
 ```
 
-Print wave progress at these moments:
-- When all stories in a wave complete (wave boundary)
-- During the regular progress dashboard update (every 3 story completions)
-- When a story blocks and may affect wave completion
-
-### Sprint Progress Dashboard
-
-During implementation, print a progress dashboard at regular intervals (every 3 story completions or at wave boundaries):
-
-```
-[sprint-dev] Progress Dashboard (updated):
-  ┌─────────────────────────────────────────────┐
-  │ Sprint 3 Implementation Progress            │
-  │                                             │
-  │ Stories:  ██████████░░░░░░░░░░  6/12 (50%)  │
-  │ Points:   ████████░░░░░░░░░░░░ 19/41 (46%)  │
-  │ Wave:     2 of 4 (Wave 1 complete)          │
-  │                                             │
-  │ backend-dev:  ███████████░░░░░  3/5 stories  │
-  │ frontend-dev: ████░░░░░░░░░░░░  1/4 stories  │
-  │ test-writer:  ██████████░░░░░░  2/3 stories  │
-  │                                             │
-  │ Ready: S3-010, S3-011                       │
-  │ Blocked: S3-012 (waiting: S3-008)           │
-  │ In-progress: S3-004 (backend-dev)           │
-  └─────────────────────────────────────────────┘
-```
+Box-drawing dashboards (`┌─┐│└─┘`) are acceptable when terminal width permits but not required — the inline form above conveys the same information.
 
 ---
 
