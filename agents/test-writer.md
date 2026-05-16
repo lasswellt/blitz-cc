@@ -202,6 +202,10 @@ describe("Firestore Rules", () => {
 });
 ```
 
+## Deterministic Test Recipe (for async / timing / mock-heavy targets)
+
+When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`/_shared/deterministic-test-recipe.md`](/_shared/deterministic-test-recipe.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
+
 ## Quality Gates
 
 Before considering your work complete, verify:
