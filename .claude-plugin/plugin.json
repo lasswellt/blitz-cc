@@ -1,6 +1,6 @@
 {
   "name": "blitz",
-  "version": "1.11.2",
+  "version": "1.12.0",
   "description": "Production-grade development skills + agents for Vue.js, Nuxt, and GCP Firebase projects. Holistic-machine orchestrator agent routes freeform input; slash commands invoke 38 skills. Includes sprint workflows, adversarial critic review, ratchet-enforced quality gates, design-quality vision critique, token-efficiency protocol, autonomous-loop primitives (PreCompact handoff, auto-resume), and 5 P0 anti-shortcut blockers (no-verify, destructive-git, destructive-sql, test-deletion, type-error-regression).",
   "author": {
     "name": "lasswellt"

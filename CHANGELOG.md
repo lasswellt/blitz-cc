@@ -2,6 +2,65 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] — 2026-05-16
+
+Minor release across three themes: (1) incorporating six specialist-agent patterns from GitHub's May-15-2026 accessibility-agent post-mortem; (2) closing two broken pipeline handoffs (sprint-review and ship) plus a self-audit-driven compactness + consistency sweep; (3) a four-iteration recursive cycle that hardened audit-agent false-positive prevention, validated against Anthropic's shipped Code Review Plugin pattern, and converged to a stable rule.
+
+### Added — GitHub accessibility-agent pattern incorporations
+
+Six patterns from `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` (commit `317c47d`). The blog reported 3,535 PRs reviewed at 68% resolution rate; we mapped its 8 reusable patterns + 5 failure modes against blitz state and adopted six:
+
+- **KNOWLEDGE.md slice injection** into sprint-dev worker prompts (`skills/sprint-dev/SKILL.md` Phase 0.5 + Dev Agent Prompt Specification item 14). Counters training-data bias per [knowledge-protocol.md](skills/_shared/knowledge-protocol.md) — workers see project-specific gotchas before generation, not after type-check fails post-hoc. Opt-out: `BLITZ_SKIP_KNOWLEDGE_INJECTION=1`.
+- **Pre-flight complexity gate** in `sprint-dev/SKILL.md` Phase 1.4: `complexity_score = story_count * 2 + est_loc / 100`. Warn at >40, hard-stop at >80 (escape: `BLITZ_SPRINT_COMPLEXITY_OVERRIDE=1`). Prevents token-explosion that the ratchet only catches retrospectively.
+- **Sequential review fallback** in `sprint-review/SKILL.md` Phase 2.2.0: triggered by `BLITZ_REVIEW_SEQUENTIAL=1` or diff >2000 LOC. Passes prior reviewer findings as `## Prior Reviewer Findings` context to the next spawn. Default parallel behavior unchanged.
+- **Reviewer "Instruction Gaps" field** in `sprint-review/references/main.md`: non-empty entries route to `.cc-sessions/KNOWLEDGE.md` under `## Skill Instruction Drift — <reviewer-role>`, creating an automated feedback loop from reviewer agents to skill authors.
+- **Phase 3.7 Automation Coverage** in `sprint-review/SKILL.md`: declares deterministic-gates-passed vs human-judgment-required boundary. Sets `REVIEW_RECOMMENDATION` to `auto-merge-safe` (all gates + Phase 2.5 `full` + zero critical/major) or `needs-human-review` otherwise. Mitigates F4 over-confidence by making the gap explicit in the report.
+- **Mandatory Playwright gate** in `sprint-review/SKILL.md` Phase 2.5: when MCP available, skipping smoke test counts as `phase_2_5_coverage: partial` and surfaces in Phase 4 Recommendations. When unavailable, gate still skips silently (gap, not failure).
+
+### Added — Audit-Agent False-Positive Prevention
+
+Self-Falsification + Confidence pattern (commit `6199a65`), mirrored on Anthropic's shipped Code Review Plugin (github.com/anthropics/claude-code/plugins/code-review, 129K+ installs, <1% FP rate). Driven by 3 false positives in the 2026-05-16 self-audit + literature review (CHIIR 2026, EMNLP 2025, arxiv 2309.11495 CoVe).
+
+- **`skills/codebase-audit/references/main.md`** Rules block: new rule 2 (Falsify before recording — count/negative/duplication artifacts) + rule 3 (Confidence: 0-100 on every finding). Pillar agents inherit immediately. Refined across 3 iterations to add: routing for `Confidence < 50` to `## Discarded Drafts`, `## Verified Clean` section for no-violation reports, and count-discipline rule disambiguating `grep -l | wc -l` (files) from `grep -rn | wc -l` (hits).
+- **`skills/_shared/agent-prompt-boilerplate.md`** §Self-Falsification: inheritance target for all future audit-style skills via Pattern A author-time reference. Same 5 clauses as above plus a `${VAR}` output-path resolution clause to prevent agents from taking placeholder text literally.
+- **`skills/_shared/shortcut-taxonomy.md`** detector #20 (Unverified pattern-match claim): P3 advisory tier; canonical grep pattern in §3 that flags Evidence blocks with count-only claims or missing Confidence scores.
+- **`agents/critic.md`** §2.9: audit-finding integrity check that fires detector #20 against audit findings files in the sprint diff. Advisory only — adds findings to critic `issues[]` with `severity: advisory`, signaling re-run with Self-Falsification rule.
+- **`skills/codebase-audit/SKILL.md`** Phase 2.1.5: confidence threshold filter (default 80, tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`). Filters findings below threshold before deduplication. Findings missing Confidence trigger detector #20 advisory.
+
+The four-iteration cycle (initial implementation → generous test → blind retest #1 → blind retest #2) reached a fixed point: blind retest #2 surfaced zero new rule gaps and only two Confidence-65 housekeeping items, both verified real on independent falsification.
+
+### Added — Shared Protocols
+
+- **`skills/_shared/skill-cross-references.md`** (new) — canonical source-of-truth for the 2-line "Additional Resources" block (spawn-protocol + terse-output refs) shared by 7 SKILL.md files. Each file carries an `<!-- import: from _shared/skill-cross-references.md ... -->` marker. No runtime line reclaim — Claude Code's skill loader needs each SKILL.md to declare its own resources — but provides a canonical-wording target plus a drift-detection grep snippet at the file's bottom.
+- **`skills/_shared/project-context.md`** (new) — canonical source-of-truth for the `## Project Context` heading + `detect-stack.sh` invocation shared by 29 SKILL.md files. Same `<!-- import: -->` marker pattern. design-extract is intentionally excluded (has bespoke body). The independent-falsification process that produced this file disambiguated three counts (30 files with heading, 29 with full block, 30 grep-hits) — the kind of confusion the new count-discipline rule prevents.
+
+### Fixed — Broken Pipeline Handoffs
+
+- **`skills/sprint-review/SKILL.md` Phase 0.0** — hard-fail input gate on `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, and `${SPRINT_DIR}/stories/S*.md`. Override (not recommended): `BLITZ_REVIEW_NO_MANIFEST=1`. State-handoff.md declared sprint-review consumed manifest.json but the skill never gated on its existence — would proceed silently on missing input. Bash block lives in `references/main.md §Phase 0.0 Input Gate`.
+- **`skills/ship/SKILL.md` Phase 0.1** — added `[ -s "${SPRINT_DIR}/review-report.md" ] || exit 1` check when sprint context exists. Ship would previously cut a release without a passing review when the review-report file was missing.
+
+### Changed — Self-Audit Driven Sweep
+
+Three waves of fixes from `docs/_research/2026-05-16_blitz-self-audit.md` (commits `b06fa08`, `4182ea0`, `cbada5b`):
+
+- **18 SKILL.md compatibility floors** bumped from `>=2.1.50` to `>=2.1.71` (CLAUDE.md-declared project floor). Affects ask, bootstrap, browse, completeness-gate, dep-health, fix-issue, health, migrate, next, perf-profile, quick, refactor, release, retrospective, test-gen, todo, ui-audit, ui-build. `design-extract` retains `>=2.1.117` (holistic-machine orchestrator dependency, now annotated with an HTML comment in the file).
+- **`agents/orchestrator.md` §2 routing matrix** expanded from 19 to 38 skills (full coverage of the user-invocable skill catalog). Reorganized into 5 intent groups: greenfield/setup, sprint pipeline, research/audit/quality, dev/maintenance, diagnostics/meta. The two greenfield-pipeline entry points (`bootstrap` and `roadmap`) were previously unrouted from natural-language input.
+- **`skills/_shared/verbose-progress.md`** Sprint Selection Verbosity section: 300→247 lines (−53). Replaced 85-line per-format ASCII-art dashboard examples with a 4-row trigger/format/content table plus three condensed canonical examples. Box-drawing dashboards still acceptable but the inline form is now also valid.
+- **`skills/_shared/spawn-protocol.md` §7** trimmed: ~21 lines reclaimed via Output Style prose tightening; Historical Reference section (v1.4.0 merge notes) deleted.
+- **7 SKILL.md persona preambles trimmed** (bootstrap, completeness-gate, dep-health, retrospective, migrate, release, perf-profile): dropped "You are a X. You..." framing while keeping the imperative-mood description. The frontmatter description already conveys the role. ui-audit and browse preserved as-is — their preambles contain meaningful read-only constraints and loop-mode behavior worth keeping inline.
+- **v1.4.0 SendMessage tombstone dedup** (research, sprint-plan, sprint-review, codebase-audit): five identical historical paragraphs collapsed to single-line `synthesized by orchestrator (not peer-to-peer, per spawn-protocol.md)` references. Exact duplicate at `research/SKILL.md:155` deleted entirely.
+- **`skills/research/SKILL.md:92`** dangling reference: relative `../_shared/token-budget.md` → canonical absolute `/_shared/token-budget.md`.
+- **`skills/health/SKILL.md` description**: "activity feed" → "activity-feed" (hyphen form when referring to the `.cc-sessions/activity-feed.jsonl` file, matching retrospective's description).
+- **`skills/design-extract/SKILL.md`**: HTML comment after frontmatter explains why compatibility floor is `>=2.1.117` (requires holistic-machine orchestrator for the DESIGN.md handoff to ui-build, frontend-design, and design-critic).
+
+### Compatibility
+
+No breaking changes. Drop-in upgrade from v1.11.2.
+
+- New env vars introduced (all opt-out / tunable): `BLITZ_SKIP_KNOWLEDGE_INJECTION`, `BLITZ_SPRINT_COMPLEXITY_OVERRIDE`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_REVIEW_NO_MANIFEST`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`.
+- New shared protocols (5 total now at 23 files: was 21): `skill-cross-references.md`, `project-context.md`.
+- New detector (#20 in `shortcut-taxonomy.md`): P3 advisory tier, does not block sprint-review.
+
 ## [1.11.2] — 2026-05-02
 
 Patch release adding a single new shared protocol that closes a high-frequency drift source: agents picking outdated package versions from training memory.
@@ -354,6 +413,7 @@ Carry-forward registry format (`.cc-sessions/carry-forward.jsonl`) validated acr
 - Issues closed: #1-#16 (all stories from Sprint 2-5)
 - Research source: 2 April-18 research docs (full absorption + runtime propagation)
 
+[1.12.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.0
 [1.11.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.2
 [1.11.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.1
 [1.11.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.0
