@@ -8,6 +8,7 @@ effort: high
 compatibility: ">=2.1.71"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -16,9 +17,7 @@ compatibility: ">=2.1.71"
 - For pipeline state contracts (which artifacts this skill produces and requires), see [state-handoff.md](/_shared/state-handoff.md)
 - For agent prompt templates, coordination patterns, and story distribution rules, see [references/main.md](references/main.md)
 - For autonomy modes (low/medium/high/full), see [session-protocol.md](/_shared/session-protocol.md) §Autonomy Levels
-- For checkpoint/resume behavior, see [checkpoint-protocol.md](/_shared/checkpoint-protocol.md)
-- For agent deviation handling, see [deviation-protocol.md](/_shared/deviation-protocol.md)
-- For context window hygiene, see [context-management.md](/_shared/context-management.md)
+- For checkpoint/resume + deviation handling + context hygiene, see [checkpoint-protocol.md](/_shared/checkpoint-protocol.md), [deviation-protocol.md](/_shared/deviation-protocol.md), [context-management.md](/_shared/context-management.md)
 - For the carry-forward registry (Reader Algorithm + writer contract on story completion in Phase 3.1a), see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
 - For subagent spawning, agent output contract (success/failure/partial thresholds), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For package install policy (every dep added by backend-dev / frontend-dev / test-writer agents resolves to registry latest, no invented versions), see [package-install-policy.md](/_shared/package-install-policy.md). Sprint-dev injects this into every dev-agent prompt via the Dev Agent Prompt Specification in references/main.md.

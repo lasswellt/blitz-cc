@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication] -- framework-API correctness audit; --scan reports only (default), --fix applies low-risk auto-fixes, --fix-all is more aggressive; --rules narrows the categories"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

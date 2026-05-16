@@ -203,6 +203,15 @@ SELF-FALSIFICATION (audit-style only):
 - "No violations found" reports go in a separate `## Verified Clean` section,
   NOT in findings. Findings are for things to fix; clean checks are for the
   reader to see what was inspected and passed.
+- Count discipline: claiming "N files match X" requires `grep -l X <files> | wc -l`
+  (file count), NOT `grep -rn X <files> | wc -l` (hit count). The two differ
+  when any file has multiple matches. If the claim is about hits, name it
+  ("30 occurrences across 29 files"). When in doubt, run both and report
+  both. Failure mode observed 2026-05-16 blind retest: "30/38 files" claim
+  was actually 29 files / 30 hits (one file had 2 mentions).
+- Also distinguish WHICH thing you're counting before falsifying. "Files with
+  block X" ≠ "files with heading of X" ≠ "files with one line of X". Sample
+  2-3 alleged hits with Read before reporting the count.
 
 This is artifact construction, NOT self-judgment. Shell decides.
 Per docs/_research/2026-05-16_audit-agent-fp-prevention.md.

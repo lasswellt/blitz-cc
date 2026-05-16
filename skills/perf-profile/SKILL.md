@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "<mode> -- bundle (size analysis vs baseline, large-dep detection) | runtime (V8 heap + framework hot paths) | lighthouse (Core Web Vitals on built site) | full (all three with cross-correlation)"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

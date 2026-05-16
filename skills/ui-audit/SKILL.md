@@ -8,6 +8,7 @@ argument-hint: "[mode] -- modes: full | smoke | data | buttons | events | consis
 effort: low
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

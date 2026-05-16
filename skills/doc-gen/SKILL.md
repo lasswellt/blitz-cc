@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "<mode> -- api (TypeDoc/JSDoc → docs/api/) | components (Vue prop+event tables) | architecture (Mermaid graphs) | changelog (commits since last tag) | full (all of the above)"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "<file-path>"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

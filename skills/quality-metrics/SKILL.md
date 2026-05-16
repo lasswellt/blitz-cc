@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "<mode> -- collect (snapshot to .cc-sessions/quality-metrics.jsonl) | dashboard (HTML over time) | trend (delta vs last sprint) | compare <date1> <date2> (diff between two snapshots)"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

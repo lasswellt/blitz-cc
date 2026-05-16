@@ -8,6 +8,7 @@ compatibility: ">=2.1.71"
 argument-hint: "[--fix | --check] [--scope global|project|all] -- detects conflicts between CLAUDE.md files and blitz behaviors; --check audits read-only, --fix applies safe migrations; --scope chooses global config (~/.claude) / current project / both"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 

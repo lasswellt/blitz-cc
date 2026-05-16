@@ -9,6 +9,7 @@ compatibility: ">=2.1.71"
 argument-hint: "[mode] -- modes: full (default — generate from scratch) | refresh (re-read research, regenerate phases, preserve completed work) | extend (ingest new research docs, append capabilities) | status (report progress + blockers, no generation)"
 ---
 
+<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
