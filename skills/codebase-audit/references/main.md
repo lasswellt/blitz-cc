@@ -53,13 +53,19 @@ Write each finding using this exact format:
 ## Rules
 
 1. Write each finding to your output file AS YOU DISCOVER IT. Do not accumulate.
-2. Stay within your file cap. Prioritize the most impactful files.
-3. Read files fully before judging — do not flag issues based on file names alone.
-4. Be specific: cite exact file paths, line numbers, and code snippets.
-5. Do not report style-only issues unless they indicate a deeper problem.
-6. If you find a security vulnerability, always mark it Critical or High.
-7. Cross-reference related files (e.g., a component and its store) to find integration issues.
-8. At the end of your findings, write a brief summary section:
+2. **Falsify before recording.** Before writing any finding, construct an artifact (Bash command, file Read) that would refute the claim. Include the artifact + its output in the Evidence field.
+   - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading — refine or discard.
+   - **Negative** ("X is absent from Y"): `grep -in '<4-char-substring-of-X>' Y`. Any hit means re-evaluate (may be over-strict regex).
+   - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
+   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. Orchestrator filters below 80 (tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`).
+4. Stay within your file cap. Prioritize the most impactful files.
+5. Read files fully before judging — do not flag issues based on file names alone.
+6. Be specific: cite exact file paths, line numbers, and code snippets.
+7. Do not report style-only issues unless they indicate a deeper problem.
+8. If you find a security vulnerability, always mark it Critical or High.
+9. Cross-reference related files (e.g., a component and its store) to find integration issues.
+10. At the end of your findings, write a brief summary section:
 
 ### SUMMARY
 

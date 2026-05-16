@@ -181,6 +181,31 @@ Do NOT echo findings in your response.
 
 ---
 
+## Self-Falsification (audit-style agents)
+
+Before recording any count-based, negative, or pattern-duplication finding, construct a falsification artifact (Bash, AST query, file Read) and include the artifact + output in the Evidence field. Add `Confidence: <0-100>` to every finding.
+
+```
+SELF-FALSIFICATION (audit-style only):
+- Count-based ("N hits of X"): grep -n 'pattern' file | head -3; verify hits are
+  content, not path/filename substrings.
+- Negative ("X is absent from Y"): grep -in '<4-char-partial-of-X>' Y; any hit
+  means re-evaluate.
+- Pattern-duplication ("X duplicated across N files"): require N ≥ 35% of
+  in-scope files AND Read 2 alleged duplicates for structural equivalence
+  (not keyword overlap).
+- Confidence: 0=false-positive, 25=might-be-real, 50=real-but-minor,
+  75=real-and-important, 100=definitely-real. Orchestrator filters below 80.
+This is artifact construction, NOT self-judgment. Shell decides.
+Per docs/_research/2026-05-16_audit-agent-fp-prevention.md.
+```
+
+**When to use:** every audit-style spawn (codebase-audit, code-sweep, conventions audit, flow-consistency audit, the meta-audit agents in `/blitz:research` on internal topics). NOT for sprint-dev workers (they generate code, not claims) or sprint-review reviewers (they synthesize cross-cutting findings rather than count occurrences).
+
+**Why required:** count-as-claim with no falsification is the documented FP pattern (3 false positives in the 2026-05-16 self-audit). Literature (CHIIR 2026, EMNLP 2025) shows "ask the agent again" amplifies bias; artifact construction routes the verification through the shell, which is deterministic.
+
+---
+
 ## Output-Style Reference (NOT extracted — invariant)
 
 The canonical OUTPUT STYLE snippet that closes every Agent() prompt template lives in [spawn-protocol.md §7](spawn-protocol.md#7-output-style-terse-output-protocol). It is **deliberately not extracted into this fragment.** Sprint-review Invariant 5 enforces verbatim presence of that snippet in every `skills/*/references/main.md` agent-prompt template. Deduping it would break the invariant. Each references/main.md must continue to carry the snippet inline.

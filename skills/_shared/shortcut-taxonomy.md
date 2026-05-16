@@ -34,6 +34,7 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 | 17 | Infinite correction loop | consecutive-fix-failure counter ≥ 2 | code-sweep circuit breaker (existing) | blitz baseline |
 | 18 | Destructive SQL outside migration | DROP/DELETE/TRUNCATE in psql/mysql/sqlite3/mongosh CLI command | `block-destructive-sql.sh` (PreToolUse) | Cursor+Railway, Replit Rogue |
 | 19 | `git reset --hard` on dirty tree | git command + working-tree non-empty | `block-destructive-git.sh` (PreToolUse) | autonomous-coding 2026 reports |
+| 20 | Unverified pattern-match claim (audit FP) | Audit finding cites grep count in Evidence with no sampled code excerpt or inverse-query output; OR no `Confidence:` field | critic 2.9 (advisory) | `docs/_research/2026-05-16_audit-agent-fp-prevention.md` |
 
 ---
 
@@ -42,7 +43,7 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 - **P0 (PreToolUse hard-block)**: 1, 2, 18, 19 — and 12 (PostToolUse hard-block). These are the catastrophic classes; the hook must `exit 2`.
 - **P1 (sprint-review BLOCKER)**: 4, 13, 14 — sprint cannot reach PASS while present.
 - **P2 (ratchet metric)**: 3, 4, 6, 7, 15 — surfaced as ratchet regressions; trigger auto-revert on deterministic regression.
-- **P3 (advisory)**: 5, 8, 16, 17 — completeness-gate findings; surface in critic but do not auto-block.
+- **P3 (advisory)**: 5, 8, 16, 17, 20 — completeness-gate / critic findings; surface but do not auto-block.
 
 P0 corresponds to the five hooks shipped as part of this protocol (blast-radius too large to defer to review).
 
@@ -100,6 +101,16 @@ history 2>/dev/null | grep -iE '(DROP\s+TABLE|TRUNCATE|DELETE\s+FROM\s+[^;]+;)' 
 
 # 19. git reset --hard usage in commit messages
 git reflog --all | grep -iE 'reset.*--hard' | head
+
+# 20. Unverified pattern-match claim in audit findings file
+# Flag Evidence blocks that record a count without a sampled code excerpt or
+# inverse-query output. Run against each audit-style findings file.
+FINDING_FILE="${1:-}"
+grep -A3 '^\*\*Evidence\*\*:' "$FINDING_FILE" \
+  | grep -E '^\*\*Evidence\*\*:\s*[0-9]+\s*(hits|matches|occurrences|instances|files)\b' \
+  | grep -v '```'
+# Also flag findings missing a Confidence: <0-100> field
+grep -L 'Confidence:\s*[0-9]\+' "$FINDING_FILE"
 ```
 
 Replace `HEAD~N` with the appropriate sprint-start commit when running from sprint-review.

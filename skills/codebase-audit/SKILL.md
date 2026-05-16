@@ -164,8 +164,21 @@ done
 ### 2.1 Read All Findings
 
 Read every file in `${AUDIT_RUN}/findings/`. For each file:
-- Parse the findings (each finding has: severity, title, description, file, line, recommendation).
+- Parse the findings (each finding has: severity, title, description, file, line, recommendation, **Confidence: 0-100**).
 - If a file is empty or malformed, note the agent as failed.
+
+### 2.1.5 Confidence Threshold Filter
+
+Filter findings below confidence threshold (default 80) before deduplication. Mirrors Anthropic Code Review Plugin pattern; per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+
+```bash
+THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-80}"
+# For each finding parsed, drop if Confidence < THRESHOLD.
+# Findings missing Confidence: <0-100> field trigger detector #20 at critic stage
+# (advisory; not auto-dropped — surface to user as "unscored finding" in the report).
+```
+
+Report shows: total findings parsed, findings filtered below threshold, findings missing confidence score (detector #20 trigger).
 
 ### 2.2 Handle Agent Failures
 

@@ -179,6 +179,24 @@ git log --since='1 day ago' --diff-filter=R --name-status | grep -E '\.test\.|\.
 
 If a test file was renamed to a non-test suffix: REJECT.
 
+### 2.9 Audit-finding integrity (detector #20, advisory)
+
+When any sprint deliverable is an audit findings file (codebase-audit pillar outputs, code-sweep tier outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per `_shared/shortcut-taxonomy.md` §3 detector #20:
+
+```bash
+for f in $(git diff --name-only ${SPRINT_BASE}..HEAD | grep -E 'findings.*\.md|review-.*\.md|_research/.*audit.*\.md'); do
+  # Count-only claims (no code excerpt or inverse-query)
+  grep -A3 '^\*\*Evidence\*\*:' "$f" \
+    | grep -E '^\*\*Evidence\*\*:\s*[0-9]+\s*(hits|matches|occurrences|instances|files)\b' \
+    | grep -v '```' && echo "DETECTOR_20_FAIL: $f (count-without-artifact)"
+  # Missing Confidence: 0-100 field
+  grep -q 'Confidence:\s*[0-9]\+' "$f" \
+    || echo "DETECTOR_20_FAIL: $f (no confidence score)"
+done
+```
+
+Advisory (P3) — does NOT block PASS by itself, but findings that fire detector #20 are added to the critic's `issues[]` array as `severity: advisory`, signaling the audit agent should re-run with Self-Falsification rule per `_shared/agent-prompt-boilerplate.md` §Self-Falsification. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+
 ---
 
 ## 3. Output Format (canonical reply contract)
