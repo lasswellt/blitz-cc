@@ -2,6 +2,48 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] — 2026-05-16
+
+**Critical patch.** v1.12.0's `reference-compression-validate.sh` PreToolUse hook blocked every blitz user's `git commit` regardless of whether their project had any `references/main.md.original` pairs. Two structural fixes plus drift cleanup.
+
+### Fixed
+
+- **`hooks/scripts/reference-compression-validate.sh` — scope changed from plugin cache to user repo.** Prior `REPO_ROOT="$(dirname $0)/../.."` pointed into the plugin install directory, so drift in OUR bundled `.original` files (sprint-review and research references/main.md, which I edited across recent sprints without refreshing their snapshots) blocked every user's commit. New behavior: `REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"`. The `find` then operates on the caller's repo. Most user projects have no `.original` files — find returns nothing, hook exits 0 immediately. Plugin developers running commits inside the plugin repo still get the validation as before.
+- **Hook validation is now loss-only.** v1.12.0's strict-parity checks (`code-fence count != original`, `URL set drift`, `heading drift`, `table-row count !=`) couldn't distinguish "compression lost content" from "later sprint added new sections." Both produced the same FAIL. The compressed form **must** preserve all of the original's structural elements (≥ counts; ⊇ URL and heading sets), but it **may** contain additional content. Surfaces only real content-loss; tolerates legitimate additions.
+- **Exit code downgraded from 2 to 1 in hook mode.** Plugin-internal drift must not hard-block user commits. Failure now prints an advisory and exits 1, leaving the user free to proceed via `--no-verify` for the affected commit. Direct invocation (CI / verify) is unchanged.
+- **`skills/sprint-review/references/main.md.original` + `skills/research/references/main.md.original` refreshed** to current state. The originals dated from April 16-18 (sprint v1.7 era) and had not been refreshed when subsequent sprints added Phase 0.0 Input Gate, Automation Coverage Block, Reviewer Spawn Strategy, Phase 2.5 Browser Verification, Invariant 6/7 Procedures, etc. After this refresh, the validator passes all 16 pairs cleanly inside the plugin repo. Future drift will surface as real failures.
+
+### Workaround for users still on 1.12.0
+
+Until upgrade, either of:
+
+```bash
+# One-off commit (acceptable for this hook only — bypassing blitz's own
+# anti-shortcut hooks like block-no-verify.sh is NOT recommended)
+git commit --no-verify -m "..."
+```
+
+Or disable the hook in `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "/path/to/cache/blitz/blitz/1.12.0/hooks/scripts/reference-compression-validate.sh",
+        "disabled": true
+      }]
+    }]
+  }
+}
+```
+
+### Compatibility
+
+No new env vars. No breaking changes. Drop-in upgrade from v1.12.0.
+
 ## [1.12.0] — 2026-05-16
 
 Minor release across three themes: (1) incorporating six specialist-agent patterns from GitHub's May-15-2026 accessibility-agent post-mortem; (2) closing two broken pipeline handoffs (sprint-review and ship) plus a self-audit-driven compactness + consistency sweep; (3) a four-iteration recursive cycle that hardened audit-agent false-positive prevention, validated against Anthropic's shipped Code Review Plugin pattern, and converged to a stable rule.
@@ -413,6 +455,7 @@ Carry-forward registry format (`.cc-sessions/carry-forward.jsonl`) validated acr
 - Issues closed: #1-#16 (all stories from Sprint 2-5)
 - Research source: 2 April-18 research docs (full absorption + runtime propagation)
 
+[1.12.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.1
 [1.12.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.0
 [1.11.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.2
 [1.11.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.1

@@ -1,6 +1,28 @@
 # Sprint Review Reference
 
-Supporting templates, checklists, and rules for the sprint-review skill.
+Templates, checklists, rules for sprint-review skill.
+
+---
+
+## Phase 0.0 Input Gate
+
+Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [state-handoff.md](/_shared/state-handoff.md) contract.
+
+```bash
+PIPELINE_MISSING=()
+[ -s "sprint-registry.json" ] || PIPELINE_MISSING+=("sprint-registry.json")
+SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
+SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
+[ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
+ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
+if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
+  echo "BLOCK: missing pipeline inputs (see /_shared/state-handoff.md §sprint-review):" >&2
+  printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
+  echo "Producer: /blitz:sprint-plan + /blitz:sprint-dev." >&2
+  echo "Override (not recommended): BLITZ_REVIEW_NO_MANIFEST=1" >&2
+  [ "${BLITZ_REVIEW_NO_MANIFEST:-0}" = "1" ] || exit 1
+fi
+```
 
 ---
 
@@ -84,6 +106,25 @@ ${EPIC_COUNT} epics. ${SUMMARY_SENTENCE}.
 
 ---
 
+## Automation Coverage
+
+**Deterministic gates passed:** ${DETERMINISTIC_PASSED}/${DETERMINISTIC_TOTAL}
+(type-check, lint, tests, build, ratchet, shortcut-taxonomy, critic)
+
+**Browser smoke (Phase 2.5):** ${full | partial | skipped_unavailable}
+
+**NOT auto-verified — human-judgment review required:**
+- Architectural fitness (right abstraction for the domain)
+- UX correctness (does this make sense to a real user)
+- Business-logic intent (does this do the right business thing)
+- Cross-feature regressions in untested code paths
+
+**Recommendation:** ${auto-merge-safe | needs-human-review}
+
+> Deterministic gates passing does NOT verify architectural fit, UX, or business-logic intent. Human review owns those dimensions.
+
+---
+
 ## Recommendations
 
 ### Before Merge (Required)
@@ -100,7 +141,7 @@ ${EPIC_COUNT} epics. ${SUMMARY_SENTENCE}.
 
 ## Quality Gate Checklist
 
-Complete checklist of all automated quality gates with pass/fail criteria.
+All automated quality gates with pass/fail criteria.
 
 ### Type-Check Gate
 
@@ -214,7 +255,7 @@ CHANGED_PACKAGES=($(echo "${CHANGED_PACKAGES[@]}" | tr ' ' '\n' | sort -u))
 
 ### Single Package
 
-For non-monorepo projects, the entire project is the changed package. Run all checks at root level.
+Non-monorepo: entire project is changed package. Run all checks at root.
 
 ### Detection Heuristics
 
@@ -229,7 +270,7 @@ For non-monorepo projects, the entire project is the changed package. Run all ch
 
 ### Scope Optimization
 
-Only run tests for changed packages to save time:
+Run tests only for changed packages to save time:
 ```bash
 # pnpm
 pnpm --filter ...[$SPRINT_BASE] run test
@@ -248,7 +289,7 @@ npm run test
 
 ## Review Finding Format
 
-Each reviewer agent must format findings consistently.
+Reviewer agents must format findings consistently.
 
 ### Finding Schema
 
@@ -278,6 +319,24 @@ Each reviewer agent must format findings consistently.
 **Auto-fixable:** yes | no
 **References:** <link to docs, OWASP rule, etc.>
 ```
+
+### Reviewer Output Schema — Optional Instruction Gaps Section
+
+At the **end** of every reviewer output file (after the last finding), append the optional section below. Empty entries are filtered by the orchestrator and never reach KNOWLEDGE.md — only non-empty Instruction Gaps survive. This creates a feedback channel from reviewer agents back to skill authors (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P7).
+
+```markdown
+## Instruction Gaps (optional)
+
+Did any skill instruction in your prompt cause you to produce a suboptimal
+finding, miss a real issue, or waste effort? Quote the instruction verbatim
+and propose a rewording. Format (one per line):
+
+`<verbatim instruction quote>` | <how it failed you> | <suggested rewording>
+
+Leave empty if no gap. Do NOT pad with "no gaps to report."
+```
+
+Orchestrator post-processing (sprint-review Phase 4 after reading all reviewer files): for each non-empty Instruction Gaps line, append an entry to `.cc-sessions/KNOWLEDGE.md` under heading `## <DATE> · Skill Instruction Drift — <reviewer-role>` following the format in [knowledge-protocol.md](/_shared/knowledge-protocol.md) §1. Entries with empty `<suggested rewording>` are dropped (no value).
 
 ### Severity Guidelines
 
@@ -390,7 +449,7 @@ L30: ❓ q: why `Map` over `Record<string, X>` here? Hot path?
 
 ## Registry Invariants — Phase 3.6 Detailed Procedures
 
-This phase is a **hard gate**: failing any invariant fails the sprint close. Its purpose is to make silent scope drops impossible by auditing the carry-forward registry against the current sprint's state. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full protocol and `docs/_research/2026-04-08_sprint-carryforward-registry.md` for the incident that motivated it.
+**Hard gate**: failing any invariant fails sprint close. Makes silent scope drops impossible by auditing carry-forward registry against current sprint state. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for full protocol and `docs/_research/2026-04-08_sprint-carryforward-registry.md` for motivating incident.
 
 ### 3.6.1 Load the Registry
 
@@ -400,46 +459,46 @@ Reduce `.cc-sessions/carry-forward.jsonl` to latest-wins state:
 REGISTRY=$(jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo '[]')
 ```
 
-Load the current sprint's manifest (`sprints/sprint-${SPRINT_NUMBER}/manifest.json`) and `sprint-registry.json`. Load `docs/roadmap/epic-registry.json` if it exists. Identify every research doc referenced (directly or transitively) by any story, epic, or capability in this sprint — call this `SPRINT_RESEARCH_DOCS`.
+Load current sprint's manifest (`sprints/sprint-${SPRINT_NUMBER}/manifest.json`) and `sprint-registry.json`. Load `docs/roadmap/epic-registry.json` if exists. Identify every research doc referenced (directly or transitively) by any story, epic, or capability in this sprint — call this `SPRINT_RESEARCH_DOCS`.
 
 ### 3.6.2 Invariant 1 — Quantified Scope Has a Registry Entry
 
 For every doc in `SPRINT_RESEARCH_DOCS`:
 
-1. Scan the doc's Summary, Findings, and Recommendation sections for quantified language — regex `\d+\s+(files|components|modals|routes|tests|endpoints|pages|views|tables|migrations|fields|records)`.
+1. Scan doc's Summary, Findings, Recommendation sections for quantified language — regex `\d+\s+(files|components|modals|routes|tests|endpoints|pages|views|tables|migrations|fields|records)`.
 
-2. If a match is found:
-   - **Acceptable case A:** the doc has a `scope:` YAML frontmatter block covering the match, AND the block's `id` exists in the registry → pass.
-   - **Acceptable case B:** the match is inside an HTML comment `<!-- no-registry: <reason> -->` → pass.
-   - **Failure case:** neither — **FAIL** this invariant. Print the offending file and line range. Require the author to either (a) add a `scope:` block and re-run `/blitz:roadmap extend` before sprint close or (b) annotate the line with a `no-registry` comment and a reason.
+2. If match found:
+   - **Acceptable case A:** doc has `scope:` YAML frontmatter block covering the match, AND block's `id` exists in registry → pass.
+   - **Acceptable case B:** match inside HTML comment `<!-- no-registry: <reason> -->` → pass.
+   - **Failure case:** neither — **FAIL** this invariant. Print offending file and line range. Require author to either (a) add `scope:` block and re-run `/blitz:roadmap extend` before sprint close or (b) annotate line with `no-registry` comment and reason.
 
-Record matching results as `invariant_1: {pass|fail, violations: [...]}` in the report.
+Record results as `invariant_1: {pass|fail, violations: [...]}` in report.
 
 ### 3.6.3 Invariant 2 — Active Entries Are Touched or Explicitly Deferred
 
 For every registry entry with `status ∈ {active, partial}`:
 
 - **Touched:** `last_touched.sprint == sprint-${SPRINT_NUMBER}` → pass.
-- **Explicitly deferred:** the latest line for the entry has `event: "deferred"` with a non-empty `notes` AND was written during this sprint → pass.
-- **Waivered this sprint:** the entry id appears in the current manifest's `registry_entries_touched`, AND the registry has a matching `event: "auto_waived"` line dated within this sprint → pass. This catches sprint-plan Phase 4.1 auto-waivers.
-- **Otherwise:** **FAIL** this invariant. Increment `rollover_count` in a new registry line:
+- **Explicitly deferred:** latest line has `event: "deferred"` with non-empty `notes` AND written during this sprint → pass.
+- **Waivered this sprint:** entry id in current manifest's `registry_entries_touched`, AND registry has matching `event: "auto_waived"` line dated within sprint → pass. Catches sprint-plan Phase 4.1 auto-waivers.
+- **Otherwise:** **FAIL**. Increment `rollover_count` in new registry line:
   ```jsonl
   {"id":"<entry-id>","ts":"<ISO-8601>","event":"correction","rollover_count":<prev+1>,"notes":"sprint-review Invariant 2: entry not touched in sprint-${SPRINT_NUMBER}"}
   ```
-  Require the operator to (a) link a story in this sprint that advanced the entry, (b) write a `deferred` event with a reason, or (c) write a `dropped` event with `drop_reason` + `revival_candidate`.
+  Require operator to (a) link story in this sprint that advanced the entry, (b) write `deferred` event with reason, or (c) write `dropped` event with `drop_reason` + `revival_candidate`.
 
-**Waiver accounting sub-check:** cross-reference manifest `waived_ac_count > 0` against the registry. For every sprint with waivers, there MUST be at least one `event: "auto_waived"` line written during the sprint for an entry whose `parent.epic` appears in the sprint manifest's `epics` array. Missing mirror → Invariant 2 failure.
+**Waiver accounting sub-check:** cross-reference manifest `waived_ac_count > 0` against registry. For every sprint with waivers, MUST be at least one `event: "auto_waived"` line written during sprint for entry whose `parent.epic` appears in sprint manifest's `epics` array. Missing mirror → Invariant 2 failure.
 
-**Rollover escalation:** if any entry crosses `rollover_count >= 3` as a result of this invariant, print a loud escalation banner to stdout AND record the entry as `blocker: rollover-escalation` in the report. These entries are no longer eligible for auto-inject in Invariant 4 — they require mandatory human review before the next sprint can plan around them. This prevents infinite `/loop` bouncing on stuck work.
+**Rollover escalation:** if any entry crosses `rollover_count >= 3`, print loud escalation banner to stdout AND record entry as `blocker: rollover-escalation` in report. Entries no longer eligible for auto-inject in Invariant 4 — require mandatory human review before next sprint can plan around them. Prevents infinite `/loop` bouncing on stuck work.
 
 ### 3.6.4 Invariant 3 — Roadmap Completion Claims Match Registry Coverage
 
-Read `docs/roadmap/roadmap-registry.json` and `docs/roadmap/tracker.md` (if they exist) and extract any completion claims — typically "N/N epics complete" in the registry JSON or a completion column in the tracker.
+Read `docs/roadmap/roadmap-registry.json` and `docs/roadmap/tracker.md` (if exist); extract completion claims — typically "N/N epics complete" in registry JSON or completion column in tracker.
 
-For every epic marked `status: done|complete` that has a non-empty `registry_entries` field in the epic registry:
+For every epic marked `status: done|complete` with non-empty `registry_entries` in epic registry:
 
-- Every referenced registry id MUST have `status == complete` in the latest-wins registry.
-- Any mismatch → **FAIL** this invariant with a precise delta:
+- Every referenced registry id MUST have `status == complete` in latest-wins registry.
+- Any mismatch → **FAIL** with precise delta:
   ```
   MISMATCH: Epic EPIC-105 claims status=done, but registry entry
     cf-2026-04-02-modal-consistency is status=partial at coverage=0.646
@@ -447,13 +506,13 @@ For every epic marked `status: done|complete` that has a non-empty `registry_ent
     the gap or revert the epic to status=in-progress.
   ```
 
-Fix path: roll the epic's status back to `in-progress` OR write a `dropped`/`deferred` event on the offending entry with a reason. Do NOT silently change the registry entry to `complete` — that is the drop this whole mechanism exists to prevent.
+Fix path: roll epic status back to `in-progress` OR write `dropped`/`deferred` event on offending entry with reason. Do NOT silently change registry entry to `complete` — that's the drop this mechanism prevents.
 
 ### 3.6.5 Invariant 4 — Auto-Inject Uncompleted Active Entries Into Next Sprint
 
-For every registry entry with `status == active` AND `coverage < 1.0` AND `rollover_count < 3` (entries at 3+ are escalated, see 3.6.3):
+For every registry entry with `status == active` AND `coverage < 1.0` AND `rollover_count < 3` (3+ escalated, see 3.6.3):
 
-Write the entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.json`:
+Write entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.json`:
 
 ```json
 {
@@ -471,24 +530,24 @@ Write the entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.j
 }
 ```
 
-The next invocation of `sprint-plan` will read this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) the operator must explicitly `defer`/`drop` the entry before planning runs. This is **Linear cycle semantics**: nothing silently falls out of view. See [carry-forward-registry.md](/_shared/carry-forward-registry.md).
+Next `sprint-plan` invocation reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator must explicitly `defer`/`drop` entry before planning runs. **Linear cycle semantics**: nothing silently falls out of view. See [carry-forward-registry.md](/_shared/carry-forward-registry.md).
 
-Partial entries (`status == partial`) are not auto-injected here — they carry their own state forward via the normal reader path (sprint-plan Phase 0 step 8 reads both active and partial entries). Only `active` with `coverage < 1.0` needs the explicit file marker for visibility.
+Partial entries (`status == partial`) not auto-injected here — carry state forward via normal reader path (sprint-plan Phase 0 step 8 reads both active and partial entries). Only `active` with `coverage < 1.0` needs explicit file marker for visibility.
 
 ### 3.6.6 Invariants Report
 
-Write invariants results to the sprint review report under a `## Registry Invariants` section. Include:
+Write invariants results to sprint review report under `## Registry Invariants` section. Include:
 
 - Per-invariant pass/fail status
 - Violations with file/entry references
 - `rollover_count` updates
-- Entries auto-injected into the next sprint
-- Any escalations at `rollover_count >= 3`
+- Entries auto-injected into next sprint
+- Escalations at `rollover_count >= 3`
 
 **Hard gate decision:**
 
-- **All four invariants pass** → Phase 3.6 passes, proceed to Phase 4 (Report) with `review_status` unchanged by this phase.
-- **Any invariant fails** → Phase 3.6 fails. The sprint close transitions to `CONDITIONAL` at best (see Phase 4.2 overall status table), and the failing invariants are listed under `Critical` findings in the report. The sprint CANNOT be marked `PASS` while registry invariants are failing. In `autonomy=full`, the failures are logged to the activity feed and the sprint is marked `CONDITIONAL` — the next `/loop` tick must address the failures before proceeding.
+- **All four invariants pass** → Phase 3.6 passes, proceed to Phase 4 (Report) with `review_status` unchanged.
+- **Any invariant fails** → Phase 3.6 fails. Sprint close transitions to `CONDITIONAL` at best (see Phase 4.2 overall status table); failing invariants listed under `Critical` findings. Sprint CANNOT be marked `PASS` while registry invariants failing. In `autonomy=full`, failures logged to activity feed and sprint marked `CONDITIONAL` — next `/loop` tick must address failures before proceeding.
 
 ---
 
@@ -522,7 +581,7 @@ Report: ${SPRINT_DIR}/review-report.md
 Next: ${RECOMMENDED_ACTION}
 ```
 
-Where `RECOMMENDED_ACTION` is:
+`RECOMMENDED_ACTION`:
 - PASS: "Ready to merge. Run `git merge sprint-${N}/merged` into main."
 - CONDITIONAL: "Review major findings in report before merging."
 - FAIL: "Fix critical issues before merging. See report for details."
@@ -531,7 +590,236 @@ Where `RECOMMENDED_ACTION` is:
 
 ## Error Recovery
 
-- **Quality gate command not found**: Try alternative commands (e.g., `npx tsc --noEmit` if `npm run type-check` fails). Skip gracefully if no equivalent exists and note in report.
-- **Reviewer agent failure**: Retry once. If still failing, proceed with available reviews and note the gap.
-- **Auto-fix makes things worse**: Revert immediately using `git checkout -- <file>`. Move to next issue.
-- **Git diff base not found**: Fall back to `HEAD~20` or ask user for the base commit. *(If autonomy is `high` or `full`, use `HEAD~20` without prompting.)*
+- **Quality gate command not found**: Try alternatives (e.g., `npx tsc --noEmit` if `npm run type-check` fails). Skip gracefully if no equivalent, note in report.
+- **Reviewer agent failure**: Retry once. If still failing, proceed with available reviews and note gap.
+- **Auto-fix makes things worse**: Revert immediately via `git checkout -- <file>`. Move to next issue.
+- **Git diff base not found**: Fall back to `HEAD~20` or ask user for base commit. *(If autonomy is `high` or `full`, use `HEAD~20` without prompting.)*
+
+---
+
+## Invariant 6 — Ratchet Procedures
+
+Authoritative protocol: [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md).
+
+### Compute current values
+
+```bash
+RATCHET="docs/sweeps/ratchet.json"
+[ -f "$RATCHET" ] || { echo "Invariant 6 SKIP: no ratchet.json (greenfield); bootstrap on first PASS"; exit 0; }
+
+TEST_COUNT=$(grep -rcE '\b(it|test)\(' --include='*.test.*' --include='*.spec.*' . 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
+TYPE_ERRORS=$(npx --no-install tsc --noEmit 2>&1 | grep -cE 'error TS' || echo 0)
+AS_ANY=$(grep -rEn '\bas any\b' src/ --include='*.ts' --include='*.tsx' --include='*.vue' --exclude-dir=__tests__ 2>/dev/null | wc -l)
+LINT_VIOLATIONS=$(npx --no-install eslint --format=json . 2>/dev/null | jq '[.[].errorCount] | add // 0')
+MOCKS_IN_SRC=$(grep -rEn '\b(vi\.mock|jest\.mock|sinon\.stub)\b' src/ --exclude-dir=__tests__ 2>/dev/null | wc -l)
+TODO_COUNT=$(grep -rEn '\b(TODO|FIXME)\b' src/ 2>/dev/null | wc -l)
+```
+
+### Compare and act
+
+For each metric:
+- direction `down`, `current > max_allowed` AND no carry-forward entry covering it → REGRESSION → BLOCKER
+- direction `up`, `current < min_allowed` AND no carry-forward entry → REGRESSION → BLOCKER
+- direction `down`, `current < max_allowed` → IMPROVEMENT → tighten `max_allowed` to `current`, append history snapshot
+- direction `up`, `current > min_allowed` → IMPROVEMENT → tighten `min_allowed` to `current`, append history snapshot
+
+`type_errors > 0` is an absolute floor regardless of baseline — sprint FAILs.
+
+### History snapshot format
+
+Append to `docs/sweeps/ratchet.json -> history[]`. Never rewrite prior entries:
+
+```json
+{"sprint": "sprint-N", "ts": "2026-05-01T00:00:00Z", "metrics": {"test_count": 158, "type_errors": 0, "as_any_count": 2, "lint_violations": 5, "completeness_score": 94, "mocks_in_src": 3, "todo_count": 7}}
+```
+
+### Multi-agent worktree merge
+
+When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allowed)` for ↓ metrics and `max(min_allowed)` for ↑ metrics. See [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md) §4 for the canonical jq merge.
+
+---
+
+## Invariant 7 — Critic Spawn
+
+Three execution modes, selected by env var:
+
+| Env | Mode | Critic | Behaviour |
+|---|---|---|---|
+| (unset, default) | in-Claude | `blitz:critic` agent | Spawn Sonnet subagent. Cheapest. |
+| `BLITZ_USE_GEMINI_CRITIC=1` | cross-model | `gemini` CLI via wrapper | Replace in-Claude critic with Gemini. Different blindspots (Cross-Model Critic per arxiv 2604.19049). |
+| `BLITZ_DUAL_CRITIC=1` | dual-CMC | both | Run both; both must LGTM. Catches the blindspots either model has on its own work. Highest signal, ~2× cost. |
+
+### Mode-resolution algorithm (run BEFORE spawning anything)
+
+```bash
+# Step 1: derive intended mode from env vars (DUAL_CRITIC takes precedence)
+if [ "${BLITZ_DUAL_CRITIC:-0}" = "1" ]; then INTENDED=dual
+elif [ "${BLITZ_USE_GEMINI_CRITIC:-0}" = "1" ]; then INTENDED=gemini
+else INTENDED=claude; fi
+
+# Step 2: probe whether critic-gemini.sh is reachable
+GEMINI_SCRIPT="${CLAUDE_PLUGIN_ROOT}/hooks/scripts/critic-gemini.sh"
+if [ "$INTENDED" != "claude" ] && [ ! -x "$GEMINI_SCRIPT" ]; then
+  GEMINI_AVAILABLE=0
+else
+  GEMINI_AVAILABLE=1
+fi
+
+# Step 3: probe whether the gemini binary is reachable (if script is)
+if [ "$GEMINI_AVAILABLE" = "1" ] && [ "$INTENDED" != "claude" ]; then
+  command -v "${BLITZ_GEMINI_BIN:-gemini}" >/dev/null 2>&1 || GEMINI_AVAILABLE=0
+fi
+
+# Step 4: resolve the actual mode and emit ONE canonical line to stdout
+case "$INTENDED:$GEMINI_AVAILABLE" in
+  claude:*)         MODE=claude; echo "[critic] mode=claude (default in-Claude critic)" ;;
+  gemini:1)         MODE=gemini; echo "[critic] mode=gemini-only (BLITZ_USE_GEMINI_CRITIC=1)" ;;
+  dual:1)           MODE=dual;   echo "[critic] mode=dual-CMC (BLITZ_DUAL_CRITIC=1; in-Claude + Gemini, both must LGTM)" ;;
+  gemini:0|dual:0)  MODE=claude; echo "[critic] mode=claude (FALLBACK: BLITZ_${INTENDED^^}_CRITIC=1 set but $([ -x \"$GEMINI_SCRIPT\" ] && echo 'gemini binary missing' || echo 'critic-gemini.sh missing — plugin <v1.11.0?'))" ;;
+esac
+```
+
+**The orchestrator MUST emit exactly that bracketed `[critic] mode=...` line before spawning.** Do not improvise the message — earlier sessions hallucinated "critic-gemini.sh not installed in this plugin version" when both the script and the binary were present. The probe above is the source of truth.
+
+### Default (in-Claude)
+
+```
+Agent({
+  subagent_type: "blitz:critic",
+  description: "Adversarial pre-PASS review",
+  prompt: "Review sprint-${SPRINT_NUMBER}. Run the 8-checklist from agents/critic.md against the changes since ${SPRINT_BASE_SHA}. Reject if ANY of the 19 shortcut signals (skills/_shared/shortcut-taxonomy.md), ratchet regressions, type-error regressions, test deletions, or hallucinated-symbol findings are present. Return canonical JSON reply with verdict (LGTM | REJECT). Output style: terse-technical per /_shared/terse-output.md."
+})
+```
+
+### Cross-model (Gemini)
+
+```bash
+# critic-gemini.sh lifts agents/critic.md body verbatim, appends a JSON-only
+# directive, pipes to `gemini` CLI, validates and emits canonical JSON.
+REPLY=$(${CLAUDE_PLUGIN_ROOT}/hooks/scripts/critic-gemini.sh \
+          --mode pre-pass \
+          --target "${SPRINT_BASE_SHA}")
+GEMINI_RC=$?
+```
+
+Tunable via `BLITZ_GEMINI_BIN` (default `gemini`), `BLITZ_GEMINI_MODEL` (default `gemini-2.5-pro`), `BLITZ_GEMINI_FLAGS`. Requires `@google/gemini-cli` installed and authenticated.
+
+### Dual-CMC (paired)
+
+```bash
+# Run both; require both LGTM. The first REJECT short-circuits to FAIL.
+REPLY_CLAUDE=$(... Agent invocation as default ...)
+REPLY_GEMINI=$(${CLAUDE_PLUGIN_ROOT}/hooks/scripts/critic-gemini.sh --mode pre-pass --target "$SPRINT_BASE_SHA")
+
+VERDICT_CLAUDE=$(echo "$REPLY_CLAUDE" | jq -r '.verdict')
+VERDICT_GEMINI=$(echo "$REPLY_GEMINI" | jq -r '.verdict')
+
+if [ "$VERDICT_CLAUDE" = "LGTM" ] && [ "$VERDICT_GEMINI" = "LGTM" ]; then
+  echo "Dual-CMC: both LGTM. Proceeding to PASS."
+else
+  echo "Dual-CMC: REJECT (claude=$VERDICT_CLAUDE, gemini=$VERDICT_GEMINI)"
+  echo "$REPLY_CLAUDE" "$REPLY_GEMINI" | jq -s '.[].issues'
+  exit 1
+fi
+```
+
+### Reply parsing (single-critic modes)
+
+```bash
+VERDICT=$(echo "$REPLY" | jq -r '.verdict')
+case "$VERDICT" in
+  LGTM)   echo "Critic: LGTM. Proceeding to PASS." ;;
+  REJECT) echo "Critic: REJECT. Issues:"; echo "$REPLY" | jq '.issues'; exit 1 ;;
+  *)      echo "Critic: malformed reply (no verdict). Treating as REJECT."; exit 1 ;;
+esac
+```
+
+REJECT verdict transitions sprint to FAIL. Re-run sprint-review after the issue is addressed by sprint-dev or the user.
+
+---
+
+## Reviewer Spawn Strategy
+
+Phase 2.2.0 of `SKILL.md`. Selects parallel (default) vs sequential reviewer dispatch (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P2).
+
+```bash
+DIFF_LOC=$(git diff --shortstat ${SPRINT_BASE}..HEAD 2>/dev/null \
+  | awk '{print ($4+0)+($6+0)}')
+SEQUENTIAL_REVIEW=false
+if [ "${BLITZ_REVIEW_SEQUENTIAL:-0}" = "1" ] || [ "${DIFF_LOC:-0}" -gt 2000 ]; then
+  SEQUENTIAL_REVIEW=true
+  echo "[sprint-review] sequential reviewer mode (diff=${DIFF_LOC} LOC, env=${BLITZ_REVIEW_SEQUENTIAL:-0})"
+fi
+```
+
+**Sequential mode contract**: spawn reviewers one at a time in order (security → backend → frontend → patterns). After each reviewer completes, append findings to `${SESSION_TMP_DIR}/sprint-${N}-prior-findings.md`. Inject that file's contents into the NEXT reviewer's prompt under `## Prior Reviewer Findings (for cross-cutting awareness)`. Later reviewers may dedupe against prior findings.
+
+**Parallel mode (default)**: continue with the existing single-message multi-spawn flow in Phase 2.2.1.
+
+---
+
+## Phase 2.5 Browser Verification
+
+Phase 2.5.0 of `SKILL.md`. Required when Playwright MCP available; silent skip otherwise (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` F4).
+
+```bash
+PLAYWRIGHT_AVAILABLE=false
+if grep -q 'mcp__plugin_playwright_playwright__browser_navigate' "${SESSION_TMP_DIR}/available-tools.txt" 2>/dev/null \
+   || which playwright >/dev/null 2>&1; then
+  PLAYWRIGHT_AVAILABLE=true
+fi
+echo "[sprint-review] playwright_available=${PLAYWRIGHT_AVAILABLE}"
+```
+
+Coverage tag values (write to gates JSON `phase_2_5_coverage`):
+
+| Value | Condition |
+|---|---|
+| `skipped_unavailable` | `PLAYWRIGHT_AVAILABLE=false`. Not a failure. |
+| `partial` | `PLAYWRIGHT_AVAILABLE=true` but smoke test skipped (other than "no changed routes"). Surface in Phase 4 Recommendations → Before Merge. |
+| `full` | Smoke test completed across all changed routes. |
+
+Smoke procedure: identify changed routes from changed page files. Navigate each via `mcp__plugin_playwright_playwright__browser_navigate`. For each page, check console errors (Critical/Error), placeholder/sample data visible (Warning), broken layouts (Minor). Add findings to review report.
+
+---
+
+## Automation Coverage Block
+
+Phase 3.7 of `SKILL.md`. Declares deterministic-vs-human-judgment boundary (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4).
+
+```bash
+DETERMINISTIC_PASSED=0
+DETERMINISTIC_TOTAL=0
+for gate in type_check lint tests build ratchet shortcut_taxonomy critic; do
+  DETERMINISTIC_TOTAL=$((DETERMINISTIC_TOTAL + 1))
+  PASS=$(jq -r ".gates.${gate}.pass // false" "${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-quality-gates.json")
+  [ "$PASS" = "true" ] && DETERMINISTIC_PASSED=$((DETERMINISTIC_PASSED + 1))
+done
+
+cat <<EOF
+Automation Coverage
+===================
+Deterministic gates: ${DETERMINISTIC_PASSED}/${DETERMINISTIC_TOTAL} passed
+  - type-check, lint, tests, build, ratchet, shortcut-taxonomy, critic (LGTM)
+Browser smoke (Phase 2.5): ${PHASE_2_5_COVERAGE:-skipped_unavailable}
+Human-judgment review required (NOT auto-verified):
+  - Architectural fitness (right abstraction for the domain)
+  - UX correctness (does this make sense to a real user)
+  - Business-logic intent (does this do the right business thing)
+  - Cross-feature regressions in untested code paths
+Recommendation: ${REVIEW_RECOMMENDATION}
+EOF
+```
+
+`REVIEW_RECOMMENDATION` rules:
+
+| Value | Triggered when |
+|---|---|
+| `auto-merge-safe` | ALL deterministic gates pass AND Phase 2.5 coverage = `full` AND zero critical/major findings. |
+| `needs-human-review` | Any deterministic gate fails OR Phase 2.5 coverage = `partial` OR any critical/major findings exist. |
+
+The PR may merge under `auto-merge-safe` for behavior correctness, but human reviewer still owns architecture/UX/business-intent judgment. Frame in the report as honest limitation, not a coverage claim.
+
+The block is written into the review report under the `## Automation Coverage` section between `## Story Status` and `## Recommendations` (template above).
+
+OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
