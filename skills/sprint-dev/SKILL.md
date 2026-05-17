@@ -82,6 +82,7 @@ Then validate every story file against [story-frontmatter.md](/_shared/story-fro
    If STATE.md exists, follow the **resume flow** from [checkpoint-protocol.md](/_shared/checkpoint-protocol.md):
    - Validate staleness (>24h = warn user, ask whether to resume or start fresh). **If autonomy is `high` or `full` (e.g., loop mode), skip the staleness prompt and auto-resume regardless of age.** Log a `decision` event noting the auto-resume.
    - Validate worktrees (`git worktree list`).
+   - **Branch divergence gate** (prevents sprint-289-class dual-implementation conflicts per [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)). For each expected `sprint-${N}/${role}` branch, count commits ahead of `git merge-base "$BRANCH" HEAD`. Full check script in `references/main.md` section **"Resume Divergence Gate"**. If any branch is DIVERGENT, stop and prompt the user with reconciliation options: `rebase` (replay onto HEAD), `abandon` (delete branch + restart), `inspect` (open diff). Never auto-merge. In `autonomy=full` loops, behavior is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
    - Rebuild `agent_tracker` from STATE.md tables.
    - Skip to Phase 3 with remaining stories.
    - Log a `decision` event: "Resuming sprint ${N} from checkpoint".
@@ -413,22 +414,9 @@ If verification fails:
    git commit -m "fix(sprint-${N}): resolve integration issues — round ${ROUND}"
    ```
 
-### 4.4 Clean Up Worktrees
+### 4.4 Clean Up Worktrees and Branches
 
-If agents were spawned with `isolation: "worktree"`, worktrees with no changes are automatically cleaned up when agents complete. For worktrees that persist (because they have changes):
-
-1. List remaining worktrees: `git worktree list`
-2. After successful merge (Phase 4.1), remove merged worktrees:
-   ```bash
-   for ROLE in backend frontend tests infra; do
-     WT=".worktrees/sprint-${SPRINT_NUMBER}/${ROLE}"
-     if [ -d "$WT" ]; then
-       git worktree remove "$WT" --force 2>&1 || \
-         echo "WARNING: Could not remove worktree $WT — check for uncommitted changes"
-     fi
-   done
-   ```
-3. Log any removal failures to the activity feed as `warning` events.
+Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md). Worktrees with no changes auto-clean on agent completion. After Phase 4.1 merge succeeds, sprint-dev MUST explicitly remove worktrees AND delete the underlying agent branches (the platform leaves branches behind even after `git worktree remove`). Full cleanup script in `references/main.md` section **"Worktree + Branch Cleanup (Phase 4.4)"** — covers roles `{backend,frontend,tests,infra}` plus the Phase 3.5.1 integration branch, uses `git branch -d` (safe: refuses unmerged), and logs failures as `warning` events. Escape hatch: `BLITZ_SKIP_BRANCH_CLEANUP=1` preserves branches for forensic inspection.
 
 ### 4.5 E2E Verification (Best-Effort)
 

@@ -2,7 +2,7 @@
 
 Authoritative protocol for monotonic quality metrics. The ratchet ensures **work compounds**: code quality only improves across sprints, never regresses. Sprint-review enforces ratchet invariants in Phase 3.6; auto-revert triggers on deterministic regressions.
 
-**Why this doc exists**: `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 documented 19 shortcut signals and the ratchet pattern that proves work compounds across 7 monotonic metrics. This is the canonical schema and enforcement contract.
+**Why this doc exists**: `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 documented 19 shortcut signals and the ratchet pattern that proves work compounds across monotonic metrics (originally 7; expanded to 8 on 2026-05-17 with `stale_worktree_branch_count` per [worktree-lifecycle.md](worktree-lifecycle.md)). This is the canonical schema and enforcement contract.
 
 ---
 
@@ -19,8 +19,11 @@ Stored in `docs/sweeps/ratchet.json`, updated by `code-sweep` and `sprint-review
 | `completeness_score` | ↑ | baseline | `/blitz:completeness-gate` (existing) |
 | `mocks_in_src` | ↓ | baseline | `grep -rEn '\b(vi\.mock\|jest\.mock\|sinon\.stub)\b' src/ --exclude-dir=__tests__ \| wc -l` |
 | `todo_count` | ↓ | baseline | `grep -rEn '\b(TODO\|FIXME)\b' src/ \| wc -l` |
+| `stale_worktree_branch_count` | ↓ | baseline | `git for-each-ref --format='%(refname:short)' refs/heads/worktree-agent-* refs/heads/worktree-sprint-* refs/heads/sprint-*/backend refs/heads/sprint-*/frontend refs/heads/sprint-*/tests refs/heads/sprint-*/infra refs/heads/sprint-*/integration \| wc -l` |
 
 `type_errors` is special: it has an **absolute floor of 0** in addition to the ratchet. Once a project hits 0, it cannot regress to 1.
+
+`stale_worktree_branch_count` measures branches matching the spawn-protocol-controlled patterns from [worktree-lifecycle.md](worktree-lifecycle.md). Existing projects must run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt; otherwise the first sprint-review post-upgrade will fail Invariant 8 for projects with N>0 stale branches. After baselining, the ratchet tightens monotonically as `/blitz:worktree-prune` reduces the count.
 
 ---
 
@@ -40,7 +43,8 @@ Stored in `docs/sweeps/ratchet.json`, updated by `code-sweep` and `sprint-review
     "lint_violations":    {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
     "completeness_score": {"baseline": 0, "current": 0, "min_allowed": 0, "direction": "up"},
     "mocks_in_src":       {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
-    "todo_count":         {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"}
+    "todo_count":         {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
+    "stale_worktree_branch_count": {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"}
   },
   "auto_revert": {"enabled": true, "needs_human_label": "ratchet-regression"},
   "history": [
@@ -113,7 +117,7 @@ When a fix commit during sprint-dev causes a deterministic metric to regress, sp
 after each fix commit:
   current = compute_metrics()
   for each metric where direction-violation detected:
-    if metric in {type_errors, as_any_count, lint_violations, completeness_score, mocks_in_src, todo_count}:
+    if metric in {type_errors, as_any_count, lint_violations, completeness_score, mocks_in_src, todo_count, stale_worktree_branch_count}:
       git reset --hard HEAD~1   # only the fix commit
       append to .cc-sessions/carry-forward.jsonl: {needs-human, reason: "ratchet:<metric>"}
       activity-feed: event=auto_revert detail={metric, old, new}
@@ -157,7 +161,8 @@ cat > docs/sweeps/ratchet.json <<'JSON'
     "lint_violations":    {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
     "completeness_score": {"baseline": 0, "current": 0, "min_allowed": 0, "direction": "up"},
     "mocks_in_src":       {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
-    "todo_count":         {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"}
+    "todo_count":         {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"},
+    "stale_worktree_branch_count": {"baseline": 0, "current": 0, "max_allowed": 0, "direction": "down"}
   },
   "auto_revert": {"enabled": true, "needs_human_label": "ratchet-regression"},
   "history": []

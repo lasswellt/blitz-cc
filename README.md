@@ -15,9 +15,9 @@
 
 **Production-grade Claude Code plugin for Vue/Nuxt + Firebase**
 
-**38 skills** · **10 agents** · **36 hooks** · **16 hook events** · **25 shared protocols**
+**39 skills** · **10 agents** · **36 hooks** · **16 hook events** · **26 shared protocols**
 
-Top-level orchestrator agent · 7 anti-shortcut hooks · 7-invariant quality ratchet · optional Gemini Cross-Model Critic
+Top-level orchestrator agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Gemini Cross-Model Critic
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
@@ -183,7 +183,7 @@ Seven `PreToolUse` hooks block common shortcut shapes at the tool boundary. Each
 | `as any` / `@ts-ignore` / `@ts-nocheck` insertion in non-test source | `block-as-any-insertion.sh` | Inline `// blitz:any-allowed: <reason>` |
 | `.skip(` / `.only(` / `xit` / `xdescribe` insertion in test files | `block-test-disabling.sh` | Inline `// blitz:skip-pinned: #<issue>` |
 
-`sprint-review` Phase 3.6 enforces 7 invariants — registry consistency, OUTPUT STYLE coverage, **ratchet** (7 monotonic metrics: `test_count`, `type_errors`, `as_any_count`, `lint_violations`, `completeness_score`, `mocks_in_src`, `todo_count` — never regress without a covering carry-forward), and **critic** (the `blitz:critic` agent must emit `LGTM`). Sprint cannot reach `PASS` while any fail.
+`sprint-review` Phase 3.6 enforces 8 invariants — registry consistency, OUTPUT STYLE coverage, **ratchet** (8 monotonic metrics: `test_count`, `type_errors`, `as_any_count`, `lint_violations`, `completeness_score`, `mocks_in_src`, `todo_count`, `stale_worktree_branch_count` — never regress without a covering carry-forward), **critic** (the `blitz:critic` agent must emit `LGTM`), and **branch hygiene** (per-sprint `sprint-${N}/${role}` branches deleted by Phase 4.4). Sprint cannot reach `PASS` while any fail.
 
 ### 3. Cross-Model Critic (CMC) — optional Gemini integration
 
@@ -421,7 +421,7 @@ The carry-forward registry (`.cc-sessions/carry-forward.jsonl`) is the backbone 
 
 4. Sprint-dev advances `delivered.actual` and `coverage` as stories complete.
 
-5. Sprint-review enforces **7 invariants** — registry consistency, epic completion, OUTPUT STYLE coverage, **ratchet** (7 monotonic metrics: `test_count`, `type_errors`, `as_any_count`, `lint_violations`, `completeness_score`, `mocks_in_src`, `todo_count` — `type_errors > 0` is an absolute floor), and **critic** LGTM. The loop cannot exit while entries remain active. Entries stuck for 3+ sprints are escalated with rollover banners.
+5. Sprint-review enforces **8 invariants** — registry consistency, epic completion, OUTPUT STYLE coverage, **ratchet** (8 monotonic metrics: `test_count`, `type_errors`, `as_any_count`, `lint_violations`, `completeness_score`, `mocks_in_src`, `todo_count`, `stale_worktree_branch_count` — `type_errors > 0` is an absolute floor), **critic** LGTM, and **branch hygiene** (per-sprint cleanup). The loop cannot exit while entries remain active. Entries stuck for 3+ sprints are escalated with rollover banners.
 
 6. When `coverage` reaches 1.0, the entry transitions to `status: complete`.
 
@@ -445,7 +445,7 @@ All skills share 20 protocol files that define cross-cutting behavior:
 | `spawn-protocol.md` | Agent spawn rules — type selection, workload sizing, HEARTBEAT/PARTIAL, **Agent Output Contract**, three-tier timeout (soft 20m / idle 10m / hard 30m), stuck-loop detection, WRAP_UP at 70% context, JSON reply contract |
 | `terse-output.md` | Output style — canonical exemptions list, intensity precedence, OUTPUT STYLE snippet |
 | **`token-budget.md`** *(v1.11+)* | Model routing matrix (60% Haiku / 35% Sonnet / 5% Opus), mandatory `cache_control: {ttl: "1h"}` on prompts ≥1024 tokens, lazy skill load, deferred MCP via ToolSearch. Combined target: 50–70% cut on top of 15× multi-agent baseline. |
-| **`ratchet-protocol.md`** *(v1.11+)* | 7 monotonic quality metrics, `docs/sweeps/ratchet.json` schema, multi-agent worktree merge takes `min(max_allowed)` deterministically, auto-revert on regression |
+| **`ratchet-protocol.md`** *(v1.11+)* | 8 monotonic quality metrics (incl. `stale_worktree_branch_count` added 2026-05-17), `docs/sweeps/ratchet.json` schema, multi-agent worktree merge takes `min(max_allowed)` deterministically, auto-revert on regression |
 | **`shortcut-taxonomy.md`** *(v1.11+)* | 19-detector catalog with canonical grep patterns, severity tiers (P0/P1/P2/P3), false-positive escape hatches |
 | **`knowledge-protocol.md`** *(v1.11+)* | `.cc-sessions/KNOWLEDGE.md` cross-session lessons format (Context / Lesson / How to apply). Append-only paragraphs. Pruned at 500 lines. |
 | **`frontend-design-heuristics.md`** *(v1.11+)* | Paraphrased aesthetic philosophy, 13-tone selector, NEVER list (Inter/Roboto/Arial/Space Grotesk + purple-on-white + uniform corners + all-centered + default Tailwind palette) |
@@ -485,7 +485,7 @@ blitz/
 │   ├── sprint/                  # Orchestrator — auto-chains roadmap extend
 │   ├── sprint-plan/             # Carry-forward-aware sprint planning
 │   ├── sprint-dev/              # Monitor-tool progress, worktree isolation
-│   ├── sprint-review/           # 7 invariants (registry + ratchet + critic)
+│   ├── sprint-review/           # 8 invariants (registry + ratchet + critic + branch-hygiene)
 │   ├── research/                # Parallel agents → scope: YAML; research-critic gate
 │   ├── roadmap/                 # Research ingestion → epic-registry
 │   ├── ui-build/                # 5-phase + design-critic vision loop

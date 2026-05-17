@@ -717,3 +717,70 @@ Used by dev agents and orchestrator in Phase 3.3.
 | `ASSIST:` | Orchestrator -> Agent | Help with current issue |
 | `SYNC:` | Orchestrator -> Agent | File paths or exports from another agent |
 | `HALT:` | Orchestrator -> Agent | Stop current work (critical issue) |
+
+---
+
+## Worktree + Branch Cleanup (Phase 4.4)
+
+Run this AFTER Phase 4.1 merge succeeds. Removes worktree directories AND deletes the underlying agent branches — the platform leaves branches behind after `git worktree remove`. Uses `git branch -d` (refuses unmerged), so unmerged branches are preserved with a warning for manual reconciliation. Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md). Escape hatch: `BLITZ_SKIP_BRANCH_CLEANUP=1`.
+
+```bash
+[ "${BLITZ_SKIP_BRANCH_CLEANUP:-0}" = "1" ] && echo "[sprint-dev] branch cleanup skipped" && exit 0
+for ROLE in backend frontend tests infra; do
+  WT=".worktrees/sprint-${SPRINT_NUMBER}/${ROLE}"
+  BRANCH="sprint-${SPRINT_NUMBER}/${ROLE}"
+  if [ -d "$WT" ]; then
+    git worktree remove "$WT" --force 2>&1 || \
+      echo "WARNING: could not remove worktree $WT — check for uncommitted changes"
+  fi
+  if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+    if git merge-base --is-ancestor "$BRANCH" HEAD; then
+      git branch -d "$BRANCH" 2>&1 || echo "WARNING: could not delete merged branch $BRANCH"
+    else
+      echo "WARNING: branch $BRANCH not merged into HEAD; preserving for inspection"
+    fi
+  fi
+done
+# Phase 3.5.1 integration branch (present only when ui-integrator ran)
+INTEG_BRANCH="sprint-${SPRINT_NUMBER}/integration"
+if git rev-parse --verify "$INTEG_BRANCH" >/dev/null 2>&1 && \
+   git merge-base --is-ancestor "$INTEG_BRANCH" HEAD; then
+  git branch -d "$INTEG_BRANCH" 2>&1 || true
+fi
+```
+
+## Resume Divergence Gate
+
+Phase 0.1 resume path runs this BEFORE re-spawning agents. Detects when a `sprint-${N}/${role}` branch already has commits from a prior partial run — the exact failure mode behind sprint-289/CAP-148. Behavior on DIVERGENT findings is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
+
+```bash
+DIVERGENT=()
+for ROLE in backend frontend tests infra; do
+  BRANCH="sprint-${SPRINT_NUMBER}/${ROLE}"
+  git rev-parse --verify "$BRANCH" >/dev/null 2>&1 || continue
+  BASE=$(git merge-base "$BRANCH" HEAD 2>/dev/null || echo "")
+  [ -z "$BASE" ] && continue
+  AHEAD=$(git rev-list --count "${BASE}..${BRANCH}" 2>/dev/null || echo 0)
+  [ "$AHEAD" -gt 0 ] && DIVERGENT+=("$BRANCH:$AHEAD")
+done
+
+if [ "${#DIVERGENT[@]}" -gt 0 ]; then
+  case "${BLITZ_RESUME_ON_DIVERGENCE:-halt}" in
+    abandon)
+      for entry in "${DIVERGENT[@]}"; do
+        git branch -D "${entry%:*}"
+      done
+      ;;
+    halt)
+      echo "ERROR: divergent branches detected: ${DIVERGENT[*]}" >&2
+      echo "  -> set BLITZ_RESUME_ON_DIVERGENCE=abandon to auto-delete, or rebase manually" >&2
+      exit 1
+      ;;
+    prompt|*)
+      echo "Divergent branches: ${DIVERGENT[*]}"
+      echo "Options: rebase (replay onto HEAD), abandon (git branch -D), inspect (git log)"
+      # interactive prompt handled by orchestrator
+      ;;
+  esac
+fi
+```

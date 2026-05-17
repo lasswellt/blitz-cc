@@ -631,6 +631,37 @@ When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allo
 
 ---
 
+## Invariant 8 — Branch Hygiene
+
+Asserts sprint-dev Phase 4.4 completed its branch cleanup before review. Catches three failure modes: (1) Phase 4.4 was skipped because Phase 4.1 merge failed silently, (2) `BLITZ_SKIP_BRANCH_CLEANUP=1` was set and never unset, (3) the user interrupted sprint-dev after Phase 4.1 but before Phase 4.4. Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md).
+
+Detector:
+
+```bash
+LEAKED=$(git for-each-ref --format='%(refname:short)' \
+  "refs/heads/sprint-${SPRINT_NUMBER}/backend" \
+  "refs/heads/sprint-${SPRINT_NUMBER}/frontend" \
+  "refs/heads/sprint-${SPRINT_NUMBER}/tests" \
+  "refs/heads/sprint-${SPRINT_NUMBER}/infra" \
+  "refs/heads/sprint-${SPRINT_NUMBER}/integration" 2>/dev/null)
+if [ -n "$LEAKED" ]; then
+  echo "Invariant 8 FAIL: sprint-${SPRINT_NUMBER} leaked branches:"
+  echo "$LEAKED" | sed 's/^/  - /'
+  echo "Resolution: run /blitz:worktree-prune --apply --merged-only"
+  exit 2
+fi
+```
+
+Distinguished from Invariant 6's `stale_worktree_branch_count` metric:
+- Invariant 8 is **per-sprint scoped** — only checks branches for the sprint under review. Strict pass/fail.
+- Invariant 6's metric is **repo-wide cross-sprint** — counts all `worktree-*` and `sprint-*/{role}` branches. Ratchet-tightened over time.
+
+Both block PASS on failure but for different reasons: Invariant 8 means *this* sprint failed to clean up; Invariant 6 means cumulative debt grew.
+
+Escape hatch: setting `BLITZ_SKIP_INVARIANT_8=1` skips this check (intended only for forensic review of broken sprints; sprint cannot reach PASS while set — `CONDITIONAL` at best).
+
+---
+
 ## Invariant 7 — Critic Spawn
 
 Three execution modes, selected by env var:

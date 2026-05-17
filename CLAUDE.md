@@ -45,7 +45,7 @@ If no activity feed exists or is empty, skip the summary silently.
 
 ## Skill System
 
-This repo contains **38 development skills** in `skills/` and **10 plugin agents** in `agents/` (`architect`, `backend-dev`, `critic`, `design-critic`, `doc-writer`, `frontend-dev`, `orchestrator`, `research-critic`, `reviewer`, `test-writer`). Skills are auto-discovered by Claude Code from `skills/<name>/SKILL.md` (Anthropic-canonical layout — no central registry). Skills are invoked via `/blitz:<skill-name>`.
+This repo contains **39 development skills** in `skills/` and **10 plugin agents** in `agents/` (`architect`, `backend-dev`, `critic`, `design-critic`, `doc-writer`, `frontend-dev`, `orchestrator`, `research-critic`, `reviewer`, `test-writer`). Skills are auto-discovered by Claude Code from `skills/<name>/SKILL.md` (Anthropic-canonical layout — no central registry). Skills are invoked via `/blitz:<skill-name>`.
 
 Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hooks/scripts/skill-frontmatter-validate.sh`: third-person description ≤1024 chars (stricter than platform's 1536 cap by design — keeps the always-loaded skill listing lean), body ≤500 lines, required fields (`name`, `description`, `model`, `effort`, `compatibility`, `allowed-tools` when invokable), and the verbatim OUTPUT STYLE snippet from `/_shared/terse-output.md`.
 
@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (25 files). Required for every skill:
+All skills follow the protocols in `skills/_shared/` (26 files). Required for every skill:
 - **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
 - **verbose-progress.md** — Verbose output format and activity feed logging
 - **terse-output.md** — Output style + canonical exemptions list
@@ -70,7 +70,7 @@ Required for skills that spawn agents:
 - **agent-routing.md** (v1.11+) — orchestrator routing decision tree + the subagents-cannot-spawn-subagents constraint
 
 Required for autonomous loops + quality:
-- **ratchet-protocol.md** (v1.11+) — 7 monotonic metrics, schema, multi-agent worktree merge, auto-revert on regression
+- **ratchet-protocol.md** (v1.11+) — 8 monotonic metrics (incl. `stale_worktree_branch_count`), schema, multi-agent worktree merge, auto-revert on regression
 - **shortcut-taxonomy.md** (v1.11+) — 19 anti-shortcut detectors with grep patterns + escape-hatch rules
 - **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
 - **frontend-design-heuristics.md** (v1.11+) — paraphrased aesthetic philosophy, NEVER list, density-vs-whitespace guidance
@@ -98,12 +98,13 @@ Adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/a
 
 ## Quality Gates (v1.11+)
 
-`sprint-review` Phase 3.6 enforces 7 invariants. Sprint cannot reach PASS while any fails:
+`sprint-review` Phase 3.6 enforces 8 invariants. Sprint cannot reach PASS while any fails:
 
 1. Carry-forward Reader Algorithm — registry consistency
 2. Reserved (canonical algorithm)
 3. Epic completion — no `done` epics with `incomplete` registry entries
 4. Reserved (canonical algorithm)
 5. OUTPUT STYLE snippet present in every SKILL.md + agent-prompt template
-6. **Ratchet** — 7 monotonic metrics never regress without carry-forward (`type_errors > 0` is absolute floor)
+6. **Ratchet** — 8 monotonic metrics never regress without carry-forward (`type_errors > 0` is absolute floor; `stale_worktree_branch_count` added 2026-05-17 per [worktree-lifecycle.md](skills/_shared/worktree-lifecycle.md))
 7. **Critic** — `agents/critic.md` adversarial review must emit LGTM (it runs the 19-detector shortcut taxonomy)
+8. **Branch hygiene** — sprint-dev Phase 4.4 deleted every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch (per-sprint scope; complements Invariant 6's cross-sprint cumulative metric)

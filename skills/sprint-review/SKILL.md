@@ -1,6 +1,6 @@
 ---
 name: sprint-review
-description: "Reviews sprint quality with automated gates (type-check, lint, tests, build) and parallel reviewer agents (security, backend, frontend, patterns). Auto-fixes safe categories (types, lint, imports). Enforces the carry-forward registry hard gate (Phase 3.6 Invariants 1-5). Use when the user says 'review sprint', 'check quality', 'run review', 'sprint quality gate', or 'audit sprint'."
+description: "Reviews sprint quality with automated gates (type-check, lint, tests, build) and parallel reviewer agents (security, backend, frontend, patterns). Auto-fixes safe categories (types, lint, imports). Enforces the carry-forward registry hard gate (Phase 3.6 Invariants 1-8 — including ratchet, critic, and worktree branch hygiene). Use when the user says 'review sprint', 'check quality', 'run review', 'sprint quality gate', or 'audit sprint'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, Agent
 disable-model-invocation: false
 model: opus
@@ -378,12 +378,13 @@ Full invariant procedures (Invariants 1-4, the hard-gate decision, report schema
    - **Invariant 5**: every SKILL.md under `skills/*/SKILL.md` AND every `skills/*/references/main.md` containing an Agent-prompt template contains the canonical `OUTPUT STYLE: … per /_shared/terse-output.md` snippet from `spawn-protocol.md` §7. Missing snippet → Critical finding → sprint FAILs (BLOCKER).
 3. Run **Invariant 6** (ratchet — see [/_shared/ratchet-protocol.md](/_shared/ratchet-protocol.md)): read `docs/sweeps/ratchet.json`. For each metric, recompute `current` and verify direction. If any metric regresses without a covering carry-forward entry, the sprint cannot reach PASS. On improvements, tighten thresholds and append a history snapshot.
 4. Run **Invariant 7** (critic adversarial review — see [/_shared/shortcut-taxonomy.md](/_shared/shortcut-taxonomy.md) and `agents/critic.md`): spawn the `blitz:critic` agent. It returns `{verdict: "LGTM" | "REJECT", issues: [...]}`. REJECT verdict blocks PASS; the issues array describes the single reject reason.
-5. Write the Invariants Report section to the review report.
-6. **Hard gate**: Reader Algorithm exit 0 + Invariants 3, 5, 6, 7 pass → proceed to Phase 4. Any fail → `CONDITIONAL` at best; ESCALATION (exit 3), Invariant 5 fail, ratchet regression with no carry-forward, or critic REJECT → FAIL.
+5. Run **Invariant 8** (worktree branch hygiene — see [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)): assert sprint-dev Phase 4.4 deleted every `sprint-${SPRINT_NUMBER}/{backend,frontend,tests,infra,integration}` branch. Any surviving match → FAIL. Resolution: `/blitz:worktree-prune --apply --merged-only`. Full procedure: `references/main.md` §Invariant 8 — Branch Hygiene.
+6. Write the Invariants Report section to the review report.
+7. **Hard gate**: Reader Algorithm exit 0 + Invariants 3, 5, 6, 7, 8 pass → proceed to Phase 4. Any fail → `CONDITIONAL` at best; ESCALATION (exit 3), Invariant 5 fail, Invariant 8 fail, ratchet regression with no carry-forward, or critic REJECT → FAIL.
 
 ### Invariants 6 and 7 — Ratchet + Critic (BLOCKERs)
 
-- **Invariant 6 (ratchet)**: see [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md). Compute the 7 monotonic metrics, compare to `docs/sweeps/ratchet.json`, tighten on improvement, block PASS on regression without covering carry-forward. `type_errors > 0` is an absolute floor. Full procedure: `references/main.md` §Invariant 6 — Ratchet Procedures.
+- **Invariant 6 (ratchet)**: see [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md). Compute the 8 monotonic metrics, compare to `docs/sweeps/ratchet.json`, tighten on improvement, block PASS on regression without covering carry-forward. `type_errors > 0` is an absolute floor. The 8th metric `stale_worktree_branch_count` (added 2026-05-17 per [worktree-lifecycle.md](/_shared/worktree-lifecycle.md)) requires existing projects to run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt. Full procedure: `references/main.md` §Invariant 6 — Ratchet Procedures.
 - **Invariant 7 (critic)**: spawn `blitz:critic` (read-only adversarial — see `agents/critic.md`). It runs the 19-detector shortcut scan + ratchet + hallucinated-symbol spot-check and returns canonical JSON `{verdict: LGTM | REJECT, ...}`. REJECT blocks PASS. Spawn template: `references/main.md` §Invariant 7 — Critic Spawn.
 
 ### Invariant 5 — Agent-Prompt Output Style Snippet (BLOCKER)
