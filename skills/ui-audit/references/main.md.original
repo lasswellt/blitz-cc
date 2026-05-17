@@ -35,7 +35,7 @@ check: "equal" | "gte" | "lte"
 tolerance: number            # Default 0. For 'equal': |a-b| <= tolerance.
 ```
 
-See `.ui-audit.json.example` at repo root.
+See `.ui-audit.json.example` at repo root for a filled template.
 
 ### `docs/crawls/page-data-registry.jsonl`
 
@@ -46,21 +46,21 @@ Append-only. One line per observation. Latest-wins-by-`(role, page, label, ts)`.
 ```
 
 Field semantics:
-- `role`: `"__default__"` when not multi-role (E-012 adds real roles).
-- `raw`: exact `.textContent.trim()` — never a11y-tree text.
-- `parsed`: type-coerced per label `type`. `null` on null `raw` or coercion fail.
-- `hash`: `printf '%s' "$raw" | (sha256sum 2>/dev/null || shasum -a 256) | cut -c1-8`. NOT md5sum (macOS portability).
-- `detail`: freeform — quality flags, flapping, event-invariants, heuristics metadata.
+- `role`: defaults to `"__default__"` when the skill is not in multi-role mode (E-012 introduces real role values).
+- `raw`: exact `.textContent.trim()` return — never a11y-tree text. See rule below.
+- `parsed`: type-coerced per label `type`. `null` when `raw` was null or coercion failed.
+- `hash`: `printf '%s' "$raw" | (sha256sum 2>/dev/null || shasum -a 256) | cut -c1-8`. NOT md5sum (not portable on macOS).
+- `detail`: optional freeform object — used by quality flags, flapping detection, event-invariants, and heuristics to carry additional structure without bloating the primary fields.
 
 ### `docs/crawls/ui-audit-report.md`
 
-Overwritten on every non-`consistency`-only run. Severity-grouped; template in Phase 6.
+Overwritten on every non-`consistency`-only run. Severity-grouped; see Phase 6 for the template.
 
 ---
 
 ## Phase 0 — CONTEXT
 
-See `SKILL.md` § "Phase 0: CONTEXT". Session registration + arg parse + config load + browse-state overlap check live in SKILL.md. This file holds phases 1-6 procedures only.
+See `SKILL.md` § "Phase 0: CONTEXT". Session registration + arg parse + config load + browse-state overlap check live in the main SKILL.md. This reference file does not duplicate that procedure — it only holds the deeper procedures for phases 1 through 6.
 
 ---
 
@@ -78,8 +78,8 @@ fi
 ```
 
 If `STATE_SOURCE=browse`:
-- Read `docs/crawls/crawl-visited.json` — derive page list from top-level keys.
-- Read `docs/crawls/hierarchy.json` — nav graph for Phase 6 grouping.
+- Read `docs/crawls/crawl-visited.json` — derive the page list from its top-level keys (one per visited path).
+- Read `docs/crawls/hierarchy.json` — use the nav graph if Phase 6 reporter wants to group findings by nav parent.
 - Read `docs/crawls/latest-tick.json` — if `status == "crawling"`, emit WARN but continue.
 
 Exit Phase 1 with `PAGE_LIST` populated.
@@ -92,15 +92,17 @@ If `STATE_SOURCE=fallback`:
    ```
    ToolSearch: query="select:browser_navigate,browser_snapshot,browser_evaluate,browser_wait_for,browser_console_messages,browser_network_requests"
    ```
-   If any of 6 tools missing, print `[ui-audit] Playwright MCP tools unavailable — install the playwright plugin or run blitz:browse first.` and exit 1.
+   If any of the 6 tools is missing, print:
+   `[ui-audit] Playwright MCP tools unavailable — install the playwright plugin or run blitz:browse first.`
+   and exit 1.
 
-2. Build `PAGE_LIST` from `.ui-audit.json[pages]` keys. If empty, exit Phase 1 with `PAGE_LIST = []` and log INFO — Phase 2 no-ops.
+2. Build `PAGE_LIST` from `.ui-audit.json[pages]` keys. If empty (e.g., `data` mode with no config), exit Phase 1 with `PAGE_LIST = []` and log INFO — Phase 2 will no-op.
 
-3. No navigation in Phase 1 — Phase 2 owns the visit loop.
+3. No navigation is done in Phase 1 — Phase 2 owns the per-page visit loop. Phase 1 just produces the list.
 
 ### 1.3 Registry corruption guard
 
-Before any phase reads `docs/crawls/page-data-registry.jsonl`, validate:
+Before any later phase reads `docs/crawls/page-data-registry.jsonl`, validate the whole file:
 ```bash
 if [ -f docs/crawls/page-data-registry.jsonl ]; then
   jq -c '.' docs/crawls/page-data-registry.jsonl >/dev/null 2>&1 || {
@@ -115,7 +117,7 @@ fi
 
 ## Phase 2 — DATA EXTRACTION
 
-Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in sprint-6 (multi-role in E-012).
+Per page, run the 5-step loop below. Emits one JSONL line per `(role, page, label)` observation. `role` is `__default__` in sprint-6 (multi-role arrives in E-012).
 
 ### 2.1 Navigate + settle
 
@@ -126,7 +128,7 @@ browser_wait_for(textGone = "<spinner-or-loading-label>", time = 1)
 # Fallback hard timeout — no networkidle in Playwright MCP.
 ```
 
-Max settle: 10s. Proceed with whatever rendered at timeout.
+Max settle wait: 10 seconds. Proceed with whatever is rendered at timeout.
 
 ### 2.2 Render confirm (optional, first tick per page only)
 
@@ -134,13 +136,13 @@ Max settle: 10s. Proceed with whatever rendered at timeout.
 browser_snapshot()
 ```
 
-Verifies render; on first-tick-per-path, discovers candidate selectors. **Never used for registry writes** (a11y tree reformats numbers; see ground-truth rule below).
+Used to verify the page rendered and — on the first tick per path — to discover candidate selectors the author may not yet have declared. **Never used for registry writes** (a11y tree can reformat numbers; see the ground-truth rule above).
 
 ### 2.3 Evaluate label map
 
-Build label map for `path` from `.ui-audit.json[pages][path]`. If no entry, log INFO `[ui-audit] no labels declared for ${path} — skipping` and continue.
+Build the label map for this `path` from `.ui-audit.json[pages][path]`. If no entry, log INFO `[ui-audit] no labels declared for ${path} — skipping` and move to the next page.
 
-**Label-name validation (prototype-pollution guard).** Reject any label matching `/^(__proto__|constructor|prototype)$/`. Allowing them lets hostile `.ui-audit.json` set prototype entries on `browser_evaluate` return object → polluted downstream jq/node coercion. On match: exit 1 with `[ui-audit] Forbidden label name in .ui-audit.json: "${label}"`.
+**Label-name validation (prototype-pollution guard).** Before interpolation, reject any label name that matches `/^(__proto__|constructor|prototype)$/`. These keys are forbidden by this skill even though they are otherwise valid JSON — allowing them lets a hostile `.ui-audit.json` author set prototype entries on the `browser_evaluate` return object and then trigger prototype-polluted behavior in downstream jq/node coercion. On match: exit 1 with `[ui-audit] Forbidden label name in .ui-audit.json: "${label}"`.
 
 ```js
 (() => {
@@ -157,13 +159,13 @@ Build label map for `path` from `.ui-audit.json[pages][path]`. If no entry, log 
 })()
 ```
 
-Pass compiled payload as `script` to `browser_evaluate`. Return value: plain object keyed by label.
+Pass the compiled payload as the `script` parameter to `browser_evaluate`. Return value is a plain object keyed by label.
 
-If return > ~1 KB, offload via `browser_evaluate`'s `filename` param — don't inline giant strings.
+If the returned object is large (> ~1 KB), offload via `browser_evaluate`'s `filename` parameter and read the file — don't inline giant strings into the orchestrator context.
 
 ### 2.4 Coerce + hash + quality-flag (inline JS)
 
-For each `(label, raw)` pair returned:
+For each `(label, raw)` pair returned by the evaluate call:
 
 ```bash
 LABEL_TYPE=$(jq -r ".pages[\"$PATH\"][\"$LABEL\"].type" .ui-audit.json)
@@ -182,11 +184,11 @@ HASH=$(printf '%s' "${RAW:-}" | (sha256sum 2>/dev/null || shasum -a 256) | cut -
 
 Inline quality flags (Phase 4 subset — full catalog in `references/checks.md`):
 
-- `NULL_VALUE` — `RAW` null or empty.
-- `PLACEHOLDER` — `RAW` matches compiled union of `BUILTIN_PATTERN` (`/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`) + user `.ui-audit.json.placeholder_patterns` (compiled once at config-load with try/catch — malformed → `CONFIG_ERROR` finding, no crash). **ReDoS guard:** reject patterns (a) >200 chars or (b) with nested quantifiers `(x+)+` / `(x*)*` / `(x+)*` / `(x*)+` (detected via `/\([^)]*[+*][^)]*\)[+*]/`). Rejected → `CONFIG_ERROR` with `detail.issue: "pattern_redos_risk"`. See S8-004.
+- `NULL_VALUE` — `RAW` is null or empty.
+- `PLACEHOLDER` — `RAW` matches the compiled union of `BUILTIN_PATTERN` (`/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`) and any user-supplied `.ui-audit.json.placeholder_patterns` (compiled once at config-load with try/catch — malformed pattern emits `CONFIG_ERROR` finding at start, doesn't crash). **ReDoS guard:** before compile, reject any pattern that (a) exceeds 200 characters or (b) contains nested quantifiers `(x+)+` / `(x*)*` / `(x+)*` / `(x*)+` (detected via regex `/\([^)]*[+*][^)]*\)[+*]/`). Rejected patterns emit `CONFIG_ERROR` with `detail.issue: "pattern_redos_risk"` and are not compiled. See S8-004 for the configurable-patterns contract.
 - `NEGATIVE_COUNT` — `LABEL_TYPE == count && PARSED < 0`.
 
-Each flag emits one JSONL line with `label: "quality_flag"` + `detail: {flag, target_label, severity}` (schema in `references/checks.md`).
+Each flag emits an additional JSONL line with `label: "quality_flag"` and `detail: {flag, target_label, severity}` (schema in `references/checks.md`).
 
 ### 2.5 Append to registry
 
@@ -204,19 +206,19 @@ jq -c -n \
   >> docs/crawls/page-data-registry.jsonl
 ```
 
-After page labels all written, emit one `registry_progress` activity-feed event (aggregate, not per-label).
+After the page's labels are all written, emit one `registry_progress` activity-feed event (aggregate, not per-label).
 
-**Information-flow note.** Raw DOM `.textContent` may include PII (usernames, emails, order amounts) visible to the authenticated role, persisted verbatim in `docs/crawls/page-data-registry.jsonl`, aggregated into `docs/crawls/ui-audit-report.md`, may appear in `raw` of activity-feed events. By design (cross-page invariants need exact values). These files inherit the highest-privilege role's sensitivity class. Do not commit to public repos. `.gitignore`: `docs/crawls/page-data-registry.jsonl` + `docs/crawls/ui-audit-report.md`.
+**Information-flow note.** Raw DOM `.textContent` for each labeled element — which may include PII visible to the authenticated role (usernames, emails, order amounts, etc.) — is persisted verbatim in `docs/crawls/page-data-registry.jsonl`, aggregated into `docs/crawls/ui-audit-report.md`, and may appear in `raw` fields of activity-feed events. This is by design (cross-page invariant comparisons need the exact value), but it means these three files inherit the sensitivity class of the highest-privilege role the skill audits. Do not commit them to public repos. `.gitignore` suggestion: `docs/crawls/page-data-registry.jsonl` and `docs/crawls/ui-audit-report.md`.
 
 ## Phase INTERACTIVE — Every button / link / tab
 
-Runs in `buttons` + `full`. Skipped in `data`, `consistency`, `heuristics`, `events`-only.
+Runs in `buttons` and `full` modes. Skipped in `data`, `consistency`, `heuristics`, and `events`-only modes.
 
-Per page: enumerate → 6 static checks → focus probe → safe-click (gated) → summarize.
+Per-page procedure: enumerate → 6 static checks → focus probe → safe-click (gated) → summarize.
 
 ### I.1 Enumeration (single `browser_evaluate` call)
 
-Every ARIA-role + native HTML interactive element. Zero side effects. De-dup via `Set`.
+Returns every ARIA-role + native HTML interactive element on the page. Zero side effects. De-dup via `Set` so an element matching both ARIA role and native tag appears once.
 
 ```js
 (() => {
@@ -246,7 +248,7 @@ Every ARIA-role + native HTML interactive element. Zero side effects. De-dup via
 
 ### I.2 Per-page summary line
 
-Once per page (after I.1 + I.3 + I.4), append aggregate JSONL:
+Once per page (after I.1 + I.3 + I.4), append one aggregate JSONL:
 
 ```jsonl
 {"ts":"<ISO>","role":"<role>","page":"<path>","label":"interactive_audit_summary","raw":null,"parsed":null,"hash":"<sha8>","selector":null,"tick":<n>,"detail":{"total":<n>,"labeled":<n>,"dead_href":<n>,"no_handler":<n>,"tabindex_broken":<n>,"no_focus_state":<n>,"safe_clicked":<n>,"click_errors":<n>}}
@@ -254,7 +256,7 @@ Once per page (after I.1 + I.3 + I.4), append aggregate JSONL:
 
 ### I.3 Per-element checks (6 static + 1 probe)
 
-Applied to each I.1 element. Findings → `button_finding` JSONL with `detail: {issue, element_label, tag, tabindex, selector_snip, severity}`.
+Applied to each element returned by I.1. Findings emit as `button_finding` JSONL lines with `detail: {issue, element_label, tag, tabindex, selector_snip, severity}`.
 
 | Check | Condition | Severity |
 |---|---|---|
@@ -265,11 +267,11 @@ Applied to each I.1 element. Findings → `button_finding` JSONL with `detail: {
 | `TABINDEX_NEGATIVE_VISIBLE` | `tabindex === '-1'` AND `visible && !ariaHidden` (**R7: re-check after 500ms settle**) | MED |
 | `NO_FOCUS_STATE` | Focus probe (see I.4) returns no visible focus indicator | HIGH (WCAG 2.1 AA) |
 
-**R7 mitigation — TABINDEX_NEGATIVE_VISIBLE settle window.** Frameworks (Vue, React, Svelte) inject `tabindex` dynamically on mount. If initial enumeration finds `tabindex === '-1'` on visible element, wait 500ms (`browser_wait_for(time: 0.5)`) then re-enumerate that element. If still `-1`, emit. Otherwise suppress — framework injected real value during mount.
+**R7 mitigation — TABINDEX_NEGATIVE_VISIBLE settle window.** Frameworks (Vue, React, Svelte) inject `tabindex` dynamically on mount. If the initial enumeration finds `tabindex === '-1'` on a visible element, wait 500ms (`browser_wait_for(time: 0.5)`) then re-run enumeration for that element only. If still `-1`, emit the finding. Otherwise, suppress — the framework injected the real value during mount.
 
 ### I.4 Focus probe (NO_FOCUS_STATE)
 
-Per-element `browser_evaluate`. Cap **10 focus probes per page** (emit `focus_probe_capped` INFO with total if exceeded).
+Per-element `browser_evaluate`. Cost is bounded — cap at **10 focus probes per page** (emit `focus_probe_capped` INFO finding with total count if exceeded).
 
 ```js
 (selector) => {
@@ -285,13 +287,13 @@ Per-element `browser_evaluate`. Cap **10 focus probes per page** (emit `focus_pr
 }
 ```
 
-If `hasRing === false` → `NO_FOCUS_STATE`. If `ok === false` (element gone between enumeration + probe — shadow-DOM timing, route transition) → `focus_probe_element_gone` INFO.
+If `hasRing === false`, emit `NO_FOCUS_STATE`. If `ok === false`, the element disappeared between enumeration and probe (shadow-DOM timing, route transition) — emit `focus_probe_element_gone` INFO.
 
 ### I.5 Safe-click pass
 
-After enumeration + static checks + focus probe, click elements passing both destructive classifier AND type heuristic. Post-click captures any console error or 4xx/5xx network response → `CLICK_ERROR`. Also captures `window.location.href` before/after — consumed by Phase 5 § 5.3 (Vercel Cat 9).
+After enumeration + static checks + focus probe, the skill may click elements that pass both the destructive classifier AND a type heuristic. Post-click, it captures any console error or 4xx/5xx network response attributed to that click as a `CLICK_ERROR` finding. It also captures `window.location.href` before and after the click — consumed by Phase 5 § 5.3 (Vercel Cat 9 URL-reflects-state heuristic).
 
-**Destructive-label classifier.** Keep in sync with `SKILL.md` Safety Rule 1.
+**Destructive-label classifier.** Keep in sync with `SKILL.md` Safety Rule 1 — same verb list.
 
 ```js
 const DESTRUCTIVE_LABELS = /delete|remove|logout|sign.?out|cancel|submit|pay|confirm|save|update|apply|publish|send|subscribe|unsubscribe|create|add|archive|disable|revoke|destroy|drop|purge|reset|terminate/i;
@@ -299,7 +301,7 @@ const DESTRUCTIVE_HREF   = /\/logout|\/delete|\/remove|\/signout|\/destroy/i;
 const isSafe = !DESTRUCTIVE_LABELS.test(label ?? '') && !DESTRUCTIVE_HREF.test(hrefOrOnclick ?? '');
 ```
 
-**Type heuristic.** Only these types are clicked even when `isSafe`:
+**Type heuristic.** Only these element types are clicked even when `isSafe` is true:
 
 | Allowed type | Detection rule |
 |---|---|
@@ -309,7 +311,7 @@ const isSafe = !DESTRUCTIVE_LABELS.test(label ?? '') && !DESTRUCTIVE_HREF.test(h
 | Accordion toggle | `[aria-expanded]` attribute present |
 | Expander / "Show more" | text matches `/^(show more|show less|expand|collapse|more|less|view all|see more)$/i` |
 
-Extensible via `.ui-audit.json[interactive_click_allowlist]: [<css-selector>, ...]` (doc-only; default empty). Both destructive classifier AND allow-list must pass.
+Extensible via `.ui-audit.json[interactive_click_allowlist]: [<css-selector>, ...]` (doc-only; default empty). Operators can widen the allow-list for project-specific widgets, but both the destructive classifier AND the allow-list must pass.
 
 **Execution per safe click.**
 
@@ -330,9 +332,9 @@ if (ERRORS.length > 0 || NET_FAIL.length > 0) {
 emit click_record with {label, element_type, url_before: URL_BEFORE, url_after: URL_AFTER, ts: START_TS}
 ```
 
-**Click cap.** Max 10 safe clicks per page. On hit: `safe_click_capped` INFO with `{capped_at: 10, remaining: <count>}`.
+**Click cap.** Max 10 safe clicks per page. On hit: emit `safe_click_capped` INFO with `{capped_at: 10, remaining: <count>}`.
 
-**Safety invariant.** Element reaches click path only if `isSafe === true` AND matches type heuristic AND not in modal/dialog AND not inside `[aria-disabled=true]`. Single-gate bypass = CRITICAL bug.
+**Safety invariant.** An element reaches the click path only if it passes `isSafe === true` AND matches the type heuristic AND is not in a modal/dialog AND is not inside `[aria-disabled=true]`. A single-gate bypass is a CRITICAL bug.
 
 
 
@@ -342,11 +344,11 @@ emit click_record with {label, element_type, url_before: URL_BEFORE, url_after: 
 
 ## Phase EVENTS — Analytics consistency
 
-Runs in `events` + `full`. Injects 3 interception layers immediately after `browser_navigate` returns, BEFORE user interaction.
+Runs in `events` and `full` modes. Injects 3 interception layers immediately after `browser_navigate` returns, BEFORE any user interaction.
 
 ### E.1 Three-layer interception
 
-All three wrappers call original transport last — events reach production analytics unchanged.
+All three wrappers call their original transport last — events reach production analytics unchanged.
 
 **Layer A — `window.dataLayer` push proxy** (GA4 / GTM):
 
@@ -387,28 +389,28 @@ navigator.sendBeacon = function(url, data) {
 };
 ```
 
-**Layer C — Network-level (post-hoc)**. After each action, read `browser_network_requests({static:false, requestBody:true, requestHeaders:false})`, filter POST bodies by hostname. Default list:
+**Layer C — Network-level (post-hoc)**. After each action, read `browser_network_requests({static:false, requestBody:true, requestHeaders:false})` and filter POST bodies by hostname. Default filter list:
 
 - `api.segment.io` — Segment
 - `app.posthog.com`, `*.i.posthog.com` — PostHog
 - `api2.amplitude.com`, `*.amplitude.com` — Amplitude
 - `www.google-analytics.com/g/collect`, `/g/collect` — GA4
 
-Extensible via `.ui-audit.json[analytics_hostnames]: [...]` (substrings).
+Extensible via `.ui-audit.json[analytics_hostnames]: [...]` (array of strings; matched as substrings).
 
 ### E.2 Activation timing — R8 mitigation
 
-Layers A + B injected via `browser_evaluate` immediately after `browser_navigate` returns — before safe-click, before text-settle. If `window.dataLayer.length > 0` at inject (events fired during initial parse), emit:
+Layers A + B are injected via `browser_evaluate` immediately after `browser_navigate` returns — before the safe-click pass, before any text-settle. If `window.dataLayer.length > 0` at inject time (events fired during initial parse), emit a finding:
 
 ```jsonl
 {"label":"analytics_event_warning","detail":{"flag":"EVENTS_BEFORE_SPY","count":<n>,"severity":"LOW"}}
 ```
 
-Count = `window.dataLayer.length` at inject. Earlier entries captured but lack spy timestamps.
+The count is `window.dataLayer.length` at inject time — those earlier entries are captured but lack the spy's timestamps.
 
 ### E.3 Registry schema — `analytics_event` lines
 
-Each event → one JSONL line in `docs/crawls/page-data-registry.jsonl`. Keyed by `(page, action_trigger)`.
+Each captured event becomes one JSONL line in `docs/crawls/page-data-registry.jsonl`. Keyed by `(page, action_trigger)` — the trigger encodes what caused the fire.
 
 ```jsonl
 {"ts":"<ISO>","role":"<role>","page":"<path>","label":"analytics_event","raw":"<JSON.stringify payload>","parsed":null,"hash":"<sha8 of sorted-key props>","selector":null,"tick":<n>,"detail":{"event_name":"<name>","layer":"dataLayer|beacon|network","action_trigger":"<trigger>","props":<object>}}
@@ -418,20 +420,20 @@ Each event → one JSONL line in `docs/crawls/page-data-registry.jsonl`. Keyed b
 
 | Value | When to use |
 |---|---|
-| `page_load` | Drain before any safe-click (initial render) |
-| `click:<label>` | Within 1s of safe-click on element with `<label>` |
+| `page_load` | Events captured in the drain before any safe-click (initial render) |
+| `click:<label>` | Events captured within 1s of a safe-click on an element with `<label>` |
 | `tab:<label>` | Tab-switch drain |
-| `scroll` | Reserved (future scroll-triggered events) |
-| `timer:<ms>` | Reserved (future delayed events) |
-| `manual` | Fallback when no action attributable |
+| `scroll` | Reserved for future scroll-triggered-event support |
+| `timer:<ms>` | Reserved for future delayed-event support |
+| `manual` | Fallback when no action can be attributed |
 
 ### E.4 Drain cadence
 
-Twice per page:
-1. **Initial drain** — after `browser_navigate` + 1s settle, drain with `action_trigger: "page_load"`. Captures page-view + auto-fired init events.
-2. **Per-click drain** — after each safe-click (§ I.5), wait 1s, drain with `action_trigger: "click:<label>"`.
+Drain twice per page:
+1. **Initial drain** — after `browser_navigate` + 1s settle, drain with `action_trigger: "page_load"`. Captures page-view + any auto-fired init events.
+2. **Per-click drain** — after each safe-click (Phase INTERACTIVE § I.5), wait 1s, drain with `action_trigger: "click:<label>"`. Captures click-attributed events.
 
-Non-destructive — events already reached original transports:
+Drain is non-destructive to the page — events have already reached their original transports:
 
 ```js
 (() => {
@@ -443,18 +445,18 @@ Non-destructive — events already reached original transports:
 
 ### E.5 Props hash (drift detection)
 
-Hash with **key-sorted JSON** so prop order doesn't cause false drift:
+Hash the props object with **key-sorted JSON** so prop order doesn't cause false drift:
 
 ```bash
 # Given a props JSON object, compute the 8-char hash.
 HASH=$(printf '%s' "$PROPS_JSON" | jq --sort-keys -c . | (sha256sum 2>/dev/null || shasum -a 256) | cut -c1-8)
 ```
 
-Write `hash` on JSONL line. Phase 3 drift (§ E.6, S7-007) groups by `event_name`, flags differing hashes across pages.
+Write `hash` on the JSONL line. Phase 3 drift detection (see § E.6 — S7-007) groups events by `event_name` and flags differing hashes across pages.
 
 ### E.6 Cross-page event drift (undeclared)
 
-Same `event_name` on multiple pages with differing `hash` (key-sorted props) → `event_drift`, MED.
+Same `event_name` firing on multiple pages with differing `hash` values (key-sorted props) → auto-flag as `event_drift`, severity MED.
 
 ```bash
 jq -s '
@@ -471,7 +473,7 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl
 ```
 
-Each result → one `event_drift` finding:
+Each result row → one `event_drift` finding:
 
 ```jsonl
 {"ts":"<ISO>","role":"<role>","page":"<comma-joined-pages>","label":"event_drift","raw":null,"parsed":null,"hash":"<sha8 of event_name>","selector":null,"tick":<n>,"detail":{"event_name":"<name>","severity":"MED","observations":[{"page","hash","props"},...]}}
@@ -479,7 +481,7 @@ Each result → one `event_drift` finding:
 
 ### E.7 `event_invariants` evaluator (declared)
 
-Reads `.ui-audit.json[event_invariants][]`:
+Reads `.ui-audit.json[event_invariants][]`. Schema:
 
 ```json
 {
@@ -493,14 +495,14 @@ Reads `.ui-audit.json[event_invariants][]`:
 
 **Scope resolution:**
 - `all_pages` → every page visited this run
-- `pages_with_cta` → pages with ≥1 safe-click OR ≥1 label declared
+- `pages_with_cta` → pages where ≥1 safe-click was performed OR ≥1 label was declared
 - explicit array → literal path list
 
-**Evaluation.** For each invariant × in-scope page × `analytics_event` with matching `event_name`:
-- **Required-props:** `props` has every key in `required_props`. Missing → violation.
-- **Forbidden-props:** `props` has NO key in `forbidden_props`. Any match → violation.
+**Evaluation.** For each invariant, for each in-scope page, for each `analytics_event` with matching `event_name`:
+- **Required-props check:** `props` object has every key in `required_props`. Missing → violation.
+- **Forbidden-props check:** `props` object has NO key in `forbidden_props`. Any match → violation.
 
-Severity HIGH default. **PII auto-escalation to CRITICAL:** any violation with forbidden-prop from `{user_email, email, password, ssn, social_security, credit_card, card_number, cvv, token, session_id, auth_token, api_key, phone, phone_number, address, street, dob, date_of_birth, ip_address, ip, passport}` (case-insensitive substring match on prop key) → CRITICAL regardless of declared severity. Conservative list — false-positive CRITICALs easier to down-grade via `.ui-audit.json[pii_suppressions]` than false-negatives.
+Severity HIGH by default. **PII auto-escalation to CRITICAL:** any violation involving a forbidden-prop from the set `{user_email, email, password, ssn, social_security, credit_card, card_number, cvv, token, session_id, auth_token, api_key, phone, phone_number, address, street, dob, date_of_birth, ip_address, ip, passport}` (case-insensitive; matches any prop key containing these substrings) is CRITICAL regardless of declared severity. This catches real PII leaks in analytics payloads. List is conservative — false-positive CRITICALs are easier to down-grade via `.ui-audit.json[pii_suppressions]` than false-negative missed leaks.
 
 Each violation → `event_invariant_fail` finding + activity-feed event.
 
@@ -512,17 +514,17 @@ Each violation → `event_invariant_fail` finding + activity-feed event.
 
 ## Phase ROLE — Per-permissions-role cycle
 
-Runs in `full`, `smoke`, `role <name>`. Also drives `(role, page)` cursor in `--loop`.
+Runs in `full`, `smoke`, and `role <name>` modes. Also drives the `(role, page)` cursor in `--loop` mode.
 
 ### R.1 Role enumeration + env contract
 
-Five roles, in order:
+Five recognized roles, executed in this order:
 
 ```
 anonymous → viewer → member → admin → superadmin
 ```
 
-Env vars:
+Env var contract:
 
 ```
 AUDIT_ANONYMOUS=true                  # default true when unset; anonymous needs no creds
@@ -532,13 +534,13 @@ AUDIT_ADMIN_EMAIL      / AUDIT_ADMIN_PASS
 AUDIT_SUPERADMIN_EMAIL / AUDIT_SUPERADMIN_PASS
 ```
 
-**Skip-if-absent.** For any non-anonymous role whose `EMAIL` env is unset/empty, emit `ROLE_SKIP` and continue:
+**Skip-if-absent.** For any non-anonymous role whose `EMAIL` env var is unset (or empty string), emit a `ROLE_SKIP` event and continue:
 
 ```jsonl
 {"ts":"<ISO>","session":"<SESSION_ID>","skill":"ui-audit","event":"ROLE_SKIP","message":"Role <name> skipped — env vars absent","detail":{"role":"<name>","missing":["AUDIT_<ROLE>_EMAIL","AUDIT_<ROLE>_PASS"]}}
 ```
 
-**No credential logging.** Only `{role, missing: [var names]}` logged. `EMAIL`/`PASS` values never written. Violations = CRITICAL security regression per SKILL.md Safety Rule 6.
+**No credential logging.** Only `{role, missing: [var names]}` is logged. `EMAIL` and `PASS` values are never written to any file. This is enforced by convention — violators are CRITICAL security regressions per SKILL.md Safety Rule 6.
 
 ### R.2 Mode-specific role selection
 
@@ -548,11 +550,11 @@ AUDIT_SUPERADMIN_EMAIL / AUDIT_SUPERADMIN_PASS
 | `smoke` | `anonymous` + `admin` (minus skipped) |
 | `role <name>` | Just `<name>` (must not be skipped) |
 
-ETA gate (R10) applies only to `full` (multi-role × all-pages × 2min/tick). Smoke + single-role bounded <1hr by construction; not gated.
+ETA gate (R10) applies only to `full` (multi-role × all-pages × 2min/tick). Smoke and single-role are not gated — they are bounded under 1 hour by construction.
 
 ### R.3 Scripted login (default path)
 
-Default transition: logout → navigate login → fill creds from env → submit → wait for success landmark. Reliable across all cookie types (HttpOnly, SameSite, Secure). ~5s per transition.
+Default transition between roles: log out → navigate to login → fill credentials from env → submit → wait for success landmark. Reliable across all cookie types (HttpOnly, SameSite, Secure). ~5s per transition.
 
 ```
 browser_navigate(baseUrl + "/login")
@@ -563,7 +565,7 @@ browser_evaluate:
 browser_wait_for(text: SELECTORS.success_landmark, time: SELECTORS.sentinel_timeout || 10)
 ```
 
-Override selectors via `.ui-audit.json[login_flow]`:
+Selectors are overridable via `.ui-audit.json[login_flow]`:
 
 ```json
 "login_flow": {
@@ -580,7 +582,7 @@ Override selectors via `.ui-audit.json[login_flow]`:
 
 ### R.4 storageState harvest + restore (opt-in fast path)
 
-Opt-in via `--fast-role-switch`. Harvest after login:
+Opt in via `--fast-role-switch` flag. Harvest after successful login:
 
 ```js
 (() => ({
@@ -591,9 +593,9 @@ Opt-in via `--fast-role-switch`. Harvest after login:
 }))()
 ```
 
-Write to `.auth/<role>.json` (add `/.auth/` to `.gitignore`).
+Write the result to `.auth/<role>.json` (add `/.auth/` to `.gitignore`).
 
-Restore:
+Restore path:
 
 ```
 browser_navigate(baseUrl)   # must be same-origin for cookie injection
@@ -601,11 +603,11 @@ browser_evaluate: replay localStorage + sessionStorage via setItem loop;
                   for each cookie pair: document.cookie = "k=v; path=/"
 ```
 
-**Limitation:** `document.cookie = ...` only sets non-HttpOnly cookies. Most real auth uses HttpOnly session cookies → cannot inject. If post-restore sentinel (R.5) fails, fall back to scripted login automatically.
+**Limitation:** `document.cookie = ...` only sets non-HttpOnly cookies. Session cookies from most real auth systems are HttpOnly and cannot be injected this way. If the post-restore sentinel (R.5) fails, fall back to scripted login automatically.
 
 ### R.5 R9 sentinel check (MANDATORY)
 
-After every role transition (scripted-login OR storageState-restore), sentinel-check logged-in role:
+After every role transition (both scripted-login and storageState-restore paths), sentinel-check that the skill is actually logged in as the expected role:
 
 ```
 browser_navigate(baseUrl + SELECTORS.profile_path)
@@ -614,17 +616,17 @@ EMAIL = browser_evaluate:
 assert EMAIL === process.env.AUDIT_<ROLE>_EMAIL
 ```
 
-**On mismatch (EMAIL !== expected) or null:**
-- Emit `ROLE_SWITCH_FAILED` CRITICAL
+**On mismatch** (EMAIL !== expected) **or null**:
+- Emit finding `ROLE_SWITCH_FAILED` with severity CRITICAL
 - Record `{expected_role: <name>, observed_email: <masked-or-null>}`
-- **Abort role's audit** — skip Phase 2 for this role
-- Continue to next role
+- **Abort the role's audit** — do not proceed to Phase 2 extraction for this role
+- Continue to the next role
 
-Anonymous skips R.5.
+Anonymous role skips R.5 entirely.
 
 ### R.6 Inter-role storage cleanup
 
-Before next role's login, clear persistent state (R9):
+Before the next role's login, clear all persistent state to prevent session contamination (R9):
 
 ```js
 (() => {
@@ -638,11 +640,11 @@ Before next role's login, clear persistent state (R9):
 })()
 ```
 
-Note: clears same-origin non-HttpOnly cookies only. HttpOnly session cookies cleared by target app's logout (if present). Without logout endpoint, R.3 scripted re-auth overwrites session cookie on success.
+Note: this clears same-origin non-HttpOnly cookies only. HttpOnly session cookies are cleared by the target app's logout flow (if the auth flow uses one). If the target app doesn't have a logout endpoint, the scripted-login re-auth in R.3 overwrites the session cookie on success.
 
 ### R.7 `role_invariants` evaluator
 
-Reads `.ui-audit.json[role_invariants][]`:
+Reads `.ui-audit.json[role_invariants][]`. Schema:
 
 ```json
 {
@@ -661,11 +663,11 @@ Reads `.ui-audit.json[role_invariants][]`:
 
 | `check` | Meaning | Severity on fail |
 |---|---|---|
-| `equal` | All sources' `parsed` identical within tolerance (own-data — "my email matches regardless of viewer") | HIGH |
-| `viewer_null` | First source (admin) non-null AND every non-first null (privilege boundary — "viewer must not see admin-only data") | CRITICAL on breach |
-| `gte` | First source `parsed` ≥ every other within tolerance (partial-visibility — "admin sees ≥ viewer") | HIGH |
+| `equal` | All sources' `parsed` values identical within tolerance (own-data invariant — "my email matches regardless of who's viewing") | HIGH |
+| `viewer_null` | First source (admin-tier) non-null AND every non-first source null (privilege boundary — "viewer must not see admin-only data") | CRITICAL on boundary breach |
+| `gte` | First source `parsed` ≥ every other within tolerance (partial-visibility — "admin sees ≥ everything viewer sees") | HIGH |
 
-**Evaluator jq script.** Mirrors Phase 3 invariant evaluator (§ 3I.1). `$src` variable-binding is load-bearing — don't re-introduce sprint-6 filter-arg bug.
+**Evaluator jq script.** Mirrors the Phase 3 invariant evaluator shape (sprint-6 § 3I.1). The `$src` variable-binding idiom is load-bearing — don't re-introduce the filter-arg bug from sprint-6's first draft.
 
 ```bash
 jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.json" -n '
@@ -700,17 +702,17 @@ jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.js
 ```
 
 **`viewer_null` sub-cases:**
-- Admin PRESENT AND every viewer `null`/absent → **PASS** (healthy boundary).
-- Admin PRESENT AND any viewer PRESENT → **FAIL CRITICAL** (privilege breach).
-- Admin `null` → distinct finding `ADMIN_OBS_MISSING` (don't conflate — admin obs itself is wrong).
+- Admin value PRESENT AND every viewer value `null`/absent → **PASS** (healthy privilege boundary).
+- Admin value PRESENT AND any viewer value PRESENT → **FAIL CRITICAL** (privilege breach — viewer sees what admin sees).
+- Admin value `null` → **distinct finding `ADMIN_OBS_MISSING`** (not a viewer_null fail; don't conflate — the admin observation itself is what's wrong).
 
-**Emit:** `role_invariant_fail` (HIGH/CRITICAL) / `role_invariant_pass` (verbose only). Findings written as `label: "role_invariant_fail"` JSONL.
+**Emit events:** `role_invariant_fail` (HIGH or CRITICAL) / `role_invariant_pass` (verbose only). Findings written as `label: "role_invariant_fail"` JSONL lines.
 
 ### R.8 Role-leak HTML scan
 
-Admin-only UI hidden from viewport may still leak DOM/script markup into HTML source (SSR/hydration bug revealing feature flags). Cheap coarse backstop.
+Even when admin-only UI is hidden from the viewport, its DOM/script markup may leak into the HTML source — an SSR/hydration bug that reveals feature flags. Coarse but cheap backstop.
 
-**Runs only when current role is non-admin AND not anonymous.** Anonymous skipped — no baseline; `role_invariants` (§ R.7) handles anonymous-vs-authenticated.
+**Runs only when the current role is non-admin AND not anonymous.** Anonymous is skipped because there is no baseline comparison available; `role_invariants` (§ R.7) handles anonymous-vs-authenticated cases directly.
 
 **Default patterns** (built-in, always on):
 
@@ -722,9 +724,9 @@ const BUILTIN_PATTERNS = [
 ];
 ```
 
-**Extensible via** `.ui-audit.json[role_leak_patterns]: [<regex-string>, ...]`. Compiled with `new RegExp(str, 'i')` in try/catch — malformed → `CONFIG_ERROR` finding (no crash).
+**Extensible via** `.ui-audit.json[role_leak_patterns]: [<regex-string>, ...]`. Regexes are compiled with `new RegExp(str, 'i')` inside a try/catch — a malformed pattern emits a `CONFIG_ERROR` finding instead of crashing the skill.
 
-**Per page per non-admin role:**
+**Execution per page per non-admin role:**
 
 ```
 browser_evaluate: document.documentElement.outerHTML
@@ -734,17 +736,17 @@ if (matches.length > 0) {
 }
 ```
 
-`ROLE_LEAK` always CRITICAL — positive match = admin-only markup in non-admin HTML, regardless of visibility.
+`ROLE_LEAK` severity is always CRITICAL — a positive match means admin-only markup reached a non-admin user's HTML payload, regardless of whether it was visible.
 
 ---
 
 ## Phase 3 — CONSISTENCY
 
-Reduces append-only registry to latest-wins state, detects cross-page divergence, feeds invariant evaluator.
+Reduces the append-only registry to latest-wins state, detects cross-page value divergence, and feeds the result to the invariant evaluator (next section).
 
 ### 3.1 Reduce registry
 
-Write reduced snapshot to `${SESSION_TMP_DIR}/reduced.json`:
+Write the reduced snapshot to `${SESSION_TMP_DIR}/reduced.json` for the evaluator to read:
 
 ```bash
 jq -s '
@@ -763,17 +765,17 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/reduced.json"
 ```
 
-`select` excludes finding/meta-event label families — emitted INTO registry but must not feed back as observations. Canonical exclude set (sync with § 4.2 + Shared-templates reducer):
+The `select` excludes all **finding / meta-event** label families — those are emitted INTO the registry but must not feed back as observations on re-run. The canonical exclude set (keep in sync with Phase 4 § 4.2 + § Shared-templates latest-wins reducer):
 - `quality_flag`, `heuristic` — Phase 4/5 findings
 - `cross-page-divergence`, `invariant_fail` — Phase 3 findings
-- `tick_diff` — flapping/stale/null-transition
-- `analytics_event` — Phase EVENTS (separate reducer)
-- `button_finding`, `interactive_audit_summary` — Phase INTERACTIVE
-- `role_invariant_fail` — Phase ROLE
+- `tick_diff` — flapping/stale/null-transition findings
+- `analytics_event` — Phase EVENTS observations (handled by a separate reducer, not this one)
+- `button_finding`, `interactive_audit_summary` — Phase INTERACTIVE findings
+- `role_invariant_fail` — Phase ROLE findings
 
 ### 3.2 Cross-page divergence
 
-Label appearing on multiple pages with different `parsed` = divergence. For each label with >1 distinct parsed value:
+A label appearing on multiple pages with different `parsed` values is a divergence. For each label with >1 distinct parsed value across pages:
 
 ```bash
 jq -s '
@@ -798,21 +800,21 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/divergences.json"
 ```
 
-Each entry = candidate finding. The invariant evaluator (§ Phase 3 INVARIANTS) decides suppress (declared invariant with tolerance covers it) vs emit as `label:cross-page-divergence`.
+Each entry in `divergences.json` is a candidate finding. The invariant evaluator (§ Phase 3 INVARIANTS) decides whether to suppress it (because a declared invariant with tolerance covers it) or emit it as `label:cross-page-divergence`.
 
 ### 3.3 Emit divergence findings
 
-For every unsuppressed divergence, emit:
+For every divergence not suppressed by invariants, emit:
 
 ```jsonl
 {"ts":"<ISO>","role":"__default__","page":"<pages-listed>","label":"cross-page-divergence","raw":null,"parsed":null,"hash":"<sha8 of label+obs-values>","selector":null,"tick":<t>,"detail":{"target_label":"<label>","severity":"HIGH","observations":[{"role","page","parsed","raw"}...]}}
 ```
 
-Writes to `docs/crawls/page-data-registry.jsonl` (same file — findings + observations are lines, reducer's select keeps them separate). Activity-feed `divergence` event in parallel.
+Finding writes to `docs/crawls/page-data-registry.jsonl` (the same registry file — findings are lines, observations are lines; the reducer's select filter keeps them separate). Activity-feed `divergence` event in parallel.
 
 ## Phase 3 — INVARIANTS
 
-Reads `.ui-audit.json[invariants]`. Per invariant: fetch `parsed` at each `{page, key}` source from reduced registry (§ 3.1), apply `check` with `tolerance`. Emit pass/fail events, pre-suppress matching divergences from § 3.2.
+Reads `.ui-audit.json[invariants]`. For each invariant, fetches the `parsed` value at each `{page, key}` source from the reduced registry (§ 3.1 output) and applies the `check` with `tolerance`. Emits pass/fail events and pre-suppresses matching divergences from § 3.2.
 
 ### 3I.1 Evaluate each invariant
 
@@ -856,15 +858,15 @@ jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.js
 ' > "${SESSION_TMP_DIR}/invariant-results.json"
 ```
 
-Reads `.ui-audit.json` + reduced-registry snapshot, produces one result per invariant:
+The script reads both `.ui-audit.json` and the reduced-registry snapshot, produces one result object per invariant with:
 - `id`, `description`, `check`, `tolerance`
-- `values: [{page, key, obs}]` — observations pulled
-- `passed: bool`
-- `missing_obs: int` — sources with no observation (null → separate finding)
+- `values: [{page, key, obs}]` — the observations pulled
+- `passed: bool` — `true` if the check holds
+- `missing_obs: int` — how many sources had no observation (null → finding separate)
 
 ### 3I.2 Emit events
 
-Per invariant result:
+For each invariant result:
 
 ```bash
 # On FAIL:
@@ -882,7 +884,7 @@ jq -cn --arg ts "$TS" --arg sid "$SESSION_ID" \
 # On PASS: log verbose only (event:"invariant_pass") — off by default; emit if BLITZ_OUTPUT_INTENSITY=full or a verbose flag is set.
 ```
 
-FAIL also writes finding line to `docs/crawls/page-data-registry.jsonl`:
+FAIL also writes a finding line to `docs/crawls/page-data-registry.jsonl`:
 
 ```jsonl
 {"ts":"<ISO>","role":"__default__","page":"<combined>","label":"invariant_fail","raw":null,"parsed":null,"hash":"<sha8 of id>","selector":null,"tick":<t>,"detail":{"invariant_id":"INV-NNN","check":"equal|gte|lte","tolerance":<n>,"values":[{"page","key","parsed"}...],"severity":"HIGH"}}
@@ -890,23 +892,25 @@ FAIL also writes finding line to `docs/crawls/page-data-registry.jsonl`:
 
 ### 3I.3 Divergence suppression
 
-For each § 3.2 divergence, check if any invariant's sources subset-covers the divergence's pages AND invariant passed. If so, suppress — expected per declared rule. Log `divergence_suppressed` activity-feed event for audit.
+For each divergence from § 3.2, check whether any invariant's sources subset-covers the divergence's pages AND the invariant passed (with tolerance). If so, suppress the divergence — it's expected per author's declared rule. Log a `divergence_suppressed` activity-feed event for audit trail.
 
-Unmatched divergences fall through to § 3.3.
+Divergences that match NO invariant fall through to § 3.3 (emit as finding).
 
 ### 3I.4 Check values
 
+Semantics:
+
 | `check` | Meaning | Pass condition |
 |---|---|---|
-| `equal` | All sources identical within tolerance | `∀ i,j: |v[i] - v[j]| ≤ tolerance` |
-| `gte` | First ≥ every other within tolerance | `∀ j>0: v[0] + tolerance ≥ v[j]` |
-| `lte` | First ≤ every other within tolerance | `∀ j>0: v[0] - tolerance ≤ v[j]` |
+| `equal` | All source values identical within tolerance | `∀ i,j: |v[i] - v[j]| ≤ tolerance` |
+| `gte` | First source ≥ every other within tolerance | `∀ j>0: v[0] + tolerance ≥ v[j]` |
+| `lte` | First source ≤ every other within tolerance | `∀ j>0: v[0] - tolerance ≤ v[j]` |
 
-Numeric tolerance only. For `text` labels, `tolerance: 0` + `check: "equal"` is the only valid combo.
+Numeric tolerance only. For `text`-typed labels, `tolerance: 0` and `check: "equal"` is the only valid combination.
 
 ## Phase 3 — FLAPPING/STALE
 
-Tick-over-tick hash diff classifies each `(role, page, label)` into 5 states. Requires ≥3 prior observations to detect FLAPPING; fewer degrades gracefully.
+Tick-over-tick hash diff classifies each `(role, page, label)` into one of five states. Requires ≥3 prior observations to detect FLAPPING; fewer degrades gracefully.
 
 ### 3F.1 Build per-key history
 
@@ -930,49 +934,49 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/history.json"
 ```
 
-`hist` = 3 most-recent observations, newest first.
+`hist` is the 3 most-recent observations, newest first.
 
 ### 3F.2 Classify
 
-Per `{key, hist}`:
+For each `{key, hist}` entry:
 
 | State | Rule | Severity | Silent? |
 |---|---|---|---|
 | `STABLE` | `len(hist) >= 2 && hist[0].hash == hist[1].hash` | — | Yes |
-| `CHANGED` | `len(hist) >= 2 && hist[0].hash != hist[1].hash` (not STALE/FLAPPING) | INFO | No (`value_change`) |
-| `STALE` | `len(hist) >= 2 && hist[0].hash == hist.find(prev2).hash && hist[0].hash != hist[1].hash` — reverted to 2 ticks ago | LOW | No |
-| `FLAPPING` | `len(hist) == 3 && hist[0].hash == hist[2].hash && hist[0].hash != hist[1].hash` — oscillates over 3 ticks | MED | No |
+| `CHANGED` | `len(hist) >= 2 && hist[0].hash != hist[1].hash` (not matching STALE or FLAPPING) | INFO | No (log `value_change`) |
+| `STALE` | `len(hist) >= 2 && hist[0].hash == hist.find(prev2).hash && hist[0].hash != hist[1].hash` — value reverted to what it was 2 ticks ago | LOW | No |
+| `FLAPPING` | `len(hist) == 3 && hist[0].hash == hist[2].hash && hist[0].hash != hist[1].hash` — oscillates between two values over 3 ticks | MED | No |
 | `NULL_TRANSITION` | `hist[0].parsed == null && any(hist[1..].parsed != null)` — real → null | HIGH | No |
 
-Only `STABLE` silent. Others emit finding line:
+Only `STABLE` is silent. All others emit a finding line:
 
 ```jsonl
 {"ts":"<ISO>","role":"<r>","page":"<p>","label":"tick_diff","raw":null,"parsed":null,"hash":"<sha8>","selector":null,"tick":<t>,"detail":{"target_label":"<label>","state":"FLAPPING|STALE|CHANGED|NULL_TRANSITION","severity":"HIGH|MED|LOW|INFO","history_hashes":[<3>]}}
 ```
 
-Plus activity-feed event (`flapping`, `stale`, `null_transition`, `value_change`).
+Plus activity-feed event (`flapping`, `stale`, `null_transition`, or `value_change`).
 
 ### 3F.3 Tick-count fallback
 
-When `len(hist) < 3`, FLAPPING undetectable. Expected on first + second tick — no finding, log INFO. STALE also requires `len(hist) >= 3`.
+When `len(hist) < 3`, FLAPPING cannot be detected. That's expected on first + second tick — emit no finding for those pairs; just log INFO. STALE requires `len(hist) >= 3` too.
 
-NULL_TRANSITION detectable at `len(hist) >= 2`.
+NULL_TRANSITION is detectable at `len(hist) >= 2`.
 
 
 
 ## Phase 4 — QUALITY
 
-Runs in `full`, `smoke`, `data`, `role <name>`, `--loop`. Skipped in `consistency`-only + `heuristics`-only.
+Runs in `full`, `smoke`, `data`, `role <name>`, and `--loop` modes. Skipped in `consistency`-only and `heuristics`-only.
 
-Per-flag catalog in `references/checks.md`. This section = coordinator + reporter handoff. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) already written by Phase 2 (sprint-6). Three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
+Per-flag detection catalog in `references/checks.md`. This section documents the coordinator that runs them all and hands results to the reporter. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) are already written by Phase 2 extraction (sprint-6). The three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
 
 ### 4.1 Inline flag collection
 
-Phase 2 already appends `quality_flag` JSONL for NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT. Phase 4 reads back via latest-wins reducer (`label == "quality_flag"`). No re-detection — inline pass owns ground truth.
+Phase 2 extraction already appends `quality_flag` JSONL lines for NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT. Phase 4 reads them back via the registry latest-wins reducer (filtered to `label == "quality_flag"`). No re-detection — the inline pass owns ground truth.
 
 ### 4.2 FORMAT_MISMATCH reducer (numeric + currency format drift)
 
-Detects format change across observations (decimal flip, currency symbol vanish, thousands swap, negative style change). Requires ≥2 observations per key with `type ∈ {number, currency}`.
+Detects when a `(role, page, label)` changes rendered format across observations (decimal separator flip, currency symbol vanish, thousands separator swap, negative style change). Requires ≥2 observations per key with `type ∈ {number, currency}`.
 
 ```bash
 jq -s '
@@ -990,7 +994,7 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/quality-history.json"
 ```
 
-For each history entry, extract format tuple from `raw`:
+For each history entry, extract the format tuple from `raw`:
 
 ```bash
 extract_fmt() {
@@ -1006,17 +1010,17 @@ extract_fmt() {
 }
 ```
 
-For each key, compute MODE tuple of `hist[0..-2]` (all but latest). Compare to `hist[-1]`. Divergence → FORMAT_MISMATCH:
+For each key, compute the MODE tuple of `hist[0..-2]` (all but the latest). Compare to `hist[-1]`'s tuple. Divergence → FORMAT_MISMATCH finding:
 
 ```jsonl
 {"ts":"<ISO>","role":"<r>","page":"<p>","label":"quality_flag","raw":null,"parsed":null,"hash":"<sha8>","selector":null,"tick":<n>,"detail":{"flag":"FORMAT_MISMATCH","target_label":"<label>","severity":"MED","current_fmt":{...},"mode_fmt":{...}}}
 ```
 
-**Known FP:** observations without separators (`"42"`) have null decimal_sep + currency_symbol — skip, insufficient signal. Documented as inherent.
+**Known false-positive case:** observations with no separators (`"42"`) have null decimal_sep and null currency_symbol — skip comparing those, not enough signal. Document as inherent.
 
 ### 4.3 STALE_ZERO reducer
 
-Current `parsed === 0` AND `max(history[0..-2].parsed) > 0` over last 5 observations. Requires ≥3 observations with `type ∈ {number, count, currency}`.
+Current `parsed === 0` AND `max(history[0..-2].parsed) > 0` over the last 5 observations. Requires ≥3 observations for a `(role, page, label)` with `type ∈ {number, count, currency}`.
 
 ```bash
 jq -s '
@@ -1032,11 +1036,11 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/stale-zero.json"
 ```
 
-Each match → STALE_ZERO MED with `{target_label, current_tick, last_non_zero_tick, last_non_zero_value}`.
+Each match → STALE_ZERO finding severity MED with detail `{target_label, current_tick, last_non_zero_tick, last_non_zero_value}`.
 
 ### 4.4 BROKEN_TOTAL evaluator (declared totals only)
 
-Reads `.ui-audit.json.totals[]`. Per total: resolve `parent` + `children` against reduced registry, sum children's `parsed`, compare to parent with `tolerance` (default 0.01).
+Reads `.ui-audit.json.totals[]`. For each declared total: resolve `parent` + `children` against the reduced registry, sum children's `parsed`, compare to parent `parsed` with `tolerance` (default 0.01).
 
 ```bash
 jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.json" -n '
@@ -1065,13 +1069,13 @@ jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.js
 ' > "${SESSION_TMP_DIR}/broken-total-results.json"
 ```
 
-Each failed total → BROKEN_TOTAL HIGH with `{total_id, parent_value: parent.parsed, children_sum, delta, tolerance}`.
+Each failed total → BROKEN_TOTAL finding severity HIGH with detail `{total_id, parent_value: parent.parsed, children_sum, delta, tolerance}`.
 
-**Repeat-per-row note.** `children[].key` may resolve to multiple observations (extraction emitted one registry line per row with `label: "row_total"` at different `selector`s). Lookup collects all matches; sum across all. Per-row label extraction is known-gap — current single-selector-per-label means all rows share one selector (e.g., `.row-total`) and matched elements get summed in one `browser_evaluate` call. If insufficient, carve follow-up story for `"selector": "...", "all": true`.
+**Repeat-per-row note.** `children[].key` may resolve to multiple observations if extraction emitted one registry line per row (e.g., multiple rows with `label: "row_total"` at different `selector`s). The lookup above collects all matches; the sum is across all of them. Per-row label extraction is a known-gap extension point — the current single-selector-per-label contract means all rows must share one selector (e.g., `.row-total`) and all matched elements get summed in a single `browser_evaluate` call. If the extraction single-selector contract is insufficient, carve a follow-up story to support `"selector": "...", "all": true` in the label schema.
 
 ### 4.5 Aggregation + reporter handoff
 
-After § 4.1–4.4, aggregate counts per `(flag, severity)`:
+After § 4.1–4.4 run, aggregate counts per `(flag, severity)`:
 
 ```bash
 jq -s '
@@ -1092,26 +1096,26 @@ Activity-feed event at phase end:
 {"ts":"<ISO>","session":"<sid>","skill":"ui-audit","event":"quality_pass_complete","message":"Phase 4 complete — <N> findings","detail":{"total_findings":<n>,"by_flag":{"NULL_VALUE":<n>,"PLACEHOLDER":<n>,"FORMAT_MISMATCH":<n>,"STALE_ZERO":<n>,"BROKEN_TOTAL":<n>,"NEGATIVE_COUNT":<n>}}}
 ```
 
-Reporter (Phase 6) already accepts `quality_flag` findings by severity — no changes needed.
+Reporter (Phase 6) already accepts `quality_flag`-labeled findings by severity — no reporter changes needed.
 
 ### 4.6 Idempotence
 
-Pure reducer. Re-running on unchanged registry emits identical findings (modulo ts on activity-feed event). No browser calls. Safe in `consistency` mode.
+Phase 4 is a pure reducer over the registry. Re-running on an unchanged registry emits identical findings (modulo ts on the activity-feed event). No browser calls. Safe to re-run during `consistency` mode.
 
 ### 4.7 Parallelization
 
-When `pages.length > 30`, run § 4.2/4.3/4.4 reducers in parallel via backgrounded jq; else sequential. Cost diff modest (jq is fast) — parallelize only for >100k-line registries.
+When `pages.length > 30`, run § 4.2 / 4.3 / 4.4 reducers in parallel via backgrounded jq processes; else sequential. The cost difference is modest (jq is fast) — parallelize only for very large registries (>100k lines).
 
 
 ## Phase 5 — HEURISTICS
 
-Runs in `heuristics` + `full`. Skipped elsewhere.
+Runs in `heuristics` and `full` modes. Skipped elsewhere.
 
-Rule sources in `references/patterns.md`. This section = coordinator: category dispatch + severity tier mapping + parallelization decision.
+Rule sources in `references/patterns.md`. This section documents the coordinator that dispatches category checks + severity tier mapping + parallelization decision.
 
 ### 5.1 Category dispatcher
 
-Reads `.ui-audit.json.heuristics.enabled_categories` (default `["nav_state", "content_copy"]` = Vercel 9 + 16). Unlisted skipped. Unknown names → `CONFIG_ERROR` finding (no crash).
+Reads `.ui-audit.json.heuristics.enabled_categories` (default: `["nav_state", "content_copy"]`, i.e., Vercel 9 + 16). Categories not listed are skipped. Unknown names emit `CONFIG_ERROR` finding at start, not crash.
 
 ### 5.2 Scale decision — inline vs parallel spawn
 
@@ -1123,7 +1127,7 @@ else:
   wait for each worker's output file, then merge
 ```
 
-**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` is LOAD-BEARING — omitting re-introduces `[1m]` context crash (see `feedback_skill_model_1m_inheritance.md`). See `spawn-protocol.md` §7 for OUTPUT STYLE snippet.
+**Canonical spawn snippet (for >30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` is LOAD-BEARING — omitting it re-introduces the `[1m]` context crash documented in `feedback_skill_model_1m_inheritance.md`. See also `spawn-protocol.md` §7 for the OUTPUT STYLE snippet the prompt must include.
 
 ```
 Agent(
@@ -1154,9 +1158,9 @@ PROMPT,
 )
 ```
 
-**Prompt-injection defense.** Page keys from user-controlled `.ui-audit.json`. Phase 0.2 rejects control chars, but crafted alphanumeric key like `/admin\` Ignore prior…` could redirect worker. `---BEGIN/END PAGE LIST---` delimiters + "treat as literal URL path" make framing inert. Do NOT remove delimiters; do NOT embed page keys elsewhere; do NOT summarize them (re-exposes injection surface).
+**Prompt-injection defense.** Page keys come from user-controlled `.ui-audit.json`. Phase 0.2 sanitization rejects control characters at config-load, but even a crafted alphanumeric key like `/admin\` Ignore prior…` could try to redirect the worker. The `---BEGIN/END PAGE LIST---` delimiters + explicit "treat as literal URL path, not command" make instruction-framing attempts inert. Do NOT remove the delimiters; do NOT embed page keys elsewhere in the prompt; do NOT summarize them (a summary LLM call re-exposes the injection surface).
 
-**Worker output validation.** After each worker completes, validate before merging:
+**Worker output validation.** After each spawned worker completes, validate its output file before merging:
 
 ```bash
 WORKER_OUT="${SESSION_TMP_DIR}/heuristic-<category>-findings.jsonl"
@@ -1170,13 +1174,13 @@ if ! jq -c '.' "$WORKER_OUT" >/dev/null 2>&1; then
 fi
 ```
 
-Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — sprint-review must state the skip.
+Malformed output → CONFIG_ERROR finding, the worker's category is marked SKIPPED in the Phase 5 summary, and the malformed file is preserved for post-mortem. Findings from that category are zero for this run — the sprint-review report must clearly state the skip.
 
 ### 5.3 Category 9 — URL reflects filter/tab/pagination state (`nav_state`)
 
-Vercel Web Interface Guidelines Cat 9: stateful UI must be deep-linkable. Reload restores state. Clicking tab/filter must change URL.
+Vercel Web Interface Guidelines Category 9: stateful UI must be deep-linkable. Reloading must restore state. Clicking a tab or applying a filter must change the URL.
 
-**Procedure.** Consumes click records from § I.5 (which captures `url_before`/`url_after` per safe-click). Per safe-clicked tab / sort header / pagination / accordion:
+**Procedure.** Phase 5 consumes click records from Phase INTERACTIVE § I.5 (which must capture `url_before` and `url_after` on every safe-click). For each safe-clicked tab / sort header / pagination / accordion:
 
 ```
 if url_before === url_after:
@@ -1184,7 +1188,7 @@ if url_before === url_after:
   detail: {page, element_label, element_type, url_before, url_after}
 ```
 
-**URL-token sanitization.** Target apps may use querystrings with session tokens, magic-link codes, OAuth state (`?token=abc`, `?code=...`, `?auth_state=...`). Raw URLs MUST NOT land verbatim — sanitize both `url_before` and `url_after` before emission:
+**URL-token sanitization.** Target apps may use querystrings containing session tokens, magic-link codes, or OAuth state (`?token=abc`, `?code=...`, `?auth_state=...`). Raw URLs MUST NOT land in findings verbatim — sanitize both `url_before` and `url_after` before emission:
 
 ```bash
 scrub_url() {
@@ -1196,15 +1200,15 @@ URL_BEFORE_SAFE=$(scrub_url "$URL_BEFORE")
 URL_AFTER_SAFE=$(scrub_url "$URL_AFTER")
 ```
 
-State-change test runs on scrubbed URLs — identical redaction on both sides preserves signal. Flag detail writes scrubbed strings.
+Comparison for the state-change test happens on the scrubbed URLs — identical redaction on both sides preserves the signal. Flag detail writes the scrubbed strings.
 
-**Known FP:** modal/accordion widgets that legitimately don't change URL. Allowlist via `.ui-audit.json.heuristics.url_exempt_element_types: ["modal","accordion"]` (default empty). Matched → `STATE_NOT_IN_URL_EXEMPT` INFO instead of HIGH.
+**Known false-positive case:** modal-open / accordion-expand widgets that legitimately don't change URL. Operators allowlist via `.ui-audit.json.heuristics.url_exempt_element_types: ["modal","accordion"]` (default empty). Elements matching these types get a `STATE_NOT_IN_URL_EXEMPT` INFO finding instead of HIGH.
 
 ### 5.4 Category 16 — Numerals for counts + tabular-nums (`content_copy`)
 
-Vercel Cat 16: numerals (`3 items` not `three items`) + `font-variant-numeric: tabular-nums` on numeric table columns.
+Vercel Category 16: use numerals (`3 items` not `three items`) and `font-variant-numeric: tabular-nums` on numeric table columns.
 
-**Sub-check 16a — NUMERIC_COLUMN_NOT_TABULAR** (MED):
+**Sub-check 16a — NUMERIC_COLUMN_NOT_TABULAR** (severity MED):
 
 ```js
 // browser_evaluate per page
@@ -1235,9 +1239,9 @@ document.querySelectorAll('table').forEach((table, tIdx) => {
 return findings;
 ```
 
-Each finding → `heuristic` JSONL MED with `detail.rule_id: "vercel-cat-16-tabular-nums"`.
+Each finding → `heuristic` JSONL line severity MED with `detail.rule_id: "vercel-cat-16-tabular-nums"`.
 
-**Sub-check 16b — WRITTEN_OUT_COUNT** (LOW):
+**Sub-check 16b — WRITTEN_OUT_COUNT** (severity LOW):
 
 ```js
 // browser_evaluate per page
@@ -1257,20 +1261,20 @@ document.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,th,td').forEach(el => {
 return findings;
 ```
 
-Each match → `heuristic` JSONL LOW with `detail.rule_id: "vercel-cat-16-numerals-for-counts"`. High FP rate by design (catches idioms) — LOW so informational, not gating.
+Each match → `heuristic` JSONL line severity LOW with `detail.rule_id: "vercel-cat-16-numerals-for-counts"`. High false-positive rate by design (catches idioms) — LOW severity so it's informational, not gating.
 
-**Short-circuit.** Pages without `<table>` skip 16a; pages without text skip 16b. Detect via `browser_snapshot` on first-tick-per-page (already used for render-confirm).
+**Short-circuit.** Pages with no `<table>` skip 16a; pages with no text content skip 16b. Detected via `browser_snapshot` on first-tick-per-page (already used elsewhere for render-confirm).
 
 ### 5.5 Severity tier table
 
 | Tier | When | Blocks sprint-review? |
 |---|---|---|
-| CRITICAL | WCAG 2.1 AA blockers (contrast < 4.5:1, touch target < 44×44pt) — reserved for future categories | Yes — fails heuristics pass |
+| CRITICAL | WCAG 2.1 AA failures that block usability (contrast < 4.5:1, touch target < 44×44pt) — reserved for future categories | Yes — fails heuristics pass |
 | HIGH | STATE_NOT_IN_URL (Cat 9), NO_LABEL / NO_FOCUS_STATE (Phase INTERACTIVE) | Yes |
 | MED | NUMERIC_COLUMN_NOT_TABULAR (Cat 16a), DEAD_HREF / TABINDEX_* (Phase INTERACTIVE) | Warn |
 | LOW | WRITTEN_OUT_COUNT (Cat 16b) | Info |
 
-Reporter (Phase 6) groups by tier — coordinator ensures `detail.severity` is set on every `heuristic` line.
+Reporter (Phase 6) already groups by severity tier — the coordinator just ensures `detail.severity` is set on every emitted `heuristic` line.
 
 ### 5.6 Aggregation + activity-feed event
 
@@ -1281,10 +1285,10 @@ Reporter (Phase 6) groups by tier — coordinator ensures `detail.severity` is s
 
 ## Phase 7 — LOOP MATRIX (role × page cadence)
 
-> **Section ordering:** Phase 7 appears before Phase 6 REPORT here because it forward-references Phase 6. Execution order: numeric phases 0 → 1 → 2 → 3 → 4 → 5 → 6; INTERACTIVE / EVENTS / ROLE / 7 LOOP MATRIX are mode-conditional extensions. See § 6.6 for loop reporter cadence.
+> **Note on section ordering:** Phase 7 appears here (before Phase 6 REPORT in document order) because it references Phase 6 concepts forward. Readers executing in mode-order: numeric phases 0 → 1 → 2 → 3 → 4 → 5 → 6 run first; Phase INTERACTIVE / EVENTS / ROLE / 7 LOOP MATRIX are mode-conditional extensions layered on top. See Phase 6 § 6.6 for how loop mode adjusts reporter cadence.
 
 
-Active when `--loop`. One `(role, page)` per tick. State machine:
+Active when mode is `--loop`. One `(role, page)` pair per tick. State-machine per tick:
 
 ```
 LOAD_AUTH[current_role]
@@ -1300,7 +1304,7 @@ LOAD_AUTH[current_role]
 
 ### 7.1 `latest-tick.json` extension — `ui_audit_matrix` block
 
-Top-level `ui_audit_matrix`:
+Top-level `ui_audit_matrix` alongside `page_data_registry`:
 
 ```json
 "ui_audit_matrix": {
@@ -1317,11 +1321,11 @@ Top-level `ui_audit_matrix`:
 }
 ```
 
-Persisted at END of each tick so `/loop`'s fresh context can resume. `matrix_idle: true` → 2-pass cycle complete; subsequent ticks no-op.
+Persisted at the END of each tick so `/loop`'s next fresh context can resume. `matrix_idle: true` signals the 2-pass cycle is complete — subsequent ticks no-op.
 
 ### 7.2 ETA gate (R10)
 
-On `full` entry:
+On `full` mode entry:
 
 ```bash
 ROLES_ACTIVE=$(count roles with env vars present)
@@ -1342,13 +1346,13 @@ if [ "${ETA_SECONDS}" -gt 3600 ]; then
 fi
 ```
 
-`--yes`/`--ci` parsed in SKILL.md Phase 0.1, exported to shell env before main.md runs. Equivalent except for audit trail: `--ci` writes one `ci_run` activity-feed event at start.
+`--yes` / `--ci` are parsed in SKILL.md Phase 0.1 and exported to the shell env before references/main.md procedures run. They are equivalent except for audit trail: `--ci` also writes one `ci_run` activity-feed event at start.
 
 ### 7.3 2-pass termination
 
-- **Pass 1** (`ui_audit_matrix.pass = 1`): seeds registry. Every `(role, page)` once. FLAPPING not evaluable (needs ≥3 obs) — skip.
-- **Pass 2** (`ui_audit_matrix.pass = 2`): re-visits every pair to detect drift. Phase 3 FLAPPING/STALE now has enough history.
-- **After pass 2**: set `matrix_idle: true`. Subsequent ticks exit with `matrix_idle` event. Re-run requires deleting `ui_audit_matrix` from `latest-tick.json`.
+- **Pass 1** (`ui_audit_matrix.pass = 1`): seeds the registry. Every `(role, page)` visited once. FLAPPING is not evaluable (needs ≥3 observations) — skip that classifier.
+- **Pass 2** (`ui_audit_matrix.pass = 2`): re-visits every pair to detect drift. Phase 3 FLAPPING/STALE now has enough history to classify.
+- **After pass 2**: set `matrix_idle: true`. Subsequent ticks read this field first and exit immediately with `matrix_idle` log event. Re-running requires deleting `ui_audit_matrix` from `latest-tick.json` (documented recovery step).
 
 ### 7.4 Cursor advancement
 
@@ -1370,17 +1374,17 @@ else:
       matrix_idle = true
 ```
 
-Each tick writes `latest-tick.json` BEFORE exiting so mid-tick interruption doesn't lose cursor (pairs may re-run; nothing silently skipped).
+Each tick writes `latest-tick.json` BEFORE exiting so interruption mid-tick doesn't lose the cursor (pairs may be re-run but nothing is silently skipped).
 
 ---
 
 ## Phase 6 — REPORT
 
-Aggregates all findings from Phase 3 (divergence + invariant + tick-diff), 4 (quality flags), 5 (heuristics — E-009 territory). Writes markdown + stdout + activity-feed completion.
+Aggregates every finding emitted by Phases 3 (divergence + invariant + tick-diff), 4 (quality flags), and 5 (heuristics — E-009 territory but this reporter accepts its findings today). Writes markdown + stdout + activity-feed completion event.
 
 ### 6.1 Collect findings
 
-Findings + observations share `docs/crawls/page-data-registry.jsonl`; reducer filters by `label` (§ 3.1). For the report, inverse — select finding lines only, grouped by severity.
+Findings are written into the same `docs/crawls/page-data-registry.jsonl` file as observations; the reducer filters them out by `label` (see § 3.1). For the report, we do the inverse — select finding lines only, grouped by severity.
 
 ```bash
 jq -s '
@@ -1395,7 +1399,7 @@ jq -s '
 
 ### 6.2 Compute severity defaults (sprint-6 baseline)
 
-Findings without `detail.severity` mapped per table. Producers may override.
+Reporter maps findings without explicit `detail.severity` using this table. Producers may override.
 
 | Finding source | Label | Default severity |
 |---|---|---|
@@ -1412,7 +1416,7 @@ Findings without `detail.severity` mapped per table. Producers may override.
 
 ### 6.3 Write `docs/crawls/ui-audit-report.md`
 
-Overwrite each run. Idempotent modulo timestamp.
+Overwrite — each run replaces. Idempotent modulo timestamp.
 
 ```markdown
 # ui-audit report
@@ -1466,7 +1470,7 @@ Overwrite each run. Idempotent modulo timestamp.
 
 ### 6.4 Stdout summary
 
-Print to stdout (captured by orchestrator log):
+Print to stdout (captured by the orchestrator log):
 
 ```
 [ui-audit] complete.
@@ -1480,7 +1484,7 @@ Print to stdout (captured by orchestrator log):
     3. ...
 ```
 
-Top-3: sort `invariant_fail` by `(severity-rank desc, first-seen-tick asc)`, take 3. If <3, pad with top cross-page divergences.
+Top-3 selection: sort `invariant_fail` findings by `(severity-rank desc, first-seen-tick asc)`, take 3. If fewer than 3 invariant failures, pad with top cross-page divergences.
 
 ### 6.5 Activity-feed `skill_complete`
 
@@ -1490,17 +1494,17 @@ Top-3: sort `invariant_fail` by `(severity-rank desc, first-seen-tick asc)`, tak
 
 ### 6.6 Mode exceptions
 
-- `consistency`: no `pages_visited` (no extraction). `tick_count = 0`. Same report shape.
-- `data`: no Phase 3/5 output. Report skipped; stdout shows extraction counts only. Activity-feed event still written with null invariant fields.
-- `--loop`: rolling report per tick (same path, overwritten). `skill_complete` per tick with `mode: "loop-tick"`; final `skill_complete` with `mode: "loop-matrix-complete"` when full (role × page) matrix visited twice.
+- `consistency` mode: no `pages_visited` (no extraction). `tick_count = 0` (evaluating existing registry). Report identical shape.
+- `data` mode: no Phase 3/5 output. Report skipped; stdout summary shows extraction counts only. Activity-feed event still written with null invariant fields.
+- `--loop` mode: Phase 6 emits a rolling report each tick (same path, overwritten). `skill_complete` event is emitted once per tick with `mode: "loop-tick"`; a final `skill_complete` with `mode: "loop-matrix-complete"` fires when the full (role × page) matrix has been visited twice (pass 1 seeds registry, pass 2 detects drift).
 
 ### 6.7 Idempotence
 
-Rerunning `consistency` on unchanged registry produces byte-identical content (only `**Generated:**` differs). Deterministic sort:
+Rerunning `consistency` mode on an unchanged registry produces byte-identical report content (only the `**Generated:**` timestamp differs). Reporter must sort findings deterministically:
 1. By severity (CRITICAL > HIGH > MED > LOW > INFO)
-2. By `target_label` alphabetically
-3. By `page` alphabetically
-4. By `tick` ascending
+2. Then by `target_label` alphabetically
+3. Then by `page` alphabetically
+4. Then by `tick` ascending
 
 
 
@@ -1510,7 +1514,7 @@ Rerunning `consistency` on unchanged registry produces byte-identical content (o
 
 ### Label-extraction JS payload (consumed by Phase 2)
 
-Passed verbatim to `browser_evaluate`. Built per-page from `.ui-audit.json[pages][<path>]`, interpolating each label's `selector` + `type`.
+Passed verbatim to `browser_evaluate`. The payload is built per-page by looking up `.ui-audit.json[pages][<path>]` and interpolating each label's `selector` + `type`.
 
 ```js
 (() => {
@@ -1527,11 +1531,11 @@ Passed verbatim to `browser_evaluate`. Built per-page from `.ui-audit.json[pages
 })()
 ```
 
-**Ground-truth rule:** never use `browser_snapshot` text for registry writes. The a11y tree reformats numbers (separator stripping for screen reader) and diverges from DOM `.textContent`. `browser_snapshot` allowed for render-confirm + selector discovery only.
+**Ground-truth rule:** never use `browser_snapshot` text for registry writes. The a11y tree reformats numbers (separator stripping for screen-reader reading) and can diverge from DOM `.textContent`. `browser_snapshot` is allowed for render-confirm and selector discovery only.
 
 ### JSONL append (single-session safe)
 
-`>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/session-protocol.md`).
+`>>` append is race-safe for a single ui-audit session (matches the `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock` needed. Across concurrent sessions the conflict matrix forces BLOCK (see `skills/_shared/session-protocol.md`).
 
 ### Latest-wins reducer
 
@@ -1548,19 +1552,19 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl
 ```
 
-Null-guards on `.ts` + `.label` protect against partial-write rows from a crash (domain-researcher gate). `.label != ...` guards exclude **finding lines** (meta-events written into same file) so they never pollute reduced observation state. Same guards as § 3.1.
+Null-guard on `.ts` and `.label` protects against partial-write rows a crash may leave (domain-researcher gate). The extra `.label != ...` guards exclude **finding lines** (meta-events the phases write into the same file) so they never pollute the reduced observation state. See Phase 3 § 3.1 — the reducer there uses the same guards.
 
 ### Activity-feed event format
 
-See `/_shared/verbose-progress.md`. Every ui-audit event uses the `ui-audit` skill field:
+See `/_shared/verbose-progress.md`. Every event a ui-audit phase emits uses the `ui-audit` skill field:
 
 ```jsonl
 {"ts":"<ISO-8601>","session":"<SESSION_ID>","skill":"ui-audit","event":"<event-type>","message":"<short>","detail":{<phase-specific>}}
 ```
 
-Common event types:
-- `skill_start`, `skill_complete` — lifecycle (Phase 0 / 6)
-- `invariant_fail`, `invariant_pass` — Phase 3
+Common event types this skill writes:
+- `skill_start`, `skill_complete` — lifecycle (Phase 0 / Phase 6)
+- `invariant_fail`, `invariant_pass` — Phase 3 invariants
 - `flapping`, `stale`, `null_transition` — Phase 3 tick-diff
-- `registry_progress` — Phase 2 appended ≥1 line (tick aggregate, not per-line)
+- `registry_progress` — when Phase 2 appends ≥1 line to the registry (tick-level aggregate, not per-line)
 - `decision` — mode fallback, config missing, browse-state overlap WARN, etc.
