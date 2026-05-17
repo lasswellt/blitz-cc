@@ -10,8 +10,8 @@
     {
       "name": "blitz",
       "source": "./",
-      "description": "Production-grade development skills for Vue/Nuxt + Firebase with 38 skills, 10 agents, and 27 hook scripts",
-      "version": "1.13.0"
+      "description": "Holistic-machine plugin for Vue/Nuxt + Firebase. 39 skills, 10 agents, 36 hook scripts across 16 events, 26 shared protocols. Orchestrator main-thread routing, 8-invariant quality ratchet, 7 anti-shortcut hooks, optional Cross-Model Critic.",
+      "version": "1.14.0"
     }
   ]
 }

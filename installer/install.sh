@@ -42,8 +42,8 @@ echo -e "${DIM}   ╚═════╝ ╚══════╝╚═╝   ╚�
 echo ""
 echo -e "${CYAN}   ──────────────────────────────── ⚡ ───${NC}"
 echo ""
-echo -e "${DIM}     Claude Code Plugin Installer · v1.13.0${NC}"
-echo -e "${DIM}       38 skills · 10 agents · 27 hooks${NC}"
+echo -e "${DIM}     Claude Code Plugin Installer · v1.14.0${NC}"
+echo -e "${DIM}       39 skills · 10 agents · 36 hooks${NC}"
 echo ""
 
 # ── Try npx first ──────────────────────────────────────────────

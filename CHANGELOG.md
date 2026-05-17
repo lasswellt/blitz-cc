@@ -2,6 +2,71 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] — 2026-05-17
+
+Worktree lifecycle enforcement, 8 new platform-event hooks wired, 5 platform-feature primitives adopted, and 9 spec-fixing recipes ship in this release. Counts move to **39 skills · 10 agents · 36 hook scripts across 16 events · 26 shared protocols** with an **8-invariant** sprint-review gate and an **8-metric** ratchet. The README is rewritten ground-up from a parallel-agent deep-dive of the codebase.
+
+### Added
+
+- **`/blitz:worktree-prune` skill** (39th) — lists and safely deletes stale `worktree-agent-*`, `worktree-sprint-*-plan`, and `sprint-N/{role}` branches. Default `--dry-run` classifies by age + merge-status + divergence + disk; `--apply --merged-only` deletes ancestors of `origin/HEAD`; `--all-older-than 30d --force` reaps unmerged stale branches (83dd3bf).
+- **Sprint-review Invariant 8 — Branch hygiene** — asserts every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch was deleted by sprint-dev Phase 4.4 (83dd3bf).
+- **Ratchet metric 8 — `stale_worktree_branch_count`** — cumulative count of leaked worktree branches; ↓ direction. Existing projects run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt (83dd3bf).
+- **8 platform-event hooks wired** as logging-first stubs (all exit 0, no behavior change): `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`. Activity-feed proves wiring; each carries a candidate-future-work comment block. Hook scripts: 28 → 36; hook events: 8 → 16 (ee605cd).
+- **`skills/_shared/worktree-lifecycle.md`** — canonical contract for `Agent({isolation: "worktree"})` branch lifecycle. Referenced by sprint-dev, spawn-protocol, state-handoff, checkpoint-protocol (83dd3bf).
+- **`skills/_shared/quality-matrix.md`** — decision table for the 7 quality-related skills (sprint-review × codebase-audit × code-doctor × code-sweep × completeness-gate × integration-check × review). Documents why apparent overlaps are real distinctions (edf1d1b).
+- **`skills/_shared/deterministic-test-recipe.md`** — vitest/jest deterministic-test patterns (fake timers, seeded randomness, MSW). Cited by test-writer + test-gen as a discoverability pointer (aa20279).
+- **`output-styles/terse-technical.md`** — plugin-level OUTPUT STYLE with `force-for-plugin: true`. Pilot; does not yet retire the per-SKILL.md snippets or Invariant 5 (7e5b71a).
+- **HARD_SPEC complexity classifier in `agents/test-writer.md`** — 6-signal detector (timers, stochastic, network, deep async, singletons, mock-heavy). Emits `INVESTIGATE:` on HARD_SPEC. Spec Fix Prompt Template (verification-first oracle, "fix impl not assertions"), per-spec turn cap (10 tool calls, then `ESCALATE: spec-investigation-budget-exhausted`) (d57ac60).
+- **`block_reason` field on `agent_tracker`** — 6-value controlled vocabulary (`hard_spec`, `oracle-underivable`, `test-assertion-suspect`, `scope-expansion-needed`, `circuit-breaker`, `dependency-missing`). Per-Story Scope Constraint with `SCOPE_FILES` injection (advisory `ESCALATE: scope-expansion-needed`, not a hard block) (d57ac60).
+- **Per-call output budget** in `spawn-protocol.md` §2 — per-model safe write ceiling table (sonnet 32KB, opus 48KB, haiku 16KB). New banned pattern #6: single Write > 40 KB (sonnet) / > 64 KB (opus). `compress` skill auto-routes 40–500 KB targets to sectioned-Edit mode (784abe5).
+- **`/blitz:next --loop` HARD_SPEC awareness** — Phase 0.10 detects HARD_SPEC-blocked stories from `STATE.md`; row 1a short-circuits row 1 with `LOOP_ESCALATE` so the loop doesn't blindly resume on stuck specs (d57ac60).
+- **Orchestrator ask-before-code routing** — `agents/orchestrator.md` §6.1: "fix this failing spec" + HARD_SPEC signals routes to read-only investigation before edit (d57ac60).
+- **Karpathy Clarification Gate** in `CLAUDE.md` — autonomy-gated "Think Before Coding" step. Builder agents (backend-dev, frontend-dev) gain Phase 0 Think + minimum-code + surgical-scope rules. Adapted from `multica-ai/andrej-karpathy-skills` (MIT) (4f688f9).
+- **Scope Discipline checklist** in `definition-of-done.md` + reviewer scope-check in `spawn-protocol.md` §6 (4f688f9).
+
+### Changed
+
+- **`disable-model-invocation: true` on `ship`, `release`, `migrate`** — user-only invocation for destructive ops. Removes their descriptions from the always-loaded skill listing (saves listing-budget tokens). Slash invocations still work; the model can no longer auto-fire them (7e5b71a).
+- **`paths:` field on `code-doctor`** — Vue/Firestore/Pinia globs gate conditional auto-load. Plus `ultrathink` keyword in `codebase-audit` body for the 5-pillar synthesis (7e5b71a).
+- **`memory: project` on `critic`, `reviewer`, `architect`** — cross-session lessons coverage now 6/10 agents (7e5b71a, b6201fe).
+- **`sprint-dev` Phase 4.4 deletes per-role branches** post-merge (was: only `git worktree remove`, which leaked branches every sprint). Escape: `BLITZ_SKIP_BRANCH_CLEANUP=1` (83dd3bf).
+- **`sprint-dev` Phase 0.1 resume divergence gate** — detects branches with commits ahead of merge-base before re-spawning. Behavior: `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`) (83dd3bf).
+- **`worktree-create.sh` aborts collision** — when a `worktree-agent-<8hex>` stale branch has commits ahead of `origin/HEAD`. Escape: `BLITZ_ALLOW_WORKTREE_COLLISION=1`. Fixes GH#51596 silent stale-branch reuse (83dd3bf).
+- **`worktree-remove.sh` opportunistic cleanup** — deletes `worktree-*` branches that are ancestors of `origin/HEAD` (best-effort, never blocks) (83dd3bf).
+- **`compress` skill** — Phase 0.2 classifies target by 40 KB threshold; Phase 2.4 single-Write mode (≤40KB), Phase 2.5 sectioned-Edit mode (>40KB) (784abe5).
+- **Plugin manifest description** updated for new counts and capabilities. Homepage + repository URLs corrected to `lasswellt/cc-plugin-suite` (this release).
+
+### Fixed
+
+- **`workflow-guard.sh` reclassified** from "anti-shortcut blocker" to "warner" (per script line 4 comment). Anti-shortcut blocker count in `hooks/scripts/README.md` corrected to 6. `CLAUDE.md` was already correct (b6201fe).
+- **`quality-matrix.md` phase labels** — sprint-review Phase 3.7 was wrongly labeled "critic agent". Actually Phase 3.7 = "Automation Coverage — Declare Boundary"; critic runs inside Phase 3.6 as Invariant 7 (b6201fe).
+- **README stale counts** reconciled across multiple passes — 38→39 skills, 8→16 hook events, 27→36 hook scripts, 19→26 shared protocols (37b761f, e8545bb, 8ac21aa, 424794f).
+- **`README.md` autonomous-loop entry point** — corrected from `/loop /blitz:sprint --loop` to `/loop /blitz:next --loop` (canonical since v1.13.0) (8477f52).
+- **`worktree-remove.sh` defensive append** — aligned `2>/dev/null || true` with `worktree-create.sh` for consistency (b6201fe).
+
+### Documentation
+
+- **`README.md` ground-truth rewrite** — spawned 5 parallel Explore agents to audit `skills/`, `agents/`, `hooks/`, plugin metadata, and quality-gate mechanics independently of the prior README. Tiered reading paths (evaluator / installer / contributor). New sections: carry-forward lifecycle state diagram, ratchet metric table, worktree lifecycle, token-budget routing matrix, autonomous-loop stop signals, BLITZ_* env-var override table (424794f).
+- **`CLAUDE.md` count reconciliation** — agents 8→10 (added explicit roster), shared 19→26, hooks 26→36 across 8→16 events (8ac21aa, edf1d1b, e8545bb, 83dd3bf).
+- **`hooks/scripts/README.md`** — added rows for all 6 anti-shortcut blockers, `agent-frontmatter-validate`, `post-edit-typecheck-block`, and `critic-gemini` (8ac21aa).
+
+### Other
+
+- **`chore(ui-audit)`** — compressed `references/main.md` via sectioned-Edit mode (1570 → 1566 lines, 70756 → 64277 bytes; 50 Edits across 15 sections). Investigation showed 6 of 7 originally-scoped targets were already at minimum size (d6746f8).
+
+### Retracted
+
+- **`fallbackModel` on opus skills** — re-reading platform docs confirms `fallbackModel` is an Agent SDK option (`query({...})`), not a `SKILL.md` or agent frontmatter field. Cannot be adopted in plugin context. Removed from the platform-frontmatter adoption target (b6201fe).
+
+### Migration
+
+Drop-in upgrade from v1.13.0. Two opt-in baselines for existing projects:
+
+1. **Ratchet baseline for stale branches** — run `/blitz:code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix worktree debt. Without this, sprint-review Invariant 6 may flag the new 8th metric on first run.
+2. **Resume divergence behavior** — `BLITZ_RESUME_ON_DIVERGENCE` defaults to `halt`. If you prefer the prior behavior (re-spawn without divergence check), set `BLITZ_ALLOW_WORKTREE_COLLISION=1` and `BLITZ_RESUME_ON_DIVERGENCE=abandon`.
+
+No breaking changes. All existing slash commands work unchanged.
+
 ## [1.13.0] — 2026-05-16
 
 `/blitz:next --loop` is now the canonical autonomous reconciliation engine. `/blitz:sprint --loop` becomes a backwards-compat alias that dispatches to it. Same Observe → Diff → Act → Report semantics, same scheduling tiers, same 8-row decision tree, same stop signals — but the engine now lives in the skill whose scope is "what should I do next?" rather than "run a sprint", reflecting that autonomous reconciliation handles the full project lifecycle (bootstrap, roadmap creation, ship, carry-forward gap closure) and not just the sprint cycle.
