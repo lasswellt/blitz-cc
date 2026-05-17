@@ -1,6 +1,6 @@
 # Hook Scripts
 
-28 scripts wired through `hooks/hooks.json`, covering 8 hook events. Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 7 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`, `workflow-guard.sh`).
+36 scripts wired through `hooks/hooks.json`, covering 16 hook events. Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 7 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`, `workflow-guard.sh`).
 
 ## By event
 
@@ -70,6 +70,54 @@
 | Script | Purpose |
 |---|---|
 | `teammate-idle.sh` | Forwards idle events to the activity feed so orchestrators can detect stalls |
+
+### `SubagentStart` — fires when a subagent (Agent tool) spawns
+
+| Script | Purpose |
+|---|---|
+| `subagent-start.sh` | Logs subagent spawn (agent_id, agent_type) to activity feed. Stub — logging only. |
+
+### `SubagentStop` — fires when a subagent finishes
+
+| Script | Purpose |
+|---|---|
+| `subagent-stop.sh` | Logs subagent completion to activity feed. Stub — logging only; future: enforce Agent Output Contract (spawn-protocol.md §9). |
+
+### `PostToolBatch` — fires after a parallel tool batch resolves, before next model call
+
+| Script | Purpose |
+|---|---|
+| `post-tool-batch.sh` | Logs batch completion. Stub — logging only; future: single batched ratchet check instead of per-edit. |
+
+### `PostToolUseFailure` — fires on tool failure
+
+| Script | Purpose |
+|---|---|
+| `post-tool-failure.sh` | Logs tool name + failure. Stub — logging only; future: auto-recover from common failure modes. |
+
+### `StopFailure` — fires when a turn ends via API error (rate_limit / billing_error / etc.)
+
+| Script | Purpose |
+|---|---|
+| `stop-failure.sh` | Logs failure_type to activity feed. Stub — logging only; future: write advisories to KNOWLEDGE.md. |
+
+### `PermissionRequest` — fires when a permission dialog is about to be shown
+
+| Script | Purpose |
+|---|---|
+| `permission-request.sh` | Logs the tool requesting permission. Stub — logging only; emits NO permissionDecision so the user is still prompted normally. Future: auto-approve safe read-only patterns. |
+
+### `WorktreeCreate` — fires on `--worktree` or `isolation: worktree`
+
+| Script | Purpose |
+|---|---|
+| `worktree-create.sh` | Logs worktree creation. **Stub — emits nothing to stdout** (would override default worktree path) and exits 0 (non-zero would ABORT worktree creation). |
+
+### `WorktreeRemove` — fires after worktree removal
+
+| Script | Purpose |
+|---|---|
+| `worktree-remove.sh` | Logs worktree removal. Stub — logging only. |
 
 ## Standalone (invoked by skills, not wired to a hook event)
 
