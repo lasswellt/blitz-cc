@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (24 files). Required for every skill:
+All skills follow the protocols in `skills/_shared/` (25 files). Required for every skill:
 - **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
 - **verbose-progress.md** — Verbose output format and activity feed logging
 - **terse-output.md** — Output style + canonical exemptions list
@@ -74,6 +74,7 @@ Required for autonomous loops + quality:
 - **shortcut-taxonomy.md** (v1.11+) — 19 anti-shortcut detectors with grep patterns + escape-hatch rules
 - **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
 - **frontend-design-heuristics.md** (v1.11+) — paraphrased aesthetic philosophy, NEVER list, density-vs-whitespace guidance
+- **quality-matrix.md** (v1.15+) — decision matrix for the 7 quality-related skills (sprint-review, codebase-audit, code-doctor, code-sweep, completeness-gate, integration-check, review); cites why apparent overlaps are real distinctions
 
 ## Hooks
 
