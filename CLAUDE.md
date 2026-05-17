@@ -80,6 +80,22 @@ Required for autonomous loops + quality:
 
 36 hook scripts wired through `hooks/hooks.json` across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
 
+## Clarification Gate (Karpathy Principle 1)
+
+Before any non-trivial freeform task, **state assumptions explicitly** and **surface tradeoffs**:
+
+- If multiple interpretations exist, list 2-3 and pick the most likely with one-line rationale — do not silently pick.
+- If a simpler approach exists than what was requested, name it. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask 1 focused question.
+
+**Autonomy override:** `autonomy=high|full` skips the question step. In that mode, still write a one-line ASSUMPTIONS block before the first edit so the user can correct course on read-back.
+
+**Trivial tasks** (typo fix, single-line tweak, rename within one file): skip the gate. Use judgment.
+
+**Precedence:** Skill-level scope rules (e.g., `skills/quick/SKILL.md:47`) remain authoritative — this gate adds the upstream "think first" step. If two rules conflict, the more restrictive wins.
+
+Adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). Original principles by Andrej Karpathy.
+
 ## Quality Gates (v1.11+)
 
 `sprint-review` Phase 3.6 enforces 7 invariants. Sprint cannot reach PASS while any fails:

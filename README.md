@@ -578,6 +578,10 @@ The installer is idempotent — safe to run multiple times. Merges settings with
 5. Add a CHANGELOG entry
 6. Submit a pull request
 
+## Acknowledgments
+
+- Clarification Gate (`CLAUDE.md`) and Scope Discipline (`skills/_shared/definition-of-done.md`) adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). Original principles by Andrej Karpathy.
+
 ## License
 
 MIT

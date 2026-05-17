@@ -404,6 +404,7 @@ Sprint-review (`/blitz:sprint-review`) must flag these as BLOCKERs on any new or
 - [ ] None of the banned patterns used (unbounded files, unbounded diff, write-at-end)
 - [ ] Orchestrator validates output file exists and is non-empty before consuming
 - [ ] Model declared explicitly (not relying on inheritance) if the skill is invokable from `[1m]` parents
+- [ ] No files modified outside assigned story scope without a DEVIATION report per [/_shared/deviation-protocol.md](deviation-protocol.md) Tier 2 or Tier 3
 
 Absence of any item is a BLOCKER, not a suggestion.
 

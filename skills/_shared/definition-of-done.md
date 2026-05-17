@@ -39,6 +39,16 @@ If the answer is no, the work is not done.
 
 ---
 
+## Scope Discipline (Karpathy Principle 2)
+
+- [ ] No abstraction added unless the story explicitly required it
+- [ ] No "future-proofing" not in the story (configurability, plugin hooks, generics)
+- [ ] No error handling for scenarios the story does not mention
+- [ ] No files modified outside the story's surgical scope (every changed line traces to an acceptance_check)
+- [ ] If implementation exceeds ~150% of estimated story size, add a carry-forward note explaining why before marking complete
+
+---
+
 ## Code Quality
 
 - [ ] Type-check passes with zero new errors
