@@ -17,6 +17,7 @@ tools: Read, Grep, Glob, Bash
 maxTurns: 30
 model: sonnet
 color: red
+memory: project
 ---
 
 # Critic — Adversarial Pre-PASS Reviewer

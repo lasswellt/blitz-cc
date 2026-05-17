@@ -6,6 +6,12 @@ model: opus
 effort: low
 compatibility: ">=2.1.71"
 argument-hint: "[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication] -- framework-API correctness audit; --scan reports only (default), --fix applies low-risk auto-fixes, --fix-all is more aggressive; --rules narrows the categories"
+paths:
+  - "**/*.vue"
+  - "**/firestore.rules"
+  - "**/firebase.json"
+  - "**/stores/**/*.{ts,js}"
+  - "**/*.firestore.{ts,js}"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

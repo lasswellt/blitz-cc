@@ -6,6 +6,7 @@ model: opus
 effort: high
 compatibility: ">=2.1.71"
 argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
+disable-model-invocation: true
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

@@ -6,7 +6,7 @@ model: opus
 effort: low
 compatibility: ">=2.1.71"
 argument-hint: "[version] -- full release chain: review → completeness-gate → quality-metrics → release → notify; pass explicit version (e.g. 1.2.0) or omit to auto-bump from CHANGELOG"
-disable-model-invocation: false
+disable-model-invocation: true
 ---
 
 
