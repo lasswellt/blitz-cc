@@ -36,7 +36,7 @@ Blitz turns Claude Code into an opinionated, partly-autonomous development envir
 - **Quality gates that cannot be bypassed** — seven `PreToolUse` blockers stop `--no-verify`, destructive git/SQL, test deletion, `as any` insertion, and disabled tests at the tool boundary; a monotonic ratchet enforces that 8 quality metrics never regress.
 - A **read-only adversarial critic** that runs a 19-detector shortcut taxonomy before any sprint can reach `PASS`, optionally backed by a different model family (Gemini) for blindspot coverage.
 
-It's designed so that `/loop /blitz:sprint --loop` produces shippable code unattended.
+It's designed so that `/loop /blitz:next --loop` produces shippable code unattended.
 
 ---
 
@@ -144,10 +144,12 @@ Every quantified scope claim from research lands in `.cc-sessions/carry-forward.
 ### Autonomous loop
 
 ```bash
-/loop 5m /blitz:sprint --loop
+/loop 5m /blitz:next --loop
 ```
 
-Each tick reads current state, executes exactly one phase, commits, exits. `PreCompact` writes `.cc-sessions/HANDOFF.json`; `SessionStart` detects a fresh handoff (≤24h) and resumes without re-reading every protocol.
+`/blitz:next --loop` is the canonical autonomous reconciliation engine (since v1.13.0) — it handles the full project lifecycle (bootstrap → research → roadmap → sprint cycle → ship → carry-forward gap closure), not just the sprint cycle. Each tick reads current state, executes exactly one phase, commits/pushes, and exits cleanly so `/loop` or `ScheduleWakeup` can re-tick. `PreCompact` writes `.cc-sessions/HANDOFF.json`; `SessionStart` detects a fresh handoff (≤24h) and resumes without re-reading every protocol.
+
+`/loop /blitz:sprint --loop` continues to work as a backwards-compat alias — each tick dispatches to `/blitz:next --loop`.
 
 ---
 
@@ -240,7 +242,7 @@ The wrapper supports three review domains: `--mode pre-pass` (Invariant 7), `--m
 | **implement** | Sprint implementation phase only | `/blitz:implement [--sprint N\|--resume]` |
 | **review** | Sprint review phase only | `/blitz:review [--sprint N]` |
 | **ship** | review → completeness-gate → quality-metrics → release → PushNotification | `/blitz:ship [version]` |
-| **next** | Reads sprint/roadmap/carry-forward state, recommends the next command | `/blitz:next` |
+| **next** | Reads sprint/roadmap/carry-forward state, recommends the next command. With `--loop`: canonical autonomous reconciliation engine (full project lifecycle, supersedes `/blitz:sprint --loop` since v1.13.0). | `/blitz:next [--loop]` |
 
 ### Sprint lifecycle
 
