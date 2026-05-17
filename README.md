@@ -15,7 +15,7 @@
 
 **Production-grade Claude Code plugin for Vue/Nuxt + Firebase**
 
-**38 skills** · **10 agents** · **27 hooks** · **8 hook events** · **20 shared protocols**
+**38 skills** · **10 agents** · **36 hooks** · **16 hook events** · **25 shared protocols**
 
 Top-level orchestrator agent · 7 anti-shortcut hooks · 7-invariant quality ratchet · optional Gemini Cross-Model Critic
 
@@ -345,7 +345,7 @@ Drop typed agent YAML files into `.claude/agents/` to scope MCP server access pe
 
 ---
 
-## Hooks (27 scripts, 8 events)
+## Hooks (36 scripts, 16 events)
 
 | Event | Matcher | Script | Behavior |
 |-------|---------|--------|----------|
@@ -379,6 +379,15 @@ Drop typed agent YAML files into `.claude/agents/` to scope MCP server access pe
 | `PreToolUse` | `Bash` | `reference-compression-validate.sh` | On `git commit`: validates compressed `references/main.md` matches `.original` structure |
 | `PreToolUse` | `Bash` | `markdown-link-validate.sh` | On `git commit`: warn-only scan for broken relative `.md` links |
 | `PreToolUse` | `Bash` | `workflow-guard.sh` | Warns on out-of-order phase execution in phased skills |
+| **New platform-event stubs (v1.15+)** — logging only, exit 0 | | | |
+| `SubagentStart` | — | `subagent-start.sh` | Logs Agent tool spawn (agent_id + agent_type) to activity feed |
+| `SubagentStop` | — | `subagent-stop.sh` | Logs subagent completion. Future: enforce Agent Output Contract (spawn-protocol §9) |
+| `PostToolBatch` | — | `post-tool-batch.sh` | Logs parallel tool batch resolution. Future: single batched ratchet check |
+| `PostToolUseFailure` | — | `post-tool-failure.sh` | Logs failed tool execution. Future: auto-recover from common failure modes |
+| `StopFailure` | — | `stop-failure.sh` | Logs turn-end API errors (rate_limit/billing_error/server_error/max_output_tokens) |
+| `PermissionRequest` | — | `permission-request.sh` | Logs permission-prompt opportunities. Future: auto-approve safe read-only patterns |
+| `WorktreeCreate` | — | `worktree-create.sh` | Logs worktree creation. Synchronous (non-zero ABORTS), prints nothing to stdout |
+| `WorktreeRemove` | — | `worktree-remove.sh` | Logs worktree removal |
 
 > **Plus** `hooks/scripts/critic-gemini.sh` — invoked from sprint-review (not a hook event). See [Cross-Model Critic](#3-cross-model-critic-cmc--optional-gemini-integration) above.
 
