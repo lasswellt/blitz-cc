@@ -5,6 +5,12 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch
 model: opus
 effort: high
 compatibility: ">=2.1.71"
+paths:
+  - "**/*.vue"
+  - "**/*.nuxt.{ts,js}"
+  - "**/components/**/*.{vue,ts,js}"
+  - "**/pages/**/*.{vue,ts,js}"
+  - "**/layouts/**/*.{vue,ts,js}"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

@@ -17,6 +17,7 @@ maxTurns: 15
 # security-architecture review), the spawning skill MAY override to opus.
 model: sonnet
 background: true
+memory: project
 ---
 
 

@@ -24,6 +24,6 @@ WORKTREE_PATH="$(extract worktree_path)"
 [ -z "$SESSION_ID" ] && SESSION_ID="cli-$(date +%Y%m%d%H%M | md5sum 2>/dev/null | cut -c1-8 || echo unknown)"
 
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-echo "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"skill\":\"hook\",\"event\":\"worktree_remove\",\"message\":\"Worktree removed\",\"detail\":{\"worktree_path\":\"$WORKTREE_PATH\"}}" >> "$SESSIONS_DIR/activity-feed.jsonl"
+echo "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"skill\":\"hook\",\"event\":\"worktree_remove\",\"message\":\"Worktree removed\",\"detail\":{\"worktree_path\":\"$WORKTREE_PATH\"}}" >> "$SESSIONS_DIR/activity-feed.jsonl" 2>/dev/null || true
 
 exit 0

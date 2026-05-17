@@ -6,6 +6,11 @@ model: opus
 effort: medium
 compatibility: ">=2.1.71"
 argument-hint: "<mode> -- bundle (size analysis vs baseline, large-dep detection) | runtime (V8 heap + framework hot paths) | lighthouse (Core Web Vitals on built site) | full (all three with cross-correlation)"
+paths:
+  - "**/*.vue"
+  - "**/nuxt.config.{ts,js}"
+  - "**/vite.config.{ts,js}"
+  - "**/package.json"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

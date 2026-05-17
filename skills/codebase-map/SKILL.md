@@ -24,7 +24,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Codebase Mapper
 
-Produce a comprehensive, prescriptive analysis of an existing codebase by spawning 4 parallel dimension agents (Technology, Architecture, Quality, Concerns) and synthesizing their findings into a single `CODEBASE-MAP.md`. Output helps developers understand the project before planning sprints, refactoring, or onboarding new team members. Execute every phase in order. Do NOT skip phases.
+Produce a comprehensive, prescriptive analysis of an existing codebase by spawning 4 parallel dimension agents (Technology, Architecture, Quality, Concerns) and synthesizing their findings into a single `CODEBASE-MAP.md`. Output helps developers understand the project before planning sprints, refactoring, or onboarding new team members. Execute every phase in order. Do NOT skip phases. ultrathink during synthesis — the value of this map is cross-dimensional reasoning (e.g., "high test coverage on the wrong layer," "architecture A but stack B implies tension X") that single-dimension analysis misses.
 
 **This skill is read-only. It does NOT modify any code.**
 

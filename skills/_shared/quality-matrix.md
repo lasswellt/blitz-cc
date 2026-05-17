@@ -41,16 +41,20 @@ Blitz ships **7 quality-related skills**. They look superficially overlapping bu
 
 ```
 /blitz:sprint-review
-├── Phase 0-2: setup + auto-fix safe categories
-├── Phase 3.0: type-check
-├── Phase 3.1: lint
-├── Phase 3.2: tests
-├── Phase 3.3: build
-├── Phase 3.4: parallel reviewer agents (security, backend, frontend, patterns)
-├── Phase 3.5: integration-check  (✓ already-invoked)
-├── Phase 3.6: 7 invariants (carry-forward Reader Algorithm, ratchet, output-style snippet, critic LGTM)
-└── Phase 3.7: critic agent (must emit LGTM)
+├── Phase 0.0: input gate — validate pipeline inputs
+├── Phase 0:   context — load sprint state
+├── Phase 1:   automated checks — type-check + lint + tests + build
+├── Phase 1.5: pattern analysis — anti-mock scan + convention check
+├── Phase 2:   code review — parallel reviewer agents (security, backend, frontend, patterns)
+├── Phase 2.5: browser verification (when Playwright available)
+├── Phase 3:   auto-fix — resolve common failures
+├── Phase 3.6: registry invariants — carry-forward hard gate (7 invariants, including
+│              Invariant 7 = critic agent LGTM via agents/critic.md)
+├── Phase 3.7: automation coverage — declare boundary
+└── Phase 4:   report — write review report and update registry
 ```
+
+The critic agent runs INSIDE Phase 3.6 as Invariant 7, not as a separate Phase 3.7. Phase 3.7 is the "automation coverage / declared boundary" step where the skill states which checks were skipped (e.g. browser unavailable, no test runner detected) so reviewers can spot-check those manually.
 
 Notably, sprint-review does NOT run completeness-gate — that's a separate concern owned by `ship`. The chain is:
 

@@ -16,6 +16,7 @@ maxTurns: 20
 # Sonnet per /_shared/token-budget.md — review needs reasoning, not depth.
 model: sonnet
 background: true
+memory: project
 ---
 
 
