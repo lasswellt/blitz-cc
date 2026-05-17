@@ -1,6 +1,6 @@
 # Hook Scripts
 
-19 scripts wired through `hooks/hooks.json`, covering 8 hook events. Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; only `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, and `skill-frontmatter-validate.sh` can BLOCK an action by exiting 2.
+28 scripts wired through `hooks/hooks.json`, covering 8 hook events. Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 7 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`, `workflow-guard.sh`).
 
 ## By event
 
@@ -26,6 +26,12 @@
 | `reference-compression-validate.sh` | `Bash` | Fires on `git commit`. Validates that any compressed `references/main.md` preserves all structure of its `.original` sibling (code fences, URLs, headings, tables) |
 | `markdown-link-validate.sh` | `Bash` | Fires on `git commit`. Warns on broken relative `.md` links across `skills/` (skips fenced code, inline code, http URLs, anchors). Non-blocking; pre-commit-validate.sh prints warnings only |
 | `workflow-guard.sh` | `Bash` | Detects anti-patterns in shell commands (`rm -rf` outside scratch, `git push --force` to main, etc.) |
+| `block-no-verify.sh` | `Bash` | **P0 anti-shortcut**. Blocks `git commit --no-verify` / `--no-gpg-sign` / `-c commit.gpgsign=false` bypasses |
+| `block-destructive-git.sh` | `Bash` | **P0 anti-shortcut**. Blocks `git reset --hard`, `git checkout .`, `git restore .`, `git clean -f`, `git push --force` to main, force-deletes of unmerged branches |
+| `block-destructive-sql.sh` | `Bash` | **P0 anti-shortcut**. Blocks `DROP TABLE`, `TRUNCATE`, `DELETE FROM` without `WHERE` against production-shaped paths |
+| `block-test-deletion.sh` | `Bash` | **P0 anti-shortcut**. Blocks `rm` / `git rm` of test files (`*.test.*`, `*.spec.*`, `__tests__/`) |
+| `block-test-disabling.sh` | `Write\|Edit` | **P1 anti-shortcut**. Blocks `it.skip` / `test.skip` / `describe.skip` / `xit` / `xdescribe` / `it.todo` mass-conversions |
+| `block-as-any-insertion.sh` | `Write\|Edit` | **P1 anti-shortcut**. Blocks `as any` / `@ts-ignore` / `@ts-expect-error` insertions in TS files |
 
 ### `PostToolUse` — fires after any tool execution; non-blocking
 
@@ -37,6 +43,8 @@
 | `post-edit-test.sh` | `Write\|Edit` | Finds and runs matching test files for the edited source |
 | `analysis-paralysis-guard.sh` | `Write\|Edit` `Read\|Glob\|Grep` | Detects long read-heavy phases without writes; nudges toward action |
 | `skill-frontmatter-validate.sh` | `Write\|Edit` | Lints any modified SKILL.md against the Anthropic-canonical frontmatter contract |
+| `agent-frontmatter-validate.sh` | `Write\|Edit` | Lints any modified `agents/*.md` against the canonical agent frontmatter contract |
+| `post-edit-typecheck-block.sh` | `Write\|Edit` | **P0 quality gate**. Runs project type-checker (tsc/pyright/etc.) against the edited file; exit 2 if new type errors introduced (ratchet invariant 6 absolute floor) |
 | `context-monitor.sh` | `Read\|Glob\|Grep` `Bash` | Tracks per-session context-character count; warns at 80% of estimated cap |
 
 ### `PreCompact` — fires before context compaction
@@ -62,6 +70,12 @@
 | Script | Purpose |
 |---|---|
 | `teammate-idle.sh` | Forwards idle events to the activity feed so orchestrators can detect stalls |
+
+## Standalone (invoked by skills, not wired to a hook event)
+
+| Script | Invoked by | Purpose |
+|---|---|---|
+| `critic-gemini.sh` | `sprint-review`, `research` | Optional cross-model critic. Pipes the artifact through Gemini for a second-opinion review; used to mitigate single-model agreement bias. |
 
 ## Conventions
 
