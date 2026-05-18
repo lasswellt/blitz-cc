@@ -58,6 +58,7 @@ Before any other work, hard-fail if required upstream artifacts are missing. Per
 PIPELINE_MISSING=()
 [ -s "sprint-registry.json" ] || PIPELINE_MISSING+=("sprint-registry.json")
 SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
+[ -z "$SPRINT_NUMBER" ] && { echo "BLOCK: SPRINT_NUMBER is empty — cannot expand sprints/sprint-/ paths." >&2; exit 1; }
 SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
 [ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
 ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
@@ -287,21 +288,7 @@ Each agent follows this loop for each assigned story:
 
 The orchestrator (you) must:
 
-1. **Monitor progress** using the Monitor tool (event-driven) in preference to polling. Start a background progress monitor before the first agent wave:
-   ```bash
-   # Agents append JSON lines to this file on DONE/BLOCKED/HEARTBEAT
-   PROGRESS_FILE=".cc-sessions/${SESSION_ID}/tmp/sprint-progress.jsonl"
-   touch "$PROGRESS_FILE"
-   ```
-   Then use the `Monitor` tool:
-   ```
-   Monitor(
-     description: "Sprint ${N} agent progress",
-     command: "tail -f ${PROGRESS_FILE} | grep --line-buffered '\"status\":\"done\"\\|\"status\":\"blocked\"\\|\"event\":\"wave_complete\"'",
-     persistent: true
-   )
-   ```
-   Each stdout line from the monitor wakes this session as a notification event, eliminating the need for manual polling. Fall back to `TaskList` polling (every 2-3 turns) only if Monitor is unavailable. Track wave-level completion — when all stories in a wave complete, print a wave progress report per [verbose-progress.md](/_shared/verbose-progress.md) and unblock all Wave N+1 stories.
+1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. On wave completion, print progress report and unblock Wave N+1 stories.
 1a. **Write carry-forward registry progress on story `DONE:`.** When an agent signals `DONE:`, before updating STATE.md, follow the writer contract in [/_shared/carry-forward-registry.md](/_shared/carry-forward-registry.md) §Writers (sprint-dev): validate the story's `registry_entries` ids (per [story-frontmatter.md](/_shared/story-frontmatter.md)), compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, and log the activity-feed mirror. Apply the inference-fallback (parent-epic link with `delta: 1`) when the story omits `registry_entries`. No-op for stories whose epic also has no registry link.
 
 1b. **Update STATE.md** — After each story completion (or at wave boundaries), update `${SPRINT_DIR}/STATE.md` per [checkpoint-protocol.md](/_shared/checkpoint-protocol.md). This enables session recovery if interrupted. Include wave progress.
@@ -349,12 +336,7 @@ This phase is **mandatory** and must not be skipped, even if no explicit UI stor
 
 ### 3.5.0 Run Integration Check (Mandatory)
 
-Before the UI/UX pass, run `/blitz:integration-check` to verify cross-module wiring on the just-implemented code:
-- Export-to-import tracing (are new exports consumed?)
-- Route coverage (do new pages have navigation?)
-- Store wiring (are new stores connected to components?)
-
-This step is **mandatory** because integration gaps caught at Phase 3.5.0 cost one fix-round; the same gaps caught at sprint-review Phase 1.6 cost a full review-and-fix-round. If integration-check finds high-severity issues, address them before the UI pass and re-run before proceeding.
+Run `/blitz:integration-check` to verify: export-to-import tracing, route coverage, store wiring. Fix high-severity findings before UI pass — cheaper here than at sprint-review Phase 1.6.
 
 ### 3.5.1 Spawn Integration Agent
 
@@ -420,52 +402,19 @@ Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle
 
 ### 4.5 E2E Verification (Best-Effort)
 
-After build verification passes, run an automated browser smoke test if Playwright MCP is available:
-
-1. **Check availability**: Verify Playwright MCP tools are accessible.
-2. **Start dev server**: `npm run dev &` (or equivalent). Wait for ready signal.
-3. **Smoke test changed routes**: Identify changed page files from the diff. Navigate to the first 10 routes.
-4. **Evaluate results**:
-   - 0 Critical + 0 Error = **PASS**
-   - 1+ Critical = **CONDITIONAL** — include findings in sprint report
-   - 1+ Error only = **PASS with notes**
-5. **Clean up**: Kill the dev server process.
-
-Skip gracefully if Playwright is unavailable — document as a gap, not a failure.
+If Playwright MCP available: start dev server, smoke-test first 10 changed routes. 0 Critical + 0 Error = PASS; 1+ Critical = CONDITIONAL (include in report); 1+ Error = PASS with notes. Skip gracefully if unavailable.
 
 ### 4.6 Shutdown Team
 
-Gracefully shutdown the development team. Send `HALT:` to any remaining agents.
+Send `HALT:` to remaining agents.
 
 ### 4.7 Update Sprint Registry
 
-**Registry Lock — `sprint-registry.json`**: Before writing, acquire a file-based lock per [session-protocol.md](/_shared/session-protocol.md):
-1. CHECK if `sprint-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
-2. ACQUIRE by writing `sprint-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
-3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
-4. OPERATE — read, modify, and write the registry file.
-5. RELEASE — delete `sprint-registry.json.lock` and append `lock_released` to the operation log.
-
-Update `sprint-registry.json`:
-```json
-{
-  "number": <N>,
-  "status": "review",
-  "completed_date": "<ISO-8601>",
-  "stories_completed": <count>,
-  "stories_blocked": <count>,
-  "integration_issues": <count>
-}
-```
+Acquire `sprint-registry.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol (CHECK → ACQUIRE → VERIFY → OPERATE → RELEASE). Update sprint status to `review` with `completed_date`, `stories_completed`, `stories_blocked`, `integration_issues`.
 
 ### 4.8 Update Story Statuses
 
-For each story file, acquire `<story-file>.lock` before modifying the status field, then release after writing. This prevents concurrent sprint-review from reading partially-updated statuses.
-
-For each story file, update frontmatter `status`:
-- `done` — Implemented and passes verification.
-- `incomplete` — Partially implemented or has failing tests.
-- `blocked` — Could not be completed (circuit breaker triggered).
+Update each story frontmatter `status`: `done` (passes verification), `incomplete` (partial / failing tests), `blocked` (circuit breaker triggered). Acquire per-file lock before write.
 
 ### 4.8.5 Blocked Story Accountability
 
@@ -488,7 +437,14 @@ git push origin HEAD
 
 ### 4.10 Final Output and Error Recovery
 
-Print the summary block and apply recovery rules from `references/main.md` sections **"Final Output Template"** and **"Error Recovery"**.
+Print the summary block per `references/main.md` §"Final Output Template".
+
+**Inline recovery rules** (see `references/main.md` §"Error Recovery" for full detail):
+- **Agent timeout/OOM**: escalate story to `blocked`; send `HALT:` to agent; fallback to next story in wave.
+- **Malformed agent output**: retry with narrower scope (one story, reduced file count); abort agent after 3 retry failures.
+- **Lock-acquisition failure** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK: lock conflict` if still held.
+- **STATE.md corrupt on resume**: recover per [checkpoint-protocol.md](/_shared/checkpoint-protocol.md) §STATE.md Parse-Failure Handling (abort vs auto-reset).
+- **Validation failures** (story frontmatter): run `/blitz:conform --fix` then re-validate; escalate if persist after conform.
 
 ### 4.11 Push Completion Notification
 

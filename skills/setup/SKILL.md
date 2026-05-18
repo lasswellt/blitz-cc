@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "Detects conflicts between the user's CLAUDE.md files and blitz skill behaviors. Reads global and project CLAUDE.md scopes, matches rules against a known-conflict catalog, and reports severity-graded findings with remediation suggestions. Validates tool permissions and stack assumptions. Use when the user installs blitz in a new project, after adding CLAUDE.md rules, or when sprint-dev/code-sweep/ui-audit behave unexpectedly. Should run automatically the first time blitz is invoked in a project."
+description: "Detects conflicts between CLAUDE.md rules and blitz skill behaviors. Reads global + project CLAUDE.md, matches against a known-conflict catalog, and reports severity-graded findings with remediation. Validates tool permissions and stack assumptions. Use on new project install, after adding CLAUDE.md rules, or when blitz skills behave unexpectedly."
 allowed-tools: Read, Bash, Glob, Grep
 model: sonnet
 effort: low
@@ -43,7 +43,7 @@ Scan the user's `~/.claude/CLAUDE.md` and project `./CLAUDE.md` for rules that c
 
 ### 0.0 Register Session
 
-Follow the session protocol from [session-protocol.md](/_shared/session-protocol.md) **and** the [verbose-progress.md](/_shared/verbose-progress.md) protocol. Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
+Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Parse Arguments
 

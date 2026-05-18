@@ -212,43 +212,18 @@ Default parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git 
 
 Spawn 3-4 specialized reviewers using the `Agent` tool, all in **a single assistant message** so they run concurrently. Each writes findings to session-scoped temp files.
 
-Per-spawn parameters:
-- `subagent_type: general-purpose` (reviewers must Write; `Explore` cannot)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from Opus orchestrator)
-- `description: sprint-<N> <reviewer-role>`
-- `prompt`: reviewer prompt from references/main.md with diff slice, story ACs, and Phase 1 gate results
-- `run_in_background: true`
-
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Each reviewer prompt MUST include:
-- Diff slice bounded by domain (max 500 lines of diff per reviewer — slice the full diff by changed-file path prefix)
-- Max 15 file reads per reviewer
-- Max 25 tool calls per reviewer
-- Max 300-line output
-- 5-minute wall-clock budget
-- Write-as-you-go: "Append each finding to your output file immediately after identifying it"
+Per-spawn: `subagent_type: general-purpose`, `model: sonnet`, `run_in_background: true`. Prompt from `references/main.md` "Reviewer Prompt Templates" with diff slice (max 500 lines), ACs, Phase 1 gate results. Weight class: Medium — max 15 reads, 25 tool calls, 300-line output, 5-min budget per reviewer.
 
 | Agent Name | Focus | Output File |
 |---|---|---|
-| `security-reviewer` | Auth, input validation, secrets, injection, XSS, CSRF | `${SESSION_TMP_DIR}/sprint-${N}-review-security.md` |
-| `backend-reviewer` | API design, error handling, data validation, performance | `${SESSION_TMP_DIR}/sprint-${N}-review-backend.md` |
-| `frontend-reviewer` | Component design, accessibility, UX, responsive, state mgmt | `${SESSION_TMP_DIR}/sprint-${N}-review-frontend.md` |
-| `pattern-reviewer` | Code consistency, naming, DRY, architecture, test coverage | `${SESSION_TMP_DIR}/sprint-${N}-review-patterns.md` |
+| `security-reviewer` | Auth, injection, XSS, CSRF, secrets | `${SESSION_TMP_DIR}/sprint-${N}-review-security.md` |
+| `backend-reviewer` | API, error handling, validation, performance | `${SESSION_TMP_DIR}/sprint-${N}-review-backend.md` |
+| `frontend-reviewer` | Components, accessibility, UX, state mgmt | `${SESSION_TMP_DIR}/sprint-${N}-review-frontend.md` |
+| `pattern-reviewer` | Consistency, naming, DRY, architecture, test coverage | `${SESSION_TMP_DIR}/sprint-${N}-review-patterns.md` |
 
-### 2.4 Reviewer Instructions
+### 2.5 Cross-Cutting Findings
 
-Each reviewer receives:
-1. The full diff or relevant subset of changed files.
-2. The list of story acceptance criteria for context.
-3. Quality gate results from Phase 1.
-4. Their specific review checklist (see references/main.md).
-
-### 2.5 Cross-Cutting Findings — Synthesized by Orchestrator
-
-Reviewers write findings to their individual output files. The orchestrator synthesizes cross-cutting findings during Phase 3 report assembly by reading all reviewer files and cross-referencing:
-
-- Security findings with `unvalidated input` tags are propagated into the Backend Review section of the final report.
-- Pattern findings about component structure are propagated into the Frontend Review section.
-- Backend findings about error handling gaps are propagated into the Frontend Review section.
+Orchestrator synthesizes cross-cutting findings during Phase 3: security `unvalidated input` → Backend section; pattern component findings → Frontend section; backend error-handling gaps → Frontend section.
 
 ### 2.6 Collect Review Findings
 
@@ -280,15 +255,7 @@ Categorize all findings:
 
 ## Phase 2.5: BROWSER VERIFICATION (Required When Playwright Available)
 
-Mitigates F4 (over-confidence — passes checks but functionally unusable) per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md`. Required when Playwright MCP is available; silent skip when unavailable (gap, not failure).
-
-### 2.5.0 Probe + coverage tagging
-
-Probe Playwright MCP availability. If unavailable → write `phase_2_5_coverage: skipped_unavailable` to gates JSON, proceed. If available and smoke test is skipped → `phase_2_5_coverage: partial` and surface in Phase 4 Recommendations → Before Merge. Probe script + smoke procedure (changed-route detection, console-error severity mapping, placeholder-data detection) in `references/main.md` section **"Phase 2.5 Browser Verification"**.
-
-### 2.5.1 Smoke Test
-
-Navigate changed routes (per references). For each: console errors → Critical/Error; placeholder data visible → Warning; broken layouts → Minor. Write `phase_2_5_coverage: full` on success.
+Probe Playwright MCP availability. If unavailable: write `phase_2_5_coverage: skipped_unavailable` and proceed. If available: navigate changed routes; console errors → Critical/Error; placeholder data → Warning; broken layouts → Minor. Write `phase_2_5_coverage: full` on success. Probe script + smoke procedure in `references/main.md` §"Phase 2.5 Browser Verification".
 
 ---
 
@@ -329,39 +296,15 @@ while issue not resolved AND attempt < max_attempts:
 
 ### 3.3 Fix Ordering
 
-Fix in this order (earlier fixes often resolve later issues):
-1. Missing imports and exports (resolves most type errors downstream).
-2. Type errors (resolves downstream lint and test errors).
-3. Lint errors (auto-fix first, then manual).
-4. Naming inconsistencies.
-5. Unused imports/variables (cosmetic, last).
+Fix in this order: (1) missing imports/exports, (2) type errors, (3) lint errors (auto-fix first), (4) naming inconsistencies, (5) unused imports/variables.
 
 ### 3.4 Auto-Fix Boundaries
 
-**DO NOT auto-fix:**
-- Security findings (XSS, injection, auth bypass, secrets exposure).
-- Logic errors (wrong business logic, incorrect calculations).
-- Architecture issues (wrong abstraction, missing separation of concerns).
-- Test assertion failures (the test might be correct and the code wrong).
-- Performance issues (require design decisions).
-
-These are documented in the report for human review.
+**DO NOT auto-fix:** security findings, logic errors, architecture issues, test assertion failures, performance issues. Document for human review.
 
 ### 3.5 Post-Fix Verification
 
-After all auto-fixes, re-run the full quality gate suite from Phase 1:
-```bash
-npm run type-check 2>&1
-npm run lint 2>&1
-npm run test 2>&1
-npm run build 2>&1
-```
-
-Record improvement:
-```
-Before auto-fix: type-errors=12, lint-errors=8, test-failures=2
-After auto-fix:  type-errors=0,  lint-errors=1,  test-failures=2
-```
+Re-run full quality gate suite (type-check + lint + test + build). Record `type-errors=N, lint-errors=M, test-failures=P` before and after.
 
 ---
 
@@ -510,5 +453,12 @@ This stores a timestamped JSON snapshot in `docs/metrics/` that can be used for 
 
 ### 4.6 Final Output and Error Recovery
 
-Print the summary block and apply recovery rules from `references/main.md` sections **"Final Output Template"** and **"Error Recovery"**.
-- **No test runner found**: Skip test gate, mark as "SKIPPED" (not "FAIL") in report.
+Print summary block per `references/main.md` §"Final Output Template".
+
+**Inline recovery rules**:
+- **Reviewer agent timeout/missing**: PARTIAL output still counts if ≥1 finding-file is non-empty; escalate security-domain MISSING as blocker ("SECURITY DOMAIN UNREVIEWED — sprint cannot close").
+- **Auto-fix loop fails 3×**: abort auto-fix, document remaining issues, fallback to manual-fix note in report.
+- **Lock conflict** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK:` if unresolved.
+- **No test runner found**: fallback to marking gate as "SKIPPED" (not "FAIL") in report.
+- **Corrupt sprint artifacts**: recover with `/blitz:conform --fix` to repair frontmatter; retry review gate after.
+- **Prior PASS re-run**: abort early — "Sprint ${N} already reviewed PASS — nothing to do." Do not overwrite.

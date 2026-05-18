@@ -1,6 +1,6 @@
 ---
 name: research
-description: "Investigates libraries, APIs, cloud services, frameworks, and architecture patterns. Spawns parallel research agents (domain, library, codebase, optional infra), produces a structured docs/_research/<date>_<topic>.md with quantified scope: YAML frontmatter for /blitz:roadmap to ingest. Use when the user says 'research X', 'investigate', 'compare options', 'what's the best approach for', 'evaluate library Y', or just '/blitz:research <topic>'. Always run before sprint-plan when adopting new tech."
+description: "Investigates libraries, APIs, frameworks, and architecture patterns via parallel research agents (domain, library, codebase, optional infra). Produces a structured docs/_research/<date>_<topic>.md with scope: YAML for /blitz:roadmap ingestion. Use when the user says 'research X', 'compare options', 'evaluate library Y', or '/blitz:research <topic>'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 model: opus
 effort: high

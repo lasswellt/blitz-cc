@@ -1,6 +1,6 @@
 ---
 name: design-extract
-description: "Reads an existing project's design tokens, typography, palette, and component samples, then emits a portable DESIGN.md (Google Labs Apache-2.0 spec). Used to bootstrap brownfield projects so ui-build, frontend-design, and design-critic share the same aesthetic source-of-truth without re-discovering tokens every run. Invoke when the user says 'extract design system', 'build DESIGN.md', 'document the design tokens', or before the first /blitz:ui-build run on a brownfield project."
+description: "Extracts design tokens, typography, palette, and component samples from an existing project into a portable DESIGN.md (Google Labs Apache-2.0 spec). Bootstraps brownfield projects so ui-build and design-critic share a common aesthetic source-of-truth. Use when the user says 'extract design system', 'build DESIGN.md', or before the first /blitz:ui-build run."
 argument-hint: "[--from <path>] [--out DESIGN.md]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet

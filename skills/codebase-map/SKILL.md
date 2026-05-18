@@ -1,6 +1,6 @@
 ---
 name: codebase-map
-description: "Builds a CODEBASE-MAP.md for brownfield project onboarding by analyzing 4 dimensions: Technology (stack/deps/build), Architecture (modules/layers/data flow), Quality (test coverage, lint debt, complexity hotspots), and Concerns (security/perf/correctness risks). Use when the user says 'map the codebase', 'analyze this project', 'help me understand this code', 'I just inherited this repo', or starts working in an unfamiliar codebase. Should run automatically when no CODEBASE-MAP.md exists in a brownfield project."
+description: "Builds CODEBASE-MAP.md for brownfield onboarding: Technology (stack/deps/build), Architecture (modules/layers/data flow), Quality (test coverage, lint debt), and Concerns (security/perf risks). Use when the user says 'map the codebase', 'analyze this project', 'I just inherited this repo', or when no CODEBASE-MAP.md exists."
 allowed-tools: Read, Write, Bash, Glob, Grep, Agent
 model: opus
 effort: medium
@@ -34,7 +34,7 @@ Produce a comprehensive, prescriptive analysis of an existing codebase by spawni
 
 ### 0.0 Register Session
 
-Follow the session protocol from [session-protocol.md](/_shared/session-protocol.md) **and** the [verbose-progress.md](/_shared/verbose-progress.md) protocol. Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start` to activity feed.
+Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Build File Inventory
 

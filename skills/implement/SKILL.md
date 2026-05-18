@@ -16,6 +16,8 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 You run the implementation phase of a sprint.
 
+**Session registration**: follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration before any other work.
+
 **Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[implement]` prefixed status lines at every phase transition, decision point, and when dispatching to sprint-dev. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
 ## Flag Parsing

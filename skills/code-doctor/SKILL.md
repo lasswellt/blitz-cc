@@ -1,6 +1,6 @@
 ---
 name: code-doctor
-description: "Framework-API correctness audit for Firestore, VueFire, Vue 3, and Pinia. Detects anti-patterns, misuse, dead exports, and duplication candidates. Read-only by default; --fix applies low-risk auto-fixes only (never mutates business logic). Use when the user says 'code-doctor', 'audit firestore', 'check api usage', 'find misuse', 'check vuefire', 'pinia anti-patterns', 'firestore best practices', or starts seeing framework-API warnings in logs."
+description: "Framework-API correctness audit for Firestore, VueFire, Vue 3, and Pinia. Detects anti-patterns, misuse, dead exports, and duplication. Read-only by default; --fix applies low-risk fixes. Use when the user says 'code-doctor', 'audit firestore', 'pinia anti-patterns', or sees framework-API warnings in logs."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 model: opus
 effort: low
@@ -54,7 +54,7 @@ Detect framework-API anti-patterns, misuse, dead exports, and duplication candid
 
 ### 0.1 Session Registration
 
-Follow [/_shared/session-protocol.md](/_shared/session-protocol.md):
+Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md):
 - Generate `SESSION_ID = "code-doctor-<8-char-hex>"`
 - Create `SESSION_TMP_DIR = ".cc-sessions/${SESSION_ID}/tmp/"`
 - Check for conflicting sessions on overlapping scopes

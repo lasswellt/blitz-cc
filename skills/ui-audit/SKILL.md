@@ -1,6 +1,6 @@
 ---
 name: ui-audit
-description: "Cross-page semantic consistency + data-quality + UI/UX heuristic audit. Extracts a labeled value registry from rendered pages, asserts invariants across them (same field shows same value, same role shows same nav, no role leaks), flags placeholders / nulls / flapping values. Read-only. Loop-safe. Reads /blitz:browse crawl state if present. Use when the user says 'audit consistency', 'check cross-page data', 'ui-audit', 'data drift', 'invariants', 'role leak', 'placeholder text on screen', 'broken UI'."
+description: "Cross-page semantic consistency + data-quality + UI/UX heuristic audit. Extracts a labeled value registry, asserts cross-page invariants (same field = same value, no role leaks), flags placeholders and flapping values. Read-only, loop-safe. Use when the user says 'audit consistency', 'check cross-page data', 'ui-audit', 'role leak', or 'placeholder text on screen'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 compatibility: ">=2.1.71"

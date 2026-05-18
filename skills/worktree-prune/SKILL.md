@@ -1,6 +1,6 @@
 ---
 name: worktree-prune
-description: "Lists and safely deletes stale git worktrees + agent-spawned branches accumulated from `Agent({isolation: \"worktree\"})` calls. Default --dry-run mode is read-only and reports each branch with age, merge-status, divergence, and disk usage. --apply --merged-only deletes branches that are ancestors of origin/HEAD (safe). --apply --all-older-than 30d includes unmerged stale branches behind --force. Use when the user says 'worktree prune', 'clean up worktrees', 'delete stale branches', 'too many worktree-agent branches', 'free disk space', or notices 30+ leftover `worktree-agent-*` / `worktree-sprint-*` / `sprint-N/role` branches in `git branch`. Composes with the spawn-time collision guard in hooks/scripts/worktree-create.sh and the post-merge cleanup in sprint-dev Phase 4.4 per skills/_shared/worktree-lifecycle.md."
+description: "Lists and safely deletes stale git worktrees + agent-spawned branches. --dry-run (default) reports age, merge-status, divergence, and disk usage. --apply --merged-only deletes origin-ancestor branches; --all-older-than 30d includes unmerged (requires --force). Use when the user says 'worktree prune', 'clean up worktrees', or notices leftover sprint-N/role branches."
 argument-hint: "[--dry-run|--apply] [--merged-only|--all-older-than <duration>] [--force]"
 allowed-tools: Read, Bash, Glob, Grep
 model: sonnet

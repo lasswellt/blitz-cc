@@ -97,6 +97,15 @@ When sprint-dev starts, before the normal Phase 0 flow:
    {"ts":"<ISO-8601>","session":"<NEW_SESSION_ID>","skill":"sprint-dev","event":"decision","message":"Resuming sprint ${N} from STATE.md checkpoint","detail":{"resumed_from":"<OLD_SESSION_ID>","completed_stories":<count>,"remaining_stories":<count>}}
    ```
 
+### STATE.md Parse-Failure Handling
+
+If STATE.md exists but fails YAML/markdown parse (truncated, garbled by a hard-kill):
+
+1. **Detect**: attempt `python3 -c "import yaml; yaml.safe_load(open(path).read().split('---',2)[1])"` — non-zero exit or exception = corrupt.
+2. **Abort vs reset**: if `autonomy < high`, stop and prompt: "STATE.md is corrupt — resume from scratch (loses completed progress) or abort?". In `autonomy=full`, auto-reset and log a `warning` event with `{"reason":"corrupt_state_md","action":"reset_to_full_sprint"}`.
+3. **On reset**: delete corrupt STATE.md, re-read sprint stories, restart from Phase 0 (all stories treated as `planned`). Log `decision` event noting the reset.
+4. **Report**: include `state_md_reset: true` in the sprint report Phase 4 summary so sprint-review flags it.
+
 ---
 
 ## Orchestrator Support (sprint, implement)

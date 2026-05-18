@@ -1,6 +1,6 @@
 ---
 name: code-sweep
-description: "Iterative code-quality improvement with /loop support. Discovers conventions from the codebase, defines standards, and progressively aligns code via 30 checks across 7 categories plus dynamic standards. Ratchet mechanism ensures quality only improves (never regresses). Use when the user says 'sweep', 'cleanup', 'improve code', 'code quality pass', 'find TODOs', 'remove dead code', 'enforce standards', or wants a continuous improvement loop running."
+description: "Iterative code-quality improvement with /loop support. Runs 30 checks across 7 categories with a ratchet ensuring quality only improves. Use when the user says 'sweep', 'code quality pass', 'find TODOs', 'remove dead code', or wants a continuous improvement loop."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 model: opus
 effort: high
@@ -50,7 +50,7 @@ Iterative code improvement using **Observe-Diff-Act-Report**. 30 static checks +
 ## Phase 0: SETUP
 
 ### 0.0 Register Session
-Read `/_shared/session-protocol.md` and `/_shared/verbose-progress.md` for protocols. Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start` to activity feed.
+Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start`.
 
 ### 0.1 Parse Arguments
 

@@ -1,6 +1,6 @@
 ---
 name: sprint-plan
-description: "Plans the next sprint from roadmap epics with research-backed stories. Reads the dependency graph, selects next unblocked epics, spawns research agents in parallel, generates per-story files with the canonical /_shared/story-frontmatter.md schema, and creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', 'plan next sprint', 'sprint planning', or '--gaps' for gap-closure mode. Hard-fails at Phase 0.0 if roadmap-registry.json is missing."
+description: "Plans the next sprint from roadmap epics. Selects unblocked epics via dependency graph, spawns parallel research agents, generates story files with /_shared/story-frontmatter.md schema, creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', or 'sprint planning'. --gaps generates gap-closure stories from the prior review report."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 disable-model-invocation: false
 model: opus
@@ -229,29 +229,11 @@ Before generating stories directly from epics, analyze what outcomes the sprint 
 
 ### 2.5.1 Define Observable Outcomes
 
-For each selected epic, define 2-5 observable outcomes — concrete, testable statements of what a user or developer can do after the sprint:
-
-```
-Example outcomes for an "Authentication" epic:
-  1. User can log in with email/password and see their dashboard
-  2. Unauthenticated users are redirected to /login on protected routes
-  3. Auth token refreshes automatically before expiry
-  4. Admin users see the admin panel nav entry; regular users do not
-```
+For each selected epic, define 2-5 observable outcomes — concrete, testable statements of what a user or developer can do after the sprint. Example: "User can log in with email/password and see their dashboard."
 
 ### 2.5.2 Derive Required Artifacts
 
-For each outcome, trace backward through the stack layers to identify every artifact (file) required:
-
-```
-Outcome: "User can log in with email/password"
-  → Page: pages/login.vue (form UI)
-  → Store: stores/auth.ts (login action, user state)
-  → Schema: schemas/auth.ts (LoginRequest, LoginResponse)
-  → API: server/api/auth/login.ts (handler)
-  → Middleware: middleware/auth.ts (route guard)
-  → Test: tests/auth.test.ts (login flow)
-```
+For each outcome, trace backward through stack layers to identify every artifact (file) required: page → store → schema → API handler → middleware → test.
 
 ### 2.5.3 Map Required Connections
 
@@ -307,13 +289,9 @@ After drafting each story but **before** accepting it into the sprint, run the b
 
 **Handling a match:**
 
-- **Autonomy = low|medium:** pause and require operator input. Offer two paths: (a) split along the SPIDR **Data** axis — by route, feature folder, file path prefix, or author (see `docs/_research/2026-04-08_sprint-carryforward-registry.md` for the Mountain Goat Software SPIDR reference); or (b) downgrade the story to `type: spike` whose deliverable is *a split plan*, not working code.
-
-- **Autonomy = high|full:** **auto-split** the story along the SPIDR Data axis. Default heuristic: group `story.files` by their nearest parent directory (`apps/web/src/routes/admin/*` → one story, `apps/web/src/routes/public/*` → another). If grouping yields batches still > 8 files, recursively split. Log a `decision` event to the activity feed documenting the split. If the story's language is horizontal but it has no concrete file list, downgrade to `type: spike` and generate a single spike story whose deliverable is "write a split plan for <original scope>" — this is Mike Cohn's "spike, not story" guidance.
-
-- **Never auto-accept a bulk story in any autonomy mode.** A 5-point story touching 130 files is a rollover timebomb and is the exact pattern that dropped CAP-133.
-
-The guard is advisory warnings in `low`/`medium`, mandatory splits in `high`/`full`. Record every split or downgrade decision in the sprint manifest under a `spidr_splits` array so sprint-review can verify that no story slipped past the guard.
+- **Autonomy = low|medium:** pause. Offer SPIDR Data-axis split (by route/folder/prefix) or downgrade to `type: spike` (deliverable = split plan only).
+- **Autonomy = high|full:** auto-split by nearest parent directory; recursively split if batches still > 8. If no concrete file list, downgrade to spike. Log `decision` event for each split.
+- **Never auto-accept a bulk story.** Record splits in sprint manifest `spidr_splits` array.
 
 ### 3.2 Story File Format
 
@@ -375,55 +353,19 @@ If any AC is uncovered:
 2. **Attempt 2:** If gaps remain, re-analyze the epic for implicit ACs that may need explicit stories.
 3. **Attempt 3:** Final generation attempt with broader story scope.
 
-If after 3 attempts any AC remains uncovered, ask the user for an explicit waiver:
-```
-AC Coverage Gap: N acceptance criteria could not be mapped to stories.
-  Uncovered:
-    - E001/AC3: "User can export data as CSV"
-    - E002/AC5: "Admin dashboard shows real-time metrics"
+If after 3 attempts any AC remains uncovered, report uncovered ACs and offer: (1) waive for this sprint, (2) retry with different approach, (3) abort. Do not proceed without 100% coverage or explicit user waiver.
 
-  Options:
-    1. Waive these ACs for this sprint (they will carry forward)
-    2. Let me try a different approach to covering them
-    3. Abort sprint planning
-```
+*(Autonomy `high`/`full`: auto-waive uncovered ACs. Fix for the CAP-133 silent-drop in `docs/_research/2026-04-08_sprint-carryforward-registry.md`.)*
 
-Do not proceed to Phase 4.2 without either 100% coverage or an explicit user waiver.
+**Auto-waiver procedure (autonomy ∈ {high, full}):** Four writes are required — see `references/main.md` §Auto-Waiver Procedure for the full jsonl schemas.
 
-*(If autonomy is `high` or `full`, auto-waive uncovered ACs as follows — this is the fix for the silent-drop pattern traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`.)*
+1. Add uncovered ACs to `carry_forward` in sprint manifest + `waived_ac_count`/`reason_waivers` fields.
+2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl` for each parent registry entry. Precompute `coverage = actual / target`. Schema: [carry-forward-registry.md](/_shared/carry-forward-registry.md).
+3. Record touched ids in manifest `registry_entries_touched` (sprint-review Invariant 2 cross-checks this).
+4. Log `decision` event to activity feed.
+5. Proceed to Phase 4.2.
 
-**Auto-waiver procedure (autonomy ∈ {high, full}):**
-
-1. **Add uncovered story IDs** to `carry_forward` in the sprint manifest (`sprints/sprint-${SPRINT_NUMBER}/manifest.json`). This preserves existing behavior for sprint-dev and STATE.md consumers.
-
-2. **Update the manifest waiver fields** (see `references/main.md` Sprint Manifest JSON Schema):
-   ```json
-   "waived_ac_count": <N>,
-   "reason_waivers": "autonomy=<mode>"
-   ```
-
-3. **Append an `auto_waived` line** to `.cc-sessions/carry-forward.jsonl` for **each** parent registry entry whose scope has uncovered ACs. The line must include:
-   ```jsonl
-   {"id":"<parent-registry-id>","ts":"<ISO-8601>","event":"auto_waived","waived_count":<N>,"reason":"autonomy=<mode> auto-waiver at sprint-plan Phase 4.1","last_touched":{"sprint":"sprint-${SPRINT_NUMBER}","date":"<ISO-8601>"}}
-   ```
-   If the entry's current `status` is `active`, **also append a `progress` line** transitioning it to `partial`:
-   ```jsonl
-   {"id":"<parent-registry-id>","ts":"<ISO-8601>","event":"progress","delivered":{"unit":"<unit>","actual":<new-actual>,"last_sprint":"sprint-${SPRINT_NUMBER}"},"coverage":<computed>,"status":"partial","last_touched":{"sprint":"sprint-${SPRINT_NUMBER}","date":"<ISO-8601>"}}
-   ```
-   Precompute `coverage = delivered.actual / scope.target` on write — do not let readers derive it. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full schema.
-
-4. **Record the touched ids** in the manifest's `registry_entries_touched` field. Sprint-review Phase 3.5 Invariant 2 will cross-check this list against the registry.
-
-5. **Log a `decision` event** to `.cc-sessions/activity-feed.jsonl`:
-   ```jsonl
-   {"ts":"<ISO-8601>","session":"<SESSION_ID>","skill":"sprint-plan","event":"decision","message":"Auto-waivers: <N> ACs deferred, <M> registry entries transitioned to partial","detail":{"waived_ac_count":<N>,"registry_entries":["cf-..."],"reason":"autonomy=<mode>"}}
-   ```
-
-6. **Proceed to Phase 4.2.**
-
-**Why all four writes are required:** the manifest carry_forward alone is what caused the CAP-133 drop — sprint-198's planner never read it. Writing to the registry (step 3) ensures the next sprint's Phase 0 step 8 sees the entry as a mandatory planning input. Writing to `registry_entries_touched` (step 4) enables sprint-review Invariant 2 to catch the case where an entry was waived but never re-injected. Logging the decision (step 5) preserves the human-readable audit trail.
-
-**Do NOT** write only to the manifest and skip the registry — that is the pre-fix behavior and reintroduces the silent-drop bug.
+**All four writes are required** — manifest carry_forward alone reintroduces the CAP-133 silent-drop.
 
 ### 4.2 Partition Stories to Agent Roles
 
@@ -512,4 +454,11 @@ Sprint ${SPRINT_NUMBER} planned successfully.
 
 ## Error Recovery
 
-See `references/main.md` section **"Error Recovery"**.
+Full detail in `references/main.md` §"Error Recovery".
+
+**Inline recovery rules**:
+- **Research agent missing/timeout**: retry once with narrower scope (one most-critical epic only); abort Phase 2 if still MISSING.
+- **Epic dependency cycle**: abort planning with `BLOCK: circular dependency`; do not auto-resolve.
+- **Registry lock conflict** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK: lock conflict`.
+- **Corrupt planning-inputs.json**: validate with `jq -e . sprints/sprint-${NEXT_SPRINT}-planning-inputs.json`; fallback to skipping the file if invalid (log `warning` event, escalate to user).
+- **AC coverage < 100% after 3 attempts**: auto-waive if `autonomy ≥ high`; otherwise abort and ask user to waive or extend epic scope.

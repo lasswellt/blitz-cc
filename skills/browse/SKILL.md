@@ -1,6 +1,6 @@
 ---
 name: browse
-description: "Automated browser testing, site crawling, and visual analysis via Playwright MCP. Navigates pages, clicks safe interactive elements, captures console errors, failed network requests, and screenshots. Classifies findings (Critical/Error/Warning) and optionally auto-fixes source issues. Loop-safe: one page per tick, builds navigational hierarchy, performs cross-page consistency analysis. Use when the user says 'test pages', 'smoke test', 'check console errors', 'browse test', 'crawl site', 'check design', 'visual audit', 'click through the app'."
+description: "Automated browser testing and site crawling via Playwright MCP. Captures console errors, failed network requests, and screenshots; classifies findings (Critical/Error/Warning). Loop-safe — one page per tick, builds navigational hierarchy. Use when the user says 'test pages', 'smoke test', 'crawl site', 'visual audit', or 'click through the app'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 effort: high

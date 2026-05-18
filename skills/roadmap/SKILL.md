@@ -73,7 +73,11 @@ Search for research documents:
 Glob: **/docs/_research/**/*.md, **/docs/research/**/*.md, **/research/**/*.md, **/_research/**/*.md
 ```
 
-If no research documents found, inform the user that research documents are required and STOP.
+If no research documents found:
+```bash
+echo "BLOCK: roadmap requires research documents in docs/_research/. Run /blitz:research first." >&2
+exit 1
+```
 
 ### 0.3 Build Codebase Inventory
 

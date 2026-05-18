@@ -1,6 +1,6 @@
 ---
 name: next
-description: "Reads current project, sprint, and carry-forward state and tells the user what action to take next (run sprint-plan, resume sprint-dev, ship, address a registry escalation, etc.). With --loop, becomes the canonical autonomous reconciliation engine: auto-dispatches the recommended action via the Skill tool and exits cleanly so /loop or ScheduleWakeup can re-tick. Supersedes /blitz:sprint --loop (now a backwards-compat alias). Use when the user asks 'what should I do next?', 'where are we?', 'is anything blocked?', '/blitz:next', or invokes autonomous mode."
+description: "Reads project, sprint, and carry-forward state then recommends the next blitz command. With --loop, auto-dispatches the recommended phase and exits cleanly for /loop or ScheduleWakeup re-tick. Canonical autonomous reconciliation engine (supersedes /blitz:sprint --loop). Use when the user asks 'what should I do next?', 'where are we?', '/blitz:next', or starts autonomous loop mode."
 argument-hint: "[--loop] -- default: read state and suggest a command. --loop: auto-dispatch the recommended phase, commit/push, exit; designed for /loop /blitz:next --loop or self-scheduled ScheduleWakeup."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup
 model: sonnet
@@ -29,7 +29,7 @@ Two modes:
 1. **Default (read-only suggest)** — `/blitz:next` reads state and prints the recommended next blitz command. No dispatch, no writes. Lightweight survey.
 2. **`--loop` (auto-dispatch reconciliation)** — `/blitz:next --loop` reads state, executes **one phase**, commits + pushes, and exits cleanly so `/loop` or `ScheduleWakeup` can re-tick. Sets autonomy to `full`. Canonical autonomous-loop entry point for blitz (supersedes `/blitz:sprint --loop` since v1.13.0).
 
-**Session protocol**: skipped in default mode (read-only). Required in `--loop` mode (writes commits, dispatches sub-skills).
+**Session protocol**: skipped in default mode (read-only). In `--loop` mode, follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration before dispatching.
 
 **Verbose progress**: skipped in default mode. `--loop` mode prints a concise per-tick reconciliation report (Observe → Diff → Act → Report).
 
