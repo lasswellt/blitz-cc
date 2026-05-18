@@ -456,9 +456,9 @@ This stores a timestamped JSON snapshot in `docs/metrics/` that can be used for 
 Print summary block per `references/main.md` §"Final Output Template".
 
 **Inline recovery rules**:
-- **Reviewer agent timeout/missing**: PARTIAL output still counts if ≥1 finding-file is non-empty; escalate security-domain MISSING as blocker ("SECURITY DOMAIN UNREVIEWED — sprint cannot close").
-- **Auto-fix loop fails 3×**: abort auto-fix, document remaining issues, fallback to manual-fix note in report.
-- **Lock conflict** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK:` if unresolved.
-- **No test runner found**: fallback to marking gate as "SKIPPED" (not "FAIL") in report.
-- **Corrupt sprint artifacts**: recover with `/blitz:conform --fix` to repair frontmatter; retry review gate after.
-- **Prior PASS re-run**: abort early — "Sprint ${N} already reviewed PASS — nothing to do." Do not overwrite.
+- **Reviewer timeout/missing**: PARTIAL counts if ≥1 finding-file non-empty; escalate security-MISSING as blocker.
+- **Auto-fix loop fails 3×**: abort auto-fix, document issues, fallback to manual-fix note in report. Append carry-forward `active` entry per [carry-forward-registry.md](/_shared/carry-forward-registry.md) so the issue is mandatory planning input next sprint (prevents CAP-133-class silent drop).
+- **Lock conflict**: retry 3× with 20s backoff; abort with `BLOCK:` if unresolved.
+- **No test runner found**: fallback to "SKIPPED" gate marker (not "FAIL").
+- **Corrupt sprint artifacts**: recover with `/blitz:conform --fix`; retry review gate after.
+- **Prior PASS re-run**: abort early ("already reviewed PASS — nothing to do"); do not overwrite.

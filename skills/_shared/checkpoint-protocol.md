@@ -101,7 +101,16 @@ When sprint-dev starts, before the normal Phase 0 flow:
 
 If STATE.md exists but fails YAML/markdown parse (truncated, garbled by a hard-kill):
 
-1. **Detect**: attempt `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read().split('---',2)[1])" "${SPRINT_DIR}/STATE.md"` — non-zero exit or exception = corrupt. (`yaml.safe_load` is safe; no code execution from crafted YAML.)
+1. **Detect** (structural markdown validation — STATE.md has no YAML frontmatter, only markdown sections):
+   ```bash
+   STATE_FILE="${SPRINT_DIR}/STATE.md"
+   grep -qE '^# Sprint [0-9]+ State' "$STATE_FILE" \
+     && grep -qE '^Last updated:' "$STATE_FILE" \
+     && grep -qE '^## Completed Stories' "$STATE_FILE" \
+     && grep -qE '^## Ready Stories' "$STATE_FILE" \
+     || CORRUPT=1
+   ```
+   If any required section header is missing → corrupt.
 2. **Abort vs reset**: if `autonomy < high`, stop and prompt: "STATE.md is corrupt — resume from scratch (loses completed progress) or abort?". In `autonomy=full`, auto-reset and log a `warning` event with `{"reason":"corrupt_state_md","action":"reset_to_full_sprint"}`.
 3. **On reset**: delete corrupt STATE.md, re-read sprint stories, restart from Phase 0 (all stories treated as `planned`). Log `decision` event noting the reset.
 4. **Report**: include `state_md_reset: true` in the sprint report Phase 4 summary so sprint-review flags it.

@@ -457,8 +457,8 @@ Sprint ${SPRINT_NUMBER} planned successfully.
 Full detail in `references/main.md` §"Error Recovery".
 
 **Inline recovery rules**:
-- **Research agent missing/timeout**: retry once with narrower scope (one most-critical epic only); abort Phase 2 if still MISSING.
-- **Epic dependency cycle**: abort planning with `BLOCK: circular dependency`; do not auto-resolve.
-- **Registry lock conflict** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK: lock conflict`.
-- **Corrupt planning-inputs.json**: validate with `jq -e . sprints/sprint-${NEXT_SPRINT}-planning-inputs.json`; fallback to skipping the file if invalid (log `warning` event, escalate to user).
-- **AC coverage < 100% after 3 attempts**: auto-waive if `autonomy ≥ high`; otherwise abort and ask user to waive or extend epic scope.
+- **Research agent missing/timeout**: retry once with narrower scope; abort Phase 2 if still MISSING.
+- **Registry/lock conflict** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK:`.
+- **Corrupt planning-inputs.json**: validate with `jq -e`; fallback to skipping (log `warning`, escalate to user).
+- **Validation failures** (story frontmatter): run `/blitz:conform --fix` then re-validate; escalate if persist.
+- **AC coverage < 100% after 3 attempts**: auto-waive if `autonomy ≥ high`; otherwise abort and ask user.
