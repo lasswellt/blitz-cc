@@ -38,7 +38,7 @@ Blitz turns Claude Code into an opinionated, partly-autonomous development envir
 
 It's designed so that `/loop /blitz:next --loop` produces shippable code unattended.
 
-> Current version: **v1.14.0** (2026-05-17) — see [CHANGELOG.md](CHANGELOG.md).
+> Current version: **v1.15.0** (2026-05-18) — see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -478,7 +478,7 @@ Prose replies bloat orchestrator context 430–1,930 tokens per return × N agen
 ```
 blitz/
 ├── .claude-plugin/
-│   ├── plugin.json              # name=blitz · version=1.14.0
+│   ├── plugin.json              # name=blitz · version=1.15.0
 │   ├── settings.json            # {"agent": "orchestrator"} — main-thread activation
 │   ├── marketplace.json         # Marketplace catalog
 │   └── model-profiles.json      # quality / balanced / budget

@@ -17,6 +17,61 @@ Bump these files together on every release. `installer/package.json` and `instal
 (`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
 
 
+## [1.15.0] — 2026-05-18
+
+Four-sprint audit-closure release. The full 9-epic backlog from `docs/audits/audit-20260517.md` (E-013 through E-021) is now closed across sprints 9-12. Hook scripts gained a shared `common.sh` library, a four-suite `bats-core` test harness, anti-shortcut hardening, and standardized boilerplate. Sprint orchestrator skills shed ~1100 lines of inlined procedure to keep `SKILL.md` bodies under 450 lines via `references/main.md` extraction. STATE.md detection tolerates em-dash + bold-timestamp variants; `SPRINT_NUMBER` interpolation paths get a numeric path-traversal guard. Counts unchanged: **39 skills · 10 agents · 36 hook scripts across 16 events · 26 shared protocols** — this release hardens what exists rather than adding new surface area.
+
+### Added
+
+- **`hooks/scripts/_lib/common.sh`** — shared helper library for log timestamps, repo-root detection, JSON-line safe construction. Adopted by 19 hook scripts (sprint-10 standardization). Eliminates per-hook copy-pasted boilerplate; reduces total hook-script LoC ~200 (126e60f).
+- **`hooks/tests/` bats-core test harness** — four blocker-hook test suites plus `_helpers.bash` factory. Initial coverage: `blitz-extract.bats` (8 tests incl. nested-quote / newline / backslash / jq-injection / digit-prefix fuzz), `block-destructive-git.bats` (8 tests), `block-no-verify.bats` (6 tests), `block-test-deletion.bats` (4 tests). Total: 26 hook tests pass on `bats hooks/tests/` (126e60f, 3df3338).
+- **`docs/audits/audit-20260517*`** — full audit report, 9-epic backlog, and machine-readable index covering hook performance, installer hygiene, anti-shortcut detection, token reduction, error recovery, orchestrator routing completeness, and spawn-API consistency (84738ec).
+- **Per-skill `Register Session.` citation** — 18 `SKILL.md` files added the canonical `[session-protocol.md] §Session Registration (steps 1-9) and [verbose-progress.md]` snippet so the protocol is discoverable from every skill that registers a session (102ff52).
+- **`installer/install.sh` resiliency** — npm-presence probe + clearer error envelopes on `npx` fallback path; banner version derives from a single source (84738ec).
+
+### Changed
+
+- **`sprint-plan` / `sprint-dev` / `sprint-review` `SKILL.md` body lines: ≤450** — verbose bash blocks, inline tables, and procedural detail moved to `references/main.md` (15 sections extracted across the three skills). Net body line counts: 575 → 441 (sprint-plan), 583 → 440 (sprint-review), 567 → 447 (sprint-dev). Token-listing cost when always-loaded drops proportionally (102ff52, a050ff2).
+- **`conform/SKILL.md` description** — 1000 → 568 chars (`description` field counts against the listing budget) (102ff52).
+- **Hook scripts standardized on `_lib/common.sh`** — 19 scripts switched to `source "$HOOK_DIR/_lib/common.sh"`: `block-no-verify`, `block-destructive-git`, `critic-gemini`, `markdown-link-validate`, `permission-request`, `post-edit-activity-log`, `post-edit-format`, `post-edit-lint`, `post-edit-test`, `post-edit-typecheck-block`, `post-tool-batch`, `pre-commit-validate`, `reference-compression-validate`, `session-start`, `skill-frontmatter-validate`, `subagent-start`, `subagent-stop`, `task-completed-validate`, `worktree-create`, `worktree-remove`. Behavior identical (126e60f, 7a2021b).
+- **`agents/orchestrator.md` routing table** — `/blitz:worktree-prune` row added with full flag surface (`--dry-run`, `--apply`, `--merged-only`, `--all-older-than`, `--force`); Vue-conditional skills (`code-doctor`, `ui-build`, `ui-audit`) tagged as stack-gated (ea8e22d).
+- **`skills/doc-gen/SKILL.md`** — `TeamCreate` + `SendMessage` spawn pattern replaced with `Agent()` per the canonical `spawn-protocol.md` `Agent` Tool Spawning section. `allowed-tools` updated accordingly (ea8e22d).
+- **`skills/migrate/SKILL.md`** — `SendMessage` removed from `allowed-tools`, replaced with `Agent` (ea8e22d).
+- **`skills/ui-build/SKILL.md`** — `AskUserQuestion` added to `allowed-tools` (was used but undeclared) (ea8e22d).
+- **`skills/_shared/state-handoff.md`** — `migrate` section added with full producer/consumer/resume contract (`STATE.md` exists + `--resume` not passed → refuse to clobber) (ea8e22d).
+- **`skills/_shared/quality-matrix.md`** — `implement` and `review` alias rows documented; clarifies that `/blitz:implement` and `/blitz:review` are thin pass-throughs to `sprint-dev` / `sprint-review` (ea8e22d, c0a615b).
+
+### Fixed
+
+- **`SPRINT_NUMBER` path-traversal guard** — `sprint-dev` Phase 0.0 + `sprint-review` Phase 0.0 now reject empty and non-numeric (`^[0-9]{1,4}$`) sprint numbers before any path interpolation. Prior behavior: `SPRINT_NUMBER="../etc/passwd"` would expand into the path (431d8f4).
+- **`STATE.md` detection regex** — `checkpoint-protocol.md` em-dash header variant (`# Sprint N — STATE`) and bold timestamp variant (`**Last updated:**`) now recognized; previous anchored regex silently mis-classified valid STATE files as corrupt. Replaced with non-anchored `grep -qE` structural validation (94cc94c).
+- **`python3` one-liner `NameError`** — hook scripts using `python3 -c` for JSON construction no longer reference undefined locals; switched to `jq -n --arg` for all dynamic JSON-line construction (431d8f4).
+- **Hook script logging consistency** — `block-no-verify`, `block-destructive-git`, `critic-gemini`, `permission-request`, `post-tool-failure`, `stop-failure`, `teammate-idle` now emit `{"event": "blocker_fired", ...}` lines via `_lib/common.sh::log_event` rather than ad-hoc `echo` (7a2021b).
+- **`blitz-extract` JSONL safety** — embedded quotes, newlines, backslashes, and shell metacharacters in extracted values no longer corrupt downstream `jq` pipelines. New `digit-prefix` guard rejects identifiers starting with `[0-9]` (jq filter injection vector). 5 new fuzz tests cover the boundaries (3df3338).
+- **`/blitz:next --loop` row 1a HARD_SPEC escalation** — `block_reason` vocabulary cross-referenced in `STATE.md` parsing so `LOOP_ESCALATE` fires before row 1 auto-resumes a stuck story (102ff52).
+
+### Documentation
+
+- **`agents/orchestrator.md`** — completeness pass for the routing table; every skill in `skills/` now has at least one trigger phrase mapped to it (39/39 coverage) (ea8e22d).
+- **`docs/audits/audit-20260517*`** — final audit closure tracking: 9/9 epics shipped across sprints 9-12, full traceability from audit finding → epic → sprint → commit.
+
+### Audit closure
+
+All 9 epics from `docs/audits/audit-20260517.md` are now `done`:
+
+| Epic | Title | Shipped in |
+|------|-------|-----------|
+| E-013 | Installer hygiene | sprint-9 |
+| E-014 | Hook library + bats infrastructure | sprint-10 |
+| E-015 | Skill frontmatter normalization | sprint-9 |
+| E-016 | Anti-shortcut hardening | sprint-10 |
+| E-017 | Token reduction (SKILL.md slimming) | sprint-11 |
+| E-018 | Error-recovery robustness | sprint-11 |
+| E-019 | Orchestrator routing completeness | sprint-12 |
+| E-020 | Hook performance | sprint-9 |
+| E-021 | Spawn-API + allowed-tools consistency | sprint-12 |
+
+
 ## [1.14.0] — 2026-05-17
 
 Worktree lifecycle enforcement, 8 new platform-event hooks wired, 5 platform-feature primitives adopted, and 9 spec-fixing recipes ship in this release. Counts move to **39 skills · 10 agents · 36 hook scripts across 16 events · 26 shared protocols** with an **8-invariant** sprint-review gate and an **8-metric** ratchet. The README is rewritten ground-up from a parallel-agent deep-dive of the codebase.
