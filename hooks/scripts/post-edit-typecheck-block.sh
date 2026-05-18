@@ -15,6 +15,7 @@
 #
 # Exit 0 = allow / pass-through, Exit 2 = block (regression).
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 INPUT="$(cat)"
 FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")"

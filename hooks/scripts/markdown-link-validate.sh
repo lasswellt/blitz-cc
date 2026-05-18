@@ -14,7 +14,7 @@
 # manually (`bash hooks/scripts/markdown-link-validate.sh`) or wired into
 # pre-commit-validate.sh as a non-blocking warn.
 
-set -uo pipefail
+set -euo pipefail
 
 HOOK_MODE=0
 if [[ ! -t 0 ]]; then

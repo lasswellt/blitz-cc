@@ -21,7 +21,8 @@
 #   9. Canonical OUTPUT STYLE snippet present verbatim
 #  10. compatibility: present, ">=" semver pin
 
-set -u
+set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 SCRIPT_NAME="$(basename "$0")"
 BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 RC=0

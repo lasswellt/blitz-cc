@@ -2,6 +2,7 @@
 # PreToolUse hook — validates staged files before git commit
 # Exit 0 = allow, Exit 2 = block
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 # Read the hook input from stdin
 INPUT=$(cat)

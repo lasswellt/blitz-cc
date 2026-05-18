@@ -5,26 +5,14 @@
 # Non-blocking by default: exits 0
 
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 INPUT=$(cat)
 
-# Extract task info
-TASK_SUBJECT=$(echo "$INPUT" | grep -o '"subject"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"subject"[[:space:]]*:[[:space:]]*"//;s/"$//' || true)
-AGENT_TYPE=$(echo "$INPUT" | grep -o '"agent_type"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"agent_type"[[:space:]]*:[[:space:]]*"//;s/"$//' || true)
+TASK_SUBJECT=$(blitz_extract subject)
+AGENT_TYPE=$(blitz_extract agent_type)
 
-# Find project root
-DIR="$(pwd)"
-ROOT=""
-while [ "$DIR" != "/" ]; do
-  if [ -d "$DIR/.claude-plugin" ]; then
-    ROOT="$DIR"
-    break
-  fi
-  DIR="$(dirname "$DIR")"
-done
-
-# Skip validation if not in a blitz project
-[ -z "$ROOT" ] && exit 0
+ROOT=$(blitz_find_root) || exit 0
 
 # Only validate sprint story tasks (format: "S{N}-{NNN}: ..." or "S{N}-G{NNN}: ..." for gap-closure)
 if [[ ! "$TASK_SUBJECT" =~ ^S[0-9]+-G?[0-9]+: ]]; then
@@ -49,9 +37,8 @@ if [ "$PLACEHOLDERS_FOUND" -eq 1 ]; then
   exit 2
 fi
 
-# Log completion to activity feed
-FEED="$ROOT/.cc-sessions/activity-feed.jsonl"
-TS=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)
-echo "{\"ts\":\"$TS\",\"session\":\"${AGENT_TYPE:-unknown}\",\"skill\":\"hook\",\"event\":\"task_validated\",\"message\":\"Task completed and validated: $TASK_SUBJECT\",\"detail\":{}}" >> "$FEED" 2>/dev/null || true
+SESSION_ID="${AGENT_TYPE:-$(blitz_session_id)}"
+SESSIONS_DIR="$ROOT/.cc-sessions"
+blitz_log_event "hook" "task_validated" "Task completed and validated: $TASK_SUBJECT"
 
 exit 0

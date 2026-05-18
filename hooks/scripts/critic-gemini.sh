@@ -30,13 +30,16 @@
 #   2   — verdict REJECT | CITATIONS_MISSING (sprint-review treats as block)
 #   1   — invocation failure (gemini missing, malformed reply, parse error)
 
-set -u
+set -euo pipefail
 SCRIPT_NAME="$(basename "$0")"
 BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 GEMINI_BIN="${BLITZ_GEMINI_BIN:-gemini}"
 GEMINI_MODEL="${BLITZ_GEMINI_MODEL:-gemini-2.5-pro}"
-# shellcheck disable=SC2206
-GEMINI_FLAGS=(${BLITZ_GEMINI_FLAGS:-})
+# Read BLITZ_GEMINI_FLAGS as a newline-delimited list (one flag per line).
+# This prevents word-splitting (e.g. --system-prompt "arg") from injecting
+# multiple flags from a single env-var value — which could override the critic
+# system prompt and return LGTM unconditionally.
+mapfile -t GEMINI_FLAGS < <(printf '%s\n' "${BLITZ_GEMINI_FLAGS:-}")
 
 MODE=""
 PROMPT_FILE=""

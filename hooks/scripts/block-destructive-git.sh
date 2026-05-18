@@ -53,17 +53,23 @@ if echo "$CMD" | grep -qE 'git[[:space:]]+clean[[:space:]]+(-[a-zA-Z]*f|--force)
   is_dirty && block "git clean -f" "Removes untracked files (config, logs, scratch work)."
 fi
 
-# git push --force / -f to a protected branch
-if echo "$CMD" | grep -qE 'git[[:space:]]+push[[:space:]]+(.*[[:space:]])?(--force|-f)([[:space:]]|$)' \
+# git push --force / -f / --force-with-lease to a protected branch.
+# audit-20260517: --force-with-lease was missing, leaving a history-rewrite bypass.
+if echo "$CMD" | grep -qE 'git[[:space:]]+push[[:space:]]+(.*[[:space:]])?(--force|--force-with-lease|-f)([[:space:]]|$)' \
     && echo "$CMD" | grep -qE '(main|master|production|release)'; then
   block "git push --force to protected branch" "Force-pushing main/master rewrites shared history."
 fi
 
-# git branch -D on current branch
+# git branch -D on current branch.
+# Branch name is escaped via grep -F (fixed-string) to prevent ERE metacharacter
+# injection from crafted branch names — audit-20260517 sec-bash MEDIUM.
 if echo "$CMD" | grep -qE 'git[[:space:]]+branch[[:space:]]+-D'; then
   CURRENT="$(git branch --show-current 2>/dev/null || true)"
-  if [[ -n "$CURRENT" ]] && echo "$CMD" | grep -qE "git[[:space:]]+branch[[:space:]]+-D[[:space:]]+$CURRENT([[:space:]]|$)"; then
-    block "git branch -D <current>" "Cannot delete the branch you're on; ambiguous intent."
+  if [[ -n "$CURRENT" ]] && printf '%s' "$CMD" | grep -qF "$CURRENT"; then
+    # Confirm -D and the current branch are both in the command
+    if echo "$CMD" | grep -qE 'git[[:space:]]+branch[[:space:]]+-D'; then
+      block "git branch -D <current>" "Cannot delete the branch you're on; ambiguous intent."
+    fi
   fi
 fi
 

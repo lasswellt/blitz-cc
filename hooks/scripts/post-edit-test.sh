@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # PostToolUse hook — runs matching tests after file edits
 # Always exits 0 (non-blocking)
-set -uo pipefail
+set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 # Read the hook input from stdin
 INPUT=$(cat)
 
-# Extract the file path from the tool input
-FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
+FILE_PATH=$(blitz_extract file_path)
 
 # Skip if no file path
 if [[ -z "$FILE_PATH" ]]; then
@@ -58,14 +58,10 @@ if [[ -z "$TEST_FILE" ]]; then
   exit 0
 fi
 
-# Find project root by walking up looking for package.json
 find_project_root() {
   local dir="$1"
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/package.json" ]]; then
-      echo "$dir"
-      return 0
-    fi
+    [[ -f "$dir/package.json" ]] && { echo "$dir"; return 0; }
     dir=$(dirname "$dir")
   done
   return 1

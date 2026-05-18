@@ -27,7 +27,7 @@
 # sprints) is explicitly allowed. Only LOSS of structural elements is a
 # failure. This matches the actual semantic intent of compression review.
 
-set -uo pipefail
+set -euo pipefail
 
 HOOK_MODE=0
 EXIT_BLOCK=1   # downgraded from 2 in v1.12.1 — plugin-internal drift must

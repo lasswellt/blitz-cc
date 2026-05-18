@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 # Post-edit format hook
 # Auto-formats edited files using the project's formatter.
@@ -9,7 +10,7 @@ set -uo pipefail
 INPUT=$(cat)
 
 # Extract the file path from the tool input
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+FILE_PATH=$(blitz_extract file_path)
 
 if [[ -z "$FILE_PATH" ]]; then
   exit 0
@@ -25,15 +26,11 @@ if [[ ! -f "$FILE_PATH" ]]; then
   exit 0
 fi
 
-# Find the project root by walking up from the file looking for package.json
 find_project_root() {
   local dir
   dir=$(dirname "$FILE_PATH")
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/package.json" ]]; then
-      echo "$dir"
-      return 0
-    fi
+    [[ -f "$dir/package.json" ]] && { echo "$dir"; return 0; }
     dir=$(dirname "$dir")
   done
   return 1

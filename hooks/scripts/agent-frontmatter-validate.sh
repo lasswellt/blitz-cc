@@ -32,7 +32,8 @@
 #  10. Canonical OUTPUT STYLE snippet present verbatim OR `[CANONICAL PREAMBLE]`
 #      inheritance marker (templates that inherit from a referenced preamble)
 
-set -u
+set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 SCRIPT_NAME="$(basename "$0")"
 BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 RC=0

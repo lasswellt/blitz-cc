@@ -9,26 +9,17 @@
 # collision guard triggers — see comment block at the guard.
 
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
 INPUT=$(cat 2>/dev/null || echo "{}")
-
-DIR="$(pwd)"
-ROOT=""
-while [ "$DIR" != "/" ]; do
-  [ -d "$DIR/.claude-plugin" ] && { ROOT="$DIR"; break; }
-  DIR="$(dirname "$DIR")"
-done
-[ -z "$ROOT" ] && ROOT="$(pwd)"
-
+ROOT=$(blitz_find_root || true)
 SESSIONS_DIR="$ROOT/.cc-sessions"
 mkdir -p "$SESSIONS_DIR"
 
-extract() { echo "$INPUT" | { grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" || true; } | head -1 | sed "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"//;s/\"$//"; }
-
-SESSION_ID="$(extract session_id)"
-WORKTREE_PATH="$(extract worktree_path)"
-BRANCH="$(extract branch)"
-[ -z "$SESSION_ID" ] && SESSION_ID="cli-$(date +%Y%m%d%H%M | md5sum 2>/dev/null | cut -c1-8 || echo unknown)"
+SESSION_ID=$(blitz_extract session_id)
+WORKTREE_PATH=$(blitz_extract worktree_path)
+BRANCH=$(blitz_extract branch)
+[ -z "$SESSION_ID" ] && SESSION_ID=$(blitz_session_id)
 
 # Collision guard — GH#51596: the 8-hex agentId prefix in `worktree-agent-<8hex>`
 # can collide with a branch from a prior session, silently reusing stale commits
@@ -41,8 +32,8 @@ if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
   if git -C "$ROOT" rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
     AHEAD=$(git -C "$ROOT" rev-list --count "origin/HEAD..$BRANCH" 2>/dev/null || echo 0)
     if [ "${AHEAD:-0}" -gt 0 ]; then
-      TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-      echo "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"skill\":\"hook\",\"event\":\"worktree_collision_blocked\",\"message\":\"Refused stale agent branch $BRANCH ($AHEAD commits ahead)\",\"detail\":{\"branch\":\"$BRANCH\",\"ahead\":$AHEAD}}" >> "$SESSIONS_DIR/activity-feed.jsonl" 2>/dev/null || true
+      CDET=$(jq -n --arg br "$BRANCH" --argjson ah "${AHEAD:-0}" '{branch:$br,ahead:$ah}')
+      blitz_log_event "hook" "worktree_collision_blocked" "Refused stale agent branch $BRANCH ($AHEAD commits ahead)" "$CDET"
       echo "BLITZ: refusing to reuse stale agent branch $BRANCH ($AHEAD commits ahead of origin/HEAD)" >&2
       echo "  -> run /blitz:worktree-prune to inspect, or set BLITZ_ALLOW_WORKTREE_COLLISION=1 to force" >&2
       exit 1
@@ -50,8 +41,8 @@ if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
   fi
 fi
 
-TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-echo "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"skill\":\"hook\",\"event\":\"worktree_create\",\"message\":\"Worktree created\",\"detail\":{\"worktree_path\":\"$WORKTREE_PATH\",\"branch\":\"$BRANCH\"}}" >> "$SESSIONS_DIR/activity-feed.jsonl" 2>/dev/null || true
+DETAIL=$(jq -n --arg wp "$WORKTREE_PATH" --arg br "$BRANCH" '{worktree_path:$wp,branch:$br}')
+blitz_log_event "hook" "worktree_create" "Worktree created" "$DETAIL"
 
 # IMPORTANT: do NOT print to stdout; that would override the default worktree path.
 exit 0

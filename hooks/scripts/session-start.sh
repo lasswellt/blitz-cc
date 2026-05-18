@@ -1,25 +1,14 @@
 #!/usr/bin/env bash
+# shellcheck source=_lib/common.sh
 # session-start.sh — Initialize session context on SessionStart hook
 # Displays recent activity feed and checks for stale sessions
 # Non-blocking: always exits 0
 
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
 
-# Find project root
-DIR="$(pwd)"
-ROOT=""
-while [ "$DIR" != "/" ]; do
-  if [ -d "$DIR/.claude-plugin" ]; then
-    ROOT="$DIR"
-    break
-  fi
-  DIR="$(dirname "$DIR")"
-done
-[ -z "$ROOT" ] && ROOT="$(pwd)"
-
+ROOT=$(blitz_find_root || true)
 SESSIONS_DIR="$ROOT/.cc-sessions"
-
-# Ensure .cc-sessions exists
 mkdir -p "$SESSIONS_DIR"
 
 # --- HANDOFF.json auto-resume detection ---
@@ -77,7 +66,11 @@ parse_iso_epoch() {
   local iso="$1"
   date -d "$iso" +%s 2>/dev/null && return 0
   date -j -f "%Y-%m-%dT%H:%M:%SZ" "$iso" +%s 2>/dev/null && return 0
-  python3 -c "from datetime import datetime; print(int(datetime.fromisoformat('$iso'.replace('Z', '+00:00')).timestamp()))" 2>/dev/null && return 0
+  python3 - "$iso" <<'PYEOF' 2>/dev/null && return 0
+import sys
+from datetime import datetime
+print(int(datetime.fromisoformat(sys.argv[1].replace('Z', '+00:00')).timestamp()))
+PYEOF
   return 1
 }
 
