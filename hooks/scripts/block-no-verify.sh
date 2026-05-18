@@ -22,8 +22,9 @@ CMD="$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
 # `git commit -m "use -n flag"`, strip quoted strings before pattern check.
 CMD_CLEAN="$(printf '%s' "$CMD" | sed "s/'[^']*'//g" | sed 's/"[^"]*"//g')"
 NO_VERIFY_LONG="$(printf '%s' "$CMD_CLEAN" | grep -cE '(^|[[:space:]])--no-verify([[:space:]]|$)' || true)"
-# -n short form: standalone flag in a git commit command (not part of combined option like -am)
-NO_VERIFY_SHORT="$(printf '%s' "$CMD_CLEAN" | grep -cE 'git[[:space:]].*commit.*[[:space:]]-n([[:space:]]|$)' || true)"
+# -n short form: standalone flag OR combined short flags like -an, -nm, -na, -anm
+# Git's POSIX short-flag grouping means -n can be combined with other flags (-an = -a -n).
+NO_VERIFY_SHORT="$(printf '%s' "$CMD_CLEAN" | grep -cE 'git[[:space:]].*commit.*[[:space:]]-[a-zA-Z]*n[a-zA-Z]*([[:space:]]|$)' || true)"
 if [[ "${NO_VERIFY_LONG:-0}" -gt 0 || "${NO_VERIFY_SHORT:-0}" -gt 0 ]]; then
   if [[ "${BLITZ_OVERRIDE_NO_VERIFY:-0}" == "1" ]]; then
     # Logged override: user explicitly set the env var.

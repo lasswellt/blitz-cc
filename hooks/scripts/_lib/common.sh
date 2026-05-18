@@ -31,12 +31,21 @@ blitz_find_root() {
 # Extract a JSON field from json_string (default: $INPUT).
 # Tries top-level first (.field), then nested under tool_input (.tool_input.field).
 # Prints empty string on miss. Safe under set -e.
+# Field name validated against [a-zA-Z_][a-zA-Z0-9_]* to prevent jq filter injection
+# in case a caller passes a non-literal field name.
 blitz_extract() {
   local field="$1" input="${2:-${INPUT:-}}"
+  case "$field" in
+    [a-zA-Z_]*) ;;  # valid identifier prefix
+    *) return 0 ;;
+  esac
+  case "$field" in
+    *[!a-zA-Z0-9_]*) return 0 ;;  # contains non-identifier char
+  esac
   local val
-  val=$(printf '%s' "$input" | jq -r ".${field} // empty" 2>/dev/null) \
+  val=$(printf '%s' "$input" | jq -r --arg f "$field" '.[$f] // empty' 2>/dev/null) \
     && [ -n "$val" ] && { printf '%s\n' "$val"; return 0; } || true
-  val=$(printf '%s' "$input" | jq -r ".tool_input.${field} // empty" 2>/dev/null) \
+  val=$(printf '%s' "$input" | jq -r --arg f "$field" '.tool_input[$f] // empty' 2>/dev/null) \
     && { printf '%s\n' "$val"; return 0; } || true
   return 0
 }

@@ -39,7 +39,13 @@ GEMINI_MODEL="${BLITZ_GEMINI_MODEL:-gemini-2.5-pro}"
 # This prevents word-splitting (e.g. --system-prompt "arg") from injecting
 # multiple flags from a single env-var value — which could override the critic
 # system prompt and return LGTM unconditionally.
-mapfile -t GEMINI_FLAGS < <(printf '%s\n' "${BLITZ_GEMINI_FLAGS:-}")
+#
+# Use while+read (bash 3.2-compatible) instead of mapfile (bash 4+) since
+# macOS ships bash 3.2 by default. Empty lines are skipped.
+GEMINI_FLAGS=()
+while IFS= read -r _flag; do
+  [ -n "$_flag" ] && GEMINI_FLAGS+=("$_flag")
+done < <(printf '%s\n' "${BLITZ_GEMINI_FLAGS:-}")
 
 MODE=""
 PROMPT_FILE=""

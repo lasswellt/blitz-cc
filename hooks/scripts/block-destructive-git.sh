@@ -55,7 +55,7 @@ fi
 
 # git push --force / -f / --force-with-lease to a protected branch.
 # audit-20260517: --force-with-lease was missing, leaving a history-rewrite bypass.
-if echo "$CMD" | grep -qE 'git[[:space:]]+push[[:space:]]+(.*[[:space:]])?(--force|--force-with-lease|-f)([[:space:]]|$)' \
+if echo "$CMD" | grep -qE 'git[[:space:]]+push[[:space:]]+(.*[[:space:]])?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|$)' \
     && echo "$CMD" | grep -qE '(main|master|production|release)'; then
   block "git push --force to protected branch" "Force-pushing main/master rewrites shared history."
 fi
