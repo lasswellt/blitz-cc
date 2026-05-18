@@ -60,7 +60,10 @@ what work is being suspended, and the resumption criteria.
 ```bash
 SCOPE_LIMIT_ACTIVE=0
 if [ -f SCOPE-LIMIT.md ]; then
-  EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+  # Strip surrounding quotes so quoted-YAML form (`expires_after: "2026-08-01"`)
+  # extracts as `2026-08-01`, not `"2026-08-01"` — the quote char sorts below '0'
+  # in shell string-compare, silently treating active limits as expired.
+  EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
   if [ -z "$EXPIRES" ]; then
     echo "[next] SCOPE-LIMIT.md present but missing expires_after — malformed, ignoring" >&2
   elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
@@ -70,11 +73,12 @@ fi
 ```
 
 **Row 6f dispatch** (decision-tree position: after 6e, before 7):
-- Condition: `SCOPE_LIMIT_ACTIVE == 1` (fires regardless of sprint state, regardless of CF_ESCALATED / CF_PENDING_INPUTS / CF_ACTIVE)
+- Condition: **No active sprint** + `SCOPE_LIMIT_ACTIVE == 1` (an in-progress/planned sprint at rows 1-5 still dispatches first — see Tie-break precedence below)
+- Short-circuits rows 6a-6e regardless of `CF_ESCALATED` / `CF_PENDING_INPUTS` / `CF_ACTIVE`
 - Action: Print SCOPE-LIMIT banner including declared_at, expires_after, first line of reason, and revival instructions
 - Exit: emit `LOOP_ESCALATE` stop signal
 
-**Tie-break precedence**: Row 6f short-circuits all rows 6a-6e. Even if HARD_SPEC_BLOCKERS or CF_ESCALATED are present, the SCOPE-LIMIT.md override takes priority — operators want a single signal that suspends everything.
+**Tie-break precedence**: Row 6f short-circuits rows 6a-6e (new-work auto-detection paths). An in-progress or planned sprint (rows 1-5) continues to ship — SCOPE-LIMIT.md suspends the loop's appetite for NEW work but does not interrupt committed sprints. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon.
 
 **Re-entry semantics**: Each subsequent `/blitz:next --loop` tick re-detects the file and re-prints the banner. Operators clear the override by deleting the file OR editing `expires_after` to a past date.
 

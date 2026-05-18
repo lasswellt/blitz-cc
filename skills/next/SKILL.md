@@ -161,8 +161,10 @@ Detect `proposed_epics[]` in `docs/audits/*-index.json` (e.g., `audit-2026-05-17
 ```bash
 LAST_SHIPPED=$(jq -r '[.sprints[] | select(.shipped_date != null) | .shipped_date] | sort | last' \
   sprint-registry.json 2>/dev/null || echo "1970-01-01T00:00:00Z")
+# jq returns literal "null" when array is empty — coerce to epoch
+[ "$LAST_SHIPPED" = "null" ] && LAST_SHIPPED="1970-01-01T00:00:00Z"
 
-SPRINTIFIED_IDS=$(jq -r '[.sprints[].epics[]] | map(select(startswith("EPIC-A"))) | unique | .[]' \
+SPRINTIFIED_IDS=$(jq -r '[.sprints[].epics[]?] | map(select(startswith("EPIC-A"))) | unique | .[]' \
   sprint-registry.json 2>/dev/null | sort -u)
 
 SPRINTIFIED_AUDITS=$(jq -r '[.sprints[] | .audit_source // empty] | unique | .[]' \
@@ -176,7 +178,7 @@ for f in docs/audits/*-index.json; do
   audit_basename=$(basename "$f" -index.json).md
   echo "$SPRINTIFIED_AUDITS" | grep -qF "$audit_basename" && continue
   n=$(jq --argjson sprintified "$(printf '%s\n' $SPRINTIFIED_IDS | jq -Rs 'split("\n") | map(select(. != ""))')" \
-    '[.proposed_epics[] | select((.status // "proposed") == "proposed") | select(.id as $i | $sprintified | index($i) | not)] | length' \
+    '[.proposed_epics[] | select(.id != null) | select((.status // "proposed") == "proposed") | select(.id as $i | $sprintified | index($i) | not)] | length' \
     "$f" 2>/dev/null || echo 0)
   UNSPRINTIFIED_AUDIT_COUNT=$((UNSPRINTIFIED_AUDIT_COUNT + n))
 done
@@ -186,10 +188,15 @@ done
 
 Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md) for the full schema and behavior contract.
 
+Phase 0.9c only sets `SCOPE_LIMIT_ACTIVE`. When row 6f fires (Phase 3.4 dispatch), the banner emitter reads the additional fields (`declared_at`, `declared_by`, `scope`, `reason`) directly from `SCOPE-LIMIT.md` via the Phase 4 banner template — no need to pre-extract here.
+
 ```bash
 SCOPE_LIMIT_ACTIVE=0
 if [ -f SCOPE-LIMIT.md ]; then
-  EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+  # Strip surrounding quotes from YAML value (handles both `expires_after: 2026-08-01`
+  # and `expires_after: "2026-08-01"` forms). Without strip, the quote char sorts
+  # below '0' in shell string-compare → active limits silently treated as expired.
+  EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
   if [ -z "$EXPIRES" ]; then
     echo "[next] SCOPE-LIMIT.md present but missing expires_after — malformed, ignoring" >&2
   elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
@@ -234,7 +241,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 | 6c | No active sprint + roadmap with unblocked epics | Plan next sprint | Invoke `/blitz:sprint-plan` | `/blitz:sprint-plan` |
 | 6d | No active sprint + `$CF_ACTIVE > 0` (registry has active/partial entries even though epics look done) | Plan gap-closure sprint against registry | Invoke `/blitz:sprint-plan` (will re-select parent epics) | `/blitz:sprint-plan` |
 | 6e | No active sprint + `$UNSPRINTIFIED_AUDIT_COUNT > 0` AND `$SCOPE_LIMIT_ACTIVE == 0` | Plan audit-derived sprint | Invoke `/blitz:sprint-plan` (will pick up audit epics from registry) | `/blitz:sprint-plan` |
-| 6f | `$SCOPE_LIMIT_ACTIVE == 1` (any sprint state) | Operator-declared scope limit — short-circuits all other rows | Print SCOPE-LIMIT banner + exit signal LOOP_ESCALATE | `cat SCOPE-LIMIT.md` |
+| 6f | No active sprint + `$SCOPE_LIMIT_ACTIVE == 1` | Operator-declared scope limit — suspends new-work auto-detection (rows 6a-6e) | Print SCOPE-LIMIT banner + exit signal LOOP_ESCALATE | `cat SCOPE-LIMIT.md` |
 | 7 | No active sprint + all epics blocked/done AND `$CF_ACTIVE == 0` AND `$CF_PENDING_INPUTS == 0` AND `$UNSPRINTIFIED_AUDIT_COUNT == 0` | Nothing to do | Print idle status + exit signal LOOP_DONE | `/blitz:roadmap extend` |
 | 8 | No roadmap exists AND `$CF_ACTIVE == 0` | Cannot proceed | Print "No roadmap" + exit | `/blitz:roadmap full` |
 
@@ -248,10 +255,10 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
 7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
 8. HARD_SPEC escalation (row 1a) short-circuits resume (row 1) — auto-resuming a sprint with a HARD_SPEC-blocked story burns tokens on the same failing attempt; the loop must escalate to operator instead.
-9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits **all** rows 6a-6e and even active-sprint resume — operator override takes precedence over auto-detected work. See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md).
+9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md).
 10. Plan audit-derived sprint (row 6e) sits after carry-forward gap closure (6d) and before idle (7) — registry-tracked work always beats audit-suggested work. Audit findings are surfaced via `roadmap extend` ingestion (row 0 + Phase 0.8 path includes `docs/audits/*-epics.md`).
 
-**Why rows 6a-6d exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation.
+**Why rows 6a-6f exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split (6a-6d) makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation. **Rows 6e and 6f** were added per `docs/_research/2026-05-18_audit-deferred-work-detection.md`: row 6e closes a separate silent-drop mode where `codebase-audit` produced `docs/audits/*-epics.md` with proposed epics that were invisible to every other row (no scope-block ingestion path existed), and row 6f gives operators a single canonical signal (`SCOPE-LIMIT.md`) to suspend new-work auto-detection without manually transitioning every registry entry to `deferred`.
 
 ---
 

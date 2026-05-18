@@ -98,7 +98,7 @@ EOF
     audit_basename=$(basename "$f" -index.json).md
     echo "$SPRINTIFIED_AUDITS" | grep -qF "$audit_basename" && continue
     n=$(jq --argjson sprintified "$(printf '%s\n' $SPRINTIFIED_IDS | jq -Rs 'split("\n") | map(select(. != ""))')" \
-      '[.proposed_epics[] | select((.status // "proposed") == "proposed") | select(.id as $i | $sprintified | index($i) | not)] | length' \
+      '[.proposed_epics[] | select(.id != null) | select((.status // "proposed") == "proposed") | select(.id as $i | $sprintified | index($i) | not)] | length' \
       "$f" 2>/dev/null || echo 0)
     UNSPRINTIFIED_AUDIT_COUNT=$((UNSPRINTIFIED_AUDIT_COUNT + n))
   done
@@ -126,7 +126,7 @@ EOF
   # Inline Phase 0.9c detection
   SCOPE_LIMIT_ACTIVE=0
   if [ -f SCOPE-LIMIT.md ]; then
-    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
     if [ -z "$EXPIRES" ]; then
       :  # malformed
     elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
@@ -156,7 +156,7 @@ EOF
 
   SCOPE_LIMIT_ACTIVE=0
   if [ -f SCOPE-LIMIT.md ]; then
-    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
     if [ -z "$EXPIRES" ]; then
       :
     elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
@@ -185,7 +185,7 @@ EOF
 
   SCOPE_LIMIT_ACTIVE=0
   if [ -f SCOPE-LIMIT.md ]; then
-    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
     if [ -z "$EXPIRES" ]; then
       :  # malformed — do not activate
     elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
@@ -194,4 +194,34 @@ EOF
   fi
 
   [[ "$SCOPE_LIMIT_ACTIVE" -eq 0 ]]
+}
+
+# ---------------------------------------------------------------------------
+# Test 6 — Phase 0.9c SCOPE_LIMIT_ACTIVE=1 with QUOTED expires_after (regression)
+# ---------------------------------------------------------------------------
+
+@test "Phase 0.9c SCOPE_LIMIT_ACTIVE=1 with quoted expires_after YAML" {
+  cat > SCOPE-LIMIT.md <<'EOF'
+---
+declared_at: 2026-05-18
+declared_by: operator
+scope: full-codebase
+reason: |
+  Quoted YAML date.
+expires_after: "2099-12-31"
+---
+# Scope Limit Declaration
+EOF
+
+  SCOPE_LIMIT_ACTIVE=0
+  if [ -f SCOPE-LIMIT.md ]; then
+    EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md | tr -d '"'"'")
+    if [ -z "$EXPIRES" ]; then
+      :
+    elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
+      SCOPE_LIMIT_ACTIVE=1
+    fi
+  fi
+
+  [[ "$SCOPE_LIMIT_ACTIVE" -eq 1 ]]
 }
