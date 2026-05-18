@@ -196,7 +196,7 @@ mkdir -p docs/generated
 
 If mode is `full`, create a team and spawn agents for parallel documentation generation.
 
-Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: "doc-gen-<mode>", prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently.
+Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: <agent-name>, prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`, `doc-changelog`).
 
 > **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [spawn-protocol.md](/_shared/spawn-protocol.md).
 

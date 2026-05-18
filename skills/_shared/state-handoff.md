@@ -160,6 +160,8 @@ Each step's Phase 0 validation MUST cite this sequence in its error message when
 
 **Consumer**: operator (reviews report), sprint-plan (if migration is tracked as a story), fix-issue (if a step fails and needs targeted repair).
 
+**Resume contract**: if `STATE.md` already exists and `--resume` is NOT passed, refuse to clobber — print `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1. With `--resume`, read STATE.md, skip completed steps, retry the first non-`done` step. Idempotency: rerun of `--resume` after full completion is a no-op (prints "migration already complete" and exits 0).
+
 ---
 
 ## Anti-patterns

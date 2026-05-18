@@ -117,7 +117,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | "I want to do X but don't know which skill" | `/blitz:ask` | Routes ambiguous intent |
 | "is the plugin healthy" | `/blitz:health` | Diagnostic |
 | "is the project drifted from blitz spec" | `/blitz:conform` | Diagnostic |
-| "clean up worktrees", "delete stale branches", "prune worktrees", "worktree-prune" | `/blitz:worktree-prune` | Lists/deletes stale agent-spawned branches; --dry-run by default, --apply --merged-only to delete |
+| "clean up worktrees", "delete stale branches", "prune worktrees", "worktree-prune" | `/blitz:worktree-prune` | Lists/deletes stale agent-spawned branches. Flags: `--dry-run` (default), `--apply --merged-only` (safe delete), `--apply --all-older-than <duration>` (includes unmerged; requires `--force`) |
 
 When the user's intent matches one of these unambiguously, route. When ambiguous, surface 2 candidates and ask one clarifying question.
 
