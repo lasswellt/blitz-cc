@@ -68,14 +68,16 @@ Glob: **/roadmap-registry.json, **/epic-registry.json, **/roadmap/**/*.md, **/do
 
 ### 0.2 Load Research Index
 
-Search for research documents:
+Search for research documents AND audit-derived `-epics.md` files:
 ```
-Glob: **/docs/_research/**/*.md, **/docs/research/**/*.md, **/research/**/*.md, **/_research/**/*.md
+Glob: **/docs/_research/**/*.md, **/docs/research/**/*.md, **/research/**/*.md, **/_research/**/*.md, **/docs/audits/*-epics.md
 ```
 
-If no research documents found:
+Audit-derived docs (filename `*-epics.md` under `docs/audits/`) follow the same `scope:` block protocol as research docs — see `skills/codebase-audit/SKILL.md` Phase 3.3a for the writer contract, and Phase 1.1.5 below for the ingestion path. Only `*-epics.md` files are ingested; the full audit report (`audit-YYYYMMDD.md`) and machine-readable index (`audit-YYYYMMDD-index.json`) are NOT consumed by `roadmap extend`.
+
+If no research documents OR audit `-epics.md` files found:
 ```bash
-echo "BLOCK: roadmap requires research documents in docs/_research/. Run /blitz:research first." >&2
+echo "BLOCK: roadmap requires research documents in docs/_research/ OR audit -epics.md files in docs/audits/. Run /blitz:research or /blitz:codebase-audit first." >&2
 exit 1
 ```
 

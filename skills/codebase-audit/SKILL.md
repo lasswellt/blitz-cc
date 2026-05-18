@@ -319,12 +319,49 @@ For each theme, write a proposed epic using the format from `references/main.md`
 <other epics or external factors this depends on>
 ```
 
+### 3.3a Emit `scope:` YAML frontmatter on `-epics.md`
+
+Every `audit-YYYYMMDD-epics.md` file MUST open with a `scope:` YAML frontmatter block above the `# Proposed Epics` heading. One entry per non-`complete` `proposed_epics[]` item. This is the canonical contract for `/blitz:roadmap extend` ingestion — see [/_shared/carry-forward-registry.md](/_shared/carry-forward-registry.md) §Writers.
+
+Skip emission for any epic whose `status: "complete"` (idempotent reruns of `codebase-audit` MUST NOT duplicate registry entries on already-shipped work).
+
+Per-entry shape:
+- `id`: `cf-${AUDIT_DATE}-${EPIC_ID_LOWER}` (e.g., `cf-2026-05-18-epic-a01`)
+- `unit`: `epics`
+- `target`: `1`
+- `description`: theme + pillar + finding_count + effort. If `defer_reason` is set, prepend it. If `multi_sprint: true`, append "Multi-sprint (estimate: ${sprint_estimate})."
+- `acceptance`: each entry in the epic's `success_criteria` becomes one `shell:` acceptance check, OR `grep_absent:` / `grep_present:` when the criterion clearly maps to a grep pattern.
+
+Sample:
+
+```yaml
+---
+scope:
+  - id: cf-2026-05-18-epic-a01
+    unit: epics
+    target: 1
+    description: |
+      Hook performance — async + scope guards.
+      Performance (primary), Robustness (secondary). 8 findings. Effort: Small.
+    acceptance:
+      - shell: "grep -q '\"async\": true' hooks/hooks.json"
+      - shell: "test -x hooks/scripts/post-edit-typecheck-block.sh"
+---
+# Proposed Epics — Audit 2026-05-18
+
+Source: `docs/audits/audit-2026-05-18.md`. ...
+```
+
+After ingestion via `/blitz:roadmap extend`, set each epic's `ingested_at` field in the companion `audit-YYYYMMDD-index.json` to the current ISO-8601. This signals to subsequent audit runs (and `/blitz:next` Phase 0.9b) that the epic has been registered.
+
 ### 3.4 Write Epic Proposals
 
 Write all proposed epics to:
 ```
 ${REPORT_DIR}/audit-$(date +%Y%m%d)-epics.md
 ```
+
+The emitter MUST populate every field documented in Phase 3.5 schema on EVERY epic, including the 6 backward-compat fields: `id` (carried verbatim from the epic generated in Phase 3.3), `status: "proposed"`, `defer_reason: null`, `multi_sprint: false`, `sprint_estimate: null`, `ingested_at: null`. The operator may hand-edit `status: "deferred"` + `defer_reason: "..."` post-emission to signal items not to sprintify; consumers (`/blitz:roadmap extend`, `/blitz:next` Phase 0.9b) MUST tolerate older index files missing these fields by defaulting to the values above.
 
 ### 3.5 Write Machine-Readable Index
 
@@ -338,6 +375,7 @@ Schema:
   "audit_date": "<ISO-8601>",
   "proposed_epics": [
     {
+      "id": "<EPIC-A...>",
       "theme": "<theme-name>",
       "pillar": "<pillar>",
       "priority": 0,
@@ -346,11 +384,24 @@ Schema:
       "finding_count": 0,
       "severity_breakdown": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
       "proposed_stories": ["<story descriptions>"],
-      "success_criteria": ["<criteria>"]
+      "success_criteria": ["<criteria>"],
+      "status": "proposed",
+      "defer_reason": null,
+      "multi_sprint": false,
+      "sprint_estimate": null,
+      "ingested_at": null
     }
   ]
 }
 ```
+
+**Backward-compat defaults** (consumers MUST tolerate omitted fields by defaulting):
+- `id` — stable string key, format `EPIC-A<NN>`. Required for `/blitz:next` Phase 0.9b cross-reference.
+- `status` — defaults to `"proposed"`. Enum: `proposed | deferred | active | complete`. Drives `/blitz:next` row 6e detection.
+- `defer_reason` — defaults to `null`. Free-form string when `status: "deferred"`.
+- `multi_sprint` — defaults to `false`. Operator-set boolean; signals work spans multiple sprints (orthogonal to `effort` — a 6-file refactor across 3 sprints sets `multi_sprint: true` + `sprint_estimate: 3` even when `effort: Medium`).
+- `sprint_estimate` — defaults to `null`. Integer count of sprints the operator expects to complete this epic.
+- `ingested_at` — defaults to `null`. ISO-8601 timestamp set by `/blitz:roadmap extend` after registry ingestion.
 
 ### 3.6 Final Output
 

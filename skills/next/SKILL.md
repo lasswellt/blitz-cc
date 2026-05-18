@@ -131,12 +131,13 @@ CF_PENDING_INPUTS=$(test -f "sprints/sprint-${NEXT_SPRINT}-planning-inputs.json"
 
 ### 0.8 Check for Uningested Research (carry-forward-aware)
 
-A research doc is "uningested" if it's newer than roadmap-registry.json AND its `scope:` IDs aren't yet in the carry-forward registry:
+A research doc OR audit `-epics.md` file is "uningested" if it's newer than roadmap-registry.json AND its `scope:` IDs aren't yet in the carry-forward registry. Audit `-epics.md` files follow the same `scope:` block protocol (see `skills/codebase-audit/SKILL.md` Phase 3.3a):
 
 ```bash
 INGESTED_IDS=$(jq -rs '[group_by(.id)[] | max_by(.ts).id] | join("\n")' \
   .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "")
-UNINGESTED=$(find docs/_research -name '*.md' -newer roadmap-registry.json 2>/dev/null \
+UNINGESTED=$({ find docs/_research -name '*.md' -newer roadmap-registry.json 2>/dev/null;
+                find docs/audits -name '*-epics.md' -newer roadmap-registry.json 2>/dev/null; } \
   | while read f; do
       IDS=$(grep -o 'id: cf-[^ ]*' "$f" 2>/dev/null | awk '{print $2}')
       if [ -z "$IDS" ]; then echo "$f"; continue; fi
@@ -151,6 +152,50 @@ UNINGESTED_COUNT=$(echo "$UNINGESTED" | grep -c '.' 2>/dev/null || echo 0)
 
 ```bash
 ls .cc-sessions/*.json 2>/dev/null
+```
+
+### 0.9b Check for Unsprintified Audit Epics
+
+Detect `proposed_epics[]` in `docs/audits/*-index.json` (e.g., `audit-2026-05-17-index.json`) that have not been sprintified. An epic is sprintified if its `id` appears in any `sprint-registry.json` sprint's `epics[]` array OR if the audit doc is referenced by a sprint's `audit_source` field.
+
+```bash
+LAST_SHIPPED=$(jq -r '[.sprints[] | select(.shipped_date != null) | .shipped_date] | sort | last' \
+  sprint-registry.json 2>/dev/null || echo "1970-01-01T00:00:00Z")
+
+SPRINTIFIED_IDS=$(jq -r '[.sprints[].epics[]] | map(select(startswith("EPIC-A"))) | unique | .[]' \
+  sprint-registry.json 2>/dev/null | sort -u)
+
+SPRINTIFIED_AUDITS=$(jq -r '[.sprints[] | .audit_source // empty] | unique | .[]' \
+  sprint-registry.json 2>/dev/null)
+
+UNSPRINTIFIED_AUDIT_COUNT=0
+for f in docs/audits/*-index.json; do
+  [ -f "$f" ] || continue
+  file_ts=$(date -r "$f" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00Z")
+  [ "$file_ts" \> "$LAST_SHIPPED" ] || continue
+  audit_basename=$(basename "$f" -index.json).md
+  echo "$SPRINTIFIED_AUDITS" | grep -qF "$audit_basename" && continue
+  n=$(jq --argjson sprintified "$(printf '%s\n' $SPRINTIFIED_IDS | jq -Rs 'split("\n") | map(select(. != ""))')" \
+    '[.proposed_epics[] | select((.status // "proposed") == "proposed") | select(.id as $i | $sprintified | index($i) | not)] | length' \
+    "$f" 2>/dev/null || echo 0)
+  UNSPRINTIFIED_AUDIT_COUNT=$((UNSPRINTIFIED_AUDIT_COUNT + n))
+done
+```
+
+### 0.9c Check Scope Limit
+
+Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md) for the full schema and behavior contract.
+
+```bash
+SCOPE_LIMIT_ACTIVE=0
+if [ -f SCOPE-LIMIT.md ]; then
+  EXPIRES=$(awk '/^expires_after:/ {print $2; exit}' SCOPE-LIMIT.md)
+  if [ -z "$EXPIRES" ]; then
+    echo "[next] SCOPE-LIMIT.md present but missing expires_after — malformed, ignoring" >&2
+  elif [ "$(date -u +%Y-%m-%d)" \< "$EXPIRES" ]; then
+    SCOPE_LIMIT_ACTIVE=1
+  fi
+fi
 ```
 
 ### 0.10 Check for HARD_SPEC-Blocked Stories
@@ -188,7 +233,9 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 | 6b | No active sprint + `$CF_PENDING_INPUTS == 1` (planning-inputs file from prior review Invariant 4) | Plan gap-closure sprint against injected entries | Invoke `/blitz:sprint-plan` (honors planning-inputs file) | `/blitz:sprint-plan` |
 | 6c | No active sprint + roadmap with unblocked epics | Plan next sprint | Invoke `/blitz:sprint-plan` | `/blitz:sprint-plan` |
 | 6d | No active sprint + `$CF_ACTIVE > 0` (registry has active/partial entries even though epics look done) | Plan gap-closure sprint against registry | Invoke `/blitz:sprint-plan` (will re-select parent epics) | `/blitz:sprint-plan` |
-| 7 | No active sprint + all epics blocked/done AND `$CF_ACTIVE == 0` AND `$CF_PENDING_INPUTS == 0` | Nothing to do | Print idle status + exit signal LOOP_DONE | `/blitz:roadmap extend` |
+| 6e | No active sprint + `$UNSPRINTIFIED_AUDIT_COUNT > 0` AND `$SCOPE_LIMIT_ACTIVE == 0` | Plan audit-derived sprint | Invoke `/blitz:sprint-plan` (will pick up audit epics from registry) | `/blitz:sprint-plan` |
+| 6f | `$SCOPE_LIMIT_ACTIVE == 1` (any sprint state) | Operator-declared scope limit — short-circuits all other rows | Print SCOPE-LIMIT banner + exit signal LOOP_ESCALATE | `cat SCOPE-LIMIT.md` |
+| 7 | No active sprint + all epics blocked/done AND `$CF_ACTIVE == 0` AND `$CF_PENDING_INPUTS == 0` AND `$UNSPRINTIFIED_AUDIT_COUNT == 0` | Nothing to do | Print idle status + exit signal LOOP_DONE | `/blitz:roadmap extend` |
 | 8 | No roadmap exists AND `$CF_ACTIVE == 0` | Cannot proceed | Print "No roadmap" + exit | `/blitz:roadmap full` |
 
 ### Tie-Breaking (if multiple conditions match)
@@ -201,6 +248,8 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
 7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
 8. HARD_SPEC escalation (row 1a) short-circuits resume (row 1) — auto-resuming a sprint with a HARD_SPEC-blocked story burns tokens on the same failing attempt; the loop must escalate to operator instead.
+9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits **all** rows 6a-6e and even active-sprint resume — operator override takes precedence over auto-detected work. See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md).
+10. Plan audit-derived sprint (row 6e) sits after carry-forward gap closure (6d) and before idle (7) — registry-tracked work always beats audit-suggested work. Audit findings are surfaced via `roadmap extend` ingestion (row 0 + Phase 0.8 path includes `docs/audits/*-epics.md`).
 
 **Why rows 6a-6d exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation.
 
@@ -278,6 +327,8 @@ Row 5:  Skill({ skill: "blitz:implement", args: "--sprint N --mode autonomous" }
 Row 6b: Skill({ skill: "blitz:sprint-plan" })   # honors planning-inputs.json
 Row 6c: Skill({ skill: "blitz:sprint-plan" })
 Row 6d: Skill({ skill: "blitz:sprint-plan" })   # re-selects parent epics
+Row 6e: Skill({ skill: "blitz:sprint-plan" })   # picks up audit epics from registry
+Row 6f: # NO dispatch — print SCOPE-LIMIT banner + exit LOOP_ESCALATE
 ```
 
 **Do NOT dispatch `/blitz:sprint --loop` from here.** That would recurse — sprint --loop is itself an alias for this skill since v1.13.0. Always dispatch the specific phase skill.
@@ -348,6 +399,32 @@ Print a concise reconciliation report. Examples:
   ├─ DECISION: Plan gap-closure sprint (row 6d)
   ├─ Dispatching: /blitz:sprint-plan
   └─ Next /loop tick will re-evaluate after planning
+```
+
+**Audit-derived sprint (row 6e):**
+```
+[next --loop] Reconciliation:
+  ├─ Sprint 12: done (audit-derived)
+  ├─ Audit: docs/audits/audit-2026-05-17-index.json found (newer than last shipped)
+  │    UNSPRINTIFIED_AUDIT_COUNT: 3 (EPIC-A07, EPIC-A09, EPIC-A12)
+  ├─ Scope limit: not active
+  ├─ DECISION: Plan audit-derived sprint (row 6e)
+  ├─ Dispatching: /blitz:sprint-plan
+  └─ Next /loop tick will re-evaluate after planning
+```
+
+**Scope-limit active (row 6f):**
+```
+[next --loop] Reconciliation:
+  ├─ SCOPE-LIMIT.md: active (declared 2026-05-18, expires 2026-08-01)
+  │    Reason: Diminishing returns past sprint 12 — pause for capability X
+  │    Scope: full-codebase
+  ├─ DECISION: Operator scope-limit (row 6f) — LOOP_ESCALATE
+  │    Loop cannot auto-advance. Resolve via:
+  │      a) Wait for expiry (auto-clear after expires_after)
+  │      b) Delete SCOPE-LIMIT.md to lift override
+  │      c) Edit SCOPE-LIMIT.md expires_after to a past date
+  └─ Exiting — /loop will re-escalate on next tick until resolved
 ```
 
 **Escalation (row 6a):**
