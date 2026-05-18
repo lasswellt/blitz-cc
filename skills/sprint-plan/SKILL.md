@@ -140,25 +140,11 @@ mkdir -p "${SPRINT_DIR}/research"
 
 ### 1.4 Write Sprint Manifest
 
-Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol (CHECK → ACQUIRE → VERIFY → OPERATE → RELEASE). Then write `${SPRINT_DIR}/manifest.json`:
-```json
-{
-  "sprint": <number>,
-  "status": "planning",
-  "created": "<ISO-8601>",
-  "epics": ["<epic-id-1>", "<epic-id-2>"],
-  "carry_forward": ["<story-id-from-previous>"],
-  "story_count": 0
-}
-```
+Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol. Write `${SPRINT_DIR}/manifest.json` with: `sprint`, `status: planning`, `created`, `epics[]`, `carry_forward[]`, `story_count`.
 
 ### 1.5 Sync with GitHub Issues (if available)
 
-Check if `gh` CLI is available and authenticated:
-```bash
-gh auth status 2>&1
-```
-If available, note the repo owner/name for later issue creation. If not, skip GitHub integration gracefully.
+`gh auth status` — if authenticated, note repo for later issue creation; otherwise skip GitHub integration.
 
 ---
 

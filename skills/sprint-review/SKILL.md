@@ -94,22 +94,7 @@ Record:
 
 ### 1.3 Unit Tests (Changed Packages Only)
 
-Run tests only for changed packages to save time:
-
-```bash
-# For monorepo with workspaces
-# Run tests in each changed package
-for pkg in ${CHANGED_PACKAGES}; do
-  (cd "$pkg" && npm run test 2>&1) || true
-done
-
-# For single-package projects
-npm run test -- --changed 2>&1 || npm run test 2>&1
-```
-
-Record:
-- Total tests, passed, failed, skipped
-- Failure details (test name, file, assertion message)
+Monorepo: `for pkg in ${CHANGED_PACKAGES}; do (cd "$pkg" && npm run test); done`. Single-package: `npm run test -- --changed`. Record: total tests, passed/failed/skipped, failure details (test name + file + assertion).
 
 ### 1.4 Build Verification
 

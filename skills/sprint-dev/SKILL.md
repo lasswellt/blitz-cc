@@ -374,13 +374,7 @@ Run the initial full verification sweep (type-check, lint, test, build). On re-r
 
 ### 4.2.5 Completeness Gate
 
-Run the completeness gate on all files changed during the sprint:
-```bash
-# Collect all files modified in this sprint
-CHANGED_FILES=$(git diff --name-only sprint-${SPRINT_NUMBER}/base..HEAD -- '*.ts' '*.tsx' '*.vue')
-```
-Invoke: `/blitz:completeness-gate` with the sprint's source directories.
-If the score is below C (70), flag critical findings in the integration report but do not block — the sprint review will make the final call.
+Run `/blitz:completeness-gate` on changed source files (`git diff --name-only ${SPRINT_BASE}..HEAD -- '*.ts' '*.tsx' '*.vue'`). Score < C (70) → flag critical findings in integration report; do not block (sprint review makes final call).
 
 ### 4.2.1 Cross-Phase Regression Testing
 
