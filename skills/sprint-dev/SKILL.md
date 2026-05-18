@@ -59,6 +59,7 @@ PIPELINE_MISSING=()
 [ -s "sprint-registry.json" ] || PIPELINE_MISSING+=("sprint-registry.json")
 SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
 [ -z "$SPRINT_NUMBER" ] && { echo "BLOCK: SPRINT_NUMBER is empty — cannot expand sprints/sprint-/ paths." >&2; exit 1; }
+[[ "$SPRINT_NUMBER" =~ ^[0-9]{1,4}$ ]] || { echo "BLOCK: SPRINT_NUMBER must be 1-4 digits (got: $SPRINT_NUMBER)." >&2; exit 1; }
 SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
 [ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
 ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
