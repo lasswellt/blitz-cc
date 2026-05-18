@@ -27,6 +27,52 @@ BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 RC=0
 SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output\.md'
 
+# Canonical OUTPUT STYLE drift detection.
+# Extracts the canonical line from skills/_shared/terse-output.md (bounded by
+# <!-- canonical-output-style-start --> / <!-- canonical-output-style-end -->)
+# and hashes it. Every file under audit must contain this line verbatim.
+# Computed once per invocation; empty string disables the check (the file may
+# legitimately not have the markers in older checkouts).
+CANONICAL_OS_FILE="${BLITZ_ROOT}/skills/_shared/terse-output.md"
+CANONICAL_OS_HASH=""
+CANONICAL_OS_LINE=""
+# sha256 helper — sha256sum on Linux, shasum -a 256 on macOS (no GNU coreutils).
+sha256_fn() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | awk '{print $1}'
+  else
+    return 1
+  fi
+}
+if [ -f "$CANONICAL_OS_FILE" ]; then
+  CANONICAL_OS_LINE=$(awk '
+    /<!-- canonical-output-style-start -->/{flag=1; next}
+    /<!-- canonical-output-style-end -->/{flag=0}
+    flag && NF { print; exit }
+  ' "$CANONICAL_OS_FILE")
+  if [ -n "$CANONICAL_OS_LINE" ]; then
+    CANONICAL_OS_HASH=$(printf '%s' "$CANONICAL_OS_LINE" | sha256_fn 2>/dev/null || true)
+  fi
+fi
+
+# Fast-path scope guard for PostToolUse Write|Edit invocations.
+# When invoked as `--all` with hook JSON on stdin, exit 0 early unless the
+# edited file is a SKILL.md. Falls through to the existing behavior when
+# called from the CLI (no stdin tty) or with explicit file arguments.
+if [ "$#" -eq 1 ] && [ "${1:-}" = "--all" ] && [ ! -t 0 ]; then
+  INPUT=$(cat 2>/dev/null || true)
+  if [ -n "$INPUT" ]; then
+    EDITED_FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
+    case "$EDITED_FILE" in
+      skills/*/SKILL.md|*/skills/*/SKILL.md) ;;
+      "") ;;
+      *) exit 0 ;;
+    esac
+  fi
+fi
+
 usage() {
   cat <<EOF
 Usage: $SCRIPT_NAME [skill-path...] | --all
@@ -106,8 +152,23 @@ validate_one() {
   body_lines=$(printf '%s\n' "$body" | wc -l)
   [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500); push overflow to references/"
 
-  # 9. OUTPUT STYLE snippet
+  # 9. OUTPUT STYLE snippet — presence check
   printf '%s\n' "$body" | grep -qE "$SNIPPET_RE" || fail "$rel" "missing canonical OUTPUT STYLE snippet (see /_shared/terse-output.md and /_shared/spawn-protocol.md §7)"
+
+  # 9b. OUTPUT STYLE drift check — byte-identical to canonical source.
+  # Skipped when canonical hash unavailable (older terse-output.md without
+  # markers, or sha256sum missing). Skipped for skills explicitly opting out
+  # via a `<!-- output-style-extend -->` marker on the same line (none today).
+  if [ -n "$CANONICAL_OS_HASH" ]; then
+    local file_os_line file_os_hash
+    file_os_line=$(printf '%s\n' "$body" | grep -E "^OUTPUT STYLE:" | head -1 || true)
+    if [ -n "$file_os_line" ]; then
+      file_os_hash=$(printf '%s' "$file_os_line" | sha256_fn 2>/dev/null || echo "")
+      if [ -n "$file_os_hash" ] && [ "$file_os_hash" != "$CANONICAL_OS_HASH" ]; then
+        fail "$rel" "OUTPUT STYLE line drifted from canonical (see /_shared/terse-output.md §Canonical Snippet)"
+      fi
+    fi
+  fi
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done

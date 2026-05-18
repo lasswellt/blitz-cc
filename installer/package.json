@@ -1,7 +1,7 @@
 {
   "name": "blitz-cc",
-  "version": "0.4.0",
-  "description": "Installer for the Blitz Claude Code plugin — 31 skills for Vue/Nuxt + Firebase development",
+  "version": "1.14.0",
+  "description": "Installer for the Blitz Claude Code plugin — 39 skills, 10 agents, 36+ hooks for Vue/Nuxt + Firebase development",
   "bin": {
     "blitz-cc": "./bin/install.js"
   },
@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lasswellt/blitz.git",
+    "url": "https://github.com/lasswellt/cc-plugin-suite.git",
     "directory": "installer"
   },
   "engines": {

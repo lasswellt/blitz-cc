@@ -199,6 +199,25 @@ async function run(argv) {
 
   // ── Phase 3: Marketplace Registration ──────────────────────────
   ui.header('Marketplace registration...');
+  // Auto-update opt-in. Off-by-default because enabling authorizes Claude Code
+  // to pull plugin updates (incl. hook scripts that run as the user's OS
+  // process) from upstream on every session start — a supply-chain trust
+  // relationship the user must explicitly enter into.
+  // Honors `--yes` (non-interactive: keep default off) and `BLITZ_AUTO_UPDATE=1`
+  // (env-var explicit opt-in).
+  if (opts.autoUpdate === undefined) {
+    if (process.env.BLITZ_AUTO_UPDATE === '1') {
+      opts.autoUpdate = true;
+      ui.info('Auto-update enabled via BLITZ_AUTO_UPDATE=1');
+    } else if (!opts.yes && process.stdin.isTTY && process.stdout.isTTY) {
+      opts.autoUpdate = await ui.prompt(
+        'Enable automatic upstream updates from GitHub? (pulls hook scripts on every session)',
+        false
+      );
+    } else {
+      opts.autoUpdate = false;
+    }
+  }
   registerMarketplace(opts);
 
   // ── Phase 4: Plugin Installation ───────────────────────────────

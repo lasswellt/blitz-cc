@@ -90,11 +90,13 @@
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/skill-frontmatter-validate.sh --all"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/skill-frontmatter-validate.sh --all",
+            "async": true
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/agent-frontmatter-validate.sh --all"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/agent-frontmatter-validate.sh --all",
+            "async": true
           },
           {
             "type": "command",

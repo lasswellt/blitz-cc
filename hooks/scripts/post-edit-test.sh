@@ -7,11 +7,7 @@ set -uo pipefail
 INPUT=$(cat)
 
 # Extract the file path from the tool input
-FILE_PATH=$(echo "$INPUT" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(data.get('tool_input', {}).get('file_path', ''))
-" 2>/dev/null || true)
+FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
 
 # Skip if no file path
 if [[ -z "$FILE_PATH" ]]; then

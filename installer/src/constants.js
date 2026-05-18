@@ -3,12 +3,12 @@
 const path = require('path');
 const os = require('os');
 
-const VERSION = '0.4.0';
+const VERSION = '1.14.0';
 const PLUGIN_NAME = 'blitz';
 const MARKETPLACE_NAME = 'blitz';
 const PLUGIN_KEY = `${PLUGIN_NAME}@${MARKETPLACE_NAME}`;
-const REPO_URL = 'https://github.com/lasswellt/blitz.git';
-const REPO_WEB = 'https://github.com/lasswellt/blitz';
+const REPO_URL = 'https://github.com/lasswellt/cc-plugin-suite.git';
+const REPO_WEB = 'https://github.com/lasswellt/cc-plugin-suite';
 
 const CLAUDE_HOME = path.join(os.homedir(), '.claude');
 const CLAUDE_SETTINGS = path.join(CLAUDE_HOME, 'settings.json');
@@ -34,7 +34,10 @@ const BASE_PERMISSIONS = {
     'Bash(git diff *)',
     'Bash(git log *)',
     'Bash(git branch *)',
-    'Bash(git push *)',
+    'Bash(git push origin HEAD)',
+    'Bash(git push origin HEAD:*)',
+    'Bash(git push --set-upstream *)',
+    'Bash(git push -u origin *)',
     'Bash(git pull *)',
     'Bash(gh issue *)',
     'Bash(gh label *)',
@@ -52,6 +55,11 @@ const BASE_PERMISSIONS = {
   ],
   deny: [
     'Bash(rm -rf *)',
+    // History-rewriting push variants. Hook block-destructive-git.sh is the
+    // second layer; this is the first (prompt-on-attempt).
+    'Bash(git push --force *)',
+    'Bash(git push --force-with-lease *)',
+    'Bash(git push -f *)',
   ],
 };
 

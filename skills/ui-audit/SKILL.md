@@ -131,13 +131,13 @@ See `references/main.md` §§ **"Phase 3 — CONSISTENCY"**, **"Phase 3 — INVA
 
 ## Phase 4: QUALITY CHECKS
 
-See [references/checks.md](references/checks.md) for the flag catalog. Implementation body lands in E-009 / CAP-011. For sprint-6, this phase executes the basic NULL_VALUE / PLACEHOLDER / NEGATIVE_COUNT checks inline during extraction (Phase 2) and aggregates findings here.
+Aggregates the flag catalog from [references/checks.md](references/checks.md). Detectors implemented: NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL (Phase 4 reducer chain, see references/main.md §"Phase 4 — QUALITY CHECKS" for the full reducer schema). Inputs from Phase 2 raw observations; outputs `quality_finding` events to the activity feed.
 
 ---
 
 ## Phase 5: HEURISTICS
 
-See [references/patterns.md](references/patterns.md). Implementation body lands in E-009 / CAP-012. For sprint-6, this phase is a no-op stub that emits INFO "heuristics not yet implemented — see E-009".
+Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md) — WCAG 2.1 AA contrast, focus-visible coverage, touch-target sizing, tabular-nums on numeric columns, `prefers-reduced-motion` gates, copy heuristics. Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic_finding` events.
 
 ---
 

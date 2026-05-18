@@ -14,9 +14,17 @@ function registerMarketplace(opts = {}) {
     return false;
   }
 
+  // Auto-update opt-in. Defaults to disabled because enabling authorizes Claude
+  // Code to pull plugin updates (including hook scripts that run as the user's
+  // OS process) from the upstream repository on every session start, with no
+  // further prompt. If upstream is compromised, every install silently pulls
+  // attacker code. Caller must explicitly opt in.
+  // opts.autoUpdate: undefined/false = off (default), true = on.
+  // opts.yes: skip the prompt (CI / --yes flag), defaults to off.
+  const autoUpdate = opts.autoUpdate === true;
   const entry = {
     source: { source: 'git', url: REPO_URL },
-    autoUpdate: true,
+    autoUpdate,
   };
 
   setNestedValue(settings, key, entry);

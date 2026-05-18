@@ -39,6 +39,22 @@ RC=0
 SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output\.md'
 INHERIT_RE='\[CANONICAL PREAMBLE\]'
 
+# Fast-path scope guard for PostToolUse Write|Edit invocations.
+# When invoked as `--all` with hook JSON on stdin, exit 0 early unless the
+# edited file is an agent .md. Falls through to the existing behavior when
+# called from the CLI (no stdin tty) or with explicit file arguments.
+if [ "$#" -eq 1 ] && [ "${1:-}" = "--all" ] && [ ! -t 0 ]; then
+  INPUT=$(cat 2>/dev/null || true)
+  if [ -n "$INPUT" ]; then
+    EDITED_FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
+    case "$EDITED_FILE" in
+      agents/*.md|*/agents/*.md) ;;
+      "") ;;
+      *) exit 0 ;;
+    esac
+  fi
+fi
+
 usage() {
   cat <<EOF
 Usage: $SCRIPT_NAME [agent-path...] | --all

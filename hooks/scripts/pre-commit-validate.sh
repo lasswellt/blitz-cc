@@ -134,6 +134,15 @@ fi
 # that touch .claude-plugin/plugin.json (those are version-bump commits and
 # drifted files in the same commit are an explicit bug).
 VERSION_SYNC_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/scripts/check-version-sync.sh"
+# Fail loudly when the script is missing rather than silently skipping.
+# Earlier silent `-x` guard let the version-drift gate no-op for an unknown
+# duration when the script vanished. Surface the gap so it gets fixed.
+if [[ ! -f "$VERSION_SYNC_SCRIPT" ]]; then
+  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not found — version-drift gate disabled." >&2
+  echo "[pre-commit]       Restore the script or remove this check from pre-commit-validate.sh." >&2
+elif [[ ! -x "$VERSION_SYNC_SCRIPT" ]]; then
+  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not executable — fix with chmod +x." >&2
+fi
 if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
   SYNC_EXIT=0
   SYNC_OUTPUT=$("$VERSION_SYNC_SCRIPT" 2>&1) || SYNC_EXIT=$?

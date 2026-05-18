@@ -17,6 +17,13 @@ description: |
   </example>
 tools: Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor
 maxTurns: 30
+# Model rationale (reconciles audit-20260517 maint-skill-md MED finding):
+#   The user's memory note prefers `model: opus + effort: low` for orchestrators.
+#   Here the agent runs sonnet because (a) routing is pattern-match-heavy not
+#   reasoning-heavy, (b) sonnet's faster turn-time is felt directly by the user
+#   on every freeform request, (c) heavy reasoning is delegated to spawned
+#   sonnet workers anyway. Opus would be over-provisioned. If routing accuracy
+#   ever regresses, this is the first knob to flip.
 model: sonnet
 color: cyan
 initialPrompt: |

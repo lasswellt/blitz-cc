@@ -2,6 +2,21 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Release Process — Version-Drift Watch
+
+Bump these files together on every release. `installer/package.json` and `installer/src/constants.js` are the npm-installer manifest — out-of-band drift means `npx blitz-cc@latest` advertises stale skill counts:
+
+- `.claude-plugin/plugin.json` — `version`, `description`
+- `.claude-plugin/marketplace.json` — `version` (if pinned)
+- `installer/package.json` — `version`, `description`
+- `installer/src/constants.js` — `VERSION`
+- `installer/install.sh` — version banner (line ~45)
+- `README.md` — version banner / current-feature counts
+- This file — new release section
+
+(`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
+
+
 ## [1.14.0] — 2026-05-17
 
 Worktree lifecycle enforcement, 8 new platform-event hooks wired, 5 platform-feature primitives adopted, and 9 spec-fixing recipes ship in this release. Counts move to **39 skills · 10 agents · 36 hook scripts across 16 events · 26 shared protocols** with an **8-invariant** sprint-review gate and an **8-metric** ratchet. The README is rewritten ground-up from a parallel-agent deep-dive of the codebase.

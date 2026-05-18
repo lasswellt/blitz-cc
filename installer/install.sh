@@ -10,7 +10,7 @@ set -euo pipefail
 # If Node.js/npx is available, delegates to the full npx installer.
 # Otherwise, performs a minimal bash+python3 install.
 
-REPO_URL="https://github.com/lasswellt/blitz.git"
+REPO_URL="https://github.com/lasswellt/cc-plugin-suite.git"
 MARKETPLACE_NAME="blitz"
 PLUGIN_NAME="blitz"
 
@@ -63,17 +63,24 @@ if ! command -v claude &>/dev/null; then
   exit 1
 fi
 
-# Check minimum Claude Code version (>=2.1.71 for GA agent teams)
+# Check minimum Claude Code version.
+#   >=2.1.71  — agent teams GA (required for multi-agent skills)
+#   >=2.1.117 — orchestrator main-thread agent (required for blitz holistic-machine routing)
 CLAUDE_VER=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
 if [ -n "$CLAUDE_VER" ]; then
   IFS='.' read -r CV_MAJOR CV_MINOR CV_PATCH <<< "$CLAUDE_VER"
   if [ "${CV_MAJOR:-0}" -lt 2 ] || \
      { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -lt 1 ]; } || \
      { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -eq 1 ] && [ "${CV_PATCH:-0}" -lt 71 ]; }; then
-    warn "Claude Code v${CLAUDE_VER} — blitz requires >=2.1.71 for full functionality"
-    warn "Multi-agent skills may not work. Update: npm install -g @anthropic-ai/claude-code@latest"
+    warn "Claude Code v${CLAUDE_VER} — blitz requires >=2.1.71 (agent teams)"
+    warn "Multi-agent skills will not work. Update: npm install -g @anthropic-ai/claude-code@latest"
+  elif { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -eq 1 ] && [ "${CV_PATCH:-0}" -lt 117 ]; }; then
+    info "Claude Code v${CLAUDE_VER} (agent teams supported)"
+    warn "Orchestrator main-thread agent requires >=2.1.117 — your version will install cleanly but freeform"
+    warn "natural-language routing through agents/orchestrator.md will not activate."
+    warn "Upgrade for full features: npm install -g @anthropic-ai/claude-code@latest"
   else
-    info "Claude Code v${CLAUDE_VER}"
+    info "Claude Code v${CLAUDE_VER} (orchestrator-ready)"
   fi
 fi
 
@@ -89,16 +96,45 @@ fi
 
 CLAUDE_HOME="$HOME/.claude"
 CLAUDE_SETTINGS="$CLAUDE_HOME/settings.json"
-PROJECT_DIR="${1:-$(pwd)}"
+
+# Parse args: skip leading flags so $PROJECT_DIR doesn't get clobbered to "--yes"
+# when no explicit project dir is passed.
+PROJECT_DIR=""
+for arg in "$@"; do
+  case "$arg" in
+    --*) ;;  # skip flags
+    *) PROJECT_DIR="$arg"; break ;;
+  esac
+done
+PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 PROJECT_SETTINGS="$PROJECT_DIR/.claude/settings.json"
 
 # ── Register marketplace ───────────────────────────────────────
 header "Registering marketplace..."
 
+# Auto-update opt-in. Defaults to disabled.
+# Why off-by-default: enabling autoUpdate authorizes Claude Code to pull plugin
+# updates (including hook scripts that run as the user's OS process) from the
+# upstream repository on every session start, with no further user prompt. If
+# the upstream is compromised, every install silently pulls attacker code. The
+# user must explicitly opt in to that trust relationship.
+AUTO_UPDATE="false"
+if [ "${1:-}" != "--yes" ] && [ "${BLITZ_AUTO_UPDATE:-}" != "1" ] && [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "    Enable automatic upstream updates from GitHub? [y/N]: " AU_ANS || AU_ANS=""
+  case "$AU_ANS" in
+    y|Y|yes|YES) AUTO_UPDATE="true"; info "Auto-update enabled" ;;
+    *) info "Auto-update disabled (recommended). Re-enable later in ~/.claude/settings.json" ;;
+  esac
+elif [ "${BLITZ_AUTO_UPDATE:-}" = "1" ]; then
+  AUTO_UPDATE="true"
+  info "Auto-update enabled via BLITZ_AUTO_UPDATE=1"
+fi
+
 python3 -c "
 import json, os, sys
 
 settings_path = '$CLAUDE_SETTINGS'
+auto_update = $( [ "$AUTO_UPDATE" = "true" ] && echo True || echo False )
 try:
     with open(settings_path) as f:
         settings = json.load(f)
@@ -114,7 +150,7 @@ if '$MARKETPLACE_NAME' in settings['extraKnownMarketplaces']:
 
 settings['extraKnownMarketplaces']['$MARKETPLACE_NAME'] = {
     'source': {'source': 'git', 'url': '$REPO_URL'},
-    'autoUpdate': True
+    'autoUpdate': auto_update
 }
 
 os.makedirs(os.path.dirname(settings_path), exist_ok=True)

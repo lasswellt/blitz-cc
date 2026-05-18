@@ -4,6 +4,16 @@ Blitz's output-compression directive for skills and spawned agents. Inspired by 
 
 **Purpose:** reduce model output tokens 20–40% without sacrificing technical accuracy. Applies to orchestrator-to-user prose, agent-to-orchestrator reports, findings summaries, decision rationale. Does NOT apply to structured artifacts, code, or exact-match payloads.
 
+## Canonical Snippet
+
+Every SKILL.md and every `agents/*.md` must contain this exact one-line directive verbatim. `skill-frontmatter-validate.sh` and `agent-frontmatter-validate.sh` hash-compare each file's OUTPUT STYLE line against this canonical source. Drift between the canonical and a deployed copy fails the validator.
+
+<!-- canonical-output-style-start -->
+OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+<!-- canonical-output-style-end -->
+
+Agents may extend the canonical snippet with a trailing addendum (e.g., `agents/critic.md` appends "No apologies. No 'I'll now check…' prose. Only findings or LGTM."). Extensions are out of scope for the hash check — only the canonical line above is enforced byte-identical. Future stricter enforcement could compare a hash of the extended block bounded by `<!-- output-style-extend: <agent> -->` / `<!-- end-extend -->` markers.
+
 ---
 
 ## Core rule
