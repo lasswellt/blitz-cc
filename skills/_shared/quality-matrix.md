@@ -25,6 +25,7 @@ Blitz ships **7 quality-related skills**. They look superficially overlapping bu
 | **code-sweep** | scope (path/all) | continuous (`/loop`) | 30 static checks across 7 categories + dynamic standards discovered from convention; ratchet metric persisted to `.cc-sessions/ratchet.json` | per-iteration improvement report; standards report | none | `/loop`; manual |
 | **integration-check** | recently-changed code | gate (sprint-dev Phase 3.5.0) | export-to-import tracing, orphan route detection, auth guard coverage, store-to-component wiring | findings list (read-only) | none | sprint-dev Phase 3.5.0; manual |
 | **review** | (alias) | (alias) | thin wrapper — flag-parses + forwards to sprint-review | (delegated) | sprint-review | manual |
+| **implement** | (alias) | (alias) | thin wrapper — flag-parses + forwards to sprint-dev; used by `/blitz:next --loop` row 5 dispatch | (delegated) | sprint-dev | `/blitz:next --loop`; manual |
 
 ## Why they don't overlap (despite looking similar)
 

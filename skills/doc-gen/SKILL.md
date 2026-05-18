@@ -1,7 +1,7 @@
 ---
 name: doc-gen
 description: "Generates API docs, component docs, architecture diagrams (Mermaid), and CHANGELOG entries from source code and conventional commits. Modes: api, components, architecture, changelog, full. Use when the user says 'generate docs', 'doc-gen', 'API documentation', 'component docs', 'architecture diagram', 'auto-changelog', or when source code is ahead of docs/."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, TeamCreate, SendMessage
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: opus
 effort: medium
 compatibility: ">=2.1.71"
@@ -196,9 +196,7 @@ mkdir -p docs/generated
 
 If mode is `full`, create a team and spawn agents for parallel documentation generation.
 
-Use `TeamCreate` to create a team named `doc-gen-<TIMESTAMP>`.
-
-Spawn 4 agents using `SendMessage`, each with `model: "sonnet"`, `mode: "auto"`, `run_in_background: true`, **`subagent_type: general-purpose`**:
+Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: "doc-gen-<mode>", prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently.
 
 > **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [spawn-protocol.md](/_shared/spawn-protocol.md).
 

@@ -56,6 +56,8 @@ The user then invokes the slash command in the next turn. The slash invocation c
 
 Grouped by intent class. Within a group, prefer the most-specific match.
 
+**Vue-conditional skills**: route `/blitz:code-doctor`, `/blitz:ui-build`, and `/blitz:ui-audit` only when the detected stack includes Vue/Nuxt. These skills target Firestore/VueFire/Pinia APIs and Playwright MCP — they produce no useful output on non-Vue projects and should short-circuit with "stack not compatible" if run outside Vue context.
+
 ### Greenfield / setup
 | User intent | Skill | Why |
 |---|---|---|
@@ -115,6 +117,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | "I want to do X but don't know which skill" | `/blitz:ask` | Routes ambiguous intent |
 | "is the plugin healthy" | `/blitz:health` | Diagnostic |
 | "is the project drifted from blitz spec" | `/blitz:conform` | Diagnostic |
+| "clean up worktrees", "delete stale branches", "prune worktrees", "worktree-prune" | `/blitz:worktree-prune` | Lists/deletes stale agent-spawned branches; --dry-run by default, --apply --merged-only to delete |
 
 When the user's intent matches one of these unambiguously, route. When ambiguous, surface 2 candidates and ask one clarifying question.
 

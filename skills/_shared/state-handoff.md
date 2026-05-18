@@ -147,6 +147,21 @@ Each step's Phase 0 validation MUST cite this sequence in its error message when
 
 ---
 
+## migrate
+
+**Producer**: `/blitz:migrate`
+**Requires**: source codebase + package.json (baseline), `CLAUDE.md` (project config).
+**Produces**:
+- `docs/migrations/<from>-<to>/plan.md` — incremental step plan with verification commands per step
+- `docs/migrations/<from>-<to>/STATE.md` — checkpoint (which steps completed, which failed) enabling resume via `--resume`
+- `docs/migrations/<from>-<to>/report.md` — summary of applied changes, type-check/test gate results per step
+
+**Pipeline position**: standalone (not part of the sprint cycle). Typically run after research or after sprint-plan if migration is a sprint story.
+
+**Consumer**: operator (reviews report), sprint-plan (if migration is tracked as a story), fix-issue (if a step fails and needs targeted repair).
+
+---
+
 ## Anti-patterns
 
 - **Don't degrade silently when an input is missing.** Hard-fail at Phase 0 with the producer name.
