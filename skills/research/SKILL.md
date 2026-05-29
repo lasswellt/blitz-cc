@@ -15,6 +15,7 @@ compatibility: ">=2.1.71"
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
 - For context window hygiene, see [context-management.md](/_shared/context-management.md)
 - For quantified scope → registry ingestion, see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [workflow-dispatch.md](/_shared/workflow-dispatch.md)
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
@@ -113,7 +114,49 @@ fi
 
 Saves ~$0.10/run on ~40% of runs (token-economics §9 Gap 6).
 
-### 1.3 Spawn Agents via Agent Tool
+### 1.2.6 Select Dispatch Mode (capability gate)
+
+Per [workflow-dispatch.md](/_shared/workflow-dispatch.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/research/`; only the orchestration mechanism differs.
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+echo "[research] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §1.3-W (Workflow path).
+- **else, or on ANY `Workflow` failure** → fall back to §1.3 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+- The `Workflow` script touches NO filesystem: working-dir creation (§1.1), `${SESSION_TMP_DIR}` polling, summarization (§2.2), classify (§2.1), synthesis (Phase 3), and activity-feed writes all stay in this skill's main-thread Bash (hybrid wrapper boundary).
+
+### 1.3-W Dispatch via Workflow (opt-in path)
+
+Dispatch the 2-4 research agents as one `parallel()` barrier, then the gap second-wave (§2.4) as a conditional `agent()` inside the same script — replacing the manual poll (§1.7) + classify (§2.1) + jq-gated second wave with native primitives.
+
+```js
+export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
+// args: { roster:[{name,prompt}], gapSchema, gapQuestions } — prompts embed OUTPUT STYLE + write-as-you-go
+const found = await parallel(args.roster.map(a => () =>
+  agent(a.prompt, { label: a.name, phase: 'Investigate',
+    model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
+// One narrow second wave (≤2 agents) for unanswered / under-cited questions
+const gaps = (await agent(args.gapPrompt, { phase: 'GapFill', model: 'haiku', schema: args.gapSchema }))
+  ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
+const gapFills = await parallel(gaps.map(g => () =>
+  agent(`Research only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
+return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
+```
+
+- Model routing per token-budget: `codebase-analyst` → sonnet, retrieval agents → haiku.
+- `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
+- Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
+- `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.
+- After the workflow returns, proceed to §2.2 (summarize) → Phase 3 (synthesize) unchanged.
+
+### 1.3 Spawn Agents via Agent Tool (default path)
 
 Spawn each agent in **a single assistant message** (so they run concurrently) using the `Agent` tool with:
 
