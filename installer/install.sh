@@ -10,7 +10,7 @@ set -euo pipefail
 # If Node.js/npx is available, delegates to the full npx installer.
 # Otherwise, performs a minimal bash+python3 install.
 
-REPO_URL="https://github.com/lasswellt/cc-plugin-suite.git"
+REPO_URL="https://github.com/lasswellt/blitz-cc.git"
 MARKETPLACE_NAME="blitz"
 PLUGIN_NAME="blitz"
 

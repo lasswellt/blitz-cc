@@ -17,6 +17,11 @@ Bump these files together on every release. `installer/package.json` and `instal
 (`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
 
 
+## [Unreleased]
+
+### Changed
+- **Repository renamed** `lasswellt/cc-plugin-suite` → `lasswellt/blitz-cc` (matches the `blitz-cc` npm package). GitHub redirects the old URL; plugin-manifest `homepage`/`repository` + installer URLs updated to the new slug. The legacy `cc-plugin-suite@cc-plugin-suite` plugin-enablement key is retained for backward-compatibility.
+
 ## [2.0.0] — 2026-05-29 · review/audit consolidation (sprints 18–20)
 
 Collapsed the 7-skill review/audit/quality surface into **2 entry points over a shared check registry**, grounded in the verified research in `docs/consolidation/review-audit/`.
@@ -699,13 +704,13 @@ Carry-forward registry format (`.cc-sessions/carry-forward.jsonl`) validated acr
 - Issues closed: #1-#16 (all stories from Sprint 2-5)
 - Research source: 2 April-18 research docs (full absorption + runtime propagation)
 
-[1.13.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.13.0
-[1.12.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.2
-[1.12.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.1
-[1.12.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.12.0
-[1.11.2]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.2
-[1.11.1]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.1
-[1.11.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.11.0
-[1.10.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.10.0
-[1.5.0]: https://github.com/lasswellt/cc-plugin-suite/releases/tag/v1.5.0
-[1.4.1]: https://github.com/lasswellt/cc-plugin-suite/compare/v1.4.0...v1.4.1
+[1.13.0]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.13.0
+[1.12.2]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.12.2
+[1.12.1]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.12.1
+[1.12.0]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.12.0
+[1.11.2]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.11.2
+[1.11.1]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.11.1
+[1.11.0]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.11.0
+[1.10.0]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.10.0
+[1.5.0]: https://github.com/lasswellt/blitz-cc/releases/tag/v1.5.0
+[1.4.1]: https://github.com/lasswellt/blitz-cc/compare/v1.4.0...v1.4.1

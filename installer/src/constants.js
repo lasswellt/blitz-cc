@@ -7,8 +7,8 @@ const VERSION = '2.0.0';
 const PLUGIN_NAME = 'blitz';
 const MARKETPLACE_NAME = 'blitz';
 const PLUGIN_KEY = `${PLUGIN_NAME}@${MARKETPLACE_NAME}`;
-const REPO_URL = 'https://github.com/lasswellt/cc-plugin-suite.git';
-const REPO_WEB = 'https://github.com/lasswellt/cc-plugin-suite';
+const REPO_URL = 'https://github.com/lasswellt/blitz-cc.git';
+const REPO_WEB = 'https://github.com/lasswellt/blitz-cc';
 
 const CLAUDE_HOME = path.join(os.homedir(), '.claude');
 const CLAUDE_SETTINGS = path.join(CLAUDE_HOME, 'settings.json');

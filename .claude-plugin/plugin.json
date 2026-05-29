@@ -5,8 +5,8 @@
   "author": {
     "name": "lasswellt"
   },
-  "homepage": "https://github.com/lasswellt/cc-plugin-suite",
-  "repository": "https://github.com/lasswellt/cc-plugin-suite",
+  "homepage": "https://github.com/lasswellt/blitz-cc",
+  "repository": "https://github.com/lasswellt/blitz-cc",
   "license": "MIT",
   "keywords": [
     "vue",

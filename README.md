@@ -21,7 +21,7 @@ Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality r
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
-[![Version](https://img.shields.io/github/v/release/lasswellt/cc-plugin-suite?color=cyan)](https://github.com/lasswellt/cc-plugin-suite/releases)
+[![Version](https://img.shields.io/github/v/release/lasswellt/blitz-cc?color=cyan)](https://github.com/lasswellt/blitz-cc/releases)
 
 </div>
 
@@ -64,8 +64,8 @@ The installer detects your stack, registers the plugin, configures permissions, 
 <summary><b>More install options</b></summary>
 
 **Non-interactive:** `npx blitz-cc@latest --yes`
-**Bash fallback** (no Node): `curl -fsSL https://raw.githubusercontent.com/lasswellt/cc-plugin-suite/main/installer/install.sh | bash`
-**Marketplace:** `/plugin marketplace add lasswellt/cc-plugin-suite` then `/plugin install blitz@blitz`
+**Bash fallback** (no Node): `curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz-cc/main/installer/install.sh | bash`
+**Marketplace:** `/plugin marketplace add lasswellt/blitz-cc` then `/plugin install blitz@blitz`
 **Local dev:** `claude --plugin-dir ./blitz` then `/reload-plugins`
 
 </details>
@@ -363,7 +363,7 @@ Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work 
 ## Architecture
 
 ```
-cc-plugin-suite/
+blitz-cc/
 ├── .claude-plugin/
 │   ├── plugin.json              # plugin manifest (main-thread agent = orchestrator)
 │   ├── marketplace.json         # marketplace listing

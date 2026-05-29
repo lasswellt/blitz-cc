@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lasswellt/cc-plugin-suite.git",
+    "url": "https://github.com/lasswellt/blitz-cc.git",
     "directory": "installer"
   },
   "engines": {
