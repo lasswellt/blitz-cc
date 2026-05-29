@@ -149,7 +149,9 @@ for event_type in hooks:
 
     while IFS= read -r script_path; do
       [[ -z "$script_path" ]] && continue
-      resolved="${script_path//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
+      # hooks.json `command` may include args (e.g. `foo.sh --all`); validate only the script token
+      script_only="${script_path%% *}"
+      resolved="${script_only//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
       if [[ ! -f "$resolved" ]]; then
         check_fail "hooks.json references missing script: $script_path"
       elif [[ ! -x "$resolved" ]]; then
@@ -242,11 +244,17 @@ while IFS= read -r -d '' sh_file; do
     check_fail "$rel_path missing shebang (got: $first_line)"
   fi
 
-  if [[ -x "$sh_file" ]]; then
-    check_pass "$rel_path is executable"
-  else
-    check_fail "$rel_path is not executable"
-  fi
+  case "$rel_path" in
+    */_lib/*)
+      # sourced libraries (never executed directly) — executable bit not required
+      check_pass "$rel_path is a sourced lib (exec bit not required)" ;;
+    *)
+      if [[ -x "$sh_file" ]]; then
+        check_pass "$rel_path is executable"
+      else
+        check_fail "$rel_path is not executable"
+      fi ;;
+  esac
 done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/null)
 
 # ---------------------------------------------------------------

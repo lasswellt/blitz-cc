@@ -275,7 +275,24 @@ Bootstrap Complete: <type> "<name>"
     - Run /blitz:test-gen to add more tests
 ```
 
-### 5.2 Session Cleanup
+### 5.2 Roadmap Pipeline Handoff
+
+Per [/_shared/state-handoff.md](/_shared/state-handoff.md) §bootstrap, `sprint-plan` Phase 0 hard-fails without `docs/roadmap/roadmap-registry.json` + `docs/roadmap/epic-registry.json`. Silent absence is the failure mode — so for greenfield (`project` mode) initialize empty stubs:
+
+```bash
+mkdir -p docs/roadmap
+[ -f docs/roadmap/roadmap-registry.json ] || echo '{"capabilities":[],"generated":null}' > docs/roadmap/roadmap-registry.json
+[ -f docs/roadmap/epic-registry.json ]    || echo '{"epics":[],"generated":null}'       > docs/roadmap/epic-registry.json
+```
+
+If you do not create the stubs (e.g. `feature`/`package` mode), print the actionable fallback so the operator is never surprised mid-pipeline:
+
+```
+Roadmap not initialized — run /blitz:roadmap before /blitz:sprint-plan.
+(Greenfield order: bootstrap → research → roadmap → sprint-plan.)
+```
+
+### 5.3 Session Cleanup
 
 1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed`
 2. Release any held locks

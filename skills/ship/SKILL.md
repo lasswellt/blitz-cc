@@ -161,11 +161,7 @@ fi
 ### 2.2 Update CHANGELOG.md
 
 release `prepare` writes the new version section (Keep a Changelog format) — ship does not hand-edit CHANGELOG.md.
-- If `CHANGELOG.md` does not exist, create it with a standard header.
-- Strip conventional commit prefixes from descriptions.
-- Capitalize the first word of each description.
-- Include short commit hash linked to GitHub (if remote is available).
-- Remove empty sections.
+- release `prepare` owns the emit rules (create-if-missing header, prefix stripping, capitalization, hash-linking, empty-section omission) — see [`skills/release`](../release/SKILL.md) §changelog. ship does not restate or hand-edit these.
 
 ---
 

@@ -144,7 +144,7 @@ Before responding to a user request, check:
 tail -5 .cc-sessions/activity-feed.jsonl 2>/dev/null | jq -r '(.message // "")[0:200]'
 
 # In-flight HANDOFF (cap the free-text phase field at 200 chars)
-[ -f .cc-sessions/HANDOFF.json ] && jq -r '"sprint: \(.sprint // "none") · phase: \((.phase // "")|tostring|.[0:200]) · uncommitted: \(.uncommitted | length) files"' .cc-sessions/HANDOFF.json
+[ -f .cc-sessions/HANDOFF.json ] && jq -r '"sprint: \((.sprint // "none")|tostring|.[0:200]) · phase: \((.phase // "")|tostring|.[0:200]) · uncommitted: \(.uncommitted | length) files"' .cc-sessions/HANDOFF.json
 
 # Carry-forward escalations
 jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.status == "active" or .status == "partial")) | length' .cc-sessions/carry-forward.jsonl 2>/dev/null

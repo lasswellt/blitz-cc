@@ -1,7 +1,7 @@
 ---
 name: sprint-dev
 description: "Implements planned sprints with coordinated agent teams. Spawns backend-dev, frontend-dev, and test-writer agents in isolated worktrees, distributes stories as tasks with dependency-ordered waves, and monitors progress via the Monitor tool. Use when the user says 'implement sprint', 'develop stories', 'start coding', 'work the sprint', or 'resume sprint' (with STATE.md). Hard-fails at Phase 0.0 if the sprint manifest or stories are missing."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, TeamCreate, SendMessage, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, SendMessage, TaskCreate, TaskUpdate, TaskList
 disable-model-invocation: false
 model: opus
 effort: high
@@ -187,7 +187,7 @@ Update `sprint-registry.json`: set sprint status to `in-progress`, record `start
 
 ### 2.1 Create Development Team
 
-Use `TeamCreate` to create a team named `sprint-${SPRINT_NUMBER}-dev`.
+Group agents into a team named `sprint-${SPRINT_NUMBER}-dev` by passing `team_name` to each `Agent()` spawn in Phase 2.3 — the team forms implicitly on first spawn (canonical `Agent(team_name)` pattern, per [/_shared/spawn-protocol.md](/_shared/spawn-protocol.md)). No separate team-creation tool call.
 
 ### 2.2 Determine Required Agents
 

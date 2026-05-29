@@ -329,40 +329,26 @@ Migration Progress: <current> → <target>
   [ ] Step 6: Clean up deprecations — PENDING
 ```
 
-### 4.2.1 Progress Persistence
+### 4.2.1 Output Artifacts (canonical, per [/_shared/state-handoff.md](/_shared/state-handoff.md) §migrate)
 
-After each step completion (pass or fail), write progress to `${SESSION_TMP_DIR}/migrate-progress.json`:
+Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
+- `plan.md` — incremental step plan + per-step verification commands.
+- `STATE.md` — checkpoint (steps completed/failed); enables `--resume`.
+- `report.md` — applied-change summary + type-check/test gate result per step.
 
+After each step (pass or fail), update `STATE.md`:
 ```json
-{
-  "target": "<migration-target>",
-  "started": "<ISO-8601>",
-  "rollback_branch": "<rollback-branch-name>",
-  "current_step": 4,
-  "total_steps": 8,
-  "steps": [
-    { "number": 1, "description": "Update package version", "status": "pass", "commit": "abc1234" },
-    { "number": 2, "description": "Update config files", "status": "pass", "commit": "def5678" },
-    { "number": 3, "description": "Run codemod", "status": "pass", "commit": "ghi9012" },
-    { "number": 4, "description": "Fix breaking API changes", "status": "in-progress", "attempt": 2 }
-  ],
-  "remaining": ["Update test imports", "Clean up deprecations"],
-  "last_updated": "<ISO-8601>"
-}
+{ "target":"<from>-<to>", "started":"<ISO-8601>", "rollback_branch":"<branch>",
+  "current_step":4, "total_steps":8,
+  "steps":[{ "number":1, "description":"...", "status":"pass", "commit":"abc1234" }],
+  "remaining":["..."], "last_updated":"<ISO-8601>" }
 ```
 
-### 4.2.2 Resume from Progress File
+### 4.2.2 Resume Contract (`--resume`)
 
-At Phase 0 (before starting the migration), check for an existing progress file:
-```bash
-cat ${SESSION_TMP_DIR}/migrate-progress.json 2>/dev/null
-```
-
-If found and the target matches the current migration:
-1. Display completed steps and their commits.
-2. Ask the user: "Resume from step N or start fresh?"
-3. If resuming, verify each completed commit still exists in git history.
-4. Skip to the first incomplete step.
+At Phase 0, if `docs/migrations/<from>-<to>/STATE.md` exists:
+- **without `--resume`** — refuse to clobber: print `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1.
+- **with `--resume`** — read STATE.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
 
 ### 4.3 Consecutive Failure Check
 

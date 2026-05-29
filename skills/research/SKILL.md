@@ -138,7 +138,7 @@ Dispatch the 2-4 research agents as one `parallel()` barrier, then the gap secon
 
 ```js
 export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
-// args: { roster:[{name,prompt}], gapSchema, gapQuestions } — prompts embed OUTPUT STYLE + write-as-you-go
+// args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
     model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
@@ -415,7 +415,8 @@ Agent({
   description: "Citation + claim validity probe",
   prompt: "Probe all citations in docs/_research/${TIMESTAMP}_${TOPIC_SLUG}.md.
            Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
-           per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN)."
+           per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
+           Output style: terse-technical per /_shared/terse-output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })
 ```
 

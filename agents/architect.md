@@ -145,7 +145,7 @@ Based on findings, recommend follow-up skills:
 ## Collaboration Hints
 
 When spawned as part of a team (e.g., by `codebase-audit` or `sprint-review`):
-- Write findings to `${SESSION_TMP_DIR}/architect-findings.md` if a session temp dir is provided
+- Return findings as your final text response — the orchestrator extracts them; never write files (READ-ONLY, per [/_shared/spawn-protocol.md](/_shared/spawn-protocol.md) §Agent Output Contract)
 - Use severity prefixes consistently so the orchestrator can aggregate across agents
 - Keep findings atomic: one issue per finding block (do not combine multiple issues)
 - Include a confidence level (High/Medium/Low) for each finding — helps the orchestrator prioritize

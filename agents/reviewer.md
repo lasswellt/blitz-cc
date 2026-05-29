@@ -34,6 +34,8 @@ Recent commits:
 
 ## Write-As-You-Go Protocol
 
+> **Write scope (S17-G007):** the `Write` tool is restricted to the findings file ONLY (`review-findings.md`); never write or modify source files. Callers spawning this agent should validate the output path stays within `${SESSION_TMP_DIR}` / `/tmp`.
+
 1. At the start of your review, create the findings file with a header.
    If a `SESSION_TMP_DIR` is provided in your instructions, write to
    `${SESSION_TMP_DIR}/review-findings.md`. Otherwise, use `/tmp/review-findings.md`.

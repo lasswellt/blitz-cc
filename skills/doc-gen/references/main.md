@@ -312,31 +312,7 @@ This changelog is auto-generated from conventional commits.
 
 ### Changelog Template Notes
 
-- If no conventional commit prefix found, place commit under "Other."
-- Strip commit type prefix from message (e.g., `feat: add login` becomes `add login`).
-- Link commit hashes to repository if remote URL available.
-- Group entries within each section alphabetically.
-- If scopes are used (e.g., `feat(auth):`), include scope in parentheses.
-
----
-
-## Commit Type to Section Mapping
-
-| Commit Prefix | Changelog Section |
-|---------------|-------------------|
-| `feat:` | Added |
-| `fix:` | Fixed |
-| `refactor:` | Changed |
-| `perf:` | Changed |
-| `docs:` | Other |
-| `chore:` | Other |
-| `ci:` | Other |
-| `test:` | Other |
-| `style:` | Other |
-| `build:` | Other |
-| `BREAKING CHANGE:` | Breaking Changes |
-| `feat!:` | Breaking Changes + Added |
-| `fix!:` | Breaking Changes + Fixed |
+**Commit-type → section mapping and emit rules (Other fallback, prefix stripping, capitalization, alphabetical sort, hash-linking, scope inclusion, empty-section omission, BREAKING CHANGE handling) are owned by [`skills/release`](../release/SKILL.md) §changelog — canonical O1/O5.** `doc-gen` `changelog` mode delegates to that owner; it does NOT restate the map (the previous inline table had drifted from the canonical one). Edit the mapping in [`skills/release/references/main.md`](../release/references/main.md) §Commit Type Mapping; this consumer cites it.
 
 ---
 

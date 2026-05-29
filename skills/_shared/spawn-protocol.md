@@ -46,7 +46,7 @@ Source: `agents/` directory. Verified 2026-04-16.
 |---|---|---|---|---|
 | `blitz:architect` | Read, Glob, Grep, Bash | **YES (strictly)** | sonnet | Structural analysis, dependency graphs |
 | `blitz:reviewer` | Read, **Write**, Bash, Glob, Grep | No (Write for findings only) | sonnet | Code quality/security review with written findings |
-| `blitz:doc-writer` | Read, **Write**, Edit, Bash, Glob, Grep | No | sonnet | Documentation generation |
+| `blitz:doc-writer` | Read, **Write**, Edit, Bash, Glob, Grep | No | haiku | Documentation generation |
 | `blitz:backend-dev` | Read, **Write**, Edit, Bash, Glob, Grep, WebSearch, ToolSearch | No | sonnet | Cloud Functions, Zod, Firestore |
 | `blitz:frontend-dev` | Read, **Write**, Edit, Bash, Glob, Grep, WebSearch, ToolSearch | No | sonnet | Vue 3 / Pinia implementation |
 | `blitz:test-writer` | Read, **Write**, Edit, Bash, Glob, Grep | No | sonnet | Unit / integration / E2E tests |

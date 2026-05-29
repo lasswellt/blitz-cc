@@ -3,6 +3,7 @@ name: worktree-prune
 description: "Lists and safely deletes stale git worktrees + agent-spawned branches. --dry-run (default) reports age, merge-status, divergence, and disk usage. --apply --merged-only deletes origin-ancestor branches; --all-older-than 30d includes unmerged (requires --force). Use when the user says 'worktree prune', 'clean up worktrees', or notices leftover sprint-N/role branches."
 argument-hint: "[--dry-run|--apply] [--merged-only|--all-older-than <duration>] [--force]"
 allowed-tools: Read, Bash, Glob, Grep
+disallowed-tools: Edit, Write, NotebookEdit
 model: sonnet
 effort: low
 compatibility: ">=2.1.71"

@@ -93,6 +93,10 @@ Every `Agent()` prompt MUST instruct the subagent to return ONLY the canonical J
 
 `metrics` keys are optional but encouraged for any agent that touches code (sprint-review aggregates these directly without re-grepping).
 
+### Exception: sprint-dev streaming prefixes (`DONE:`/`BLOCKED:`)
+
+`sprint-dev`'s coordinated dev agents (backend-dev, frontend-dev, test-writer) are a documented exception to the JSON-only reply: during a multi-story wave they stream single prefixed status lines (`DONE:`/`BLOCKED:`/`DEVIATION:`/`ESCALATE:`/`HEARTBEAT:`) to the orchestrator's progress file for live monitoring (see [spawn-protocol.md](spawn-protocol.md) §Communication Prefix Table). These are event-stream lines parsed by the Monitor tool, not final-reply bloat. The canonical JSON reply contract above still governs one-shot `Agent()` returns (reviewers, critics, researchers).
+
 ### Embedding in spawn prompts
 
 Every Agent() prompt MUST include this snippet near the end:
