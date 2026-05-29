@@ -8,6 +8,7 @@ argument-hint: "[mode] -- modes: full | smoke | data | buttons | events | consis
 effort: low
 ---
 
+<!-- no-disallowed-tools: not read-only — Writes/Edits the value-registry + audit report artifacts. Excluded from S14-008 disallowed-tools (S14-009 / audit §2 correction). Also excluded for the same reason: integration-check (Write+Agent), codebase-audit (writes reports), design-extract (writes DESIGN.md). Only `health` qualified. -->
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`

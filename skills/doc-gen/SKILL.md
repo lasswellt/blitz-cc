@@ -175,7 +175,7 @@ else
 fi
 ```
 
-Group commits by type:
+Group commits by type. **The commit-type → changelog-section map is owned by [`skills/release`](../release/SKILL.md) (O1).** Use release's canonical map; the summary below is for quick reference only — do not let it diverge:
 - **Added** (`feat:`): New features
 - **Fixed** (`fix:`): Bug fixes
 - **Changed** (`refactor:`, `perf:`): Code changes

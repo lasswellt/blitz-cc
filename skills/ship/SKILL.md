@@ -156,21 +156,11 @@ else
 fi
 ```
 
-Group commits by type:
-
-| Prefix | Changelog Section |
-|--------|-------------------|
-| `feat:` | Added |
-| `fix:` | Fixed |
-| `refactor:`, `perf:` | Changed |
-| `docs:` | Documentation |
-| `chore:`, `ci:`, `build:` | Other |
-| `BREAKING CHANGE` or `!` | Breaking Changes |
+**Delegate to release (O5).** The commit-type → changelog-section map + Keep a Changelog emit are owned by [`skills/release`](../release/SKILL.md) §changelog. ship does NOT restate the map — it invokes release `prepare` (the final step of the ship chain) which generates the changelog. The parse above is only to preview/auto-bump the version; the authoritative changelog is produced by release.
 
 ### 2.2 Update CHANGELOG.md
 
-Add a new section following Keep a Changelog format:
-- Prepend the new version section below the file header.
+release `prepare` writes the new version section (Keep a Changelog format) — ship does not hand-edit CHANGELOG.md.
 - If `CHANGELOG.md` does not exist, create it with a standard header.
 - Strip conventional commit prefixes from descriptions.
 - Capitalize the first word of each description.
