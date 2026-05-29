@@ -1,0 +1,46 @@
+name: CI
+
+# Runs the plugin's own validators on every push to main and every PR — the
+# same gates the local pre-commit hook runs, enforced server-side. Deps (jq,
+# python3, node) are preinstalled on ubuntu-latest.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tooling versions
+        run: jq --version && python3 --version && node --version && bash --version | head -1
+
+      - name: SKILL.md frontmatter (37)
+        run: bash hooks/scripts/skill-frontmatter-validate.sh skills/*/SKILL.md
+
+      - name: Agent frontmatter (10)
+        run: bash hooks/scripts/agent-frontmatter-validate.sh agents/*.md
+
+      - name: Check-registry schema
+        run: bash hooks/scripts/check-registry-validate.sh
+
+      - name: Markdown links + anchors
+        run: bash hooks/scripts/markdown-link-validate.sh
+
+      - name: Version-reference sync
+        run: bash scripts/check-version-sync.sh
+
+      - name: Plugin structure
+        run: bash scripts/validate-plugin-structure.sh
+
+      - name: Installer JS syntax
+        run: |
+          for f in installer/bin/*.js installer/src/*.js; do
+            node --check "$f"
+          done
