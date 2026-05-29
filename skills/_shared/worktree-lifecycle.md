@@ -57,7 +57,7 @@ Existing projects must run `code-sweep --baseline stale_worktree_branch_count` o
 
 ## Cross-references
 
-- Research provenance: [docs/_research/2026-05-17_worktree-lifecycle.md](../../docs/_research/2026-05-17_worktree-lifecycle.md)
+- Research provenance: `docs/_research/2026-05-17_worktree-lifecycle.md`
 - Upstream bugs: GH#26725 (open), GH#55435 (open), GH#51596 (closed), GH#27749 (closed-stale), GH#31969 (open)
 - Spawn protocol: [spawn-protocol.md](spawn-protocol.md) §Agent isolation
 - State handoff contract: [state-handoff.md](state-handoff.md) §Worktree artifacts

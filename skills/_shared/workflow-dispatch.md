@@ -2,7 +2,7 @@
 
 Canonical contract for the Claude Code `Workflow` tool ("dynamic workflows", research preview 2026-05-28) inside the blitz plugin. Defines the **opt-in, capability-gated, additive** adoption pattern: `Workflow` may replace the `Agent()` spawn-poll-classify scaffolding in a super-orchestrator, but never as a hard dependency. Referenced from [spawn-protocol.md](spawn-protocol.md), [agent-routing.md](agent-routing.md), and [token-budget.md](token-budget.md).
 
-Research provenance: [docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md](../../docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md).
+Research provenance: `docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md`.
 
 ## Why this exists
 
@@ -103,4 +103,4 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 - Token budget + model routing: [token-budget.md](token-budget.md)
 - Output style (Invariant 5 snippet): [terse-output.md](terse-output.md)
 - Worktree isolation contract: [worktree-lifecycle.md](worktree-lifecycle.md)
-- Research provenance: [docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md](../../docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md)
+- Research provenance: `docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md`
