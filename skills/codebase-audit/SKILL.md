@@ -14,6 +14,7 @@ compatibility: ">=2.1.71"
 ## Additional Resources
 - For agent prompt templates, pillar checklists, severity schema, and report templates, see [references/main.md](references/main.md)
 - For context window hygiene (10 parallel agents), see [context-management.md](/_shared/context-management.md)
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [workflow-dispatch.md](/_shared/workflow-dispatch.md)
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
@@ -97,7 +98,42 @@ If found, note the date and key findings for comparison.
 
 ## Phase 1: SPAWN AUDIT AGENTS — Parallel Analysis
 
-### 1.1 Spawn 10 Pillar Agents via Agent Tool
+### 1.0 Select Dispatch Mode (capability gate)
+
+Per [workflow-dispatch.md](/_shared/workflow-dispatch.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+echo "[codebase-audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §1.1-W (Workflow path).
+- **else, or on ANY `Workflow` failure** → fall back to §1.1 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+- All filesystem I/O (Phase 0 inventory, Phase 2 report, ratchet.json, activity-feed) stays in this skill's main-thread Bash — the `Workflow` script touches none of it (hybrid wrapper boundary).
+
+### 1.1-W Dispatch via Workflow (opt-in path)
+
+Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
+
+```js
+export const meta = { name: 'codebase-audit', description: '5-pillar audit, 2 agents/pillar', phases: [{ title: 'Audit' }] }
+// ROSTER passed via args (agent name, pillar, scope, fileCap, outputPath, checklist, stack, inventory)
+const findings = await parallel(args.roster.map(a => () =>
+  agent(a.prompt, { label: a.name, phase: 'Audit', model: 'sonnet', schema: args.findingsSchema })))
+return { agents: findings.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f })) }
+```
+
+- Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
+- `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).
+- `schema` replaces the `classify_output()` gate; `null` entries = failed agents (handled by Phase 2.2).
+- After the workflow returns, proceed to Phase 1.4 / Phase 2 unchanged.
+
+### 1.1 Spawn 10 Pillar Agents via Agent Tool (default path)
 
 Spawn all 10 agents using the `Agent` tool, all in **a single assistant message** so they execute concurrently.
 

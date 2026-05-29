@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (26 files). Required for every skill:
+All skills follow the protocols in `skills/_shared/` (28 files). Required for every skill:
 - **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
 - **verbose-progress.md** — Verbose output format and activity feed logging
 - **terse-output.md** — Output style + canonical exemptions list
@@ -67,6 +67,7 @@ Required for skills that spawn agents:
 - **spawn-protocol.md** — Subagent type selection, weight classes, HEARTBEAT/PARTIAL/WRAP_UP, three-tier timeout, stuck-loop detection, **Agent Output Contract** + **Token Budget & Reply Contract** (§9)
 - **agent-prompt-boilerplate.md** — Author-time dedup target for recurring Agent() prompt sections (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT/PARTIAL, CONFIRMATION). Cited via `<!-- import: -->` markers in 7 `references/main.md` files
 - **token-budget.md** (v1.11+) — model routing matrix (60/35/5 Haiku/Sonnet/Opus), 1-hr cache TTL, JSON reply contract, lazy MCP/skill load, anti-patterns
+- **workflow-dispatch.md** (v1.16+) — opt-in `Workflow` (dynamic-workflows) dispatch contract: capability gate + `Agent()` fallback, hybrid wrapper boundary (script owns dispatch, skill owns filesystem I/O), main-thread-only constraint, prompt invariants. `codebase-audit` is the pilot (Phase 1.0/1.1-W)
 - **agent-routing.md** (v1.11+) — orchestrator routing decision tree + the subagents-cannot-spawn-subagents constraint
 
 Required for autonomous loops + quality:
