@@ -185,6 +185,21 @@ if [[ -n "$STAGED_SKILLS" ]]; then
   fi
 fi
 
+# --- Check check-registry.json schema when staged (block on violation) ---
+if echo "$STAGED_FILES" | grep -qE '^skills/_shared/check-registry\.json$'; then
+  REG_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/hooks/scripts/check-registry-validate.sh"
+  if [[ -x "$REG_SCRIPT" ]]; then
+    REG_EXIT=0
+    REG_OUTPUT=$("$REG_SCRIPT" 2>&1) || REG_EXIT=$?
+    if [[ "$REG_EXIT" -ne 0 ]]; then
+      echo "" >&2
+      echo "$REG_OUTPUT" >&2
+      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/check-registry.md)." >&2
+      exit 2
+    fi
+  fi
+fi
+
 # --- Check for broken markdown links (warn-only) ---
 LINK_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/hooks/scripts/markdown-link-validate.sh"
 if [[ -x "$LINK_SCRIPT" ]]; then

@@ -1,4 +1,8 @@
-# Shortcut Taxonomy — 19 Autonomous-Coder Failure Modes
+# Shortcut Taxonomy — 20 Autonomous-Coder Failure Modes (13 reject, 7 advisory)
+
+> **Canonical source is now [`check-registry.json`](check-registry.json)** (schema `blitz-check-registry/2.0`, shipped sprint-18). This doc is the human-readable **view** of the `det-*` rows. The executable `detection.command`, `lane`, `verdict_authority`, and `base_confidence` live in the registry; the §1 table and §3 greps below mirror them for reading and MUST stay in sync (the schema lint `hooks/scripts/check-registry-validate.sh` enforces structure). Cite detectors as `det-NN`.
+>
+> **Count reconciliation:** 20 catalogued detectors (det-01…20; det-20 appended 2026-05-16). **13 carry reject authority** (may flip a verdict; bypass the min-confidence gate); **7 are advisory** (det-05, det-08, det-09, det-10, det-16, det-17, det-20 — append to `issues[]` only). The older "19 blocking + 1 advisory" phrasing was wrong (6 of det-01…19 are also advisory). Severity (P0–P3) ≠ verdict authority — see [`check-registry.md`](check-registry.md).
 
 Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-completion. Used by:
 
@@ -7,7 +11,7 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 - `skills/completeness-gate/SKILL.md` (extends placeholder scanning)
 - `hooks/scripts/block-*` (PreToolUse blockers for the most damaging classes)
 
-**Why this doc exists**: `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 catalogued the 19 ways autonomous coders silently produce non-production-ready output. Without grep/diff detectors, these shortcuts ship undetected. This doc is the single source of truth for the patterns.
+**Why this doc exists**: `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 catalogued the original 19 ways autonomous coders silently produce non-production-ready output (det-20, audit-FP, was appended 2026-05-16 → 20 total). Without grep/diff detectors, these shortcuts ship undetected. The patterns are now defined as data in [`check-registry.json`](check-registry.json); this doc is the readable view.
 
 ---
 
