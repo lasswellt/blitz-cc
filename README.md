@@ -38,7 +38,7 @@ Blitz turns Claude Code into an opinionated, partly-autonomous development envir
 
 It's designed so that `/loop /blitz:next --loop` produces shippable code unattended.
 
-> Current version: **v1.15.0** (2026-05-18) — see [CHANGELOG.md](CHANGELOG.md).
+> Current version: **v1.16.0** (2026-05-28) — see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

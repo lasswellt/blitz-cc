@@ -17,6 +17,33 @@ Bump these files together on every release. `installer/package.json` and `instal
 (`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
 
 
+## [1.16.0] — 2026-05-28
+
+Dynamic-Workflows adoption + a self-audited cohesion/modernization pass (Phase 8). The suite ran its own lifecycle on itself — research → 93-agent cohesion audit (native Dynamic Workflow) → roadmap extend → sprints 14-16 — and its adversarial gates caught (and fixed) two real defects introduced along the way. Counts: **39 skills · 10 agents · 36 hook scripts · 28 shared protocols** (+2: `workflow-dispatch.md`, and the count was already stale at 27).
+
+### Added
+- `skills/_shared/workflow-dispatch.md` — opt-in `Workflow` (dynamic-workflows) dispatch contract: capability gate + `Agent()` fallback, hybrid wrapper boundary (script owns dispatch, skill owns filesystem I/O), main-thread-only constraint, mandatory prompt invariants. Pilot wired into `codebase-audit` (Phase 1.0/1.1-W) and `research` (§1.2.6/§1.3-W).
+- `hooks/scripts/markdown-link-validate.sh` — convention-aware resolution (`/_shared/X` → `skills/_shared/X`, relative bases, runtime-output skip) + scans `agents/`; coverage 114 → 397 links. Caught + fixed 1 real broken link.
+- `hooks/scripts/tests/test-link-resolver.sh` — regression test for the resolver.
+- `integration-check` — executable `unwired-store-actions` check (declared canonical owner of wiring topology).
+- `health` — `disallowed-tools: [Edit, Write, NotebookEdit]` (declarative read-only enforcement).
+- `docs/audits/cohesion-2026-05/` — full suite cohesion+modernization audit (49 unit findings + SYNTHESIS + decision docs).
+
+### Changed
+- `token-budget.md` — model IDs → `claude-haiku-4-5` / `claude-sonnet-4-6` / `claude-opus-4-8`; removed stale Opus-4.7 foot-gun; added fast-mode lane + effort low/high split; re-affirmed 60/35/5.
+- `release` declared canonical changelog owner; `doc-gen` + `ship` delegate (O1/O5).
+- `orchestrator` §2 declared canonical routing-table owner; `ask` cites it (O4).
+- `completeness-gate` declared canonical anti-mock pattern owner (O2); its wiring checks (§2.11, §2.12-L3) delegate to `integration-check` (O3) with no coverage loss.
+- `roadmap/SKILL.md` 508 → 490 (cleared the >500-line warning).
+
+### Fixed
+- `agents/orchestrator.md` — `[0:200]` field caps on `HANDOFF.json` + activity-feed `jq` renders (injection-surface guard; Opus 4.8 ASR regression).
+- `conform/SKILL.md` — broken `/_shared/../../../` link repointed.
+
+### Notes
+- Three of the audit's quantified claims were inflated by per-unit agents and corrected on verification, not executed: dead-refs 242 → 0 (resolver false positive), E-027 "restated twice" → already cited, E-031 "1764 removable lines" → top target had ~0. Lesson: treat agent counts as hypotheses to verify.
+
+
 ## [1.15.0] — 2026-05-18
 
 Four-sprint audit-closure release. The full 9-epic backlog from `docs/audits/audit-20260517.md` (E-013 through E-021) is now closed across sprints 9-12. Hook scripts gained a shared `common.sh` library, a four-suite `bats-core` test harness, anti-shortcut hardening, and standardized boilerplate. Sprint orchestrator skills shed ~1100 lines of inlined procedure to keep `SKILL.md` bodies under 450 lines via `references/main.md` extraction. STATE.md detection tolerates em-dash + bold-timestamp variants; `SPRINT_NUMBER` interpolation paths get a numeric path-traversal guard. Counts unchanged: **39 skills · 10 agents · 36 hook scripts across 16 events · 26 shared protocols** — this release hardens what exists rather than adding new surface area.
