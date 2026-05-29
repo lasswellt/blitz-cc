@@ -100,25 +100,7 @@ If a roadmap registry exists:
 - Note completed epics, in-progress epics, and pending epics.
 - Load the capability index if it exists.
 
-For `status` mode: Print the status report now and STOP.
-
-```markdown
-# Roadmap Status Report
-
-**Last Updated**: <date>
-**Total Capabilities**: N
-**Total Epics**: N
-
-## Phase Summary
-| Phase | Epics | Completed | In Progress | Pending | Blocked |
-|-------|-------|-----------|-------------|---------|---------|
-
-## Next Actions
-<list unblocked epics ready to start>
-
-## Blockers
-<list blocked epics and what they are waiting on>
-```
+For `status` mode: print the status report now and STOP. Report = `# Roadmap Status Report` with: Last Updated, Total Capabilities, Total Epics; a **Phase Summary** table (`| Phase | Epics | Completed | In Progress | Pending | Blocked |`); **Next Actions** (unblocked epics ready to start); **Blockers** (blocked epics + what they wait on).
 
 **Gate:** For `full` mode, you must have at least 1 research document. For `refresh`/`extend`, you must have an existing roadmap.
 
