@@ -1,6 +1,6 @@
 ---
 name: audit
-description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 per pillar) for thorough analysis. Produces findings formatted for /blitz:roadmap and /blitz:sprint-plan ingestion. Use when the user says 'audit codebase', 'full code review', 'comprehensive quality audit', 'health of this codebase', 'find tech debt', 'security audit', or before a major release."
+description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 independent same-scope passes per pillar) for Multi-Review aggregation. Produces findings formatted for /blitz:roadmap and /blitz:sprint-plan ingestion. Use when the user says 'audit codebase', 'full code review', 'comprehensive quality audit', 'health of this codebase', 'find tech debt', 'security audit', or before a major release."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: opus
 effort: high
@@ -121,7 +121,7 @@ echo "[audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
 Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
 
 ```js
-export const meta = { name: 'audit', description: '5-pillar audit, 2 agents/pillar', phases: [{ title: 'Audit' }] }
+export const meta = { name: 'audit', description: '5-pillar audit, 2 independent same-scope agents/pillar (Multi-Review)', phases: [{ title: 'Audit' }] }
 // ROSTER passed via args (agent name, pillar, scope, fileCap, outputPath, checklist, stack, inventory)
 const findings = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Audit', model: 'sonnet', schema: args.findingsSchema })))
@@ -158,18 +158,22 @@ Every agent receives:
 
 **Agent Roster:**
 
-| # | Agent Name | Pillar | Scope | File Cap | Output File |
+**2 independent same-scope passes per pillar** — both agents in a pillar audit the *full* pillar surface independently (not a frontend/backend split). Their overlap is the agreement signal Phase 2.0 aggregates: a finding both passes flag is high-confidence; one-pass findings are low-confidence. (Distinct breadth is recovered by aggregation across the two passes + the deterministic lane, §1.5.)
+
+| # | Agent Name | Pillar | Scope (full pillar — independent pass) | File Cap | Output File |
 |---|-----------|--------|-------|----------|-------------|
-| 1 | `arch-frontend` | Architecture | Components, stores, composables, router, layouts | 12 | `findings/01-arch-frontend.md` |
-| 2 | `arch-backend` | Architecture | Functions, schemas, packages, API routes, DB models | 12 | `findings/02-arch-backend.md` |
-| 3 | `perf-frontend` | Performance | Re-renders, memory leaks, bundle size, lazy loading | 10 | `findings/03-perf-frontend.md` |
-| 4 | `perf-backend` | Performance | Cold starts, DB queries, batch operations, caching | 10 | `findings/04-perf-backend.md` |
-| 5 | `sec-rules` | Security | DB rules, storage rules, auth config, CORS, CSP | 8 | `findings/05-sec-rules.md` |
-| 6 | `sec-code` | Security | XSS, auth middleware, input validation, secrets | 10 | `findings/06-sec-code.md` |
-| 7 | `maint-frontend` | Maintainability | Naming, complexity, duplication, dead code | 12 | `findings/07-maint-frontend.md` |
-| 8 | `maint-backend` | Maintainability | Type safety, consistency, error types, code reuse | 10 | `findings/08-maint-backend.md` |
-| 9 | `robust-frontend` | Robustness | Error boundaries, user feedback, edge cases, offline | 10 | `findings/09-robust-frontend.md` |
-| 10 | `robust-backend` | Robustness | Error handling, transactions, logging, retries | 10 | `findings/10-robust-backend.md` |
+| 1 | `arch-a` | Architecture | Components/stores/composables/router/layouts + functions/schemas/API/DB models | 14 | `findings/01-arch-a.md` |
+| 2 | `arch-b` | Architecture | (same scope as `arch-a` — independent pass) | 14 | `findings/02-arch-b.md` |
+| 3 | `perf-a` | Performance | Re-renders/memory/bundle/lazy + cold-starts/DB queries/batch/caching | 12 | `findings/03-perf-a.md` |
+| 4 | `perf-b` | Performance | (same scope as `perf-a` — independent pass) | 12 | `findings/04-perf-b.md` |
+| 5 | `sec-a` | Security | DB/storage rules, auth/CORS/CSP + XSS/middleware/input-validation/secrets | 12 | `findings/05-sec-a.md` |
+| 6 | `sec-b` | Security | (same scope as `sec-a` — independent pass) | 12 | `findings/06-sec-b.md` |
+| 7 | `maint-a` | Maintainability | Naming/complexity/duplication/dead-code + type-safety/consistency/error-types/reuse | 14 | `findings/07-maint-a.md` |
+| 8 | `maint-b` | Maintainability | (same scope as `maint-a` — independent pass) | 14 | `findings/08-maint-b.md` |
+| 9 | `robust-a` | Robustness | Error boundaries/feedback/edge/offline + error-handling/transactions/logging/retries | 12 | `findings/09-robust-a.md` |
+| 10 | `robust-b` | Robustness | (same scope as `robust-a` — independent pass) | 12 | `findings/10-robust-b.md` |
+
+`--dual` adds cross-model agreers for the Security pillar (highest-stakes; self-critique-paradox mitigation).
 
 ### 1.3 Agent Prompt Construction
 
@@ -178,7 +182,7 @@ For each agent, construct the prompt using the template from `references/main.md
 1. **Role statement**: "You are a senior code auditor specializing in {PILLAR}."
 2. **Scope definition**: "{SCOPE} — examine up to {FILE_CAP} files."
 3. **Stack context**: The detected stack profile.
-4. **Entry points**: Relevant subset from inventory (frontend agents get frontend paths, backend agents get backend paths, security agents get both).
+4. **Entry points**: Both passes in a pillar get the **full** pillar entry-point set from inventory (independent passes — the overlap is the basis for Phase 2.0 aggregation). Do NOT tell the two passes about each other.
 5. **Checklist**: The pillar-specific audit checklist from `references/main.md`.
 6. **Output format**: Findings must use the severity schema from `references/main.md`.
 7. **Output path**: Absolute path to the agent's findings file.
@@ -197,14 +201,9 @@ done
 
 ---
 
-## Phase 1.D / 2.0 / 2.5 / 3.5 — Recall hardening (net-new, sprint-19)
+### 1.5 Deterministic lane (run alongside the semantic passes)
 
-Recall-biased deep audit. Detail in [references/main.md](references/main.md) §Recall hardening; terse contract here:
-
-- **Phase 1.D — deterministic lane.** Before/alongside the semantic pillar agents, run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP. Findings tagged `lane: deterministic`. The semantic and deterministic lanes catch disjoint bug classes (ianlpaterson 38-task); run both.
-- **Phase 2.0 — Multi-Review aggregation.** The ≥2 agents per pillar now reason on the **same scope independently** (not split frontend/backend). Group semantic findings by (file, line-range, claim): flagged by **≥2 independent agreers → `confidence: high` (base 0.85)**; once → `low` (0.50). SWRBench 2509.01494 (+43.67% F1): consistency across independent runs separates real issues from sporadic hallucinations.
-- **Phase 2.5 — adversarial FP-verify panel.** Per surviving finding, spawn perspective-diverse refuters (correctness/security/reproduces lenses), majority vote; re-read cited code and **attempt to REFUTE** (default refuted if not reproducible). ≥majority refute → drop. Survivors attach a reproducing excerpt. No finding becomes a blocker without reproducing evidence (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings are advisory regardless of confidence — high confidence raises rank, never authority.
-- **Phase 3.5 — recall instrumentation.** Emit a required `coverage_boundary` field: agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is honestly labeled "passed what we checked." `--min-confidence low` default: report everything ranked, drop only refuted (fp_factor 0).
+Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP — and write to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. The deterministic and semantic lanes catch **disjoint** bug classes (ianlpaterson 38-task) — a deleted test has no semantic signature; a wrong answer-key has no structural one — so run both. Detail: [references/main.md](references/main.md) §Recall hardening.
 
 ## Phase 2: COMPILE RESULTS — Consolidate Findings
 
@@ -214,13 +213,18 @@ Read every file in `${AUDIT_RUN}/findings/`. For each file:
 - Parse the findings (each finding has: severity, title, description, file, line, recommendation, **Confidence: 0-100**).
 - If a file is empty or malformed, note the agent as failed.
 
+### 2.1.4 Multi-Review aggregation (Phase 2.0)
+
+Group semantic findings by (file, line-range, claim). A finding flagged by **≥2 independent same-scope passes → `confidence: high` (base 0.85)**; flagged once → `low` (0.50). This is the agreement signal the §1.1 roster (2 independent passes/pillar) exists to produce (SWRBench 2509.01494, +43.67% F1 — consistency across independent runs separates real issues from sporadic hallucinations). Deterministic-lane findings (`00-deterministic.md`) keep their own base_confidence (mechanism = verification). Detail: [references/main.md](references/main.md) §Recall hardening.
+
 ### 2.1.5 Confidence Threshold Filter
 
-Filter findings below confidence threshold (default 80) before deduplication. Mirrors Anthropic Code Review Plugin pattern; per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+**Recall default (`--min-confidence low`): rank, do not drop.** The threshold only suppresses when precision is explicitly requested. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
 
 ```bash
-THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-80}"
-# For each finding parsed, drop if Confidence < THRESHOLD.
+THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-0}"   # 0 = recall (report all, ranked); raise (e.g. 80) for precision
+# Rank findings by effective_confidence; drop only if Confidence < THRESHOLD.
+# Refuted findings (fp_factor 0, §2.3.5) are ALWAYS dropped regardless of THRESHOLD.
 # Findings missing Confidence: <0-100> field trigger detector #20 at critic stage
 # (advisory; not auto-dropped — surface to user as "unscored finding" in the report).
 ```
@@ -240,6 +244,10 @@ Cross-agent deduplication:
 - If two findings reference the same file and same line range, merge them.
 - Keep the higher severity.
 - Combine recommendations.
+
+### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
+
+Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [workflow-dispatch.md](/_shared/workflow-dispatch.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
 
 ### 2.4 Classify and Sort
 
@@ -316,6 +324,10 @@ cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).m
 ```
 
 ---
+
+### 2.8 Coverage boundary (recall instrumentation, Phase 3.5)
+
+Emit a required `coverage_boundary` block in the report — agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is labeled "passed what we checked," never "passed everything." Detail: [references/main.md](references/main.md) §Recall hardening.
 
 ## Phase 3: ROADMAP INTEGRATION — Convert Findings to Epics
 
@@ -476,8 +488,7 @@ Index:  docs/audits/audit-YYYYMMDD-index.json
 ## Error Recovery
 
 - **Too few source files**: Inform user the codebase is too small for a full audit. Suggest manual review.
-- **No frontend files found**: Skip frontend agents (1, 3, 7, 9). Spawn only backend/security agents.
-- **No backend files found**: Skip backend agents (2, 4, 8, 10). Spawn only frontend/security agents.
+- **A pillar has little/no relevant surface** (e.g. no frontend, or no backend): still spawn both same-scope passes for that pillar — each auto-scopes to what exists from the inventory; sparse pillars simply yield few findings. Do NOT skip numbered agents (the roster is 2 independent passes per pillar, not a frontend/backend split). If an entire pillar is N/A (e.g. no UI at all), note it in the `coverage_boundary` (§2.8) rather than dropping the passes.
 - **Agent timeout**: Mark as failed, proceed with available findings. Note gaps in report.
 - **All agents failed**: Abort and report the failure. Suggest checking stack detection and file permissions.
 - **Existing audit found**: Load previous findings for comparison. Include a "Delta" section in the report showing improvements and regressions.
