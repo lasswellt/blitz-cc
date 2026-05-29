@@ -26,6 +26,8 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Production Completeness Gate
 
+> **DEPRECATED (sprint-19) — folded into [`/blitz:review`](../review/SKILL.md).** Invoke **`/blitz:review --only completeness`** (review Phase 1.5). The canonical anti-mock/placeholder patterns (O2) now live in [`/_shared/check-registry.json`](/_shared/check-registry.json) (`o2-*`, `det-09/10`). This standalone skill stays functional until the sprint-20 cutover; existing call-sites (e.g. `ship`) keep working.
+
 Scan code for placeholder patterns, incomplete implementations, and anti-mock violations. Produce a structured findings report. Execute every phase in order. Do NOT skip phases.
 
 ---

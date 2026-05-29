@@ -484,3 +484,51 @@ Use this format for each proposed epic generated from audit findings:
   ]
 }
 ```
+
+---
+
+## Recall hardening (sprint-19) — aggregation, FP-verify panel, deterministic lane, recall instrumentation
+
+Detail for the SKILL.md §"Phase 1.D / 2.0 / 2.5 / 3.5" contract. Source specs: `docs/consolidation/review-audit/audit-spec.md`, `flaw-finding-proof.md`.
+
+### Phase 1.D — deterministic lane
+
+Load `/_shared/check-registry.json`, select `lane=="deterministic" && consolidated_target in {audit,both}`. Run each row's `detection.command` across the codebase (grep/tsc/import-graph). Zero-FP, no aggregation needed. Write findings to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. These complement the semantic pillars — the two lanes catch disjoint bug classes (a deleted-test/broken-build has no semantic signature; a wrong answer-key has no structural signature).
+
+### Phase 2.0 — Multi-Review aggregation
+
+The roster's 2 agents/pillar reason on the **same scope independently** (the legacy frontend/backend split gave no agreement signal). After Phase 2.1 parse:
+
+```
+for finding f in semantic_findings:
+    agreers = count(distinct agent_id that independently flagged f, matched by (file, line-range, claim))
+    f.base_confidence = 0.85 if agreers >= 2 else 0.50
+```
+
+Aggregating across independent runs of one model OR across models both work (SWRBench 2509.01494, +43.67% F1). `--dual` adds cross-model agreers for the security pillar.
+
+### Phase 2.5 — adversarial FP-verify panel
+
+Per surviving finding, spawn N perspective-diverse refuters (lenses: correctness / security / reproduces). Each re-reads the cited `file:line` and attempts to REFUTE the claim against actual behavior; default `refuted=true` if not reproducible.
+
+```
+fp_factor = (refuters that could NOT refute >= majority) ? 1.0 : 0.0
+effective_confidence = base_confidence * fp_factor   # refuted (0.0) -> dropped
+```
+
+Survivors attach the reproducing excerpt. A semantic finding is `advisory` regardless of confidence (registry downgrade rule) — high confidence raises rank, never authority. This is the structural cure for the v1.16.0 inflated-count incident (counts reported as findings without sampled code). Parity: native `/code-review` validation agent, <1% FP.
+
+### Phase 3.5 — recall instrumentation (`coverage_boundary`)
+
+Required field in the report JSON:
+
+```json
+"coverage_boundary": {
+  "agents_failed": ["<name>"],
+  "checks_skipped": ["det-NN", "sem-*"],
+  "files_over_cap_unread": 0,
+  "lanes_not_run": []
+}
+```
+
+A clean PASS with a large boundary is labeled "passed what we checked," never "passed everything." `--min-confidence low` is the audit default: report everything ranked by `effective_confidence`; drop only refuted findings (`fp_factor == 0`), never low-confidence ones (recall bias).

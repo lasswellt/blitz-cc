@@ -197,6 +197,15 @@ done
 
 ---
 
+## Phase 1.D / 2.0 / 2.5 / 3.5 — Recall hardening (net-new, sprint-19)
+
+Recall-biased deep audit. Detail in [references/main.md](references/main.md) §Recall hardening; terse contract here:
+
+- **Phase 1.D — deterministic lane.** Before/alongside the semantic pillar agents, run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP. Findings tagged `lane: deterministic`. The semantic and deterministic lanes catch disjoint bug classes (ianlpaterson 38-task); run both.
+- **Phase 2.0 — Multi-Review aggregation.** The ≥2 agents per pillar now reason on the **same scope independently** (not split frontend/backend). Group semantic findings by (file, line-range, claim): flagged by **≥2 independent agreers → `confidence: high` (base 0.85)**; once → `low` (0.50). SWRBench 2509.01494 (+43.67% F1): consistency across independent runs separates real issues from sporadic hallucinations.
+- **Phase 2.5 — adversarial FP-verify panel.** Per surviving finding, spawn perspective-diverse refuters (correctness/security/reproduces lenses), majority vote; re-read cited code and **attempt to REFUTE** (default refuted if not reproducible). ≥majority refute → drop. Survivors attach a reproducing excerpt. No finding becomes a blocker without reproducing evidence (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings are advisory regardless of confidence — high confidence raises rank, never authority.
+- **Phase 3.5 — recall instrumentation.** Emit a required `coverage_boundary` field: agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is honestly labeled "passed what we checked." `--min-confidence low` default: report everything ranked, drop only refuted (fp_factor 0).
+
 ## Phase 2: COMPILE RESULTS — Consolidate Findings
 
 ### 2.1 Read All Findings

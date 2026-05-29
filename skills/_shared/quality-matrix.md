@@ -1,94 +1,91 @@
 # Quality-Skill Decision Matrix
 
-Blitz ships **7 quality-related skills**. They look superficially overlapping but each has a distinct scope, tempo, and depth. This matrix is the single reference for "which one do I want?" Updated 2026-05-16.
+Updated 2026-05-29 (sprint-19 consolidation). The review/audit/quality surface is now **2 consolidated entry points** over a **shared check registry** ([`check-registry.json`](check-registry.json)), plus 2 standalone tools and 5 orthogonal-domain skills. This matrix is the single "which one do I want?" reference.
 
 ## TL;DR — pick by your symptom
 
 | Symptom | Skill |
 |---|---|
-| "Is my sprint mergeable?" | `/blitz:sprint-review` |
-| "Are there placeholders / stubs / `Not implemented` strings?" | `/blitz:completeness-gate` |
-| "Comprehensive 5-pillar audit before a major release" | `/blitz:codebase-audit` |
-| "Vue/Firestore/Pinia framework misuse patterns" | `/blitz:code-doctor` |
-| "Continuous code-quality improvement; ratchet that only goes forward" | `/blitz:code-sweep` |
-| "Are my exports wired to imports? Orphan routes? Auth coverage?" | `/blitz:integration-check` |
-| "Just run the review phase" (thin alias) | `/blitz:review` |
+| "Is this change/sprint mergeable?" (per-change gate) | `/blitz:review` |
+| "Comprehensive pre-release deep audit; find all tech debt" | `/blitz:audit` |
+| "Just the placeholder/stub scan" | `/blitz:review --only completeness` |
+| "Just the wiring/orphan-route/auth check" | `/blitz:review --only wiring` |
+| "Vue/Firestore/Pinia framework misuse" | `/blitz:review --only framework`, or `/blitz:code-doctor --fix` |
+| "Continuous ratchet that only goes forward" | `/blitz:code-sweep` (loop) |
+| "Dependency CVEs / licenses" | `/blitz:dep-health` |
+| "Bundle size / Lighthouse / runtime perf" | `/blitz:perf-profile` |
+| "Cross-page UI consistency / data drift" | `/blitz:ui-audit` |
+| "E2E smoke / console errors" | `/blitz:browse` |
+| "Quality trend over time" | `/blitz:quality-metrics` |
 
-## Full matrix
+## The two consolidated entry points
 
-| skill | scope | tempo | depth | output | invokes other skills | invoked by |
-|---|---|---|---|---|---|---|
-| **sprint-review** | one sprint | per-sprint | type-check + lint + test + build + 4 parallel reviewer agents (security/backend/frontend/patterns) + critic agent | PASS/FAIL + 8-invariant report (`.cc-sessions/sprints/<sprint>/review.md`) | critic agent, reviewer/architect agents | ship; `/blitz:review` alias; manual |
-| **completeness-gate** | repo or scope | gate (called) | placeholder/stub scan via grep + AST patterns (TODO/FIXME/STUB/`return {}`/`throw new Error('Not implemented')`) | A-F completeness score + file:line findings | none (read-only) | ship; manual |
-| **codebase-audit** | full repo | pre-release / quarterly | 10 parallel agents (2 per pillar × 5 pillars: Architecture, Performance, Security, Maintainability, Robustness) | full report → roadmap-ingestible findings (`docs/_research/<date>_codebase-audit.md`) | 10 audit agents | manual; pre-release ritual |
-| **code-doctor** | files matching `paths:` (Vue/Firestore/Pinia) | manual / hooks | framework-API anti-pattern rules (Firestore: reads in render, missing rules; Vue 3: ref/reactive misuse; Pinia: external mutation; dead exports; duplication candidates) | findings list + `--fix` auto-applies low-risk corrections | none | manual |
-| **code-sweep** | scope (path/all) | continuous (`/loop`) | 30 static checks across 7 categories + dynamic standards discovered from convention; ratchet metric persisted to `.cc-sessions/ratchet.json` | per-iteration improvement report; standards report | none | `/loop`; manual |
-| **integration-check** | recently-changed code | gate (sprint-dev Phase 3.5.0) | export-to-import tracing, orphan route detection, auth guard coverage, store-to-component wiring | findings list (read-only) | none | sprint-dev Phase 3.5.0; manual |
-| **review** | (alias) | (alias) | thin wrapper — flag-parses + forwards to sprint-review | (delegated) | sprint-review | manual |
-| **implement** | (alias) | (alias) | thin wrapper — flag-parses + forwards to sprint-dev; used by `/blitz:next --loop` row 5 dispatch | (delegated) | sprint-dev | `/blitz:next --loop`; manual |
+| | `/blitz:review` | `/blitz:audit` |
+|---|---|---|
+| Scope | one change / sprint | full codebase |
+| Tempo | per-change gate | pre-release / quarterly |
+| **Bias** | **precision** (low FP — runs constantly) | **recall** (catch everything — runs rarely) |
+| Lanes | both (deterministic + single-pass semantic) | both (deterministic + **aggregated** semantic) |
+| Aggregation | opt-in (`--aggregate`) | required (≥2 agreers → high confidence) |
+| FP-verification | inline (re-read, reproduce) | adversarial panel (refute + majority vote) |
+| Confidence gate | `--min-confidence high` (≥0.8) | `--min-confidence low` (≥0.0, ranked) |
+| Critic | in-Claude default; `--dual` for semantic | `BLITZ_DUAL_CRITIC=1` default + FP-panel |
+| Engine | `sprint-review` (8-invariant gate) | `codebase-audit` (5-pillar fan-out) |
+| Output | PASS/FAIL + 8-invariant report + auto-fix | scorecard + ranked findings + roadmap epics + `coverage_boundary` |
 
-## Why they don't overlap (despite looking similar)
+Both select checks from [`check-registry.json`](check-registry.json) by `consolidated_target`. The registry carries each check's `lane` (deterministic|semantic), `verdict_authority` (reject|advisory), and `base_confidence`. **review suppresses what audit re-surfaces**: a single-pass semantic finding review drops as low-confidence is exactly what audit's aggregation lifts to high confidence — complementary, not redundant. See [check-registry.md](check-registry.md) for the confidence model + verdict-flip asymmetry.
 
-| Apparent overlap | Reality |
+## Folded into the entry points (deprecated standalone — sprint-19)
+
+| Was standalone | Now | Invoke |
+|---|---|---|
+| `completeness-gate` | review Phase 1.5 (O2: `o2-*`, det-09/10) | `/blitz:review --only completeness` |
+| `integration-check` | review Phase 1.6 (O3: `o3-*`, det-16) | `/blitz:review --only wiring` |
+
+Both retain functional deprecation shims (slug + existing call-sites work) until the sprint-20 cutover. Canonical patterns live in the registry, not in the skill bodies.
+
+## Standalone tools (NOT folded — distinct tempo/mechanism)
+
+| Skill | Why standalone |
 |---|---|
-| sprint-review + completeness-gate | Different concerns. sprint-review = "does this sprint pass the 8 invariants" (types, lint, tests, build, reviewer findings, branch hygiene). completeness-gate = "are there placeholders". Chained sequentially by `ship`, not by each other. No code duplication. |
-| codebase-audit + code-doctor | Different scopes. codebase-audit = 5 broad pillars across whole codebase. code-doctor = narrow framework-specific rule pack. code-doctor's `paths:` field auto-loads only on Vue/Firestore projects; codebase-audit is universal. |
-| code-sweep + code-doctor | Different mechanisms. code-sweep = ratchet + continuous loop. code-doctor = one-shot framework rules. code-sweep's "standards" are convention-discovered; code-doctor's are framework-canonical. |
-| code-sweep + completeness-gate | Both grep TODOs but for different purposes. completeness-gate = "is this prod-ready right now" (gate semantics). code-sweep = "this metric should only decrease over time" (ratchet semantics). The grep patterns happen to overlap; the user-visible semantics differ. |
-| critic agent + code-sweep | Different layers. critic = adversarial review of a SPECIFIC sprint's claims (does this work survive scrutiny). code-sweep = global metric ratchet. critic is one-shot; sweep is continuous. |
-| sprint-review reviewer agents + reviewer skill | Different actors. sprint-review spawns 4 parallel reviewer agents (security/backend/frontend/patterns) PLUS the critic agent. The standalone `reviewer.md` agent is for ad-hoc one-off reviews outside a sprint context. |
+| `code-sweep` | continuous `/loop` ratchet + convention-discovered standards — a *tempo*, not a gate. Its checks (det-03/04/08/17) are registry-shared; the loop is not. |
+| `code-doctor` | framework rule packs (F/V/P/G) + `--fix` auto-apply + `paths:` glob auto-load. review embeds the *scan* (`--only framework`); `--fix` stays here. |
 
-## When sprint-review runs which
+## Orthogonal domains (out of review/audit scope)
 
-```
-/blitz:sprint-review
-├── Phase 0.0: input gate — validate pipeline inputs
-├── Phase 0:   context — load sprint state
-├── Phase 1:   automated checks — type-check + lint + tests + build
-├── Phase 1.5: pattern analysis — anti-mock scan + convention check
-├── Phase 2:   code review — parallel reviewer agents (security, backend, frontend, patterns)
-├── Phase 2.5: browser verification (when Playwright available)
-├── Phase 3:   auto-fix — resolve common failures
-├── Phase 3.6: registry invariants — carry-forward hard gate (8 invariants, including
-│              Invariant 7 = critic agent LGTM via agents/critic.md)
-├── Phase 3.7: automation coverage — declare boundary
-└── Phase 4:   report — write review report and update registry
-```
+Distinct scope + tempo + downstream + domain (the four-question test below). Invoked alongside, never inside, review/audit:
 
-The critic agent runs INSIDE Phase 3.6 as Invariant 7, not as a separate Phase 3.7. Phase 3.7 is the "automation coverage / declared boundary" step where the skill states which checks were skipped (e.g. browser unavailable, no test runner detected) so reviewers can spot-check those manually.
+| Skill | Domain |
+|---|---|
+| `quality-metrics` | observability / trend (audit Phase 4 *calls* it for a snapshot; not absorbed) |
+| `dep-health` | dependency CVE / license governance |
+| `ui-audit` | cross-page visual + data-integrity |
+| `perf-profile` | bundle / Lighthouse / runtime |
+| `browse` | E2E smoke / console / network |
 
-Notably, sprint-review does NOT run completeness-gate — that's a separate concern owned by `ship`. The chain is:
+## The agents
 
-```
-/blitz:ship
-├── /blitz:sprint-review     (PASS gate — 8 invariants)
-├── /blitz:completeness-gate (≥C / 70 required)
-├── /blitz:quality-metrics   (observability snapshot)
-└── /blitz:release           (tag + publish)
-```
+| Agent | Role |
+|---|---|
+| `critic` | adversarial pre-PASS gate (review Invariant 7; audit critic). Registry-driven §2.1; verdict-flip asymmetry (ground-truth → REJECT, advisory → annotate). |
+| `research-critic` | citation/claim gate for research docs (graded claim-grounding, UNVERIFIED verdict, scope-claim blocker). |
+| `reviewer` | the 4 parallel reviewer agents review spawns (security/backend/frontend/patterns). |
+| `architect` | audit Architecture pillar. |
 
-Each gate is independently invokable. The ship pipeline composes them; users can also run them individually.
+## Authoring guidance — before adding an 8th quality skill
 
-## Authoring guidance — when to add a new quality skill
+1. **Scope distinct?** (change vs repo vs file)
+2. **Tempo distinct?** (per-change gate vs continuous loop vs pre-release)
+3. **Downstream distinct?** (review.md vs ratchet.json vs roadmap doc vs exit code)
+4. **Would a `--mode`/`--only` flag on review/audit do?** Usually yes — prefer flags over new skills.
 
-Before adding an 8th quality-class skill, check:
-
-1. **Is the scope distinct?** (e.g., sprint-scoped vs repo-scoped vs file-scoped)
-2. **Is the tempo distinct?** (e.g., per-sprint gate vs continuous loop vs pre-release ritual)
-3. **Is the output consumed by a different downstream?** (review.md vs ratchet.json vs roadmap doc vs commit-blocking exit code)
-4. **Would a `--mode` flag on an existing skill do?** Often yes — prefer mode flags over new skills.
-
-If you cannot answer all four with distinct values, do not add the skill. Update this matrix instead — most "missing" quality skills are subsets of an existing one with a new flag.
+If you can't answer all four with distinct values, don't add the skill — add a registry row or a `--only` mode instead.
 
 ## Cross-refs
 
-- `skills/sprint-review/SKILL.md` — 8-invariant gate spec
-- `skills/codebase-audit/SKILL.md` — 5-pillar agent fan-out
-- `skills/code-doctor/SKILL.md` — framework-API rule packs + `paths:` glob auto-load
-- `skills/code-sweep/SKILL.md` — ratchet protocol + `/loop` integration
-- `skills/completeness-gate/SKILL.md` — placeholder/stub patterns
-- `skills/integration-check/SKILL.md` — cross-module wiring
-- `skills/ship/SKILL.md` — release-chain composition
-- `_shared/ratchet-protocol.md` — 8 monotonic metrics, multi-agent worktree merge, auto-revert
-- `_shared/shortcut-taxonomy.md` — 19 anti-shortcut detectors + grep patterns
-- `agents/critic.md` — adversarial pre-PASS reviewer (8 reject checks + JSON contract)
+- [`check-registry.json`](check-registry.json) / [`check-registry.md`](check-registry.md) — shared check source + confidence model
+- [`shortcut-taxonomy.md`](shortcut-taxonomy.md) — human-readable view of `det-*` rows
+- `skills/review/SKILL.md` — precision front-door · `skills/audit/SKILL.md` — recall entry point
+- `skills/sprint-review/SKILL.md` — review engine (8-invariant gate) · `skills/codebase-audit/SKILL.md` — audit engine
+- `agents/critic.md`, `agents/research-critic.md` — enforcement engines
+- `docs/consolidation/review-audit/` — full design specs

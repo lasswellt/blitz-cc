@@ -24,6 +24,8 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 # Integration Checker
 
+> **DEPRECATED (sprint-19) — folded into [`/blitz:review`](../review/SKILL.md).** Invoke **`/blitz:review --only wiring`** (review Phase 1.6). The canonical wiring checks (O3) now live in [`/_shared/check-registry.json`](/_shared/check-registry.json) (`o3-wiring`, `o3-orphan-route`, `det-16`). This standalone skill stays functional until the sprint-20 cutover; `sprint-dev` Phase 3.5.0 still calls it (now via the review front-door).
+
 Validate cross-module wiring by spawning parallel check agents grouped into 3 logical domains. Each domain agent runs its checks and writes findings JSON; the orchestrator merges and reports.
 
 **Canonical owner of wiring topology (O3).** integration-check is the single owner of cross-module wiring checks — export-to-import tracing, store-to-component / API-to-store wiring, unwired-store-actions, and orphan/wired (importer) detection. `completeness-gate` delegates its wiring checks (2.11 unwired-store-actions, 2.12 Level-3 Wired) here rather than re-implementing them; sprint-dev Phase 3.5.0 runs integration-check before the completeness gate so the sprint flow keeps full coverage.

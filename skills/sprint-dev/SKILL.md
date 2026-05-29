@@ -337,7 +337,7 @@ This phase is **mandatory** and must not be skipped, even if no explicit UI stor
 
 ### 3.5.0 Run Integration Check (Mandatory)
 
-Run `/blitz:integration-check` to verify: export-to-import tracing, route coverage, store wiring. Fix high-severity findings before UI pass — cheaper here than at sprint-review Phase 1.6.
+Run `/blitz:review --only wiring` (consolidated front-door; integration-check folded into review Phase 1.6 — legacy `/blitz:integration-check` still works) to verify: export-to-import tracing, route coverage, store wiring. Fix high-severity findings before UI pass — cheaper here than at sprint-review Phase 1.6.
 
 ### 3.5.1 Spawn Integration Agent
 

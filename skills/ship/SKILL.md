@@ -108,10 +108,11 @@ Wait for completion.
 
 ### 1.2 Completeness Gate
 
-Dispatch to completeness-gate:
+Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review Phase 1.5 — legacy slug still works):
 ```
-Invoke: /blitz:completeness-gate all
+Invoke: /blitz:review --only completeness
 ```
+The ≥C/70 release cutoff remains owned by ship (reads the completeness grade). Legacy `/blitz:completeness-gate all` is equivalent until the sprint-20 cutover.
 
 Wait for completion. Read the output:
 - Score >= 70 (C grade or higher): PASS, proceed.

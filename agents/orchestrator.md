@@ -82,13 +82,14 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | User intent | Skill | Why |
 |---|---|---|
 | "research X", "investigate Y" | `/blitz:research <topic>` | Spawns parallel research agents |
-| "audit codebase", "5-pillar review" | `/blitz:codebase-audit` | 10 parallel agents |
+| "audit codebase", "5-pillar review", "comprehensive audit" | `/blitz:audit` | Canonical recall deep audit (aggregation + FP-panel); engine = codebase-audit |
+| "review change/sprint", "quality gate", "mergeable?" | `/blitz:review` | Consolidated precision gate (8 invariants + critic); `--only` for folded concerns |
 | "what was learned recently", "explain the codebase" | `/blitz:codebase-map` | Read-only |
 | "audit deps", "security check" | `/blitz:dep-health` | npm audit + license + outdated |
-| "check completeness", "production readiness" | `/blitz:completeness-gate` | Placeholder/stub scan |
-| "check API misuse", "framework anti-patterns" | `/blitz:code-doctor` | Read-only Firestore/Vue audit |
+| "check completeness", "production readiness" | `/blitz:review --only completeness` | Placeholder/stub scan (completeness-gate folded; legacy slug still works) |
+| "check API misuse", "framework anti-patterns" | `/blitz:review --only framework`, `/blitz:code-doctor --fix` | Firestore/Vue audit |
 | "sweep code quality", "cleanup", "improve code" | `/blitz:code-sweep` | Iterative ratchet sweep |
-| "check wiring", "integration check", "orphan routes" | `/blitz:integration-check` | Read-only cross-module trace |
+| "check wiring", "integration check", "orphan routes" | `/blitz:review --only wiring` | Cross-module trace (integration-check folded; legacy slug still works) |
 | "quality metrics", "trend dashboard" | `/blitz:quality-metrics` | Snapshot + compare |
 | "audit UI consistency", "cross-page data drift" | `/blitz:ui-audit` | Read-only registry-based |
 | "browse the app", "smoke test" | `/blitz:browse` | Playwright-driven crawl |
