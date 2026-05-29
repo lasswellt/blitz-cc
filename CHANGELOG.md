@@ -17,6 +17,25 @@ Bump these files together on every release. `installer/package.json` and `instal
 (`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
 
 
+## [Unreleased] — review/audit consolidation (sprints 18–20)
+
+Collapsed the 7-skill review/audit/quality surface into **2 entry points over a shared check registry**, grounded in the verified research in `docs/consolidation/review-audit/`.
+
+### Added
+- `skills/_shared/check-registry.json` (schema `blitz-check-registry/2.0`) + `check-registry.md` — single source of truth for every review/audit check: `lane` (deterministic|semantic), `verdict_authority` (reject|advisory, derived), `base_confidence`, `detection.{type,command}`, provenance. 30 checks (20 detectors + 5 semantic pillars + O2/O3/fw).
+- `hooks/scripts/check-registry-validate.sh` — schema lint (verdict-authority derivation invariant + detection presence/type); wired into `pre-commit-validate.sh`.
+- `/blitz:review` — consolidated **precision** front-door (two detection lanes, confidence gate + reject-bypass, FP-verify, `--only completeness|wiring|framework|full`).
+- `/blitz:audit` — consolidated **recall** entry point with net-new flaw-finding: deterministic lane, Multi-Review aggregation (≥2 independent agreers → high confidence), adversarial FP-verify panel, and `coverage_boundary` recall instrumentation.
+
+### Changed
+- `agents/critic.md` — verdict-flip asymmetry (ground-truth → REJECT; advisory → annotate-only), reject-bypass of the confidence gate, FP-verify substep, principled CMC routing, registry-driven §2.1. Detector count reconciled to **20 catalogued (13 reject, 7 advisory)**.
+- `agents/research-critic.md` — §2.5 claim-grounding promoted to a graded gate, `UNVERIFIED` first-class verdict, refuse-without-evidence for `scope:` claims, carry-forward citation-drift re-verification, corrected 4-way-taxonomy attribution.
+- `shortcut-taxonomy.md` → human-readable view of the registry; `quality-matrix.md` rewritten for the 2-entry-point model.
+
+### Removed (BREAKING)
+- `skills/completeness-gate/` and `skills/integration-check/` — folded into `/blitz:review --only completeness` and `/blitz:review --only wiring`. Deprecation shims (sprint-19) removed in the sprint-20 cutover.
+- `skills/codebase-audit/` — **renamed** to `skills/audit/` (the engine; `/blitz:audit` is the entry point). All ~50 references migrated. Skill count 39 → 37.
+
 ## [1.16.0] — 2026-05-28
 
 Dynamic-Workflows adoption + a self-audited cohesion/modernization pass (Phase 8). The suite ran its own lifecycle on itself — research → 93-agent cohesion audit (native Dynamic Workflow) → roadmap extend → sprints 14-16 — and its adversarial gates caught (and fixed) two real defects introduced along the way. Counts: **39 skills · 10 agents · 36 hook scripts · 28 shared protocols** (+2: `workflow-dispatch.md`, and the count was already stale at 27).

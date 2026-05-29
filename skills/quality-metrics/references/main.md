@@ -351,7 +351,7 @@ fi
 | Lint | `max(0, 100 - errors * 5 - warnings * 1)` | 0-100 | Errors penalized 5x, warnings 1x |
 | Tests | `(passed / total) * 100` | 0-100 | Skipped tests excluded from total |
 | Build | `exit_code === 0 ? 100 : 0` | 0 or 100 | Binary pass/fail |
-| Completeness | Imported from completeness-gate skill | 0-100 | null if not available |
+| Completeness | Imported from `/blitz:review --only completeness` skill | 0-100 | null if not available |
 
 ### Overall Score
 

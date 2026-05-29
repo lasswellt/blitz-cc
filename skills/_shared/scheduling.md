@@ -30,7 +30,7 @@ Creates persistent scheduled tasks that survive session closure. Uses CronCreate
 |-------|----------|------|-----------|
 | `dep-health` | Weekly | `audit` | Catch vulnerabilities and outdated packages |
 | `quality-metrics` | Daily | `collect` | Track quality trends over time |
-| `completeness-gate` | After each sprint | default | Catch placeholders before they age |
+| `/blitz:review --only completeness` | After each sprint | default | Catch placeholders before they age |
 | `retrospective` | After each sprint | default | Auto-analyze completed sessions |
 | `sprint` | 15-30m | `--loop` | Continuous sprint execution |
 | `code-sweep` | 10m | `--loop` | Iterative code cleanup with auto-fix |
@@ -46,7 +46,7 @@ Skills that support `/loop` must be **idempotent** — safe to call repeatedly w
 | `dep-health audit` | Yes | Read-only audit, no state changes |
 | `quality-metrics collect` | Yes | Writes to date-stamped files, no conflicts |
 | `health` | Yes | Read-only check |
-| `completeness-gate` | Yes | Read-only scan |
+| `/blitz:review --only completeness` | Yes | Read-only scan |
 | `code-sweep --scan-only` | Yes | Read-only scan with state tracking |
 | `code-sweep --loop` | Yes | One fix per tick, verify-before-commit, ratchet enforcement |
 | `browse --loop` | Yes | One page per tick, discovers links from DOM, builds site hierarchy, auto-fixes up to 2 issues. Requires running dev server + auth. Circuit breaker on 3 fix failures. Max 500 pages / depth 8 |

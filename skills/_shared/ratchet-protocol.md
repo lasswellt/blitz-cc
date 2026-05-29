@@ -16,7 +16,7 @@ Stored in `docs/sweeps/ratchet.json`, updated by `code-sweep` and `sprint-review
 | `type_errors` | ↓ | absolute 0 | `npx tsc --noEmit 2>&1 \| grep -cE 'error TS\d+'` |
 | `as_any_count` | ↓ | baseline | `grep -rEn '\bas any\b' src/ --include='*.ts' --include='*.tsx' --include='*.vue' --exclude-dir=__tests__ \| wc -l` |
 | `lint_violations` | ↓ | baseline | `npx eslint --format=json . 2>/dev/null \| jq '[.[].errorCount] \| add // 0'` |
-| `completeness_score` | ↑ | baseline | `/blitz:completeness-gate` (existing) |
+| `completeness_score` | ↑ | baseline | `/blitz:review --only completeness` (existing) |
 | `mocks_in_src` | ↓ | baseline | `grep -rEn '\b(vi\.mock\|jest\.mock\|sinon\.stub)\b' src/ --exclude-dir=__tests__ \| wc -l` |
 | `todo_count` | ↓ | baseline | `grep -rEn '\b(TODO\|FIXME)\b' src/ \| wc -l` |
 | `stale_worktree_branch_count` | ↓ | baseline | `git for-each-ref --format='%(refname:short)' refs/heads/worktree-agent-* refs/heads/worktree-sprint-* refs/heads/sprint-*/backend refs/heads/sprint-*/frontend refs/heads/sprint-*/tests refs/heads/sprint-*/infra refs/heads/sprint-*/integration \| wc -l` |

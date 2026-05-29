@@ -66,7 +66,7 @@ Reference table for what each skill does that may conflict with user's CLAUDE.md
 | `release --publish` | Pushes branch + tag, creates GitHub release | HIGH |
 | `fix-issue` | Commits fix using conventional commit format on a feature branch | MEDIUM |
 | `sprint-review` | Auto-fixes common lint/type failures | MEDIUM |
-| `ship` | Chains sprint-review → completeness-gate → release | HIGH |
+| `ship` | Chains sprint-review → review --only completeness → release | HIGH |
 | All skills | Default to `npm run test`, `npm run build`, `npm run lint` | MEDIUM (pnpm/bun/yarn users) |
 | All orchestrators | Use `opus` model | LOW (cost-sensitive users) |
 | Hooks | `pre-edit-guard.sh` blocks `.env*`, lock files | MEDIUM |

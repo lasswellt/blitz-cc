@@ -278,7 +278,7 @@ Run the completeness gate on all files modified by the fix:
 ```bash
 CHANGED_FILES=$(git diff --name-only HEAD~1 -- '*.ts' '*.tsx' '*.vue')
 ```
-Invoke: `/blitz:completeness-gate` scoped to the changed files.
+Invoke: `/blitz:review --only completeness` scoped to the changed files.
 If any **critical** findings exist in the changed files, fix them before proceeding. Medium/low findings are acceptable for a targeted bug fix.
 
 ### 3.4 Manual Verification (if reproduction steps are available)

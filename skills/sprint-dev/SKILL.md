@@ -337,7 +337,7 @@ This phase is **mandatory** and must not be skipped, even if no explicit UI stor
 
 ### 3.5.0 Run Integration Check (Mandatory)
 
-Run `/blitz:review --only wiring` (consolidated front-door; integration-check folded into review Phase 1.6 — legacy `/blitz:integration-check` still works) to verify: export-to-import tracing, route coverage, store wiring. Fix high-severity findings before UI pass — cheaper here than at sprint-review Phase 1.6.
+Run `/blitz:review --only wiring` (consolidated front-door; integration-check folded into review Phase 1.6) to verify: export-to-import tracing, route coverage, store wiring. Fix high-severity findings before UI pass — cheaper here than at sprint-review Phase 1.6.
 
 ### 3.5.1 Spawn Integration Agent
 
@@ -374,7 +374,7 @@ Run the initial full verification sweep (type-check, lint, test, build). On re-r
 
 ### 4.2.5 Completeness Gate
 
-Run `/blitz:completeness-gate` on changed source files (`git diff --name-only ${SPRINT_BASE}..HEAD -- '*.ts' '*.tsx' '*.vue'`). Score < C (70) → flag critical findings in integration report; do not block (sprint review makes final call).
+Run `/blitz:review --only completeness` on changed source files (`git diff --name-only ${SPRINT_BASE}..HEAD -- '*.ts' '*.tsx' '*.vue'`). Score < C (70) → flag critical findings in integration report; do not block (sprint review makes final call).
 
 ### 4.2.1 Cross-Phase Regression Testing
 

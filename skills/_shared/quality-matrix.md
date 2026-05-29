@@ -30,7 +30,7 @@ Updated 2026-05-29 (sprint-19 consolidation). The review/audit/quality surface i
 | FP-verification | inline (re-read, reproduce) | adversarial panel (refute + majority vote) |
 | Confidence gate | `--min-confidence high` (≥0.8) | `--min-confidence low` (≥0.0, ranked) |
 | Critic | in-Claude default; `--dual` for semantic | `BLITZ_DUAL_CRITIC=1` default + FP-panel |
-| Engine | `sprint-review` (8-invariant gate) | `codebase-audit` (5-pillar fan-out) |
+| Engine | `sprint-review` (8-invariant gate) | `audit` (5-pillar fan-out) |
 | Output | PASS/FAIL + 8-invariant report + auto-fix | scorecard + ranked findings + roadmap epics + `coverage_boundary` |
 
 Both select checks from [`check-registry.json`](check-registry.json) by `consolidated_target`. The registry carries each check's `lane` (deterministic|semantic), `verdict_authority` (reject|advisory), and `base_confidence`. **review suppresses what audit re-surfaces**: a single-pass semantic finding review drops as low-confidence is exactly what audit's aggregation lifts to high confidence — complementary, not redundant. See [check-registry.md](check-registry.md) for the confidence model + verdict-flip asymmetry.
@@ -86,6 +86,6 @@ If you can't answer all four with distinct values, don't add the skill — add a
 - [`check-registry.json`](check-registry.json) / [`check-registry.md`](check-registry.md) — shared check source + confidence model
 - [`shortcut-taxonomy.md`](shortcut-taxonomy.md) — human-readable view of `det-*` rows
 - `skills/review/SKILL.md` — precision front-door · `skills/audit/SKILL.md` — recall entry point
-- `skills/sprint-review/SKILL.md` — review engine (8-invariant gate) · `skills/codebase-audit/SKILL.md` — audit engine
+- `skills/sprint-review/SKILL.md` — review engine (8-invariant gate) · `skills/audit/SKILL.md` — audit engine
 - `agents/critic.md`, `agents/research-critic.md` — enforcement engines
 - `docs/consolidation/review-audit/` — full design specs

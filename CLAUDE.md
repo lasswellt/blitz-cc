@@ -45,7 +45,7 @@ If no activity feed exists or is empty, skip the summary silently.
 
 ## Skill System
 
-This repo contains **39 development skills** in `skills/` and **10 plugin agents** in `agents/` (`architect`, `backend-dev`, `critic`, `design-critic`, `doc-writer`, `frontend-dev`, `orchestrator`, `research-critic`, `reviewer`, `test-writer`). Skills are auto-discovered by Claude Code from `skills/<name>/SKILL.md` (Anthropic-canonical layout — no central registry). Skills are invoked via `/blitz:<skill-name>`.
+This repo contains **37 development skills** in `skills/` and **10 plugin agents** in `agents/` (`architect`, `backend-dev`, `critic`, `design-critic`, `doc-writer`, `frontend-dev`, `orchestrator`, `research-critic`, `reviewer`, `test-writer`). Skills are auto-discovered by Claude Code from `skills/<name>/SKILL.md` (Anthropic-canonical layout — no central registry). Skills are invoked via `/blitz:<skill-name>`.
 
 Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hooks/scripts/skill-frontmatter-validate.sh`: third-person description ≤1024 chars (stricter than platform's 1536 cap by design — keeps the always-loaded skill listing lean), body ≤500 lines, required fields (`name`, `description`, `model`, `effort`, `compatibility`, `allowed-tools` when invokable), and the verbatim OUTPUT STYLE snippet from `/_shared/terse-output.md`.
 
@@ -67,7 +67,7 @@ Required for skills that spawn agents:
 - **spawn-protocol.md** — Subagent type selection, weight classes, HEARTBEAT/PARTIAL/WRAP_UP, three-tier timeout, stuck-loop detection, **Agent Output Contract** + **Token Budget & Reply Contract** (§9)
 - **agent-prompt-boilerplate.md** — Author-time dedup target for recurring Agent() prompt sections (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT/PARTIAL, CONFIRMATION). Cited via `<!-- import: -->` markers in 7 `references/main.md` files
 - **token-budget.md** (v1.11+) — model routing matrix (60/35/5 Haiku/Sonnet/Opus), 1-hr cache TTL, JSON reply contract, lazy MCP/skill load, anti-patterns
-- **workflow-dispatch.md** (v1.16+) — opt-in `Workflow` (dynamic-workflows) dispatch contract: capability gate + `Agent()` fallback, hybrid wrapper boundary (script owns dispatch, skill owns filesystem I/O), main-thread-only constraint, prompt invariants. `codebase-audit` is the pilot (Phase 1.0/1.1-W)
+- **workflow-dispatch.md** (v1.16+) — opt-in `Workflow` (dynamic-workflows) dispatch contract: capability gate + `Agent()` fallback, hybrid wrapper boundary (script owns dispatch, skill owns filesystem I/O), main-thread-only constraint, prompt invariants. `audit` is the pilot (Phase 1.0/1.1-W)
 - **agent-routing.md** (v1.11+) — orchestrator routing decision tree + the subagents-cannot-spawn-subagents constraint
 
 Required for autonomous loops + quality:
@@ -75,7 +75,7 @@ Required for autonomous loops + quality:
 - **shortcut-taxonomy.md** (v1.11+) — 19 anti-shortcut detectors with grep patterns + escape-hatch rules
 - **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
 - **frontend-design-heuristics.md** (v1.11+) — paraphrased aesthetic philosophy, NEVER list, density-vs-whitespace guidance
-- **quality-matrix.md** (v1.15+) — decision matrix for the 7 quality-related skills (sprint-review, codebase-audit, code-doctor, code-sweep, completeness-gate, integration-check, review); cites why apparent overlaps are real distinctions
+- **quality-matrix.md** (v1.15+) — decision matrix for the 5 quality-related skills (sprint-review, audit, code-doctor, code-sweep, review — completeness + wiring checks folded into `/blitz:review --only completeness|wiring`); cites why apparent overlaps are real distinctions
 
 ## Hooks
 

@@ -296,10 +296,10 @@ Must exit 0. Record pass/fail.
 
 ### 4.6 Completeness Gate (Optional)
 
-If the completeness-gate skill is available in this plugin suite, invoke it:
-- Run completeness-gate against the full codebase
+If the `/blitz:review --only completeness` skill is available in this plugin suite, invoke it:
+- Run `/blitz:review --only completeness` against the full codebase
 - Score must be 70 or higher (C grade minimum)
-- If completeness-gate is not available, mark as SKIPPED
+- If `/blitz:review --only completeness` is not available, mark as SKIPPED
 
 ### 4.7 Version Consistency Check
 

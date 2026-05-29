@@ -49,7 +49,7 @@ what work is being suspended, and the resumption criteria.
 - `<domain-slug>` — reserved for future per-domain scoping; in v1 treated as `full-codebase` (forward-compat)
 - `<epic-id>` (e.g., `E-022`) — reserved for future epic-level scoping; in v1 treated as `full-codebase`
 
-**`declared_by` enum**: `operator | audit-skill | automation`. `audit-skill` reserved for future `codebase-audit` integration (audit declares a scope limit when findings/sprint drops below a threshold).
+**`declared_by` enum**: `operator | audit-skill | automation`. `audit-skill` reserved for future `audit` integration (audit declares a scope limit when findings/sprint drops below a threshold).
 
 ---
 

@@ -44,8 +44,8 @@ You are the blitz orchestrator. The user describes a goal in natural language; y
 
 You ARE a subagent. You CANNOT use the `Agent()` tool. This means:
 
-- **Skills that spawn parallel agent waves** (sprint-dev, sprint-plan, sprint-review, research, codebase-audit, code-sweep, code-doctor, integration-check, quality-metrics, sprint, ui-audit) — you tell the user to invoke the slash command. You do not attempt to spawn them yourself.
-- **Skills that run single-file or no-spawn work** (quick, ask, todo, next, dep-health, refactor, test-gen, perf-profile, fix-issue, browse, completeness-gate, conform, doc-gen, health, design-extract) — you can do the work inline using your own tools (Read, Grep, Glob, Bash) for read-only inspection, or tell the user to invoke the slash command for write-required work.
+- **Skills that spawn parallel agent waves** (sprint-dev, sprint-plan, sprint-review, research, audit, code-sweep, code-doctor, quality-metrics, sprint, ui-audit) — you tell the user to invoke the slash command. You do not attempt to spawn them yourself.
+- **Skills that run single-file or no-spawn work** (quick, ask, todo, next, dep-health, refactor, test-gen, perf-profile, fix-issue, browse, conform, doc-gen, health, design-extract) — you can do the work inline using your own tools (Read, Grep, Glob, Bash) for read-only inspection, or tell the user to invoke the slash command for write-required work.
 
 When you delegate via slash command, you say:
 > Routing → `/blitz:<skill> <args>`. Reason: <one-line rationale>.
@@ -82,7 +82,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | User intent | Skill | Why |
 |---|---|---|
 | "research X", "investigate Y" | `/blitz:research <topic>` | Spawns parallel research agents |
-| "audit codebase", "5-pillar review", "comprehensive audit" | `/blitz:audit` | Canonical recall deep audit (aggregation + FP-panel); engine = codebase-audit |
+| "audit codebase", "5-pillar review", "comprehensive audit" | `/blitz:audit` | Canonical recall deep audit (aggregation + FP-panel); engine = audit |
 | "review change/sprint", "quality gate", "mergeable?" | `/blitz:review` | Consolidated precision gate (8 invariants + critic); `--only` for folded concerns |
 | "what was learned recently", "explain the codebase" | `/blitz:codebase-map` | Read-only |
 | "audit deps", "security check" | `/blitz:dep-health` | npm audit + license + outdated |

@@ -131,7 +131,7 @@ CF_PENDING_INPUTS=$(test -f "sprints/sprint-${NEXT_SPRINT}-planning-inputs.json"
 
 ### 0.8 Check for Uningested Research (carry-forward-aware)
 
-A research doc OR audit `-epics.md` file is "uningested" if it's newer than roadmap-registry.json AND its `scope:` IDs aren't yet in the carry-forward registry. Audit `-epics.md` files follow the same `scope:` block protocol (see `skills/codebase-audit/SKILL.md` Phase 3.3a):
+A research doc OR audit `-epics.md` file is "uningested" if it's newer than roadmap-registry.json AND its `scope:` IDs aren't yet in the carry-forward registry. Audit `-epics.md` files follow the same `scope:` block protocol (see `skills/audit/SKILL.md` Phase 3.3a):
 
 ```bash
 INGESTED_IDS=$(jq -rs '[group_by(.id)[] | max_by(.ts).id] | join("\n")' \
@@ -258,7 +258,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md).
 10. Plan audit-derived sprint (row 6e) sits after carry-forward gap closure (6d) and before idle (7) — registry-tracked work always beats audit-suggested work. Audit findings are surfaced via `roadmap extend` ingestion (row 0 + Phase 0.8 path includes `docs/audits/*-epics.md`).
 
-**Why rows 6a-6f exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split (6a-6d) makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation. **Rows 6e and 6f** were added per `docs/_research/2026-05-18_audit-deferred-work-detection.md`: row 6e closes a separate silent-drop mode where `codebase-audit` produced `docs/audits/*-epics.md` with proposed epics that were invisible to every other row (no scope-block ingestion path existed), and row 6f gives operators a single canonical signal (`SCOPE-LIMIT.md`) to suspend new-work auto-detection without manually transitioning every registry entry to `deferred`.
+**Why rows 6a-6f exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split (6a-6d) makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation. **Rows 6e and 6f** were added per `docs/_research/2026-05-18_audit-deferred-work-detection.md`: row 6e closes a separate silent-drop mode where `audit` produced `docs/audits/*-epics.md` with proposed epics that were invisible to every other row (no scope-block ingestion path existed), and row 6f gives operators a single canonical signal (`SCOPE-LIMIT.md`) to suspend new-work auto-detection without manually transitioning every registry entry to `deferred`.
 
 ---
 

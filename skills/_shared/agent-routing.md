@@ -22,7 +22,7 @@ The same boundary applies to the `Workflow` tool (dynamic workflows): it is main
 
 | Class | Count | Examples | Routing rule |
 |---|---|---|---|
-| **Super-orchestrator** (spawns ≥2 agents in parallel) | 11 | sprint-dev, sprint-plan, sprint-review, research, codebase-audit, integration-check, quality-metrics, code-sweep, sprint, code-doctor, ui-audit | **Slash-only**. Orchestrator routes user to `/blitz:<name>`. Never tries to invoke directly. |
+| **Super-orchestrator** (spawns ≥2 agents in parallel) | 10 | sprint-dev, sprint-plan, sprint-review, research, audit, quality-metrics, code-sweep, sprint, code-doctor, ui-audit | **Slash-only**. Orchestrator routes user to `/blitz:<name>`. Never tries to invoke directly. |
 | **Single-spawn orchestrator** (spawns ≤1 agent or invokes one downstream skill) | 9 | codebase-map, doc-gen, health, implement, migrate, retrospective, roadmap, design-extract | Future: could become subagents (out of scope for v1.11). Today: slash-only. |
 | **Router / chainer** (invokes other skills sequentially via slash) | 10 | ship, fix-issue, ui-build, review, bootstrap, conform, setup, browse, perf-profile, next | **Slash-only**. Chains slash invocations the orchestrator can't replicate. |
 | **Pure worker** (no spawning, no chaining) | 7 | quick, ask, todo, dep-health, refactor, test-gen, perf-profile | **Slash-only by default**. Migration to agent costs ~15× tokens with no parallelism gain — keep as cheap slash invocations. |

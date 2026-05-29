@@ -1,11 +1,11 @@
 ---
 name: ship
-description: "Chains the full release workflow (sprint-review → completeness-gate → quality-metrics → release) with quality gates between each step. Use when the user says 'ship it', 'cut a release', 'release v1.X', or 'ready to ship'. Refuses to publish if any gate fails."
+description: "Chains the full release workflow (sprint-review → review --only completeness → quality-metrics → release) with quality gates between each step. Use when the user says 'ship it', 'cut a release', 'release v1.X', or 'ready to ship'. Refuses to publish if any gate fails."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: low
 compatibility: ">=2.1.71"
-argument-hint: "[version] -- full release chain: review → completeness-gate → quality-metrics → release → notify; pass explicit version (e.g. 1.2.0) or omit to auto-bump from CHANGELOG"
+argument-hint: "[version] -- full release chain: review → review --only completeness → quality-metrics → release → notify; pass explicit version (e.g. 1.2.0) or omit to auto-bump from CHANGELOG"
 disable-model-invocation: true
 ---
 
@@ -108,11 +108,11 @@ Wait for completion.
 
 ### 1.2 Completeness Gate
 
-Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review Phase 1.5 — legacy slug still works):
+Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review Phase 1.5):
 ```
 Invoke: /blitz:review --only completeness
 ```
-The ≥C/70 release cutoff remains owned by ship (reads the completeness grade). Legacy `/blitz:completeness-gate all` is equivalent until the sprint-20 cutover.
+The ≥C/70 release cutoff remains owned by ship (reads the completeness grade).
 
 Wait for completion. Read the output:
 - Score >= 70 (C grade or higher): PASS, proceed.

@@ -626,7 +626,7 @@ The following epic fields link roadmap to carry-forward registry described in [c
 | `source_research_doc` | Back-link to the research doc that originated the epic's scope. Enables `sprint-review` Invariant 3 to verify that roadmap "N/N complete" claims match registry coverage. | `roadmap` phases 1 and 7 (ingest + epic generation) |
 | `registry_entries` | List of carry-forward registry ids whose parent is this epic. One epic can have multiple registry entries if its research doc had multiple quantified scope claims. | `roadmap extend` when it writes a new registry line |
 | `acceptance_criteria_count` | Total ACs across all stories in all sprints for this epic. | `sprint-plan` Phase 4.1 |
-| `acceptance_criteria_met` | Count of ACs whose executable DoD checks passed in `completeness-gate`. | `sprint-review` Phase 3.5 |
+| `acceptance_criteria_met` | Count of ACs whose executable DoD checks passed in `/blitz:review --only completeness`. | `sprint-review` Phase 3.5 |
 | `acceptance_criteria_waived` | Count of ACs auto-waived by `sprint-plan` Phase 4.1 in `autonomy ∈ {high, full}`. | `sprint-plan` Phase 4.1 |
 | `coverage` | `acceptance_criteria_met / acceptance_criteria_count`. Never set manually. | `sprint-review` Phase 3.5 |
 | `carry_forward_count` | Sum of `rollover_count` across all child registry entries. When any child crosses `rollover_count >= 3`, this also crosses 3 and the epic is flagged for mandatory human review. | `sprint-review` Phase 3.5 |

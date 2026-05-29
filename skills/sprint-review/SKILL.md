@@ -124,7 +124,7 @@ Write intermediate results to `${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-qualit
 
 ### 1.5.1 Anti-Mock Scan
 
-Pattern source: the canonical anti-mock set is owned by [`completeness-gate`](../completeness-gate/SKILL.md) §Checks (O2). The inline pattern below mirrors it for the review-time diff scan — keep in sync with completeness-gate's `references/main.md` §grep-patterns.
+Pattern source: the canonical anti-mock set lives in `/_shared/check-registry.json` (o2-*). The inline pattern below mirrors it for the review-time diff scan — keep in sync with the registry's `o2-*` grep patterns.
 
 Scan all changed files for placeholder/mock code:
 ```bash
@@ -156,7 +156,7 @@ Check for improper cross-layer imports:
 
 ### 1.6 Integration Check (Conditional)
 
-If the sprint introduced new modules, routes, stores, or API endpoints, run integration-check to validate cross-module wiring:
+If the sprint introduced new modules, routes, stores, or API endpoints, run `/blitz:review --only wiring` to validate cross-module wiring:
 
 ```bash
 # Detect if sprint introduced new modules
@@ -166,12 +166,12 @@ if [ -n "$NEW_MODULES" ]; then
 fi
 ```
 
-If new modules are detected, invoke `/blitz:integration-check all` and map findings to review severity levels:
-- Integration-check **high** → Review **Major**
-- Integration-check **medium** → Review **Minor**
-- Integration-check **low** → Review **Info**
+If new modules are detected, invoke `/blitz:review --only wiring all` and map findings to review severity levels:
+- Wiring **high** → Review **Major**
+- Wiring **medium** → Review **Minor**
+- Wiring **low** → Review **Info**
 
-Include integration-check findings in the Phase 2 review context so reviewer agents are aware of wiring gaps.
+Include wiring findings in the Phase 2 review context so reviewer agents are aware of wiring gaps.
 
 ---
 
@@ -329,7 +329,7 @@ error codes, dates, version numbers. No preamble. No trailing summary of work
 already evident in the diff or tool output. Format: fragments OK.
 ```
 
-MUST appear in every `skills/*/references/main.md` that contains an agent-prompt template (7 files as of Sprint 3: codebase-audit, codebase-map, code-sweep, integration-check, quality-metrics, sprint-dev, sprint-plan). Any missing snippet is a Critical finding; sprint status transitions to **FAIL**.
+MUST appear in every `skills/*/references/main.md` that contains an agent-prompt template (7 files: audit, codebase-map, code-sweep, quality-metrics, research, sprint-dev, sprint-plan). Any missing snippet is a Critical finding; sprint status transitions to **FAIL**.
 
 Audit command (sprint-review runs this in Phase 3.6 — covers SKILL.md AND references/main.md):
 

@@ -15,7 +15,7 @@
 
 **A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase**
 
-**39 skills** · **10 agents** · **36 hook scripts across 16 events** · **26 shared protocols**
+**37 skills** · **10 agents** · **36 hook scripts across 16 events** · **26 shared protocols**
 
 Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -47,7 +47,7 @@ It's designed so that `/loop /blitz:next --loop` produces shippable code unatten
 | Audience | Read |
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
-| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-39) · [Anti-shortcut Blockers](#2-anti-shortcut-blockers) |
+| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut Blockers](#2-anti-shortcut-blockers) |
 | **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-36-scripts-16-events) · [Shared Protocols](#shared-protocols-26) · [Sprint-review Invariants](#3-sprint-review-invariants-8) |
 
 ---
@@ -139,7 +139,7 @@ Or just type freeform — the orchestrator routes for you.
         ▼
   sprint-review  → 5 auto-gates + 4 reviewer agents + critic + 8 invariants
         ▼
-/blitz:ship      → completeness-gate → quality-metrics → release → PushNotification
+/blitz:ship      → review --only completeness → quality-metrics → release → PushNotification
 ```
 
 ### Autonomous loop
@@ -173,7 +173,7 @@ Four layers turn the skill suite into a partly-autonomous development environmen
 { "agent": "orchestrator" }
 ```
 
-The orchestrator is **read-only by construction** (its `allowed-tools` is `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor` — no Write, no Edit, no Agent). Claude Code's subagents-cannot-spawn-subagents constraint means any skill that spawns parallel agents (sprint-dev, sprint-plan, research, codebase-audit, …) stays slash-invoked. See [`skills/_shared/agent-routing.md`](skills/_shared/agent-routing.md).
+The orchestrator is **read-only by construction** (its `allowed-tools` is `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor` — no Write, no Edit, no Agent). Claude Code's subagents-cannot-spawn-subagents constraint means any skill that spawns parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked. See [`skills/_shared/agent-routing.md`](skills/_shared/agent-routing.md).
 
 ```bash
 # Opt out per session
@@ -233,7 +233,7 @@ The wrapper (`hooks/scripts/critic-gemini.sh`) supports three review domains: `-
 
 ---
 
-## Skill Catalog (39)
+## Skill Catalog (37)
 
 ### Orchestrators
 
@@ -244,7 +244,7 @@ The wrapper (`hooks/scripts/critic-gemini.sh`) supports three review domains: `-
 | **sprint** | Full cycle: plan → implement → review. `--loop` aliases to `/blitz:next --loop` (since v1.13.0). | `/blitz:sprint [--plan-only\|--skip-review\|--loop\|--gaps\|--resume\|--epics E-001]` |
 | **implement** | Thin dispatcher to sprint-dev. | `/blitz:implement [--sprint N\|--resume]` |
 | **review** | Sprint review phase only. | `/blitz:review [--sprint N]` |
-| **ship** | review → completeness-gate → quality-metrics → release → PushNotification. | `/blitz:ship [version]` |
+| **ship** | review → review --only completeness → quality-metrics → release → PushNotification. | `/blitz:ship [version]` |
 
 ### Sprint lifecycle
 
@@ -262,9 +262,7 @@ The wrapper (`hooks/scripts/critic-gemini.sh`) supports three review domains: `-
 |---|---|---|
 | **code-doctor** | Framework-API correctness — Firestore, VueFire, Vue 3, Pinia anti-patterns. Read-only by default. | `/blitz:code-doctor [--fix\|--fix-all\|--scan]` |
 | **code-sweep** | Convention discovery + standards enforcement. 30 checks across 7 categories. Ratchet enforces monotonic improvement. Loop-safe. | `/blitz:code-sweep [--loop\|--category <name>\|--deep]` |
-| **codebase-audit** | 5-pillar audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 per pillar). | `/blitz:codebase-audit` |
-| **completeness-gate** | Read-only placeholder + production-readiness scan (TODO / FIXME / STUB / "Not implemented" / `return {}`). `file:line` findings. | `/blitz:completeness-gate [scope]` |
-| **integration-check** | Read-only wiring audit — export→import tracing, route coverage, auth-guard coverage, store→component wiring. | `/blitz:integration-check [scope]` |
+| **audit** | 5-pillar audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 per pillar). | `/blitz:audit` |
 | **ui-audit** | Cross-page semantic + data-quality + UX heuristics. Extracts a labeled value registry, asserts invariants, flags placeholders/nulls/flapping values. Loop-safe. | `/blitz:ui-audit [full\|smoke\|data\|buttons\|events\|consistency\|heuristics\|role <name>\|--loop]` |
 | **quality-metrics** | Collects, stores, and visualizes metrics over time (test counts, lint debt, complexity hotspots, type-error trends). | `/blitz:quality-metrics [collect\|dashboard\|trend\|compare]` |
 | **perf-profile** | Read-only bundle / runtime / Lighthouse analysis with baseline comparison. | `/blitz:perf-profile [bundle\|runtime\|lighthouse]` |
@@ -307,8 +305,8 @@ The wrapper (`hooks/scripts/critic-gemini.sh`) supports three review domains: `-
 ### At a glance
 
 - **Loop-safe** (4): browse, code-sweep, next, ui-audit
-- **Read-only by default** (7): completeness-gate, conform, design-extract, health, perf-profile, setup, worktree-prune
-- **Multi-agent super-orchestrators** (slash-invoked due to subagents-cannot-spawn-subagents): sprint-dev, sprint-plan, sprint-review, research, codebase-audit, integration-check, quality-metrics, code-sweep, code-doctor, ui-audit
+- **Read-only by default** (6): conform, design-extract, health, perf-profile, setup, worktree-prune
+- **Multi-agent super-orchestrators** (slash-invoked due to subagents-cannot-spawn-subagents): sprint-dev, sprint-plan, sprint-review, research, audit, quality-metrics, code-sweep, code-doctor, ui-audit
 - **Pure chainers** (dispatch to other skills): sprint, ship, fix-issue, ui-build, review, bootstrap, conform, setup, browse, perf-profile, next
 
 ---
@@ -449,7 +447,7 @@ Multi-agent runs are ≈15× more expensive than single-agent by default. The to
 |---|---|---|
 | Mechanical (doc-gen, test-writer, lint-fix, file ops) | `haiku` (4.5) | Pattern-following; ≈5× cheaper than Sonnet |
 | Standard (backend-dev, frontend-dev, reviewer, refactorer) | `sonnet` (4.6) | Default — impl + review |
-| Heavy reasoning (architect, security audit, codebase-audit, research) | `opus` (4.7) | Reserve for hard multi-step decisions |
+| Heavy reasoning (architect, security audit, audit, research) | `opus` (4.7) | Reserve for hard multi-step decisions |
 | Orchestrator / Critic | `sonnet` (4.6) | Routing/review, not synthesis |
 
 Target distribution by output tokens: **≈60% Haiku · 35% Sonnet · 5% Opus**.
@@ -489,7 +487,7 @@ blitz/
 ├── scripts/                     # detect-stack.sh, check-version-sync.sh, validate-plugin-structure.sh, ...
 ├── output-styles/
 │   └── terse-technical.md       # Canonical OUTPUT STYLE (referenced by every SKILL.md)
-├── skills/                      # 39 skill directories
+├── skills/                      # 37 skill directories
 │   ├── _shared/                 # 26 shared protocol files
 │   ├── next/                    # Canonical autonomous reconciliation engine (--loop)
 │   ├── sprint/                  # Cycle orchestrator

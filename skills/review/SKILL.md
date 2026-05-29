@@ -41,8 +41,8 @@ Per [check-registry.md](/_shared/check-registry.md), select `consolidated_target
 
 | `--only` | Registry checks | Replaces |
 |---|---|---|
-| `completeness` | `o2-anti-mock`, `o2-artifact-l1l2`, det-09/10 | `/blitz:completeness-gate` (deprecated standalone) |
-| `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | `/blitz:integration-check` (deprecated standalone) |
+| `completeness` | `o2-anti-mock`, `o2-artifact-l1l2`, det-09/10 | completeness-gate (deleted; folded here) |
+| `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | integration-check (deleted; folded here) |
 | `framework` | `fw-firestore-vue-pinia` | `/blitz:code-doctor` rule scan (code-doctor keeps `--fix` standalone) |
 | `full` (default) | all review-targeted checks + the sprint-review 8-invariant gate | — |
 

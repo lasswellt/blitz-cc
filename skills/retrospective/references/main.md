@@ -157,7 +157,7 @@ Proposal is "safe" if ALL true:
 
 **Examples of safe proposals:**
 - Adding new codemod entry to `skills/migrate/references/main.md`
-- Adding new pattern to checklist in `skills/codebase-audit/references/main.md`
+- Adding new pattern to checklist in `skills/audit/references/main.md`
 - Fixing typo in skill description
 - Adding new routing row to `skills/ask/SKILL.md`
 - Adding new entry to pattern taxonomy in this file

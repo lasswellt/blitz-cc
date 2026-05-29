@@ -138,13 +138,13 @@ When analysis reveals issues that require action beyond your read-only scope:
 Based on findings, recommend follow-up skills:
 - Performance issues → `/blitz:perf-profile`
 - Security concerns → reviewer agent with security focus
-- Incomplete implementations → `/blitz:completeness-gate`
+- Incomplete implementations → `/blitz:review --only completeness`
 - Dependency issues → `/blitz:dep-health`
 - Documentation gaps → `/blitz:doc-gen`
 
 ## Collaboration Hints
 
-When spawned as part of a team (e.g., by `codebase-audit` or `sprint-review`):
+When spawned as part of a team (e.g., by `audit` or `sprint-review`):
 - Return findings as your final text response — the orchestrator extracts them; never write files (READ-ONLY, per [/_shared/spawn-protocol.md](/_shared/spawn-protocol.md) §Agent Output Contract)
 - Use severity prefixes consistently so the orchestrator can aggregate across agents
 - Keep findings atomic: one issue per finding block (do not combine multiple issues)

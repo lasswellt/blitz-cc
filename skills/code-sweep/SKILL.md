@@ -106,7 +106,7 @@ Scanning is delegated to worker agents so the skill itself stays lightweight and
 
 ### Check Summary Table
 
-The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from the canonical set owned by [`completeness-gate`](../completeness-gate/SKILL.md) §Checks (O2). code-sweep applies them under its ratchet (distinct from the gate per [quality-matrix.md](/_shared/quality-matrix.md)); keep the patterns in sync.
+The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from `/_shared/check-registry.json` (o2-*). code-sweep applies them under its ratchet (distinct from the gate per [quality-matrix.md](/_shared/quality-matrix.md)); keep the patterns in sync.
 
 | Tier | ID | Category | Fixable |
 |------|----|----------|---------|

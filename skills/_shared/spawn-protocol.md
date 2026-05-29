@@ -309,7 +309,7 @@ A **wave** is a topological layer of a dependency DAG: maximal set of work units
 - Do your work units have declared `depends_on: [<id>...]` fields?
 - Are any of those dependencies non-trivial (i.e., unit B actually cannot start until unit A finishes)?
 
-**If no**: your work is a flat pool of independent units. Do NOT adopt waves. Run a simple parallel spawn with a polling completion check. Examples of flat pools in blitz: `codebase-audit` (10 independent pillars), `research` (2-4 independent investigators), `sprint-plan` (parallel researchers), `codebase-map` (4 independent dimensions), `integration-check` (3 domain agents).
+**If no**: your work is a flat pool of independent units. Do NOT adopt waves. Run a simple parallel spawn with a polling completion check. Examples of flat pools in blitz: `audit` (10 independent pillars), `research` (2-4 independent investigators), `sprint-plan` (parallel researchers), `codebase-map` (4 independent dimensions).
 
 **If yes**: waves are appropriate.
 
@@ -461,7 +461,7 @@ Unified definition of what counts as a successful agent return, what counts as f
 | N = 3 | 2 | ABORT. |
 | N = 4+ | ⌈N / 2⌉ | ABORT. (Half-or-more failure means degraded synthesis, not partial loss.) |
 
-These thresholds are hard rules. Skills MUST NOT define their own. If a skill genuinely needs a different threshold (e.g., 10-agent codebase-audit pillars), it MUST document the deviation in its SKILL.md with rationale, and sprint-review Phase 3.6 flags undocumented deviations as BLOCKERs.
+These thresholds are hard rules. Skills MUST NOT define their own. If a skill genuinely needs a different threshold (e.g., 10-agent audit pillars), it MUST document the deviation in its SKILL.md with rationale, and sprint-review Phase 3.6 flags undocumented deviations as BLOCKERs.
 
 ### PARTIAL retry policy
 

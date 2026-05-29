@@ -17,13 +17,13 @@ For SKILL.md files that need the auto-detected stack profile injected at load ti
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 ```
 
-Skills currently carrying this block (verified 2026-05-16, count = 29):
-- `skills/bootstrap` `code-doctor` `code-sweep` `codebase-audit` `codebase-map`
-- `skills/completeness-gate` `dep-health` `doc-gen` `fix-issue` `health`
-- `skills/integration-check` `migrate` `next` `perf-profile` `quality-metrics`
-- `skills/quick` `refactor` `release` `research` `retrospective`
-- `skills/roadmap` `setup` `sprint-dev` `sprint-plan` `sprint-review`
-- `skills/test-gen` `ui-audit` `ui-build` `browse`
+Skills currently carrying this block (verified 2026-05-16, count = 27):
+- `skills/bootstrap` `code-doctor` `code-sweep` `audit` `codebase-map`
+- `skills/dep-health` `doc-gen` `fix-issue` `health` `migrate`
+- `skills/next` `perf-profile` `quality-metrics` `quick` `refactor`
+- `skills/release` `research` `retrospective` `roadmap` `setup`
+- `skills/sprint-dev` `sprint-plan` `sprint-review` `test-gen` `ui-audit`
+- `skills/ui-build` `browse`
 
 Skills intentionally WITHOUT the block (9 files — verified absent, do NOT add):
 - `ask` `compress` `conform` `implement` `review` `ship` `sprint` `todo` — thin orchestrator/routing skills that don't need stack-profile context

@@ -375,7 +375,7 @@ Read all mode-specific reports from `SESSION_TMP_DIR` and compile into a unified
 
 ### 4.2 Categorize Findings
 
-Use the same severity levels as codebase-audit for compatibility:
+Use the same severity levels as audit for compatibility:
 
 | Severity | Criteria |
 |----------|----------|
@@ -458,7 +458,7 @@ Performance Profile: <stack>
 | Runtime anti-patterns found | `refactor` | Fix performance anti-patterns |
 | Failed Lighthouse audit | `ui-build` | Optimize rendering and layout |
 | Memory leaks detected | `fix-issue` | Fix specific leak patterns |
-| Low completeness score | `completeness-gate` | Check for incomplete implementations affecting perf |
+| Low completeness score | `/blitz:review --only completeness` | Check for incomplete implementations affecting perf |
 
 ### 4.6 Session Cleanup
 

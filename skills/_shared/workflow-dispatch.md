@@ -77,7 +77,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 
 | Skill | Status | Notes |
 |---|---|---|
-| `codebase-audit` | **WIRED** (pilot) | 10 flat agents → one `parallel()` + `schema`. No DAG, no worktree, no cross-session resume. Lowest risk. Phase 1.0 gate + 1.1-W. |
+| `audit` | **WIRED** (pilot) | 10 flat agents → one `parallel()` + `schema`. No DAG, no worktree, no cross-session resume. Lowest risk. Phase 1.0 gate + 1.1-W. |
 | `research` | **WIRED** | 2-4 agent pool (`parallel()`) + conditional gap second-wave (`agent()`). §1.2.6 gate + §1.3-W. |
 | `sprint-review` | candidate (narrow) | single critic `agent()` + `schema`; net-new adversarial-verify panel. |
 | `sprint-dev` | **deferred** | wave-DAG → `pipeline()` ideal, worktree supported, BUT `resumeFromRunId` (same-session) ≠ `STATE.md` (cross-session) resume — reconcile first. |

@@ -1,6 +1,6 @@
 # Codebase Audit — Reference Material
 
-This file provides templates, checklists, and schemas used by the codebase-audit skill.
+This file provides templates, checklists, and schemas used by the audit skill.
 
 ---
 

@@ -14,7 +14,7 @@ Every agent definition (`agents/*.md`) and every dynamic spawn (`Agent({model: .
 |---|---|---|
 | **Mechanical workers**: test-gen, lint-fix, file ops, doc-gen, formatting | `claude-haiku-4-5` | 5× cheaper than Opus; adequate for pattern-following work |
 | **Standard workers**: backend-dev, frontend-dev, reviewer, refactorer, browser-agent | `claude-sonnet-4-6` | 40% cheaper than Opus; sufficient for impl + review |
-| **Heavy reasoning**: architect, security audit, codebase-audit, research orchestrator | `claude-opus-4-8` | Reserve for genuinely hard multi-step decisions |
+| **Heavy reasoning**: architect, security audit, audit, research orchestrator | `claude-opus-4-8` | Reserve for genuinely hard multi-step decisions |
 | **Orchestrator agents** (`agents/orchestrator.md`, sprint-* orchestrators) | `claude-sonnet-4-6` | 40% cheaper than Opus; orchestration is routing, not synthesis |
 | **Plan-check / critic** | `claude-sonnet-4-6` | Adversarial review needs reasoning, not depth |
 

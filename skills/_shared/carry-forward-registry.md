@@ -83,7 +83,7 @@ Every line is a JSON object. Eight fields are **load-bearing** (required to dete
 - **`id` format** — kebab-case with a date stem for uniqueness: `cf-2026-04-02-modal-consistency`. Never reuse ids across distinct scope claims.
 - **`event` enum** — describes *why this line was written*, not the resulting state. The resulting state is in `status`.
 - **`source.anchor`** — a markdown heading anchor (`#scope`) or a line reference (`L142`). Required so readers can re-locate the original scope claim if the doc is edited.
-- **`scope.acceptance`** — the executable DoD. Prefer `grep_absent` / `grep_present` / `shell` over prose — they can be run in `completeness-gate` without human interpretation.
+- **`scope.acceptance`** — the executable DoD. Prefer `grep_absent` / `grep_present` / `shell` over prose — they can be run in `/blitz:review --only completeness` without human interpretation.
 - **`coverage`** — precomputed on write. Dashboards and invariants must not re-derive it from prior lines; they read the latest-wins value directly.
 - **`rollover_count`** — incremented by `sprint-review` at sprint close if `status ∈ {active, partial}` and the entry was not touched this sprint. Any entry with `rollover_count >= 3` escalates to mandatory human review instead of auto-injecting into the next sprint (prevents infinite bounce loops).
 
@@ -98,7 +98,7 @@ Adapted from Kubernetes KEP + Python PEP + Shortcut archiving lifecycles.
 | `provisional` | Entry exists but scope has not been formally accepted | `research` skill emits a scope block; roadmap hasn't ingested it yet |
 | `active` | Accepted, in flight, has not yet been touched by a sprint | Roadmap extend ingests the scope; initial coverage is 0 |
 | `partial` | Sprint delivered some but not all of the target | Any sprint touches `delivered.actual`; coverage > 0 and < 1.0 |
-| `complete` | Coverage reached 1.0; DoD checks pass | `completeness-gate` confirms all `scope.acceptance` checks pass |
+| `complete` | Coverage reached 1.0; DoD checks pass | `/blitz:review --only completeness` confirms all `scope.acceptance` checks pass |
 | `deferred` | Explicitly pushed out with a reason; not counted against current-sprint invariants | Human or skill writes a `deferred` event with `notes` |
 | `dropped` | Explicitly abandoned; `drop_reason` + `revival_candidate` required | Human writes a `dropped` event; default path for entries hitting `rollover_count >= 3` that cannot be completed |
 | `replaced` | Superseded by a newer entry; `notes` must reference the replacement id | Research doc is updated with new scope; old entry is closed out |
@@ -373,7 +373,7 @@ Consumer projects that adopted blitz before the carry-forward registry shipped w
 - **Don't batch registry writes outside a writer's own transaction.** Each writer (research, roadmap, sprint-plan, sprint-review) writes its own lines atomically.
 - **Don't skip the activity-feed companion event.** The registry is the machine-readable state; the activity feed is the human-readable timeline. Both must be updated.
 - **Don't treat `deferred` as permanent.** Deferred entries must reappear in planning inputs at a specified revisit sprint or date, tracked in `notes`.
-- **Don't mark `status: complete` without running the `scope.acceptance` checks.** `completeness-gate` is the authority — never self-mark.
+- **Don't mark `status: complete` without running the `scope.acceptance` checks.** `/blitz:review --only completeness` is the authority — never self-mark.
 - **Don't auto-revive `dropped` entries.** Revival is always a fresh `created` line with a new `id` and a `replaced` transition on the old one.
 
 

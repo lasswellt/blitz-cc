@@ -37,7 +37,7 @@ Match the user's request against this routing table:
 | "sprint", "next sprint"                   | /sprint cmd    | —                                |
 | "check pages", "console errors", "smoke"  | browse         | → fix-issue (per finding)        |
 | "roadmap", "plan phases"                  | roadmap        | → sprint-plan                    |
-| "audit codebase", "code quality"          | codebase-audit | → roadmap                        |
+| "audit codebase", "code quality"          | audit | → roadmap                        |
 | "performance", "bundle size", "slow"      | perf-profile   | → fix-issue (per finding)        |
 | "migrate", "upgrade library", "update X"  | migrate        | —                                |
 | "bootstrap", "scaffold", "new project"    | bootstrap      | → sprint-plan                    |
@@ -45,14 +45,14 @@ Match the user's request against this routing table:
 | "generate docs", "document API"           | doc-gen        | —                                |
 | "dependencies", "outdated", "npm audit"   | dep-health     | —                                |
 | "quality dashboard", "metrics"            | quality-metrics| → (context-dependent)            |
-| "completeness", "production ready"        | completeness-gate | → fix-issue (per finding)     |
+| "completeness", "production ready"        | `/blitz:review --only completeness` | → fix-issue (per finding)     |
 | "retrospective", "retro", "postmortem", "reflect", "improve plugin" | retrospective | —                    |
 | "quick", "small change", "just do it", "trivial", "one-liner" | quick | —                     |
 | "next", "what now", "continue", "what's next" | next          | —                                |
 | "health", "status", "check plugin"        | health         | —                                |
 | "map codebase", "analyze project", "understand codebase", "brownfield" | codebase-map | → roadmap                |
 | "todo", "note", "remember to", "add todo" | todo           | —                                |
-| "check integration", "wiring check", "are modules connected" | integration-check | —                   |
+| "check integration", "wiring check", "are modules connected" | `/blitz:review --only wiring` | —                   |
 | "fix gaps", "close gaps", "gap closure"   | sprint (--gaps) | —                               |
 | "setup", "doctor", "claude.md conflict", "check config", "conflict check" | setup | —           |
 

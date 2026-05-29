@@ -195,7 +195,7 @@ Write `${SESSION_TMP_DIR}/HANDOFF.json` when:
 | `migrate` | Between migration steps (progress file also serves this role) |
 | `refactor` | If refactoring spans multiple files and is interrupted |
 | `doc-gen` (full mode) | If agent completion times out |
-| `codebase-audit` | If audit is interrupted before all pillars complete |
+| `audit` | If audit is interrupted before all pillars complete |
 | `sprint-plan` | If research phase completes but story generation is interrupted |
 
 ### How to Resume from HANDOFF.json

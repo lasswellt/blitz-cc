@@ -1,6 +1,6 @@
 # Agent Prompt Boilerplate — Shared Fragment
 
-Canonical text for prompt sections that recur across blitz orchestrator skills (codebase-audit, codebase-map, code-sweep, integration-check, quality-metrics, sprint-dev, sprint-plan).
+Canonical text for prompt sections that recur across blitz orchestrator skills (audit, codebase-map, code-sweep, quality-metrics, sprint-dev, sprint-plan).
 
 **Purpose:** author-time deduplication of the ~12 K tokens/sprint of recurring Agent() prompt boilerplate. Skills currently inline these sections in their own `references/main.md` for byte-stable spawn behavior. Future orchestrators may Read this fragment plus the per-skill `references/main.md` and splice the relevant section into the Agent() prompt at spawn time, replacing the inline copy. Until that splice machinery exists in every orchestrator, the inline copies in `skills/<skill>/references/main.md` remain authoritative; this fragment is the canonical reference + extraction target.
 
@@ -15,7 +15,7 @@ Canonical text for prompt sections that recur across blitz orchestrator skills (
 
 ## Generic Agent Preamble
 
-Used by orchestrators that spawn `general-purpose` Agents and require a written output file. Present in: `codebase-map`, `integration-check`, `quality-metrics`, `sprint-plan`.
+Used by orchestrators that spawn `general-purpose` Agents and require a written output file. Present in: `codebase-map`, `quality-metrics`, `sprint-plan`.
 
 ```
 You are a general-purpose agent with Write access. Your task is INCOMPLETE
@@ -32,7 +32,7 @@ Every Medium/Heavy Agent() spawn declares its budget in the prompt. Caps per `sp
 
 ### Medium class
 
-Used by: `codebase-map` (per-dimension agents), `integration-check` (per-domain agents), `sprint-plan` (research agents).
+Used by: `codebase-map` (per-dimension agents), `sprint-plan` (research agents).
 
 ```
 BUDGET (Medium class — see skills/_shared/spawn-protocol.md):
@@ -74,7 +74,7 @@ BUDGET:
 
 ## Write-As-You-Go Preamble
 
-Mandatory for Medium and Heavy agents. Prevents zero-output failure on timeout or turn-budget exhaustion. Present in: `codebase-map`, `integration-check`, `quality-metrics` (implied by JSON-stub start), `sprint-plan`.
+Mandatory for Medium and Heavy agents. Prevents zero-output failure on timeout or turn-budget exhaustion. Present in: `codebase-map`, `quality-metrics` (implied by JSON-stub start), `sprint-plan`.
 
 ```
 WRITE-AS-YOU-GO (MANDATORY):
@@ -83,7 +83,7 @@ WRITE-AS-YOU-GO (MANDATORY):
 3. Do NOT accumulate findings in memory and write at the end.
 ```
 
-**Variant for JSON outputs** (used by `code-sweep` tier agents and `integration-check`):
+**Variant for JSON outputs** (used by `code-sweep` tier agents):
 
 ```
 WRITE-AS-YOU-GO (MANDATORY):
@@ -97,7 +97,7 @@ WRITE-AS-YOU-GO (MANDATORY):
 
 ## HEARTBEAT Protocol
 
-Mid-run liveness signal. Canonical spec in [spawn-protocol.md §3](spawn-protocol.md#3-heartbeat-and-partial-protocols). Present in: `codebase-map`, `integration-check` (JSON variant), `sprint-dev` (Item 12).
+Mid-run liveness signal. Canonical spec in [spawn-protocol.md §3](spawn-protocol.md#3-heartbeat-and-partial-protocols). Present in: `codebase-map`, `sprint-dev` (Item 12).
 
 ### File-append form (default)
 
@@ -170,7 +170,7 @@ protocol and end.
 
 ## Confirmation Line
 
-Used by Medium agents to signal completion to the orchestrator without echoing findings. Present in: `codebase-map`, `integration-check`, `quality-metrics`, `code-sweep` (tier agents).
+Used by Medium agents to signal completion to the orchestrator without echoing findings. Present in: `codebase-map`, `quality-metrics`, `code-sweep` (tier agents).
 
 ```
 CONFIRMATION: Emit one line: "<scope-id>: <N items written>"
@@ -219,7 +219,7 @@ Per docs/_research/2026-05-16_audit-agent-fp-prevention.md.
 
 **Output-path resolution.** When the spawning orchestrator gives you an output file path containing `${VAR}` or a `${SESSION_TMP_DIR}` placeholder, resolve it via Bash (e.g., `ls /tmp/blitz-*` or `echo "$SESSION_TMP_DIR"`) BEFORE writing your stub. Do NOT take literal placeholder text (`OUTPUT`, `<dir>`, `$VAR`) as the actual path — find the real one. Failure mode observed 2026-05-16: agent wrote to `/tmp/blitz-audit-test-OUTPUT/findings.md` literally instead of resolving the session dir.
 
-**When to use:** every audit-style spawn (codebase-audit, code-sweep, conventions audit, flow-consistency audit, the meta-audit agents in `/blitz:research` on internal topics). NOT for sprint-dev workers (they generate code, not claims) or sprint-review reviewers (they synthesize cross-cutting findings rather than count occurrences).
+**When to use:** every audit-style spawn (audit, code-sweep, conventions audit, flow-consistency audit, the meta-audit agents in `/blitz:research` on internal topics). NOT for sprint-dev workers (they generate code, not claims) or sprint-review reviewers (they synthesize cross-cutting findings rather than count occurrences).
 
 **Why required:** count-as-claim with no falsification is the documented FP pattern (3 false positives in the 2026-05-16 self-audit). Literature (CHIIR 2026, EMNLP 2025) shows "ask the agent again" amplifies bias; artifact construction routes the verification through the shell, which is deterministic.
 
@@ -287,10 +287,9 @@ The orchestrator Reads both `skills/<skill>/references/main.md` and `skills/_sha
 
 | references/main.md | Sections currently inlined (mirror these from this fragment when updating) |
 |---|---|
-| `codebase-audit/references/main.md` | OUTPUT STYLE only — no HEARTBEAT/PARTIAL/BUDGET (audit pillars use their own pillar-checklist budget) |
+| `audit/references/main.md` | OUTPUT STYLE only — no HEARTBEAT/PARTIAL/BUDGET (audit pillars use their own pillar-checklist budget) |
 | `codebase-map/references/main.md` | Generic agent preamble · Medium BUDGET · WRITE-AS-YOU-GO · HEARTBEAT (file-append) · CONFIRMATION |
 | `code-sweep/references/main.md` | OUTPUT STYLE only — tier agents have a 90-second budget inline; JSON write-as-you-go implicit in single-array Write |
-| `integration-check/references/main.md` | Generic agent preamble · Medium BUDGET · WRITE-AS-YOU-GO (JSON variant) · HEARTBEAT (JSON variant) · CONFIRMATION |
 | `quality-metrics/references/main.md` | Generic agent preamble · Light BUDGET · WRITE-AS-YOU-GO (implicit) · CONFIRMATION |
 | `sprint-dev/references/main.md` | Heavy BUDGET (Item 3) · HEARTBEAT (story-completion variant) + PARTIAL (sprint-dev variant) (Item 12) |
 | `sprint-plan/references/main.md` | Generic agent preamble · Medium BUDGET · WRITE-AS-YOU-GO |

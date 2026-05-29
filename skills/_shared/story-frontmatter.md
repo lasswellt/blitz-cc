@@ -86,7 +86,7 @@ design_quality: "skip"                # skip | standard | high — drives design
 
 # ─── Source traceability (gap-closure only) ──────────────────────────────
 source_finding:                       # OMIT unless type == "gap-closure"
-  report: "sprint-review"             # sprint-review | completeness-gate | STATE.md
+  report: "sprint-review"             # sprint-review | review | STATE.md
   severity: "high"                    # high | medium | low
   description: "Original finding text"
 ---
@@ -110,7 +110,7 @@ Required = R, Optional = O, Conditional = C (required iff condition).
 | `depends_on` | string[] | sprint-plan Phase 3.4 (dependency graph) | sprint-dev (wave computation) | R |
 | `assigned_agent` | enum | sprint-plan Phase 3.3 (partition logic) | sprint-dev (agent dispatch) | R |
 | `files` | string[] | sprint-plan Phase 3.2 | sprint-dev (worktree scope), sprint-review (file-touched audit), code-sweep | R |
-| `verify` | string[] | sprint-plan Phase 3.2 | sprint-dev (story-done gate), completeness-gate | R |
+| `verify` | string[] | sprint-plan Phase 3.2 | sprint-dev (story-done gate), review | R |
 | `done` | string | sprint-plan Phase 3.2 | sprint-review (acceptance) | R |
 | `research_refs` | string[] | sprint-plan Phase 3.2 | sprint-dev (read findings during impl), sprint-review (Invariant 1) | R |
 | `github_issue` | int\|null | sprint-plan Phase 4.4 (after issue create); never sprint-dev | sprint-review (link in report), ship | R (nullable) |

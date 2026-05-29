@@ -102,7 +102,7 @@ Skills should check the autonomy level at these decision points:
 
 7. Log skill_start to the activity feed per verbose-progress.md.
 
-8. **(Optional) Write workflow tracking file.** Skills with explicit numbered phases (sprint family, ship, codebase-audit, etc.) SHOULD write:
+8. **(Optional) Write workflow tracking file.** Skills with explicit numbered phases (sprint family, ship, audit, etc.) SHOULD write:
    ```json
    .cc-sessions/${SESSION_ID}-workflow.json:
    {
@@ -135,13 +135,12 @@ SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"
 | Skill | Old Path (DEPRECATED) | New Path |
 |-------|----------------------|----------|
 | research | `/tmp/research/*.md` | `${SESSION_TMP_DIR}/research/*.md` |
-| codebase-audit | `/tmp/codebase-audit/` | `${SESSION_TMP_DIR}/codebase-audit/` |
+| audit | `/tmp/audit/` | `${SESSION_TMP_DIR}/audit/` |
 | sprint-plan | `/tmp/sprint-N-research-*.md` | `${SESSION_TMP_DIR}/sprint-N-research-*.md` |
 | sprint-review | `/tmp/sprint-N-*.json/.patch/.md` | `${SESSION_TMP_DIR}/sprint-N-*` |
 | fix-issue | `/tmp/issue-research.md` | `${SESSION_TMP_DIR}/issue-research.md` |
 | roadmap | `/tmp/roadmap-research/` | `${SESSION_TMP_DIR}/roadmap-research/` |
 | reviewer agent | `/tmp/review-findings.md` | `${SESSION_TMP_DIR}/review-findings.md` |
-| completeness-gate | — | `${SESSION_TMP_DIR}/completeness-gate.json` |
 | quality-metrics | — | `${SESSION_TMP_DIR}/quality-metrics.json` |
 | dep-health | — | `${SESSION_TMP_DIR}/dep-health-report.md` |
 | doc-gen | — | `${SESSION_TMP_DIR}/doc-gen/` |
@@ -223,9 +222,7 @@ Logged operations: `session_start`, `session_end`, `lock_acquired`, `lock_releas
 | fix-issue (#N) | fix-issue (#M) | OK — different branches |
 | research | research | OK — session-scoped, no shared state |
 | roadmap | roadmap | **BLOCK** — one at a time |
-| codebase-audit | codebase-audit | OK — session-scoped, read-only on codebase |
-| completeness-gate | completeness-gate | OK — read-only, session-scoped |
-| completeness-gate | sprint-dev | OK — read-only scan during implementation |
+| audit | audit | OK — session-scoped, read-only on codebase |
 | quality-metrics | quality-metrics | OK — writes to date-stamped files |
 | dep-health (upgrade) | dep-health (upgrade) | **BLOCK** — concurrent package modifications |
 | dep-health (audit) | dep-health (audit) | OK — read-only |

@@ -2,7 +2,7 @@
 
 Source of truth for cross-protocol reference blocks that appear in multiple SKILL.md files.
 
-**Why this file exists**: 7 SKILL.md files (codebase-audit, codebase-map, doc-gen, fix-issue, integration-check, quality-metrics, research) carry an identical 2-line "Additional Resources" block pointing to `spawn-protocol.md` + `terse-output.md`. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own resources for context discovery. This file is the **author-time dedup target** (Pattern A from `agent-prompt-boilerplate.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
+**Why this file exists**: 6 SKILL.md files (audit, codebase-map, doc-gen, fix-issue, quality-metrics, research) carry an identical 2-line "Additional Resources" block pointing to `spawn-protocol.md` + `terse-output.md`. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own resources for context discovery. This file is the **author-time dedup target** (Pattern A from `agent-prompt-boilerplate.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
 
 **Surfaced by**: 2026-05-16 audit-FP-prevention test (`docs/_research/2026-05-16_audit-agent-fp-prevention.md` test run, Finding 1, Confidence 88).
 
@@ -19,15 +19,14 @@ For SKILL.md files that (a) spawn subagents AND (b) follow the canonical output 
 ```
 
 Skills currently carrying this block (verified 2026-05-16):
-- `skills/codebase-audit/SKILL.md`
+- `skills/audit/SKILL.md`
 - `skills/codebase-map/SKILL.md`
 - `skills/doc-gen/SKILL.md`
 - `skills/fix-issue/SKILL.md`
-- `skills/integration-check/SKILL.md`
 - `skills/quality-metrics/SKILL.md`
 - `skills/research/SKILL.md`
 
-When updating the canonical wording: change this file first, then propagate to the 7 SKILL.md files in a single commit. Sprint-review can grep for divergence:
+When updating the canonical wording: change this file first, then propagate to the 6 SKILL.md files in a single commit. Sprint-review can grep for divergence:
 
 ```bash
 # Detect drift between canonical wording and inline copies

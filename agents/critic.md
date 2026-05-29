@@ -183,7 +183,7 @@ If a test file was renamed to a non-test suffix: REJECT.
 
 ### 2.9 Audit-finding integrity (detector #20, advisory)
 
-When any sprint deliverable is an audit findings file (codebase-audit pillar outputs, code-sweep tier outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per `_shared/shortcut-taxonomy.md` §3 detector #20:
+When any sprint deliverable is an audit findings file (audit pillar outputs, code-sweep tier outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per `_shared/shortcut-taxonomy.md` §3 detector #20:
 
 ```bash
 for f in $(git diff --name-only ${SPRINT_BASE}..HEAD | grep -E 'findings.*\.md|review-.*\.md|_research/.*audit.*\.md'); do

@@ -9,7 +9,13 @@
         "\\balways\\s+ask\\b.*\\bcommit",
         "\\balways\\b.*(show|review).*\\bdiff\\b.*\\bbefore\\b.*\\bcommit"
       ],
-      "skills": ["sprint-dev", "code-sweep", "fix-issue", "release", "ship"],
+      "skills": [
+        "sprint-dev",
+        "code-sweep",
+        "fix-issue",
+        "release",
+        "ship"
+      ],
       "severity": "HIGH",
       "description": "User rule forbids automatic commits",
       "fix": "Run sprint-dev with --mode=checkpoint (pauses before each wave's commit). For code-sweep, prefer --scan-only (default) over --loop. For release, skip --publish."
@@ -23,7 +29,12 @@
         "\\balways\\s+ask\\b.*\\bpush\\b",
         "\\balways\\b.*review.*\\bbefore\\b.*\\bpush\\b"
       ],
-      "skills": ["sprint-dev", "code-sweep", "release", "ship"],
+      "skills": [
+        "sprint-dev",
+        "code-sweep",
+        "release",
+        "ship"
+      ],
       "severity": "HIGH",
       "description": "User rule forbids automatic pushes to remote",
       "fix": "Avoid --loop modes and release --publish. Manually push after reviewing each commit."
@@ -35,7 +46,13 @@
         "\\balways\\s+ask\\b.*\\b(run|execute)\\b.*\\b(tests?|commands?)\\b",
         "\\bdon'?t\\s+run\\s+(tests?|npm)\\b.*\\basking\\b"
       ],
-      "skills": ["sprint-dev", "sprint-review", "release", "ship", "quality-metrics"],
+      "skills": [
+        "sprint-dev",
+        "sprint-review",
+        "release",
+        "ship",
+        "quality-metrics"
+      ],
       "severity": "HIGH",
       "description": "User rule forbids running tests or build scripts without explicit approval",
       "fix": "Invoke skills individually rather than chained via ship. Use --mode=interactive on sprint-dev if available."
@@ -47,7 +64,10 @@
         "\\bfollow\\b.*\\bfeature/.*<.*>",
         "\\buse\\b.*\\bfeature/.*ticket\\b"
       ],
-      "skills": ["sprint-dev", "release"],
+      "skills": [
+        "sprint-dev",
+        "release"
+      ],
       "severity": "MEDIUM",
       "description": "User rule requires a specific branch-naming convention",
       "fix": "sprint-dev creates sprint-N/<role> worktree branches. release uses release/vX.Y.Z. These are fixed conventions in MVP; track override support in a future version."
@@ -59,7 +79,10 @@
         "\\bdon'?t\\s+auto.?create\\s+branches?\\b",
         "\\bi'?ll\\s+create\\s+the\\s+branch\\b"
       ],
-      "skills": ["sprint-dev", "release"],
+      "skills": [
+        "sprint-dev",
+        "release"
+      ],
       "severity": "MEDIUM",
       "description": "User rule forbids automatic branch creation",
       "fix": "sprint-dev requires worktree branches for its isolation model and cannot be disabled in MVP. Consider using /blitz:quick for small changes that don't need sprint-dev."
@@ -71,7 +94,10 @@
         "\\bnever\\s+merge\\b.*\\bdirectly\\s+to\\s+main\\b",
         "\\ball\\s+changes\\b.*\\bvia\\s+pr\\b"
       ],
-      "skills": ["release", "ship"],
+      "skills": [
+        "release",
+        "ship"
+      ],
       "severity": "HIGH",
       "description": "User rule requires all changes go through a pull request",
       "fix": "release Phase 5.6 merges back to main. Skip --publish and manually open a PR from the release branch instead."
@@ -83,7 +109,10 @@
         "\\bonly\\s+report\\b.*\\bfindings\\b",
         "\\bdon'?t\\s+(automatically\\s+)?fix\\b"
       ],
-      "skills": ["code-sweep", "sprint-review"],
+      "skills": [
+        "code-sweep",
+        "sprint-review"
+      ],
       "severity": "MEDIUM",
       "description": "User rule forbids automatic code fixes",
       "fix": "Use code-sweep --scan-only (default). Run sprint-review with manual fix mode."
@@ -97,7 +126,14 @@
         "\\bpnpm\\s+(is\\s+)?(our|the)\\s+package\\s+manager\\b",
         "\\bprefer\\s+(pnpm|bun|yarn)\\b"
       ],
-      "skills": ["sprint-dev", "sprint-review", "release", "ship", "quality-metrics", "dep-health"],
+      "skills": [
+        "sprint-dev",
+        "sprint-review",
+        "release",
+        "ship",
+        "quality-metrics",
+        "dep-health"
+      ],
       "severity": "MEDIUM",
       "description": "User uses a non-npm package manager; blitz default commands use npm",
       "fix": "Ensure package.json scripts work with your package manager. Most skills invoke `npm run <script>` which works via npm compatibility shims in pnpm/bun/yarn."
@@ -109,7 +145,12 @@
         "\\bcommit\\s+messages?\\b.*\\bformat\\b",
         "\\buse\\s+conventional\\s+commits?\\s+with\\s+scope\\b"
       ],
-      "skills": ["sprint-dev", "code-sweep", "fix-issue", "release"],
+      "skills": [
+        "sprint-dev",
+        "code-sweep",
+        "fix-issue",
+        "release"
+      ],
       "severity": "MEDIUM",
       "description": "User rule requires a specific commit message format",
       "fix": "blitz uses fixed conventional-commit formats per skill (e.g., feat(sprint-N/role):). Override support is planned for a future version. For MVP, manually amend commits to add ticket refs if required."
@@ -122,7 +163,17 @@
         "\\bavoid\\s+opus\\b",
         "\\buse\\s+sonnet\\s+for\\s+everything\\b"
       ],
-      "skills": ["sprint-dev", "code-sweep", "release", "ship", "sprint-review", "fix-issue", "codebase-map", "integration-check", "quality-metrics"],
+      "skills": [
+        "sprint-dev",
+        "code-sweep",
+        "release",
+        "ship",
+        "sprint-review",
+        "fix-issue",
+        "codebase-map",
+        "review",
+        "quality-metrics"
+      ],
       "severity": "LOW",
       "description": "User rule prefers cheaper models than blitz defaults",
       "fix": "Set CLAUDE_CODE_SUBAGENT_MODEL=sonnet to force all subagents to sonnet. Note that some orchestrator skills declare model: opus to survive 1M context inheritance from parent sessions (see v1.1.4 release notes)."

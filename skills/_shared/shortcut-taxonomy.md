@@ -8,7 +8,7 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 
 - `agents/critic.md` (read-only adversarial review before sprint-review PASS)
 - `skills/sprint-review/SKILL.md` (Phase 3.6 invariants)
-- `skills/completeness-gate/SKILL.md` (extends placeholder scanning)
+- `skills/review/SKILL.md` (`--only completeness` extends placeholder scanning)
 - `hooks/scripts/block-*` (PreToolUse blockers for the most damaging classes)
 
 **Why this doc exists**: `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 catalogued the original 19 ways autonomous coders silently produce non-production-ready output (det-20, audit-FP, was appended 2026-05-16 → 20 total). Without grep/diff detectors, these shortcuts ship undetected. The patterns are now defined as data in [`check-registry.json`](check-registry.json); this doc is the readable view.
@@ -23,18 +23,18 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 | 2 | `--no-verify` bypass | Bash command contains standalone `--no-verify`; reflog grep | `block-no-verify.sh` (PreToolUse) + critic 2.7 | claude-code#40117 (Mar 2026) |
 | 3 | Mock count grows in src/ | `grep -rE '\bvi\.mock\|jest\.mock\|sinon\.stub\b' src/ --exclude-dir=__tests__ \| wc -l` delta > 0 | ratchet `mocks_in_src` | TestKube 2026 |
 | 4 | `as any` / `@ts-ignore` proliferation | `git diff HEAD~N -- src/ \| grep -E '^\+.*\bas any\b\|@ts-(ignore\|nocheck)'` (non-test) | ratchet `as_any_count` + critic 2.1 | code-sweep Tier 1 |
-| 5 | Swallow-and-continue catch | regex `catch\s*\([^)]*\)\s*\{[\s\n]*\}` or `catch.*\{[^}]*console\.(log\|warn)[^}]*\}` no rethrow | completeness-gate (existing) | OWASP A09 |
-| 6 | Env var fallbacks hiding config errors | `\|\|\s*['"]` or `\?\?\s*['"]` near password\|secret\|key\|token\|host\|port | completeness-gate (new) | autonomous-coding 2026 reports |
-| 7 | Hardcoded credentials | `password\s*=\s*['"][^'"]{3,}` + entropy heuristic | pre-edit-guard (.env) + completeness-gate | OWASP A07 |
+| 5 | Swallow-and-continue catch | regex `catch\s*\([^)]*\)\s*\{[\s\n]*\}` or `catch.*\{[^}]*console\.(log\|warn)[^}]*\}` no rethrow | review --only completeness | OWASP A09 |
+| 6 | Env var fallbacks hiding config errors | `\|\|\s*['"]` or `\?\?\s*['"]` near password\|secret\|key\|token\|host\|port | review --only completeness | autonomous-coding 2026 reports |
+| 7 | Hardcoded credentials | `password\s*=\s*['"][^'"]{3,}` + entropy heuristic | pre-edit-guard (.env) + review --only completeness | OWASP A07 |
 | 8 | Commented-out failing assertions | `git diff \| grep '^+\s*//.*expect\|assert\|should\.'` | code-sweep Tier 2 | autonomous-coding 2026 reports |
-| 9 | `throw new Error('Not implemented')` | grep | completeness-gate (existing) | blitz baseline |
-| 10 | `return {}` / `return []` stubs | grep `return\s*\{\s*\}\|return\s*\[\s*\]` in business logic | completeness-gate (existing) | blitz baseline |
+| 9 | `throw new Error('Not implemented')` | grep | review --only completeness | blitz baseline |
+| 10 | `return {}` / `return []` stubs | grep `return\s*\{\s*\}\|return\s*\[\s*\]` in business logic | review --only completeness | blitz baseline |
 | 11 | Hallucinated APIs / symbols | `tsc --noEmit` + import resolution check | post-edit-typecheck-block.sh + critic 2.6 | Arize 2026 |
 | 12 | Claiming done on broken build | tsc errors increased after Write | `post-edit-typecheck-block.sh` (PostToolUse, blocking) | dev.to Feb 2026 |
 | 13 | `.skip`/`.only`/`xit`/`xdescribe` | grep on test files | critic 2.1 + sprint-review | blitz baseline |
 | 14 | Test file renamed away | `git log --diff-filter=R --name-status \| grep '\.test\.\|\.spec\.'` to non-test | critic 2.8 | autonomous-coding 2026 reports |
-| 15 | Hardcoded localhost / ports / URLs | grep `localhost\|127\.0\.0\.1\|0\.0\.0\.0\|:[0-9]{3,5}` in src | completeness-gate (new) | OWASP A08 |
-| 16 | Orphaned files never imported | import-graph traversal (Level 3) | completeness-gate (existing) | blitz baseline |
+| 15 | Hardcoded localhost / ports / URLs | grep `localhost\|127\.0\.0\.1\|0\.0\.0\.0\|:[0-9]{3,5}` in src | review --only completeness | OWASP A08 |
+| 16 | Orphaned files never imported | import-graph traversal (Level 3) | review --only wiring | blitz baseline |
 | 17 | Infinite correction loop | consecutive-fix-failure counter ≥ 2 | code-sweep circuit breaker (existing) | blitz baseline |
 | 18 | Destructive SQL outside migration | DROP/DELETE/TRUNCATE in psql/mysql/sqlite3/mongosh CLI command | `block-destructive-sql.sh` (PreToolUse) | Cursor+Railway, Replit Rogue |
 | 19 | `git reset --hard` on dirty tree | git command + working-tree non-empty | `block-destructive-git.sh` (PreToolUse) | autonomous-coding 2026 reports |
@@ -47,7 +47,7 @@ Canonical detector catalog for autonomous-coder shortcuts, lies, and fake-comple
 - **P0 (PreToolUse hard-block)**: 1, 2, 18, 19 — and 12 (PostToolUse hard-block). These are the catastrophic classes; the hook must `exit 2`.
 - **P1 (sprint-review BLOCKER)**: 4, 13, 14 — sprint cannot reach PASS while present.
 - **P2 (ratchet metric)**: 3, 4, 6, 7, 15 — surfaced as ratchet regressions; trigger auto-revert on deterministic regression.
-- **P3 (advisory)**: 5, 8, 16, 17, 20 — completeness-gate / critic findings; surface but do not auto-block.
+- **P3 (advisory)**: 5, 8, 16, 17, 20 — review (`--only completeness`/`--only wiring`) / critic findings; surface but do not auto-block.
 
 P0 corresponds to the five hooks shipped as part of this protocol (blast-radius too large to defer to review).
 
@@ -141,7 +141,7 @@ The escape hatches are documented to keep critic from being uselessly noisy. Age
 - `agents/critic.md` — primary consumer (read-only adversarial review)
 - `hooks/scripts/block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `post-edit-typecheck-block.sh` — P0 enforcement
 - `skills/_shared/ratchet-protocol.md` — ratchet metrics 3, 4, 6, 7, 15
-- `skills/completeness-gate/SKILL.md` — placeholder + completeness scan
+- `skills/review/SKILL.md` — `--only completeness` placeholder scan + `--only wiring` import-graph
 - `skills/code-sweep/SKILL.md` — Tier 1/2 progressive cleanup
 - `skills/sprint-review/SKILL.md` — Phase 3.6 enforcement
 - `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.3 — research basis (with citations)

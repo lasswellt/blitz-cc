@@ -412,7 +412,7 @@ Metrics:
 |---|---|---|
 | Refactored code has low test coverage | `test-gen` | Generate tests for the refactored module |
 | Refactored a UI component | `browse` | Verify the component still renders correctly |
-| Large structural change | `codebase-audit` | Check for architectural issues introduced |
+| Large structural change | `audit` | Check for architectural issues introduced |
 
 ---
 

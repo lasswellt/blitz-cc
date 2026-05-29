@@ -61,7 +61,7 @@ Metric collection is delegated to 5 parallel collector agents, each running one 
 | `collect-lint` | `npx eslint . --format json` | `${SESSION_TMP_DIR}/metric-lint.json` | `max(0, 100 - errors * 5 - warnings)` |
 | `collect-tests` | `npx vitest run --reporter=json` (fallback: jest) | `${SESSION_TMP_DIR}/metric-tests.json` | `(passed / total) * 100`; null if no runner |
 | `collect-build` | `npm run build` | `${SESSION_TMP_DIR}/metric-build.json` | 100 on exit 0, else 0 |
-| `collect-completeness` | inline completeness-gate lookup | `${SESSION_TMP_DIR}/metric-completeness.json` | from latest completeness snapshot; null if none |
+| `collect-completeness` | inline `/blitz:review --only completeness` lookup | `${SESSION_TMP_DIR}/metric-completeness.json` | from latest completeness snapshot; null if none |
 
 The 2 lightweight metrics (codebase size, dependency count) stay in the orchestrator — they're simple file reads that don't warrant agent overhead.
 

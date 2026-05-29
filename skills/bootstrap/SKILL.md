@@ -237,7 +237,7 @@ All of the following must pass before proceeding to Phase 5:
 | Type-check passes | `npm run type-check` exits 0 | Yes |
 | Lint passes | `npm run lint` on new files exits 0 | Yes |
 | Tests pass | Generated tests all pass | Yes |
-| No placeholders | Run completeness-gate on new files — no critical/high findings | Yes |
+| No placeholders | Run `/blitz:review --only completeness` on new files — no critical/high findings | Yes |
 | Routes accessible | If page was created, route is defined and reachable | Yes (if applicable) |
 
 **Maximum 3 fix attempts per failing criterion.** After 3 attempts, report partial success:

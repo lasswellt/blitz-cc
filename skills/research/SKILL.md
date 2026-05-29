@@ -373,7 +373,7 @@ scope:
       removing the legacy class="modal-overlay" pattern and deprecating
       shared/ConfirmDialog.vue.
     acceptance:
-      # Executable DoD — each check must be verifiable by completeness-gate
+      # Executable DoD — each check must be verifiable by `/blitz:review --only completeness`
       # without human interpretation. Prefer grep/shell/AST over prose.
       - grep_absent: 'class="modal-overlay"'
       - grep_absent: 'from.*shared/ConfirmDialog'
@@ -477,7 +477,7 @@ Based on the research type and findings, suggest next steps using the skill grap
 | Architecture decision made, roadmap already current | `sprint-plan` | Plan implementation stories directly. |
 | Library selected, ready to integrate | `refactor` | Refactor existing code to use the new library. |
 | Feature approach decided | `ui-build` | Build the feature UI. |
-| Security concern identified | `codebase-audit` | Audit for related vulnerabilities. |
+| Security concern identified | `audit` | Audit for related vulnerabilities. |
 | Performance approach selected | `test-gen` | Generate performance-related tests. |
 
 ---

@@ -284,7 +284,7 @@ Run the completeness gate on all created/modified UI files:
 ```bash
 CHANGED_FILES=$(git diff --name-only HEAD~1 -- '*.vue' '*.ts')
 ```
-Invoke: `/blitz:completeness-gate` scoped to the changed files.
+Invoke: `/blitz:review --only completeness` scoped to the changed files.
 Verify that three-state coverage (check 2.10) passes for all new data views. Any critical or high findings must be resolved before proceeding.
 
 ### 5.2 Accessibility Audit
