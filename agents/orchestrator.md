@@ -138,11 +138,13 @@ You cannot Write, Edit, or spawn subagents. For any change to a file, route to a
 Before responding to a user request, check:
 
 ```bash
-# Recent activity (last 5 entries)
-tail -5 .cc-sessions/activity-feed.jsonl 2>/dev/null | jq -r '.message // ""'
+# Recent activity (last 5 entries) — cap field length: these files are skill-written
+# (semi-trusted) and rendered verbatim; a compromised skill could inject a long/hostile
+# summary. Truncate to 200 chars (injection-surface guard; Opus 4.8 ASR regression).
+tail -5 .cc-sessions/activity-feed.jsonl 2>/dev/null | jq -r '(.message // "")[0:200]'
 
-# In-flight HANDOFF
-[ -f .cc-sessions/HANDOFF.json ] && jq -r '"sprint: \(.sprint // "none") · phase: \(.phase) · uncommitted: \(.uncommitted | length) files"' .cc-sessions/HANDOFF.json
+# In-flight HANDOFF (cap the free-text phase field at 200 chars)
+[ -f .cc-sessions/HANDOFF.json ] && jq -r '"sprint: \(.sprint // "none") · phase: \((.phase // "")|tostring|.[0:200]) · uncommitted: \(.uncommitted | length) files"' .cc-sessions/HANDOFF.json
 
 # Carry-forward escalations
 jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.status == "active" or .status == "partial")) | length' .cc-sessions/carry-forward.jsonl 2>/dev/null

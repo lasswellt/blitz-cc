@@ -7,8 +7,11 @@
 #   - Without JSON on stdin: scans the whole skills/ tree, exits 1 on any
 #     broken link (CI / manual verification mode).
 #
+# Resolves: /_shared/X -> skills/_shared/X (plugin-root convention); other
+# leading-slash links -> repo-root-relative; bare links -> relative to the file.
 # Skips: fenced code blocks, inline code, http(s) URLs, anchor-only refs,
-# /_shared plugin-absolute links, .original backups, _research/ docs.
+# mailto, .original backups, _research/ docs, runtime-output paths
+# (docs/generated/, findings/, sprints/sprint-, tmp/).
 #
 # Why a script and not a hook-only script: the same checker can be invoked
 # manually (`bash hooks/scripts/markdown-link-validate.sh`) or wired into
@@ -39,14 +42,27 @@ python3 - <<'PY'
 import pathlib, re, sys
 broken = []
 checked = 0
-for f in pathlib.Path("skills").rglob("*.md"):
+# Runtime-output path prefixes a skill WRITES at runtime — not refs to existing files.
+RUNTIME = ("docs/generated/", "findings/", "tmp/")
+def is_runtime(link):
+    return any(seg in link for seg in RUNTIME) or "/sprint-" in link or link.startswith("sprints/sprint-")
+files = list(pathlib.Path("skills").rglob("*.md")) + list(pathlib.Path("agents").rglob("*.md"))
+for f in files:
     if ".original" in f.name or "_research" in str(f): continue
     text = f.read_text(errors="replace")
     text = re.sub(r'```.*?```', '', text, flags=re.S)
     text = re.sub(r'`[^`]+`', '', text)
-    for m in re.finditer(r'\[([^\]]+)\]\(((?!http|#|/_shared|mailto)[^)#]+\.md)(#[^)]+)?\)', text):
+    for m in re.finditer(r'\[([^\]]+)\]\(((?!http|#|mailto)[^)#]+\.md)(#[^)]+)?\)', text):
         link = m.group(2)
-        target = (f.parent / link).resolve()
+        if is_runtime(link):
+            continue
+        # Convention-aware resolution
+        if link.startswith("/_shared/"):
+            target = (pathlib.Path("skills") / link.lstrip("/")).resolve()
+        elif link.startswith("/"):
+            target = (pathlib.Path(".") / link.lstrip("/")).resolve()
+        else:
+            target = (f.parent / link).resolve()
         checked += 1
         if not target.exists():
             broken.append((str(f), link))

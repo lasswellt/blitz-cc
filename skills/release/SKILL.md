@@ -116,7 +116,9 @@ If no commits exist since the last tag, inform the user: "No unreleased changes 
 
 ### 2.1 Parse Conventional Commits
 
-Categorize commits since last tag using patterns from `references/main.md`:
+**Canonical changelog owner (O1/O5).** `skills/release` is the SINGLE source of the commit-type → changelog-section map and the Keep a Changelog emit logic. `doc-gen` (`changelog` mode) and `ship` (Phase 2) MUST delegate here — they do not restate this map. Edit the table below; consumers cite it.
+
+Categorize commits since last tag using patterns from `references/main.md` (Keep a Changelog format):
 
 | Commit Prefix | Bump | Changelog Section |
 |---------------|------|-------------------|

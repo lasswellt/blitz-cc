@@ -22,6 +22,8 @@ underspecified request and route it to the correct skill(s) with a clear plan.
 
 ## Phase 1: Classify
 
+**Canonical routing table: [`agents/orchestrator.md`](../../agents/orchestrator.md) §2 (O4).** The table below MIRRORS the orchestrator's intent→skill map for standalone `ask` invocations. To add/change a route, edit orchestrator.md §2 first, then sync this mirror — do not maintain divergent mappings.
+
 Match the user's request against this routing table:
 
 | Intent Keywords                           | Primary Skill  | Follow-up Chain                  |

@@ -36,7 +36,7 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 - For the canonical story frontmatter, see [story-frontmatter.md](/_shared/story-frontmatter.md)
 - For pipeline state handoff + STATE.md required fields, see [state-handoff.md](/_shared/state-handoff.md)
 - For autonomy field schema, see [session-protocol.md](/_shared/session-protocol.md) §Autonomy Levels
-- For plugin-mode migration scripts, see [scripts/maint/v1.9.0/README.md](/_shared/../../../scripts/maint/v1.9.0/README.md)
+- For plugin-mode migration scripts, see [scripts/maint/v1.9.0/README.md](../../scripts/maint/v1.9.0/README.md)
 
 ---
 

@@ -12,15 +12,28 @@ Every agent definition (`agents/*.md`) and every dynamic spawn (`Agent({model: .
 
 | Role | Model | Rationale |
 |---|---|---|
-| **Mechanical workers**: test-gen, lint-fix, file ops, doc-gen, formatting | `haiku` (4.5) | 5× cheaper than Opus; adequate for pattern-following work |
-| **Standard workers**: backend-dev, frontend-dev, reviewer, refactorer, browser-agent | `sonnet` (4.6) | 40% cheaper than Opus; sufficient for impl + review |
-| **Heavy reasoning**: architect, security audit, codebase-audit, research orchestrator | `opus` (4.7) | Reserve for genuinely hard multi-step decisions |
-| **Orchestrator agents** (`agents/orchestrator.md`, sprint-* orchestrators) | `sonnet` | 40% cheaper than Opus; orchestration is routing, not synthesis |
-| **Plan-check / critic** | `sonnet` | Adversarial review needs reasoning, not depth |
+| **Mechanical workers**: test-gen, lint-fix, file ops, doc-gen, formatting | `claude-haiku-4-5` | 5× cheaper than Opus; adequate for pattern-following work |
+| **Standard workers**: backend-dev, frontend-dev, reviewer, refactorer, browser-agent | `claude-sonnet-4-6` | 40% cheaper than Opus; sufficient for impl + review |
+| **Heavy reasoning**: architect, security audit, codebase-audit, research orchestrator | `claude-opus-4-8` | Reserve for genuinely hard multi-step decisions |
+| **Orchestrator agents** (`agents/orchestrator.md`, sprint-* orchestrators) | `claude-sonnet-4-6` | 40% cheaper than Opus; orchestration is routing, not synthesis |
+| **Plan-check / critic** | `claude-sonnet-4-6` | Adversarial review needs reasoning, not depth |
 
-**Target distribution**: ≈60% Haiku / 35% Sonnet / 5% Opus by output tokens.
+Model IDs (2026-05-28): `claude-haiku-4-5` (alias of `claude-haiku-4-5-20251001`), `claude-sonnet-4-6`, `claude-opus-4-8`. Skill frontmatter MAY use the short `haiku`/`sonnet`/`opus` aliases; dynamic `Agent({model})` spawns SHOULD use the full IDs above.
 
-**Foot-gun**: Opus 4.7's new tokenizer adds up to +35% effective cost vs Opus 4.6 ([finout.io](https://www.finout.io/blog/claude-opus-4.7-pricing-the-real-cost-story-behind-the-unchanged-price-tag)). Default to Sonnet unless the task is genuinely Opus-class.
+**Target distribution**: ≈60% Haiku / 35% Sonnet / 5% Opus by output tokens. Re-affirmed for Opus 4.8 — orchestration stays Sonnet (routing, not synthesis); Opus floor stays ≤5% even though 4.8 fast mode is cheaper (fast mode is NOT cost-justified for routing — see §1.1).
+
+### 1.1 Opus 4.8 fast mode + effort routing
+
+| Lane | Cost (per MTok) | When |
+|---|---|---|
+| Sonnet 4.6 (workhorse) | $3 in / $15 out | standard workers, orchestration |
+| Opus 4.8 standard | premium | heavy reasoning / synthesis |
+| Opus 4.8 **fast mode** | ~$10 in / $50 out, 2.5× tok/s (`speed:"fast"`, research preview, Claude-API only) | **latency-critical only** (e.g. wave-dispatch); NOT a default. 3× cheaper than prior Opus fast ($30/$150) but still > Sonnet — do not auto-switch. |
+
+**Effort split** (governs `effort:` frontmatter, distinct from model):
+- Routing orchestrators (`agents/orchestrator.md`, `blitz:next`) → `effort: low` (heavy reasoning lives in spawned workers).
+- Multi-wave / multi-phase orchestrators (`sprint-dev`) → `effort: high` — the `effort: low` rule applies to routing-only skills, not multi-phase work. Do not "fix" sprint-dev to low.
+- `/effort ultracode` sessions spawn multiple SEQUENTIAL workflows; budget per-workflow, not per-session.
 
 ---
 
