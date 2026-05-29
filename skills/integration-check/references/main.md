@@ -109,6 +109,18 @@ already evident in the diff or tool output. Format: fragments OK.
 | Composable definition | `export function use<Name>` | `composables/*.ts` |
 | Composable consumer | `use<Name>\(\)` | `*.vue, *.ts` |
 
+### Unwired Store Actions (`unwired-store-actions`)
+
+Executable check (owned here per O3; migrated from completeness-gate §2.11). For each store action method, flag it if its body calls no API/service function. An action that mutates only local state without a backend call in a store that otherwise fetches is a likely unwired stub.
+
+| What | Pattern | Files |
+|------|---------|-------|
+| Store with actions | `defineStore\(` AND `actions:` (Options) or action fns (Setup) | `stores/*.ts`, files using `defineStore` |
+| API/service call present | `fetch\|\$fetch\|axios\|httpsCallable\|api\.\|useFetch\|useAsyncData\|<service>\.` in action body | action method body |
+| FLAG (unwired) | action method body matches NONE of the API/service patterns above | — |
+
+Exclude pure-UI/local-state stores (e.g. a `ui` store toggling modals) via a `// local-only` marker or a store-name allowlist. Severity: **Medium** (a store action that silently no-ops a backend write is a data-loss risk; promote to **High** if the action name implies persistence — `save*`, `create*`, `update*`, `delete*`, `submit*`).
+
 ### Form-to-Handler Wiring
 
 | What | Pattern | Files |

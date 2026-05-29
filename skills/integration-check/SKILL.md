@@ -71,7 +71,7 @@ The 7 original check categories are grouped into 3 parallel agents by concern do
 
 | Agent | Checks Covered | Output File |
 |---|---|---|
-| `check-wiring` | Export-to-import, store-to-component, API-to-store, state-to-render | `${SESSION_TMP_DIR}/check-wiring.json` |
+| `check-wiring` | Export-to-import, store-to-component, API-to-store, **unwired-store-actions** (O3, see references/main.md), state-to-render | `${SESSION_TMP_DIR}/check-wiring.json` |
 | `check-auth` | Auth guard coverage, protected endpoints | `${SESSION_TMP_DIR}/check-auth.json` |
 | `check-ui` | Route coverage, form-to-handler wiring | `${SESSION_TMP_DIR}/check-ui.json` |
 
@@ -174,8 +174,8 @@ Overall: N findings (H high, M medium, L low)
 ```
 
 Severity classification (used by agents and report):
-- **High**: Unprotected auth endpoints, orphaned API functions suggesting missing features, disconnected forms
-- **Medium**: Unreachable routes, orphaned stores, orphaned state
+- **High**: Unprotected auth endpoints, orphaned API functions suggesting missing features, disconnected forms, unwired persistence actions (`save*`/`create*`/`update*`/`delete*`/`submit*` with no API call)
+- **Medium**: Unreachable routes, orphaned stores, orphaned state, unwired-store-actions (non-persistence)
 - **Low**: Orphaned exports (may be intentionally public API)
 
 Log `skill_complete` to activity feed. Clean up `${SESSION_TMP_DIR}/check-*.json`.
