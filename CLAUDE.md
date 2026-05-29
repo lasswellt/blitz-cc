@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (28 files). Required for every skill:
+All skills follow the protocols in `skills/_shared/` (29 files). Required for every skill:
 - **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
 - **verbose-progress.md** — Verbose output format and activity feed logging
 - **terse-output.md** — Output style + canonical exemptions list
@@ -79,7 +79,7 @@ Required for autonomous loops + quality:
 
 ## Hooks
 
-36 hook scripts wired through `hooks/hooks.json` across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
+37 hook scripts wired through `hooks/hooks.json` across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
 
 ## Clarification Gate (Karpathy Principle 1)
 
@@ -107,5 +107,5 @@ Adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/a
 4. Reserved (canonical algorithm)
 5. OUTPUT STYLE snippet present in every SKILL.md + agent-prompt template
 6. **Ratchet** — 8 monotonic metrics never regress without carry-forward (`type_errors > 0` is absolute floor; `stale_worktree_branch_count` added 2026-05-17 per [worktree-lifecycle.md](skills/_shared/worktree-lifecycle.md))
-7. **Critic** — `agents/critic.md` adversarial review must emit LGTM (it runs the 19-detector shortcut taxonomy)
+7. **Critic** — `agents/critic.md` adversarial review must emit LGTM (it runs the 20-detector shortcut taxonomy)
 8. **Branch hygiene** — sprint-dev Phase 4.4 deleted every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch (per-sprint scope; complements Invariant 6's cross-sprint cumulative metric)

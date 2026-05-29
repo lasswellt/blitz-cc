@@ -15,7 +15,7 @@
 
 **A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase**
 
-**37 skills** · **10 agents** · **36 hook scripts across 16 events** · **26 shared protocols**
+**37 skills** · **10 agents** · **37 hook scripts across 16 events** · **29 shared protocols**
 
 Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -34,7 +34,7 @@ Blitz turns Claude Code into an opinionated, partly-autonomous development envir
 - **A freeform orchestrator** — `agents/orchestrator.md` is wired as the plugin's main-thread agent. It receives natural-language input, reads `.cc-sessions/HANDOFF.json` + recent activity, and routes to the right `/blitz:*` skill. Slash commands bypass it.
 - **A research-to-release pipeline** — `/blitz:research` produces quantified `scope:` claims; `/blitz:sprint` chains plan → implement → review; `/blitz:ship` runs the release gates. Every scope claim is tracked across sprints in an append-only carry-forward registry that prevents silent drops.
 - **Quality gates that cannot be silently bypassed** — six `PreToolUse` blockers and one `PostToolUse` typecheck ratchet stop `--no-verify`, destructive git/SQL, test deletion, `as any` insertion, disabled tests, and type-error regressions at the tool boundary. Each returns `exit 2` with an explicit override path.
-- **An adversarial critic** — `agents/critic.md` runs a 19-detector shortcut taxonomy + ratchet + acceptance checks + hallucinated-symbol spot-check before any sprint can reach `PASS`. Optionally routed to a different model family (Gemini) for blindspot coverage.
+- **An adversarial critic** — `agents/critic.md` runs a 20-detector shortcut taxonomy + ratchet + acceptance checks + hallucinated-symbol spot-check before any sprint can reach `PASS`. Optionally routed to a different model family (Gemini) for blindspot coverage.
 
 It's designed so that `/loop /blitz:next --loop` produces shippable code unattended.
 
@@ -48,7 +48,7 @@ It's designed so that `/loop /blitz:next --loop` produces shippable code unatten
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
 | **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut Blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-36-scripts-16-events) · [Shared Protocols](#shared-protocols-26) · [Sprint-review Invariants](#3-sprint-review-invariants-8) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-37-scripts-16-events) · [Shared Protocols](#shared-protocols-29) · [Sprint-review Invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -204,7 +204,7 @@ Six `PreToolUse` hooks plus one `PostToolUse` typecheck ratchet block common sho
 4. *(reserved)*
 5. **OUTPUT STYLE snippet** present in every `SKILL.md` + agent-prompt template *(blocker)*
 6. **Ratchet** — 8 monotonic metrics never regress without a covering carry-forward *(blocker)*: `test_count` ↑, `type_errors` ↓ (absolute floor 0), `as_any_count` ↓, `lint_violations` ↓, `completeness_score` ↑, `mocks_in_src` ↓, `todo_count` ↓, `stale_worktree_branch_count` ↓ *(added 2026-05-17)*
-7. **Critic** — the `blitz:critic` adversarial agent must emit `LGTM` after running the 19-detector shortcut taxonomy *(blocker)*
+7. **Critic** — the `blitz:critic` adversarial agent must emit `LGTM` after running the 20-detector shortcut taxonomy *(blocker)*
 8. **Branch hygiene** — sprint-dev Phase 4.4 deleted every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch *(blocker)*
 
 ### 4. Cross-Model Critic (optional)
@@ -330,7 +330,7 @@ Three roles. **Builder agents** are spawned by skills via `Agent({isolation: "wo
 
 | Agent | Model | Role | Output | Spawned at |
 |---|---|---|---|---|
-| **critic** | sonnet | Adversarial pre-`PASS` reviewer. Runs the 19-detector shortcut taxonomy + ratchet + acceptance-checks + hallucinated-symbol spot-check + `--no-verify` reflog scan + test-rename detection. Halts at first REJECT. | JSON `{verdict: LGTM \| REJECT, issues: [...]}` | `sprint-review` Phase 3.6 Invariant 7 |
+| **critic** | sonnet | Adversarial pre-`PASS` reviewer. Runs the 20-detector shortcut taxonomy + ratchet + acceptance-checks + hallucinated-symbol spot-check + `--no-verify` reflog scan + test-rename detection. Halts at first REJECT. | JSON `{verdict: LGTM \| REJECT, issues: [...]}` | `sprint-review` Phase 3.6 Invariant 7 |
 | **research-critic** | sonnet | Probes every cited URL, classifies LIVE/DEAD/LIKELY_HALLUCINATED/UNKNOWN per the urlhealth taxonomy (arxiv 2604.03173). Verifies `> "..."` quoted spans appear in fetched source (Deterministic Quoting). | JSON `{verdict: PASS \| CITATIONS_MISSING, issues: [...]}` | `research` Phase 3.2.5 |
 | **design-critic** | sonnet | Vision-based aesthetic scorer. Reads `/tmp/ui-build-screenshots/*.png` against `DESIGN.md` (or frontend-design heuristics). 5 dimensions, 0–10 each. | JSON `{scores, verdict: PASS \| ITERATE \| REWORK, issues: [...]}` | `ui-build` Phase 5.4.2 |
 
@@ -488,7 +488,7 @@ blitz/
 ├── output-styles/
 │   └── terse-technical.md       # Canonical OUTPUT STYLE (referenced by every SKILL.md)
 ├── skills/                      # 37 skill directories
-│   ├── _shared/                 # 26 shared protocol files
+│   ├── _shared/                 # 29 shared protocol files
 │   ├── next/                    # Canonical autonomous reconciliation engine (--loop)
 │   ├── sprint/                  # Cycle orchestrator
 │   ├── sprint-plan/             # Carry-forward-aware planning
@@ -515,7 +515,7 @@ blitz/
 │   └── doc-writer.md            # API docs / ADRs / changelogs (haiku)
 └── hooks/
     ├── hooks.json               # 16 event types wired
-    └── scripts/                 # 36 scripts: 35 hook-wired + critic-gemini.sh utility
+    └── scripts/                 # 37 scripts: 36 hook-wired + critic-gemini.sh utility
 ```
 
 ### Runtime artifacts
@@ -538,7 +538,7 @@ Projects bootstrapped on older blitz versions may carry artifact drift (old stor
 
 ---
 
-## Hook Reference (36 scripts, 16 events)
+## Hook Reference (37 scripts, 16 events)
 
 35 scripts are wired into `hooks.json`. `critic-gemini.sh` is a utility invoked from skill bodies — not a hook event.
 
@@ -601,9 +601,9 @@ Projects bootstrapped on older blitz versions may carry artifact drift (old stor
 
 ---
 
-## Shared Protocols (26)
+## Shared Protocols (29)
 
-All skills share 26 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior.
+All skills share 29 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior.
 
 | Protocol | Purpose |
 |---|---|
@@ -615,7 +615,7 @@ All skills share 26 protocol files in [`skills/_shared/`](skills/_shared/) that 
 | [`state-handoff.md`](skills/_shared/state-handoff.md) | Pipeline contracts — artifact producers/consumers |
 | [`spawn-protocol.md`](skills/_shared/spawn-protocol.md) | Agent spawn rules, Agent Output Contract, three-tier timeout (soft 20m / idle 10m / hard 30m), WRAP_UP at 70% context |
 | [`ratchet-protocol.md`](skills/_shared/ratchet-protocol.md) | 8 monotonic metrics, `ratchet.json` schema, multi-agent merge, auto-revert |
-| [`shortcut-taxonomy.md`](skills/_shared/shortcut-taxonomy.md) | 19-detector catalog with grep patterns, severity tiers (P0/P1/P2/P3), escape hatches |
+| [`shortcut-taxonomy.md`](skills/_shared/shortcut-taxonomy.md) | 20-detector catalog with grep patterns, severity tiers (P0/P1/P2/P3), escape hatches |
 | [`token-budget.md`](skills/_shared/token-budget.md) | Model routing matrix (60/35/5), 1-hr cache TTL, lazy MCP/skill load, JSON reply contract |
 | [`agent-routing.md`](skills/_shared/agent-routing.md) | Orchestrator decision tree, subagents-cannot-spawn-subagents constraint |
 | [`knowledge-protocol.md`](skills/_shared/knowledge-protocol.md) | `.cc-sessions/KNOWLEDGE.md` cross-session lessons format |

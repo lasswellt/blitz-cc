@@ -365,7 +365,7 @@ ${ui.color.green}   ─── ${ui.sym.bolt} ───────────�
      ${ui.color.dim}/blitz:next${ui.color.reset}         ${ui.sym.arrow} What should I work on?
      ${ui.color.dim}/blitz:codebase-map${ui.color.reset} ${ui.sym.arrow} Map your codebase
 
-   All 31 skills: ${ui.color.cyan}/blitz:<TAB>${ui.color.reset}
+   All 37 skills: ${ui.color.cyan}/blitz:<TAB>${ui.color.reset}
    Docs: ${ui.color.dim}https://github.com/lasswellt/blitz${ui.color.reset}
 
 ${ui.color.green}   ──────────────────────────────── ${ui.sym.bolt} ───${ui.color.reset}
