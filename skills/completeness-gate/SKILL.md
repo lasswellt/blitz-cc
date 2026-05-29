@@ -112,6 +112,8 @@ Run all 11 check categories against target files. For each violation, record a f
 
 Use the exact grep patterns from [references/main.md](references/main.md) for each check.
 
+**Canonical anti-mock pattern set (O2).** completeness-gate owns the canonical placeholder/anti-mock pattern set (the grep patterns in `references/main.md` §grep-patterns). `sprint-review` §1.5.1 and `code-sweep` (`placeholder-throw`/`placeholder-returns`) cite this set as the source of truth — each keeps its own functional check (gate vs review-gate vs ratchet, per [quality-matrix.md](/_shared/quality-matrix.md)), but the pattern list is maintained here once.
+
 ### 2.1 Placeholder Returns
 
 Grep for `return\s*\{\s*\}`, `return\s*\[\s*\]`, and `return\s*null` in non-utility source files. Filter out legitimate patterns (guard clauses, explicit null returns documented with comments).
@@ -195,11 +197,11 @@ Flag files that fetch data but lack either loading or error states.
 
 **Check ID**: `three-state-ui`
 
-### 2.11 End-to-End Wiring
+### 2.11 End-to-End Wiring → delegated to integration-check (O3)
 
-Scan store files (files in `stores/` or files using `defineStore`) for actions that do not call any API/service function. Look for action methods that lack `fetch`, `$fetch`, `axios`, `httpsCallable`, `api.`, or service function calls.
+Wiring topology is owned by [`integration-check`](../integration-check/SKILL.md) (canonical owner — store-to-component / API-to-store / unwired-store-actions). completeness-gate does NOT re-implement it. In the sprint flow, sprint-dev Phase 3.5.0 runs integration-check before this gate, so `unwired-store-actions` coverage is preserved. For standalone completeness runs that need wiring analysis, run `/blitz:integration-check stores` alongside.
 
-**Check ID**: `unwired-store-actions`
+**Check ID**: `unwired-store-actions` (owned by integration-check)
 
 ### 2.12 Artifact Verification (Three-Level)
 
@@ -213,19 +215,14 @@ When invoked with sprint context (sprint directory path or after sprint-dev), ru
 
 **Level 2 — Substantive:** Verify files are not stubs. Each file must:
 - Be longer than 5 lines
-- Pass all existing completeness-gate checks (2.1–2.11)
+- Pass all existing completeness-gate checks (2.1–2.10)
 - Not consist solely of type re-exports or empty class declarations
 
-**Level 3 — Wired:** Verify files are imported/used by at least one other file. Exclude entry points (pages, route handlers, main files) from this requirement.
-```bash
-# For each non-entry-point file, check for at least one importer
-IMPORTERS=$(grep -rl "from.*<module-name>" --include="*.ts" --include="*.vue" . | grep -v node_modules | grep -v "<file-itself>")
-[ -n "$IMPORTERS" ] && echo "L3 PASS: <file>" || echo "L3 FAIL: <file> — no importers"
-```
+**Level 3 — Wired → delegated to integration-check (O3):** orphan/importer (wired) detection is owned by [`integration-check`](../integration-check/SKILL.md) (export-to-import tracing). completeness-gate does NOT re-implement it — L3 is covered by integration-check, which sprint-dev Phase 3.5.0 runs before this gate. For standalone runs, run `/blitz:integration-check exports`.
 
-**Check ID**: `artifact-verification`
+**Check ID**: `artifact-verification` (L1 + L2 owned here; L3 owned by integration-check)
 
-Level 1 failures are **Critical**. Level 2 failures follow existing severity rules. Level 3 failures are **Medium** (orphaned files may be intentional for new features not yet integrated).
+Level 1 failures are **Critical**. Level 2 failures follow existing severity rules. (Level 3 / wired = integration-check, severity per its report.)
 
 ### 2.13 Env-Var Fallbacks Hiding Config Errors
 

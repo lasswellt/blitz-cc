@@ -26,6 +26,8 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 Validate cross-module wiring by spawning parallel check agents grouped into 3 logical domains. Each domain agent runs its checks and writes findings JSON; the orchestrator merges and reports.
 
+**Canonical owner of wiring topology (O3).** integration-check is the single owner of cross-module wiring checks — export-to-import tracing, store-to-component / API-to-store wiring, unwired-store-actions, and orphan/wired (importer) detection. `completeness-gate` delegates its wiring checks (2.11 unwired-store-actions, 2.12 Level-3 Wired) here rather than re-implementing them; sprint-dev Phase 3.5.0 runs integration-check before the completeness gate so the sprint flow keeps full coverage.
+
 **This skill is read-only. It does NOT modify any code.**
 
 All findings follow the [Definition of Done](/_shared/definition-of-done.md) standards.

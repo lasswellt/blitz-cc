@@ -124,6 +124,8 @@ Write intermediate results to `${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-qualit
 
 ### 1.5.1 Anti-Mock Scan
 
+Pattern source: the canonical anti-mock set is owned by [`completeness-gate`](../completeness-gate/SKILL.md) §Checks (O2). The inline pattern below mirrors it for the review-time diff scan — keep in sync with completeness-gate's `references/main.md` §grep-patterns.
+
 Scan all changed files for placeholder/mock code:
 ```bash
 git diff --name-only ${SPRINT_BASE}..HEAD | xargs grep -n -E \

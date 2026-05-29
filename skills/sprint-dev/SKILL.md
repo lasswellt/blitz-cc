@@ -405,7 +405,7 @@ Send `HALT:` to remaining agents.
 
 ### 4.7 Update Sprint Registry
 
-Acquire `sprint-registry.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol (CHECK → ACQUIRE → VERIFY → OPERATE → RELEASE). Update sprint status to `review` with `completed_date`, `stories_completed`, `stories_blocked`, `integration_issues`.
+Acquire `sprint-registry.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol (the canonical acquire/verify/release sequence lives there — do not restate it). Update sprint status to `review` with `completed_date`, `stories_completed`, `stories_blocked`, `integration_issues`.
 
 ### 4.8 Update Story Statuses
 
