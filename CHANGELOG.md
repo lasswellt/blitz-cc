@@ -17,7 +17,7 @@ Bump these files together on every release. `installer/package.json` and `instal
 (`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
 
 
-## [Unreleased] — review/audit consolidation (sprints 18–20)
+## [2.0.0] — 2026-05-29 · review/audit consolidation (sprints 18–20)
 
 Collapsed the 7-skill review/audit/quality surface into **2 entry points over a shared check registry**, grounded in the verified research in `docs/consolidation/review-audit/`.
 
