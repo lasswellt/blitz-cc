@@ -33,7 +33,7 @@ Without enforced cleanup, every sprint leaks 4-5 `sprint-${N}/{backend,frontend,
 
 ## Interop with native agent view (background sessions)
 
-Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs **background sessions** dispatched via `claude --bg` / `/bg`. Before editing files, the platform **auto-isolates each background session into its own `.claude/worktrees/<id>` worktree** — the same directory blitz `Agent({isolation:"worktree"})` worktrees live in. Two systems now create worktrees under `.claude/worktrees/`; this section reconciles them. Provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`.
+Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs **background sessions** dispatched via `claude --bg` / `/bg`. Before editing files, the platform **auto-isolates each background session into its own `.claude/worktrees/<id>` worktree** — the same directory blitz `Agent({isolation:"worktree"})` worktrees live in. Two systems now create worktrees under `.claude/worktrees/`; this section reconciles them. Dispatch + alert details: [agent-view-dispatch.md](agent-view-dispatch.md). Provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`.
 
 **Branch-naming distinction:**
 - blitz-controlled: `worktree-agent-<8hex>`, `worktree-sprint-*`, `sprint-${N}/{role}` (taxonomy above).
