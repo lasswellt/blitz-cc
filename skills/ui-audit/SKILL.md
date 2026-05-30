@@ -140,6 +140,8 @@ Aggregates the flag catalog from [references/checks.md](references/checks.md). D
 
 Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md) — WCAG 2.1 AA contrast, focus-visible coverage, touch-target sizing, tabular-nums on numeric columns, `prefers-reduced-motion` gates, copy heuristics. Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic_finding` events.
 
+The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `design` pillar rows (`design-low-contrast`, `design-*`) as the canonical detection: ui-audit runs them at **runtime** (rendered, cross-role), while `/blitz:review --only design` runs them **statically** at author-time. Dedupe the pattern, not the tempo (the rule lives once in the registry; the two skills are two enforcement sites).
+
 ---
 
 ## Phase 6: REPORT

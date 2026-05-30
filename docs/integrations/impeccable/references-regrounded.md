@@ -110,6 +110,14 @@ Plus the orthogonal **register** model (`brand.md`/`product.md`) and **shape** (
 - **Register** (`brand.md` vs `product.md`) composes orthogonally with the adapter ([`normalized-model.md`](normalized-model.md) §3). Re-grounded unchanged: brand = design IS the product (committed/drenched palettes, fluid type, orchestrated motion, imagery-required, reflex-reject font/aesthetic lanes); product = design SERVES (restrained, fixed rem, state-motion, all-states components, familiar affordances). A `(brand, quasar)` or `(product, tailwind-md3)` profile loads both.
 - **Shape** (`shape.md` + the `border-radius` facet): radius scale + caps re-grounded as defer-to-stack-tokens (Layer 1 `raw-radius`).
 
+### 8.1 Aesthetic direction — the 13-tone palette (canonical home)
+
+Relocated from the retired `frontend-design-heuristics.md` §2/§7 (see [`migration-spec.md`](migration-spec.md) §2). The **tone** is the one-word aesthetic commitment made before any code (impeccable `brand.md` register; `ui-build` Phase 3.0.1 keeps an inline mirror). Pick exactly one; do not blend:
+
+`brutalist/minimal` · `maximalist` · `retro-futuristic` · `organic/natural` · `luxury/refined` · `playful/toy-like` · `editorial/magazine` · `art-deco` · `soft/pastel` · `industrial` · `dark/moody` · `lo-fi/zine` · `handcrafted/artisanal`
+
+**The NEVER list** (auto-fail aesthetic tells) is no longer prose — it is the **Layer 0 deterministic detector**: `overused-font` (Inter/Roboto), `ai-color-palette` (purple-on-white / default Tailwind palette), `gradient-text`, `border-accent-on-rounded` (all-rounded), `identical-card-grids` (cookie-cutter grid), `repeated-section-kickers` / `numbered-section-markers`, plus `agents/design-critic.md` dimension 2.5 (all-centered, shadcn-defaults, same-design-3×). Consumers (`design-extract` tone inference, `design-critic` aesthetic-fit, `ui-build` tone selection) read THIS section + the registry, not the retired heuristics file.
+
 ---
 
 ## 9. Setup flow (re-grounded, adapter-aware)

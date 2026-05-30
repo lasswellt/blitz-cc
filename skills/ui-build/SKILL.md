@@ -125,7 +125,7 @@ Commit to typography + color + motion principle:
 
 #### 3.0.2 Document choices to DESIGN.md
 
-Write or update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with the chosen tone, typography, palette, motion principle. This file is the durable handoff between aesthetic decisions and implementation; subsequent ui-build runs read it instead of rediscovering.
+Write or update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with the chosen tone, typography, palette, motion principle. This file is the durable handoff between aesthetic decisions and implementation; subsequent ui-build runs read it instead of rediscovering. The aesthetic NEVER-list + 13-tone palette are now the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md) + the Layer 0 detector); the inline aesthetic greps in the Implementation Gate below are superseded by `/blitz:review --only design` (adapter-resolved — e.g. a Quasar `bg-primary` is not a "hardcoded color").
 
 For brownfield projects without DESIGN.md, run `/blitz:design-extract` first to read the existing tokens and emit the file.
 

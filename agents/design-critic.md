@@ -41,7 +41,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 - Screenshots: `/tmp/ui-build-screenshots/*.png` (or paths the orchestrator passes)
 - Heuristic source (in priority order):
   1. Project's `DESIGN.md` if present in the repo root
-  2. `skills/_shared/frontend-design-heuristics.md` (paraphrase of Anthropic's frontend-design)
+  2. [`references-regrounded.md` §8.1](../docs/integrations/impeccable/references-regrounded.md) — the re-grounded design reference + 13-tone palette + NEVER-list mapping (replaces the retired heuristics paraphrase)
   3. `skills/ui-build/SKILL.md` Phase 3.0.1 inline tone list
 
 Read these BEFORE viewing screenshots. Internalize the project's chosen tone, typography pair, palette, and motion principle. Score against THE PROJECT'S choices, not generic taste.
