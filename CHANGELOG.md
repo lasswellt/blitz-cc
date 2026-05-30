@@ -21,6 +21,31 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.2.0] — 2026-05-30 · design-pillar reliability + precision hardening
+
+Post-release hardening of the v2.1.0 design pillar. A validation pass found the absorption architecturally sound but with concrete reliability/precision gaps in the deterministic lane: an undeclared impeccable dependency that silently no-ops, 42 browser-rendered rows mislabeled `deterministic`, and regex rules that false-positive on the token definitions they protect. Fixed across five epics (`docs/integrations/impeccable/improvements/`), each gated by a new permanent test suite.
+
+### Added
+- `scripts/design/preflight.sh` — design-lane availability gate. Resolves impeccable **from the target project** (not the plugin; it's a browser/puppeteer-class dep), emits a machine-readable `DESIGN_LANE_STATUS` line, and fails **loud** (`DESIGN_LANE_UNAVAILABLE` + `npm i -D impeccable@2.3.2` hint) instead of silent-green when the semantic lane can't run. Exit 0 — the deterministic regex lane is never blocked.
+- `scripts/detect-stack.sh` normalized `DESIGN_ADAPTER primary=… variant=… secondary=… incompat=… confidence=…` token — single parseable line consumers read instead of the prose block.
+- 8 native blitz **deterministic** static rules (key-free, browser-free grep approximations of the impeccable slop tells): `bounce-easing-static`, `thin-border-wide-shadow-static`, `repeating-stripes-static`, `gradient-text-static`, `extreme-negative-tracking-static`, `tiny-text-static`, `all-caps-body-static`, `overused-font-static`.
+- `check-registry.json` top-level `design.exclude` — token-definition exclusion set (file globs + content guards + line guards) applied to every deterministic design regex row before reporting; eliminates within-stack false positives on `@theme`/`tailwind.config`/`quasar.variables`/Vuetify-theme surfaces, comments, and SVG paint (measured 75%→0% FP on the raw-color-literal fixture).
+- `hooks/tests/design-pillar.bats` — 22-test permanent gate: adapter-detection matrix, layer-gating selection harness, reconciliation suppression, FP exclusions, lane integrity, and the preflight loud-failure contract.
+
+### Changed
+- **41 vendored impeccable rows re-laned `deterministic` → `semantic`.** They are browser-rendered (require the impeccable package + a rendered DOM) — the deterministic tag was false. The genuinely deterministic design lane is now the blitz-authored grep rows only (`{ semantic: 41, deterministic: 19 }`; zero deterministic rows shell out to `npx`).
+- **Gemini routing** — stripped impeccable's `--gpt --gemini` provider flags from all detector commands (the deterministic run is now key-free); the provider-gated tells route through `design-critic`'s gemini CLI, reusing the adversarial critic's `BLITZ_GEMINI_BIN`/`BLITZ_GEMINI_MODEL` env instead of a separate Gemini API key.
+- `/blitz:review --only design` + `/blitz:audit --pillar design` — run the preflight first, parse the `DESIGN_ADAPTER` token + inclusion map, apply `design.exclude` + FP-verify before reporting.
+- `scripts/maint/design/gen-design-rows.mjs` — dropped the silent `/tmp/impeccable-src` default (non-reproducible); the impeccable source path is now a required explicit arg.
+- `skills/setup` + `skills/bootstrap` recommend `npm i -D impeccable@2.3.2` to the **target project** (the plugin never installs it).
+
+### Removed
+- 5 near-duplicate color rules (`tw-arbitrary-color`, `md3-role-conformance`, `vuetify-hardcoded-color`, `quasar-inline-hex`, `quasar-color-outside-brand`) folded into a single consolidated `design-raw-color-literal` carrying per-adapter messaging (`perAdapter`) + the `*.html` coverage. Design rows 57→60 (−5 color, +8 static).
+
+### Fixed
+- `installer/install.sh` curl install one-liner + `installer/src/index.js` docs link — corrected stale `lasswellt/blitz` → `lasswellt/blitz-cc` (the one-liner 404'd as written; the live remote/npm/homepage were already `blitz-cc`).
+- `hooks/tests/_helpers.bash` — `fake_tool_input`/`fake_edit_input` were missing `tool_name`, so `block-test-deletion.sh` (which dispatches on it) fell through to allow instead of block — two long-standing test failures. Full `hooks/tests` suite now 57/57.
+
 ## [2.1.0] — 2026-05-30 · framework-adaptive design pillar (impeccable absorption)
 
 Absorbed `pbakaus/impeccable@2.3.2` (Apache-2.0) as a **framework-adaptive design pillar**: a normalized 7-facet design model + pluggable adapters (Tailwind v4 · Tailwind+MD3 · Vuetify v4/v3/v0 · Quasar 2) that detect the project's UI stack and adapt guidance + conformance to it. Specs in `docs/integrations/impeccable/`; epics E0→E6 (`SYNTHESIS.md`). The universal AI-slop detection runs on any stack; per-adapter conformance fires only for the detected stack (no cross-stack false positives).
