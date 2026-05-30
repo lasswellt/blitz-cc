@@ -19,8 +19,25 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [2.1.0] — 2026-05-30 · framework-adaptive design pillar (impeccable absorption)
+
+Absorbed `pbakaus/impeccable@2.3.2` (Apache-2.0) as a **framework-adaptive design pillar**: a normalized 7-facet design model + pluggable adapters (Tailwind v4 · Tailwind+MD3 · Vuetify v4/v3/v0 · Quasar 2) that detect the project's UI stack and adapt guidance + conformance to it. Specs in `docs/integrations/impeccable/`; epics E0→E6 (`SYNTHESIS.md`). The universal AI-slop detection runs on any stack; per-adapter conformance fires only for the detected stack (no cross-stack false positives).
+
+### Added
+- `docs/integrations/impeccable/` — 8 spec docs (normalized-model, adapter-detection, framework-profiles, detector-rebuild, references-regrounded, migration-spec, ATTRIBUTION, SYNTHESIS) + vendored Apache-2.0 `LICENSE-APACHE-2.0.txt`.
+- `check-registry.json` `design` pillar — **57 rows** (39 Layer-0 universal slop · 5 Layer-1 token-discipline · 13 Layer-2 adapter conformance), tagged by `layer`/`adapter` with per-adapter `reconciliation`; registry now 87 checks. Vendored from impeccable@2.3.2, re-grounded (Apache-2.0).
+- `scripts/detect-stack.sh` Adapter Stack selector — primary + variant (Vuetify v3/v4/v0, Tailwind v3/v4, tailwind-md3) + secondary + incompatibility; component framework wins over Tailwind.
+- `/blitz:review --only design` (precision) + `/blitz:audit --pillar design` (recall) + `design-critic` as the design pillar's semantic/vision lane. Deterministic detection shells out to `npx impeccable detect`.
+- `scripts/maint/design/gen-design-rows.mjs` — idempotent registry-row generator (re-runnable against an impeccable checkout).
+
 ### Changed
 - **Repository renamed** `lasswellt/cc-plugin-suite` → `lasswellt/blitz-cc` (matches the `blitz-cc` npm package). GitHub redirects the old URL; plugin-manifest `homepage`/`repository` + installer URLs updated to the new slug. The legacy `cc-plugin-suite@cc-plugin-suite` plugin-enablement key is retained for backward-compatibility.
+- `ui-build` / `design-extract` / `ui-audit` made adapter-aware; `design-extract` DESIGN.md template gains a `## Stack` section; `quality-matrix` + orchestrator §2 route the design pillar.
+
+### Removed
+- `skills/_shared/frontend-design-heuristics.md` (122 lines) — superseded by the design pillar (normalized-model + `references-regrounded.md` §8.1 + the Layer-0 detector). Coverage proven in `migration-spec.md` §2; consumers redirected; `CLAUDE.md` reference updated.
 
 ## [2.0.0] — 2026-05-29 · review/audit consolidation (sprints 18–20)
 

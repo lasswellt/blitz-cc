@@ -11,7 +11,7 @@
       "name": "blitz",
       "source": "./",
       "description": "Holistic-machine plugin for Vue/Nuxt + Firebase. 37 skills, 10 agents, 37 hook scripts across 16 events, 29 shared protocols. Orchestrator main-thread routing, 8-invariant quality ratchet, 7 anti-shortcut hooks, optional Cross-Model Critic.",
-      "version": "2.0.0"
+      "version": "2.1.0"
     }
   ]
 }
