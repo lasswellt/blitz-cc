@@ -366,7 +366,7 @@ ${ui.color.green}   ─── ${ui.sym.bolt} ───────────�
      ${ui.color.dim}/blitz:codebase-map${ui.color.reset} ${ui.sym.arrow} Map your codebase
 
    All 37 skills: ${ui.color.cyan}/blitz:<TAB>${ui.color.reset}
-   Docs: ${ui.color.dim}https://github.com/lasswellt/blitz${ui.color.reset}
+   Docs: ${ui.color.dim}https://github.com/lasswellt/blitz-cc${ui.color.reset}
 
 ${ui.color.green}   ──────────────────────────────── ${ui.sym.bolt} ───${ui.color.reset}
 `);

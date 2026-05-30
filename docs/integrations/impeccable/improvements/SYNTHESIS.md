@@ -81,7 +81,10 @@ Acceptance:
 
 ---
 
-## EPIC POLISH-1 — Consistency + maintenance (LOW)
+## EPIC POLISH-1 — Consistency + maintenance (LOW) — ✅ APPLIED
+
+Status: (1) version coherent — all impeccable refs `2.3.2`; preflight asserts the pin (the 2.3.1 sub-claim was dropped). (2) repo-rename — live config (`installer/install.sh` REPO_URL, `installer/package.json`, `.claude-plugin/plugin.json`) was already `blitz-cc`; fixed the 3 remaining live stale `lasswellt/blitz` refs (the curl install one-liner in `install.sh:7-8` — which 404'd as written — and the user-facing docs link in `installer/src/index.js:369`) → `blitz-cc`. The `cc-plugin-suite@cc-plugin-suite` keys in `installer/src/*.js` are intentional compat shims (left); dated `docs/_research`/`docs/audits` slug refs are historical (left). (3) offline key-free confirmed — `env -u OPENAI_API_KEY -u GEMINI_API_KEY` run of all 18 deterministic regex rows + preflight against a fixture with no impeccable: `deterministic=OK semantic=ABSENT (loud)`, 5 rows fired, **zero npx/network**.
+
 
 Stories:
 1. Confirm version coherence (all `2.3.2` — already coherent per findings §5; preflight asserts the pin). The 2.3.1 sub-claim was dropped.

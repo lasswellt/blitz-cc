@@ -4,8 +4,8 @@ set -euo pipefail
 # Blitz Claude Code Plugin — Installer Bootstrap
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz/main/installer/install.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz/main/installer/install.sh | bash -s -- --yes
+#   curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz-cc/main/installer/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz-cc/main/installer/install.sh | bash -s -- --yes
 #
 # If Node.js/npx is available, delegates to the full npx installer.
 # Otherwise, performs a minimal bash+python3 install.
