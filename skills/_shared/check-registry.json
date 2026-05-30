@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-check-registry/2.0",
   "generated": "2026-05-29",
-  "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check)",
+  "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check) + design pillar (47 rows: impeccable@2.3.2 + new L1/L2)",
   "supersedes": [
     "skills/_shared/shortcut-taxonomy.md \u00a71 (prose table)",
     "skills/_shared/shortcut-taxonomy.md \u00a73 (grep patterns)",
@@ -694,6 +694,1236 @@
       "escape_hatch": null,
       "source": "code-doctor F/V/P/G rule packs",
       "notes": "Stays invokable standalone; review embeds when framework detected."
+    },
+    {
+      "id": "design-side-tab",
+      "name": "Side-tab accent border",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "side-tab"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#side-tab (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Thick colored border on one side of a card \u2014 the most recognizable tell of AI-generated UI"
+    },
+    {
+      "id": "design-border-accent-on-rounded",
+      "name": "Border accent on rounded element",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "border-accent-on-rounded"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#border-accent-on-rounded (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Thick accent border on a rounded card \u2014 the border clashes with the rounded corners. Remov"
+    },
+    {
+      "id": "design-overused-font",
+      "name": "Overused font",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "overused-font"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#overused-font (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many s"
+    },
+    {
+      "id": "design-single-font",
+      "name": "Single font for everything",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "single-font"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#single-font (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Only one font family is used for the entire page. Pair a distinctive display font with a r"
+    },
+    {
+      "id": "design-flat-type-hierarchy",
+      "name": "Flat type hierarchy",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "flat-type-hierarchy"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#flat-type-hierarchy (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Font sizes are too close together \u2014 no clear visual hierarchy. Use fewer sizes with more c"
+    },
+    {
+      "id": "design-gradient-text",
+      "name": "Gradient text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "gradient-text"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Gradient text is decorative rather than meaningful \u2014 a common AI tell, especially on headi"
+    },
+    {
+      "id": "design-ai-color-palette",
+      "name": "AI color palette",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "ai-color-palette"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#ai-color-palette (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Purple/violet gradients and cyan-on-dark are the most recognizable tells of AI-generated U"
+    },
+    {
+      "id": "design-cream-palette",
+      "name": "Cream / beige palette",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "cream-palette"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cream-palette (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. A warm cream or beige page background has become the default \"tasteful\" AI surface, reache"
+    },
+    {
+      "id": "design-nested-cards",
+      "name": "Nested cards",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "nested-cards"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#nested-cards (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Cards inside cards create visual noise and excessive depth. Flatten the hierarchy \u2014 use sp"
+    },
+    {
+      "id": "design-monotonous-spacing",
+      "name": "Monotonous spacing",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "monotonous-spacing"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#monotonous-spacing (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. The same spacing value used everywhere \u2014 no rhythm, no variation. Use tight groupings for "
+    },
+    {
+      "id": "design-bounce-easing",
+      "name": "Bounce or elastic easing",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 1,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "bounce-easing"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": {
+        "relaxFor": [
+          "tailwind-md3",
+          "quasar"
+        ],
+        "cite": "M3 Expressive spring motion (emphasized-* overshoot curves); Quasar Animate.css bounceIn/Out vocabulary"
+      },
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#bounce-easing (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 1 slop rule. Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly \u2014 use exp"
+    },
+    {
+      "id": "design-dark-glow",
+      "name": "Dark mode with glowing accents",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "dark-glow"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#dark-glow (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Dark backgrounds with colored box-shadow glows are the default \"cool\" look of AI-generated"
+    },
+    {
+      "id": "design-icon-tile-stack",
+      "name": "Icon tile stacked above heading",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "icon-tile-stack"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#icon-tile-stack (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. A small rounded-square icon container above a heading is the universal AI feature-card tem"
+    },
+    {
+      "id": "design-italic-serif-display",
+      "name": "Italic serif display headline",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "italic-serif-display"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#italic-serif-display (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Oversized italic serif (Fraunces, Recoleta, Playfair, Newsreader-italic) as the primary he"
+    },
+    {
+      "id": "design-hero-eyebrow-chip",
+      "name": "Hero eyebrow / pill chip",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "hero-eyebrow-chip"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#hero-eyebrow-chip (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. A tiny uppercase letter-spaced label sitting immediately above an oversized hero headline "
+    },
+    {
+      "id": "design-repeated-section-kickers",
+      "name": "Repeated section kicker labels",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "repeated-section-kickers"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeated-section-kickers (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Repeating tiny uppercase tracked labels above section headings turns a brand page into AI "
+    },
+    {
+      "id": "design-numbered-section-markers",
+      "name": "Numbered section markers (01 / 02 / 03)",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "numbered-section-markers"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#numbered-section-markers (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Numbered display markers as section labels (01, 02, 03) are the AI editorial scaffold one "
+    },
+    {
+      "id": "design-em-dash-overuse",
+      "name": "Em-dash overuse",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "em-dash-overuse"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#em-dash-overuse (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. More than two em-dashes (\u2014 or --) in body copy is an AI cadence tell. Use commas, colons, "
+    },
+    {
+      "id": "design-marketing-buzzword",
+      "name": "Marketing buzzword",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "marketing-buzzword"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#marketing-buzzword (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Generic SaaS phrases (streamline / empower / supercharge / world-class / enterprise-grade "
+    },
+    {
+      "id": "design-aphoristic-cadence",
+      "name": "Aphoristic-cadence copy",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "aphoristic-cadence"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#aphoristic-cadence (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Three or more sections landing on a short rebuttal sentence (\"X. No Y.\" / \"X. Just Y.\") or"
+    },
+    {
+      "id": "design-oversized-h1",
+      "name": "Oversized hero headline",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "oversized-h1"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#oversized-h1 (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. A full-sentence headline set at display size ends up dominating the viewport, leaving no r"
+    },
+    {
+      "id": "design-extreme-negative-tracking",
+      "name": "Crushed letter spacing",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "extreme-negative-tracking"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#extreme-negative-tracking (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Letter-spacing pulled tighter than the point where characters keep their own shapes costs "
+    },
+    {
+      "id": "design-broken-image",
+      "name": "Broken or placeholder image",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "broken-image"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#broken-image (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. <img> tags with empty src, missing src, or placeholder values ship as broken-image boxes. "
+    },
+    {
+      "id": "design-gray-on-color",
+      "name": "Gray text on colored background",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "gray-on-color"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gray-on-color (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Gray text looks washed out on colored backgrounds. Use a darker shade of the background co"
+    },
+    {
+      "id": "design-low-contrast",
+      "name": "Low contrast text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P2",
+      "verdict_authority": "reject",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "low-contrast"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#low-contrast (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Inc"
+    },
+    {
+      "id": "design-layout-transition",
+      "name": "Layout property animation",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "layout-transition"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#layout-transition (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Animating width, height, padding, or margin causes layout thrash and janky performance. Us"
+    },
+    {
+      "id": "design-line-length",
+      "name": "Line length too long",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "line-length"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#line-length (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Text lines wider than ~80 characters are hard to read. The eye loses its place tracking ba"
+    },
+    {
+      "id": "design-cramped-padding",
+      "name": "Cramped padding",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "cramped-padding"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cramped-padding (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Text is too close to the edge of its container. Two shapes: (1) an element with its own te"
+    },
+    {
+      "id": "design-body-text-viewport-edge",
+      "name": "Body text touching viewport edge",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "body-text-viewport-edge"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#body-text-viewport-edge (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Body paragraphs render flush against the left or right viewport edge with no container pro"
+    },
+    {
+      "id": "design-tight-leading",
+      "name": "Tight line height",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "tight-leading"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tight-leading (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Line height below 1.3x the font size makes multi-line text hard to read. Use 1.5 to 1.7 fo"
+    },
+    {
+      "id": "design-skipped-heading",
+      "name": "Skipped heading level",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "skipped-heading"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#skipped-heading (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Heading levels should not skip (e.g. h1 then h3 with no h2). Screen readers use heading hi"
+    },
+    {
+      "id": "design-justified-text",
+      "name": "Justified text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "justified-text"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#justified-text (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Justified text without hyphenation creates uneven word spacing (\"rivers of white\"). Use te"
+    },
+    {
+      "id": "design-tiny-text",
+      "name": "Tiny body text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "tiny-text"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tiny-text (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Body text below 12px is hard to read, especially on high-DPI screens. Use at least 14px fo"
+    },
+    {
+      "id": "design-all-caps-body",
+      "name": "All-caps body text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "all-caps-body"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#all-caps-body (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Long passages in uppercase are hard to read. We recognize words by shape (ascenders and de"
+    },
+    {
+      "id": "design-wide-tracking",
+      "name": "Wide letter spacing on body text",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "wide-tracking"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#wide-tracking (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Letter spacing above 0.05em on body text disrupts natural character groupings and slows re"
+    },
+    {
+      "id": "design-text-overflow",
+      "name": "Content overflowing its container",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "text-overflow"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#text-overflow (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. Content renders wider than its container, spilling out or forcing a horizontal scrollbar. "
+    },
+    {
+      "id": "design-clipped-overflow-container",
+      "name": "Positioned child clipped by overflow container",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "clipped-overflow-container"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#clipped-overflow-container (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 quality rule. A clipping container (overflow hidden or clip) wrapping an absolutely-positioned child cut"
+    },
+    {
+      "id": "design-gpt-thin-border-wide-shadow",
+      "name": "Hairline border with wide shadow",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 1,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "gpt-thin-border-wide-shadow"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": {
+        "relaxFor": [
+          "tailwind",
+          "tailwind-md3",
+          "vuetify",
+          "quasar"
+        ],
+        "cite": "stack elevation systems: TW shadow-*, MD3 levels 0-5 + tonal surface-container-*, Vuetify elevation prop, Quasar shadow-1..24"
+      },
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gpt-thin-border-wide-shadow (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 1 slop rule. A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature"
+    },
+    {
+      "id": "design-repeating-stripes-gradient",
+      "name": "Repeating-gradient stripes",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "repeating-stripes-gradient"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeating-stripes-gradient (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Repeating-gradient stripes used as surface decoration are a recurring generated-UI signatu"
+    },
+    {
+      "id": "design-theater-slop-phrase",
+      "name": "Theater framing copy",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "theater-slop-phrase"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#theater-slop-phrase (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Dismissing something as \"theater\" is a recurring generated-copy tic. Say plainly what the "
+    },
+    {
+      "id": "design-image-hover-transform",
+      "name": "Image hover transform",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 0,
+      "adapter": "universal",
+      "base_confidence": 0.7,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "command",
+        "command": "npx impeccable detect --json --gpt --gemini ${TARGETS}",
+        "filter": "image-hover-transform"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "impeccable",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#image-hover-transform (re-grounded, framework-adaptive)",
+      "notes": "Vendored Layer 0 slop rule. Scaling or rotating an image on hover is a recurring generated-UI signature. Let imagery s"
+    },
+    {
+      "id": "design-raw-color-literal",
+      "name": "Raw color literal (use a role token)",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 1,
+      "adapter": "universal",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '#[0-9a-fA-F]{3,8}' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 1 token-discipline. Raw hex where a color-role token exists; adapter-resolved at firing. Never relaxed."
+    },
+    {
+      "id": "design-raw-radius",
+      "name": "Raw border-radius (use a shape token)",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 1,
+      "adapter": "universal",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 1 token-discipline. Arbitrary radius where a shape-scale token exists; defers to stack tokens."
+    },
+    {
+      "id": "design-raw-spacing",
+      "name": "Raw spacing literal (use a spacing token)",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 1,
+      "adapter": "universal",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '(margin|padding|gap):[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 1 token-discipline. Arbitrary spacing where a spacing-scale token exists."
+    },
+    {
+      "id": "design-tw-legacy-v3-class",
+      "name": "Tailwind v3 legacy class",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'bg-gradient-to-|bg-\\[--|@tailwind[[:space:]]+base' ${TARGETS} --include=*.vue --include=*.html --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Tailwind conformance. v3 classes renamed in v4 (bg-gradient-to-*->bg-linear-*, bg-[--var]->bg-(--var), @tailwind base->@import)."
+    },
+    {
+      "id": "design-tw-apply-overuse",
+      "name": "Tailwind @apply overuse",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnc '@apply' ${TARGETS} --include=*.css --include=*.vue"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Tailwind conformance. v4 discourages @apply for component abstractions; extract a component."
+    },
+    {
+      "id": "design-tw-arbitrary-color",
+      "name": "Tailwind arbitrary color value",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'bg-\\[#|text-\\[#|border-\\[#' ${TARGETS} --include=*.vue --include=*.html"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Tailwind conformance. Arbitrary [#hex] where a @theme --color-* token exists (advisory escape-hatch)."
     }
   ],
   "confidence_gate": {

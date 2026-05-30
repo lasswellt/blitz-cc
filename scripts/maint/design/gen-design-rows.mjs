@@ -1,0 +1,146 @@
+#!/usr/bin/env node
+/**
+ * E2 vendoring generator — emits Blitz `design`-pillar rows into
+ * skills/_shared/check-registry.json from impeccable's antipattern registry,
+ * plus the new Layer-1 raw-value family + Layer-2 Tailwind conformance rows.
+ *
+ * Engine decision (locked): the 41 impeccable-provided rows shell out to
+ *   npx impeccable detect --json --gpt --gemini ${TARGETS}
+ * (one run; review filters the JSON output by detection.filter == antipattern id).
+ * The 6 new rows use native regex commands.
+ *
+ * Provenance: vendored rows carry source: impeccable@2.3.2 ... (Apache-2.0).
+ * Idempotent: aborts if design-* rows already present.
+ *
+ * Usage: node scripts/maint/design/gen-design-rows.mjs [impeccable-antipatterns.mjs] [--write]
+ *   default impeccable path: /tmp/impeccable-src/cli/engine/registry/antipatterns.mjs
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const AP_PATH = process.argv[2] && !process.argv[2].startsWith('--')
+  ? process.argv[2]
+  : '/tmp/impeccable-src/cli/engine/registry/antipatterns.mjs';
+const WRITE = process.argv.includes('--write');
+const REGISTRY = path.resolve('skills/_shared/check-registry.json');
+
+const DETECT_CMD = 'npx impeccable detect --json --gpt --gemini ${TARGETS}';
+
+// The 2 rules whose ban reconciles per adapter (Layer 1). Every relaxFor carries a cite.
+const RECONCILED = {
+  'bounce-easing': {
+    relaxFor: ['tailwind-md3', 'quasar'],
+    cite: 'M3 Expressive spring motion (emphasized-* overshoot curves); Quasar Animate.css bounceIn/Out vocabulary',
+  },
+  'gpt-thin-border-wide-shadow': {
+    relaxFor: ['tailwind', 'tailwind-md3', 'vuetify', 'quasar'],
+    cite: 'stack elevation systems: TW shadow-*, MD3 levels 0-5 + tonal surface-container-*, Vuetify elevation prop, Quasar shadow-1..24',
+  },
+};
+// a11y-hard rules → P2 (deterministic P2 derives to reject). Everything else P3/advisory.
+const A11Y_REJECT = new Set(['low-contrast']);
+
+function deriveVA(lane, sev) {
+  return lane === 'deterministic' && ['P0', 'P1', 'P2'].includes(sev) ? 'reject' : 'advisory';
+}
+
+function vendorRow(ap) {
+  const layer = RECONCILED[ap.id] ? 1 : 0;
+  const severity = A11Y_REJECT.has(ap.id) ? 'P2' : 'P3';
+  return {
+    id: `design-${ap.id}`,
+    name: ap.name,
+    lane: 'deterministic',
+    pillar: 'design',
+    layer,
+    adapter: 'universal',
+    base_confidence: 0.7,
+    severity,
+    verdict_authority: deriveVA('deterministic', severity),
+    detection: { type: 'command', command: DETECT_CMD, filter: ap.id },
+    enforcement: ['skill:review --only design', 'skill:audit --pillar design'],
+    owner: 'impeccable',
+    consolidated_target: 'both',
+    escape_hatch: 'documented intentional brand system in DESIGN.md',
+    reconciliation: RECONCILED[ap.id] || null,
+    source: `impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#${ap.id} (re-grounded, framework-adaptive)`,
+    notes: `Vendored Layer ${layer} ${ap.category} rule. ${(ap.description || '').slice(0, 90)}`,
+  };
+}
+
+function newRow(id, layer, adapter, name, command, reconciliation, notes) {
+  return {
+    id, name, lane: 'deterministic', pillar: 'design', layer, adapter,
+    base_confidence: 0.65, severity: 'P3', verdict_authority: 'advisory',
+    detection: { type: 'regex', command },
+    enforcement: ['skill:review --only design', 'skill:audit --pillar design'],
+    owner: 'blitz', consolidated_target: 'both',
+    escape_hatch: 'documented intentional brand system in DESIGN.md',
+    reconciliation: reconciliation || null,
+    source: 'blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)',
+    notes,
+  };
+}
+
+const NEW_ROWS = [
+  newRow('design-raw-color-literal', 1, 'universal', 'Raw color literal (use a role token)',
+    "grep -rnE '#[0-9a-fA-F]{3,8}' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+    null, 'Layer 1 token-discipline. Raw hex where a color-role token exists; adapter-resolved at firing. Never relaxed.'),
+  newRow('design-raw-radius', 1, 'universal', 'Raw border-radius (use a shape token)',
+    "grep -rnE 'border-radius:[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+    null, 'Layer 1 token-discipline. Arbitrary radius where a shape-scale token exists; defers to stack tokens.'),
+  newRow('design-raw-spacing', 1, 'universal', 'Raw spacing literal (use a spacing token)',
+    "grep -rnE '(margin|padding|gap):[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+    null, 'Layer 1 token-discipline. Arbitrary spacing where a spacing-scale token exists.'),
+  newRow('design-tw-legacy-v3-class', 2, 'tailwind', 'Tailwind v3 legacy class',
+    "grep -rnE 'bg-gradient-to-|bg-\\[--|@tailwind[[:space:]]+base' ${TARGETS} --include=*.vue --include=*.html --include=*.css",
+    null, 'Layer 2 Tailwind conformance. v3 classes renamed in v4 (bg-gradient-to-*->bg-linear-*, bg-[--var]->bg-(--var), @tailwind base->@import).'),
+  newRow('design-tw-apply-overuse', 2, 'tailwind', 'Tailwind @apply overuse',
+    "grep -rnc '@apply' ${TARGETS} --include=*.css --include=*.vue",
+    null, 'Layer 2 Tailwind conformance. v4 discourages @apply for component abstractions; extract a component.'),
+  newRow('design-tw-arbitrary-color', 2, 'tailwind', 'Tailwind arbitrary color value',
+    "grep -rnE 'bg-\\[#|text-\\[#|border-\\[#' ${TARGETS} --include=*.vue --include=*.html",
+    null, 'Layer 2 Tailwind conformance. Arbitrary [#hex] where a @theme --color-* token exists (advisory escape-hatch).'),
+];
+
+// --- load impeccable antipatterns ---
+const mod = await import(pathToFileURL(AP_PATH).href);
+const ANTIPATTERNS = mod.ANTIPATTERNS || mod.default;
+if (!Array.isArray(ANTIPATTERNS)) {
+  console.error(`gen-design-rows: could not load ANTIPATTERNS from ${AP_PATH}`);
+  process.exit(1);
+}
+
+const rows = [...ANTIPATTERNS.map(vendorRow), ...NEW_ROWS];
+const byLayer = rows.reduce((a, r) => ((a[r.layer] = (a[r.layer] || 0) + 1), a), {});
+const byAdapter = rows.reduce((a, r) => ((a[r.adapter] = (a[r.adapter] || 0) + 1), a), {});
+console.error(`gen-design-rows: ${rows.length} design rows (by layer ${JSON.stringify(byLayer)}, by adapter ${JSON.stringify(byAdapter)})`);
+
+if (!WRITE) {
+  console.log(JSON.stringify(rows, null, 2));
+  console.error('(dry run — pass --write to splice into the registry)');
+  process.exit(0);
+}
+
+// --- textual splice into check-registry.json (clean, additions-only diff) ---
+let text = fs.readFileSync(REGISTRY, 'utf8');
+if (text.includes('"design-gradient-text"')) {
+  console.error('gen-design-rows: design-* rows already present — aborting (idempotent).');
+  process.exit(2);
+}
+const ANCHOR = '\n  ],\n  "confidence_gate"';
+if (!text.includes(ANCHOR)) {
+  console.error('gen-design-rows: could not find the checks-array close anchor.');
+  process.exit(1);
+}
+// each row pretty-printed at 4-space base indent; non-ASCII re-escaped to \uXXXX to match file style
+const rowsText = rows
+  .map((r) => '    ' + JSON.stringify(r, null, 2).split('\n').join('\n    '))
+  .join(',\n')
+  .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+text = text.replace(ANCHOR, `,\n${rowsText}${ANCHOR}`);
+// keep detector_count header honest
+text = text.replace(/("revalidated":\s*")([^"]*)(")/, `$1$2 + design pillar (${rows.length} rows: impeccable@2.3.2 + new L1/L2)$3`);
+fs.writeFileSync(REGISTRY, text);
+console.error(`gen-design-rows: spliced ${rows.length} rows into ${REGISTRY}`);

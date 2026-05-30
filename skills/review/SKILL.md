@@ -1,7 +1,7 @@
 ---
 name: review
 description: "Consolidated precision review gate (per-change). Runs both detection lanes from the shared check-registry (deterministic: tsc/lint/test/build + grep/git/import-graph; semantic: parallel reviewer agents single-pass), FP-verifies findings, gates by confidence (high band), and invokes the critic. Folds completeness-gate (--only completeness), integration-check (--only wiring), and code-doctor framework rules (--only framework); delegates the full 8-invariant gate to the sprint-review engine. Use for 'review sprint N', 'run quality gates', 'check completeness', 'check wiring', 'validate before shipping'."
-argument-hint: "[--sprint NNN] [--auto-fix] [--only completeness|wiring|framework|full] [--min-confidence high|low] [--dual] -- full run = sprint-review 8-invariant gate (parallel reviewers + critic); --only runs one folded concern; --dual adds cross-model critic for semantic findings"
+argument-hint: "[--sprint NNN] [--auto-fix] [--only completeness|wiring|framework|design|full] [--min-confidence high|low] [--dual] -- full run = sprint-review 8-invariant gate (parallel reviewers + critic); --only runs one folded concern; --dual adds cross-model critic for semantic findings"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
 disable-model-invocation: false
 model: opus
@@ -24,7 +24,7 @@ The per-change quality gate. **Precision-biased**: it runs constantly, so a fals
 
 - `--sprint NNN` — review the specified sprint (defaults to current / uncommitted changes).
 - `--auto-fix` — apply safe fixes (types, lint, imports) automatically.
-- `--only {completeness|wiring|framework|full}` — run one folded concern instead of the full gate (default `full`).
+- `--only {completeness|wiring|framework|design|full}` — run one folded concern instead of the full gate (default `full`).
 - `--min-confidence {high|low}` — advisory-finding gate band (default `high` ≥0.8). `reject`-authority findings always surface (bypass the gate). See [check-registry.md](/_shared/check-registry.md).
 - `--dual` — set `BLITZ_DUAL_CRITIC=1` (cross-model critic for semantic/security findings).
 
@@ -44,6 +44,7 @@ Per [check-registry.md](/_shared/check-registry.md), select `consolidated_target
 | `completeness` | `o2-anti-mock`, `o2-artifact-l1l2`, det-09/10 | completeness-gate (deleted; folded here) |
 | `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | integration-check (deleted; folded here) |
 | `framework` | `fw-firestore-vue-pinia` | `/blitz:code-doctor` rule scan (code-doctor keeps `--fix` standalone) |
+| `design` | `pillar == design` — Layer 0 (universal slop) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; reconciliation suppresses per stack | impeccable design pillar (new) |
 | `full` (default) | all review-targeted checks + the sprint-review 8-invariant gate | — |
 
 `--only` runs that concern's registry checks read-only and reports; `full` delegates to the sprint-review engine. sprint-dev Phase 3.5.0 calls `/blitz:review --only wiring`.
@@ -57,6 +58,7 @@ Per [check-registry.md](/_shared/check-registry.md), select `consolidated_target
 ## Execution
 
 - `--only X`: run X's registry checks (read `detection.command` per row), FP-verify, report ranked by `effective_confidence`. No engine dispatch.
+- `--only design`: resolve the adapter from `scripts/detect-stack.sh`; select `pillar == design` rows where `adapter ∈ {universal} ∪ {primary} ∪ secondary` and not suppressed by `reconciliation.relaxFor`. Vendored rows share ONE detector run — `npx impeccable detect --json --gpt --gemini <targets>` — and match hits by `detection.filter`; new L1/L2 rows run their `regex` command. Layer 0 always on; Layer 1/2 gated to the stack. See [detector-rebuild.md](../../docs/integrations/impeccable/detector-rebuild.md).
 - `full`: invoke the **sprint-review** skill (passing `--sprint`, `--auto-fix`, `--dual`). It runs the type-check/lint/test/build gates, parallel reviewer agents, auto-fix, and **Phase 3.6 the 8 carry-forward invariants** (incl. Invariant 7 = critic LGTM via [`agents/critic.md`](../../agents/critic.md)).
 
 ## Output
