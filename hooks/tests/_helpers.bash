@@ -11,13 +11,14 @@ export HOOKS_DIR
 # Fake a minimal Claude Code hook JSON payload for a Bash tool invocation.
 # fake_tool_input "git commit --no-verify -m 'x'"
 fake_tool_input() {
-  jq -n --arg cmd "$1" '{"tool_input":{"command":$cmd},"session_id":"test-session"}'
+  jq -n --arg cmd "$1" '{"tool_name":"Bash","tool_input":{"command":$cmd},"session_id":"test-session"}'
 }
 
-# Fake a PostToolUse Write|Edit hook payload.
-# fake_edit_input "/path/to/file.ts"
+# Fake a PostToolUse Write|Edit hook payload. Optional 2nd arg sets tool_name
+# (default Write).
+# fake_edit_input "/path/to/file.ts" [Write|Edit]
 fake_edit_input() {
-  jq -n --arg fp "$1" '{"tool_input":{"file_path":$fp},"session_id":"test-session"}'
+  jq -n --arg fp "$1" --arg tn "${2:-Write}" '{"tool_name":$tn,"tool_input":{"file_path":$fp},"session_id":"test-session"}'
 }
 
 # assert_blocks hook_script input_json
