@@ -69,11 +69,11 @@ function vendorRow(ap) {
   };
 }
 
-function newRow(id, layer, adapter, name, command, reconciliation, notes) {
+function newRow(id, layer, adapter, name, command, reconciliation, notes, severity = 'P3', dtype = 'regex') {
   return {
     id, name, lane: 'deterministic', pillar: 'design', layer, adapter,
-    base_confidence: 0.65, severity: 'P3', verdict_authority: 'advisory',
-    detection: { type: 'regex', command },
+    base_confidence: 0.65, severity, verdict_authority: deriveVA('deterministic', severity),
+    detection: { type: dtype, command },
     enforcement: ['skill:review --only design', 'skill:audit --pillar design'],
     owner: 'blitz', consolidated_target: 'both',
     escape_hatch: 'documented intentional brand system in DESIGN.md',
@@ -104,6 +104,42 @@ const NEW_ROWS = [
     null, 'Layer 2 Tailwind conformance. Arbitrary [#hex] where a @theme --color-* token exists (advisory escape-hatch).'),
 ];
 
+// E4 — Layer-2 conformance for the other 3 adapters + the quasar+tailwind incompatibility.
+// tailwind-md3 is a composite: it ALSO fires the tailwind L2 rows via firing-logic composition.
+const E4_ROWS = [
+  newRow('design-md3-role-conformance', 2, 'tailwind-md3', 'MD3 color-role conformance',
+    "grep -rnE '(color|background-color):[[:space:]]*(#|rgb)' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 MD3. Raw color where an --md-sys-color-* role (+ on-* pair) should be used.'),
+  newRow('design-md3-typescale-conformance', 2, 'tailwind-md3', 'MD3 type-scale conformance',
+    "grep -rnE 'font-size:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 MD3. Raw font-size where an --md-sys-typescale-<role> token (15-role scale) should be used.'),
+  newRow('design-md3-corner-conformance', 2, 'tailwind-md3', 'MD3 corner conformance',
+    "grep -rnE 'border-radius:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 MD3. Raw radius where an --md-sys-shape-corner-* token (none..full) should be used.'),
+  newRow('design-md3-elevation-conformance', 2, 'tailwind-md3', 'MD3 elevation conformance',
+    "grep -rnE 'box-shadow:' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 MD3. Raw shadow where --md-elevation-level (0-5) or tonal surface-container-* should be used.'),
+  newRow('design-vuetify-hardcoded-color', 2, 'vuetify', 'Vuetify hardcoded color in component',
+    "grep -rnE '(color|background-color):[[:space:]]*(#|rgb)' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 Vuetify. Hardcoded color in a component (use rgb(var(--v-theme-*))). The theme colors{} config is exempt.'),
+  newRow('design-vuetify-important-override', 2, 'vuetify', 'Vuetify !important override',
+    "grep -rnE '!important' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 Vuetify. Fighting component defaults with !important; use props / theme / SASS variables instead.'),
+  newRow('design-vuetify-v4-rgba-theme-var', 2, 'vuetify', 'Vuetify v4 rgba(var(--v-theme-*)) syntax',
+    "grep -rnE 'rgba\\([[:space:]]*var\\(--v-theme-' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 Vuetify v4. rgba(var(--v-theme-*),a) breaks for transparent theme colors in v4; use color-mix().'),
+  newRow('design-quasar-inline-hex', 2, 'quasar', 'Quasar inline hex outside variables.scss',
+    "grep -rnE 'style=.*#[0-9a-fA-F]{3,6}' ${TARGETS} --include=*.vue",
+    null, 'Layer 2 Quasar. Inline hex bypasses theming; use bg-primary / setCssVar (quasar.variables.scss is exempt).'),
+  newRow('design-quasar-color-outside-brand', 2, 'quasar', 'Quasar color outside brand palette',
+    "grep -rnE '(color|background-color):[[:space:]]*#' ${TARGETS} --include=*.vue --include=*.css",
+    null, 'Layer 2 Quasar. Raw color outside the 8 brand vars + palette vocabulary; use $primary-family / bg-*/text-*.'),
+  newRow('design-quasar-tailwind-coexist', 2, 'quasar', 'Quasar + Tailwind incompatibility',
+    'scripts/detect-stack.sh | grep -q "Adapter conflict: quasar+tailwind"',
+    null, 'Layer 2 Quasar. Build conflict: class collisions + unlayered-CSS specificity war; Quasar overrides Tailwind on <q-*>.',
+    'P1', 'command'),
+];
+
 // --- load impeccable antipatterns ---
 const mod = await import(pathToFileURL(AP_PATH).href);
 const ANTIPATTERNS = mod.ANTIPATTERNS || mod.default;
@@ -112,7 +148,7 @@ if (!Array.isArray(ANTIPATTERNS)) {
   process.exit(1);
 }
 
-const rows = [...ANTIPATTERNS.map(vendorRow), ...NEW_ROWS];
+const rows = [...ANTIPATTERNS.map(vendorRow), ...NEW_ROWS, ...E4_ROWS];
 const byLayer = rows.reduce((a, r) => ((a[r.layer] = (a[r.layer] || 0) + 1), a), {});
 const byAdapter = rows.reduce((a, r) => ((a[r.adapter] = (a[r.adapter] || 0) + 1), a), {});
 console.error(`gen-design-rows: ${rows.length} design rows (by layer ${JSON.stringify(byLayer)}, by adapter ${JSON.stringify(byAdapter)})`);
@@ -125,22 +161,28 @@ if (!WRITE) {
 
 // --- textual splice into check-registry.json (clean, additions-only diff) ---
 let text = fs.readFileSync(REGISTRY, 'utf8');
-if (text.includes('"design-gradient-text"')) {
-  console.error('gen-design-rows: design-* rows already present — aborting (idempotent).');
+// incremental idempotency: add only rows not already in the registry (so re-runs add new adapters).
+const existing = new Set([...text.matchAll(/"id":\s*"(design-[^"]+)"/g)].map((m) => m[1]));
+const missing = rows.filter((r) => !existing.has(r.id));
+if (!missing.length) {
+  console.error(`gen-design-rows: all ${rows.length} design rows already present — nothing to add (idempotent).`);
   process.exit(2);
 }
+console.error(`gen-design-rows: ${existing.size} existing design rows; adding ${missing.length} new.`);
 const ANCHOR = '\n  ],\n  "confidence_gate"';
 if (!text.includes(ANCHOR)) {
   console.error('gen-design-rows: could not find the checks-array close anchor.');
   process.exit(1);
 }
 // each row pretty-printed at 4-space base indent; non-ASCII re-escaped to \uXXXX to match file style
-const rowsText = rows
+const rowsText = missing
   .map((r) => '    ' + JSON.stringify(r, null, 2).split('\n').join('\n    '))
   .join(',\n')
   .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
 text = text.replace(ANCHOR, `,\n${rowsText}${ANCHOR}`);
-// keep detector_count header honest
-text = text.replace(/("revalidated":\s*")([^"]*)(")/, `$1$2 + design pillar (${rows.length} rows: impeccable@2.3.2 + new L1/L2)$3`);
+// keep detector_count header honest (idempotent — annotate once)
+if (!text.includes('design pillar')) {
+  text = text.replace(/("revalidated":\s*")([^"]*)(")/, `$1$2 + design pillar (impeccable@2.3.2 + new L1/L2)$3`);
+}
 fs.writeFileSync(REGISTRY, text);
-console.error(`gen-design-rows: spliced ${rows.length} rows into ${REGISTRY}`);
+console.error(`gen-design-rows: spliced ${missing.length} rows into ${REGISTRY}`);

@@ -1924,6 +1924,256 @@
       "reconciliation": null,
       "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
       "notes": "Layer 2 Tailwind conformance. Arbitrary [#hex] where a @theme --color-* token exists (advisory escape-hatch)."
+    },
+    {
+      "id": "design-md3-role-conformance",
+      "name": "MD3 color-role conformance",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind-md3",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '(color|background-color):[[:space:]]*(#|rgb)' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 MD3. Raw color where an --md-sys-color-* role (+ on-* pair) should be used."
+    },
+    {
+      "id": "design-md3-typescale-conformance",
+      "name": "MD3 type-scale conformance",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind-md3",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'font-size:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 MD3. Raw font-size where an --md-sys-typescale-<role> token (15-role scale) should be used."
+    },
+    {
+      "id": "design-md3-corner-conformance",
+      "name": "MD3 corner conformance",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind-md3",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 MD3. Raw radius where an --md-sys-shape-corner-* token (none..full) should be used."
+    },
+    {
+      "id": "design-md3-elevation-conformance",
+      "name": "MD3 elevation conformance",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "tailwind-md3",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'box-shadow:' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 MD3. Raw shadow where --md-elevation-level (0-5) or tonal surface-container-* should be used."
+    },
+    {
+      "id": "design-vuetify-hardcoded-color",
+      "name": "Vuetify hardcoded color in component",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "vuetify",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '(color|background-color):[[:space:]]*(#|rgb)' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Vuetify. Hardcoded color in a component (use rgb(var(--v-theme-*))). The theme colors{} config is exempt."
+    },
+    {
+      "id": "design-vuetify-important-override",
+      "name": "Vuetify !important override",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "vuetify",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '!important' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Vuetify. Fighting component defaults with !important; use props / theme / SASS variables instead."
+    },
+    {
+      "id": "design-vuetify-v4-rgba-theme-var",
+      "name": "Vuetify v4 rgba(var(--v-theme-*)) syntax",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "vuetify",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'rgba\\([[:space:]]*var\\(--v-theme-' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Vuetify v4. rgba(var(--v-theme-*),a) breaks for transparent theme colors in v4; use color-mix()."
+    },
+    {
+      "id": "design-quasar-inline-hex",
+      "name": "Quasar inline hex outside variables.scss",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "quasar",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE 'style=.*#[0-9a-fA-F]{3,6}' ${TARGETS} --include=*.vue"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Quasar. Inline hex bypasses theming; use bg-primary / setCssVar (quasar.variables.scss is exempt)."
+    },
+    {
+      "id": "design-quasar-color-outside-brand",
+      "name": "Quasar color outside brand palette",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "quasar",
+      "base_confidence": 0.65,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "regex",
+        "command": "grep -rnE '(color|background-color):[[:space:]]*#' ${TARGETS} --include=*.vue --include=*.css"
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Quasar. Raw color outside the 8 brand vars + palette vocabulary; use $primary-family / bg-*/text-*."
+    },
+    {
+      "id": "design-quasar-tailwind-coexist",
+      "name": "Quasar + Tailwind incompatibility",
+      "lane": "deterministic",
+      "pillar": "design",
+      "layer": 2,
+      "adapter": "quasar",
+      "base_confidence": 0.65,
+      "severity": "P1",
+      "verdict_authority": "reject",
+      "detection": {
+        "type": "command",
+        "command": "scripts/detect-stack.sh | grep -q \"Adapter conflict: quasar+tailwind\""
+      },
+      "enforcement": [
+        "skill:review --only design",
+        "skill:audit --pillar design"
+      ],
+      "owner": "blitz",
+      "consolidated_target": "both",
+      "escape_hatch": "documented intentional brand system in DESIGN.md",
+      "reconciliation": null,
+      "source": "blitz framework-adaptive design pillar (new authorship; inspired by impeccable conformanceRules)",
+      "notes": "Layer 2 Quasar. Build conflict: class collisions + unlayered-CSS specificity war; Quasar overrides Tailwind on <q-*>."
     }
   ],
   "confidence_gate": {

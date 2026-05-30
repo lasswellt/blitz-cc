@@ -104,14 +104,14 @@ A design rule fires iff:
 ```
 fires(rule, stack) :=
    rule.lane == "deterministic"
-   AND rule.adapter ∈ ( {"universal"} ∪ {stack.primary} ∪ stack.secondary )
+   AND rule.adapter ∈ ( {"universal"} ∪ {stack.primary} ∪ stack.secondary ∪ (stack.primary=="tailwind-md3" ? {"tailwind"} : {}) )
    AND NOT ( rule.reconciliation AND stack.primary ∈ rule.reconciliation.relaxFor )
    AND ( rule.adapter != "tailwind" OR "quasar" ∉ stack.incompatibilities-as-primary )   // no TW color rules under Quasar
 ```
 
 - **Layer 0** (`adapter: universal`, `reconciliation: null`) → always fires. No false positives across stacks because they're stack-independent by construction.
 - **Layer 1 reconciled** → fires unless the detected primary is in `relaxFor`. `bounce-easing` fires on Tailwind/Vuetify, suppressed on MD3/Quasar. Every `relaxFor` carries a `cite` (the prescription) per the [`normalized-model.md`](normalized-model.md) §4 contract — a bare relax is rejected at registry-lint.
-- **Layer 2** → fires only when its `adapter` matches the detected stack. A Quasar rule never fires on a Tailwind project. The Vuetify-secondary case suppresses tailwind **color** rules (Vuetify owns color) but keeps tailwind layout/legacy rules.
+- **Layer 2** → fires only when its `adapter` matches the detected stack. A Quasar rule never fires on a Tailwind project. The Vuetify-secondary case suppresses tailwind **color** rules (Vuetify owns color) but keeps tailwind layout/legacy rules. **Composition:** `tailwind-md3` ⊃ `tailwind` — an MD3 project's effective adapter set includes `tailwind`, so it fires the Tailwind Layer 2 rules **plus** the MD3-specific ones.
 
 **Verdict authority** (derived, per existing registry contract): deterministic AND severity ∈ {P0,P1,P2} → `reject`; else `advisory`. Design is **advisory by default** (aesthetic judgment shouldn't hard-block a merge) with two reject-eligible classes: **a11y-contrast** (`low-contrast`, `gray-on-color` → P2) and **build-breaking** (`quasar-tailwind-coexist` → P1). This matches the registry's verdict-flip asymmetry: facts (a11y failure, build conflict) can flip a gate; taste (gradient text) only annotates. Because the derivation makes any deterministic P2 a `reject`, advisory design rules are pinned at **P3**; P2/P1 are reserved for the two reject-eligible classes. Enforced by `hooks/scripts/check-registry-validate.sh`.
 
