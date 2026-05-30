@@ -112,6 +112,8 @@ Project Setup:
   Confirm choices? [y/n]
 ```
 
+When `UI != None`, add `impeccable@2.3.2` to the scaffolded project's `devDependencies` so the design pillar's semantic lane (`/blitz:review --only design`, `/blitz:audit --pillar design`) is available in **this** project. It is a target-project dependency, never a Blitz plugin dependency; without it the deterministic regex rows still run but the semantic lane reports `DESIGN_LANE_UNAVAILABLE`. (Resolve to registry latest per [/_shared/package-install-policy.md](/_shared/package-install-policy.md) if `2.3.2` is superseded.)
+
 ---
 
 ## Phase 2: DESIGN — Plan Scaffold

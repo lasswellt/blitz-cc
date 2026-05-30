@@ -4,16 +4,25 @@
  * skills/_shared/check-registry.json from impeccable's antipattern registry,
  * plus the new Layer-1 raw-value family + Layer-2 Tailwind conformance rows.
  *
- * Engine decision (locked): the 41 impeccable-provided rows shell out to
- *   npx impeccable detect --json --gpt --gemini ${TARGETS}
+ * Engine decision: the 41 impeccable-provided rows shell out to a KEY-FREE
+ *   npx impeccable detect --json ${TARGETS}
  * (one run; review filters the JSON output by detection.filter == antipattern id).
+ * The provider-gated tells (impeccable --gpt/--gemini) are NOT requested from
+ * impeccable here — those are evaluated in the design-critic semantic lane via
+ * the gemini CLI + the critic's BLITZ_GEMINI_BIN/BLITZ_GEMINI_MODEL env, so the
+ * deterministic run needs no OpenAI/Gemini API key.
  * The 6 new rows use native regex commands.
  *
  * Provenance: vendored rows carry source: impeccable@2.3.2 ... (Apache-2.0).
  * Idempotent: aborts if design-* rows already present.
  *
- * Usage: node scripts/maint/design/gen-design-rows.mjs [impeccable-antipatterns.mjs] [--write]
- *   default impeccable path: /tmp/impeccable-src/cli/engine/registry/antipatterns.mjs
+ * Maintenance-only: regenerates the registry from an upstream impeccable
+ * checkout. NOT a review-time path. The impeccable source path MUST be passed
+ * explicitly — there is no implicit /tmp default (DEP-1: a silent /tmp default
+ * made CI/contributor regen non-reproducible).
+ *
+ * Usage: node scripts/maint/design/gen-design-rows.mjs <impeccable-antipatterns.mjs> [--write]
+ *   e.g. node scripts/maint/design/gen-design-rows.mjs ~/src/impeccable/cli/engine/registry/antipatterns.mjs --write
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,11 +30,19 @@ import { pathToFileURL } from 'node:url';
 
 const AP_PATH = process.argv[2] && !process.argv[2].startsWith('--')
   ? process.argv[2]
-  : '/tmp/impeccable-src/cli/engine/registry/antipatterns.mjs';
+  : null;
+if (!AP_PATH) {
+  console.error(
+    'error: impeccable antipatterns source path is required.\n' +
+    '  usage: node scripts/maint/design/gen-design-rows.mjs <path-to/cli/engine/registry/antipatterns.mjs> [--write]\n' +
+    '  (maintenance-only regen; no /tmp default — pass an explicit upstream checkout path)'
+  );
+  process.exit(2);
+}
 const WRITE = process.argv.includes('--write');
 const REGISTRY = path.resolve('skills/_shared/check-registry.json');
 
-const DETECT_CMD = 'npx impeccable detect --json --gpt --gemini ${TARGETS}';
+const DETECT_CMD = 'npx impeccable detect --json ${TARGETS}';
 
 // The 2 rules whose ban reconciles per adapter (Layer 1). Every relaxFor carries a cite.
 const RECONCILED = {

@@ -136,6 +136,8 @@ Read `package.json` `scripts` and verify:
 - `build` script exists → LOW if absent
 - `lint` script exists → LOW if absent
 
+**Design pillar dependency.** If a UI stack is detected (Tailwind/Vuetify/Quasar/MD3 via `detect-stack.sh`) and `impeccable` is NOT in the project's `devDependencies`, record a LOW finding: "design pillar's semantic lane (`/blitz:review --only design`, `/blitz:audit --pillar design`) needs `impeccable` in **this** project — run `npm i -D impeccable@2.3.2`. Without it the deterministic regex rows still run; the semantic (rendered) lane reports `DESIGN_LANE_UNAVAILABLE`." impeccable is a target-project dependency, never a Blitz plugin dependency.
+
 ---
 
 ## Phase 5: REPORT — Present Findings

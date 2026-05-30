@@ -107,3 +107,18 @@ Verdict thresholds:
 - **Be brutal on dimension 2.5.** A "competent but generic" output should score 5–6 on Creative Distinction, not 8. If it could come from any AI tool circa 2025, score it accordingly.
 - **No prescription.** You do not propose specific colors, fonts, or layouts. You report what's wrong; the builder decides how to fix.
 - **No advice fluff.** "Consider trying a more bold color palette" — no. "Aesthetic Fit 4: tone declared 'playful' but rendered output is grayscale corporate." — yes.
+
+## 5. Provider-gated tells — gemini CLI, not impeccable's provider
+
+The four impeccable provider-gated tells (`gpt-thin-border-wide-shadow`, `repeating-stripes-gradient`, `theater-slop-phrase`, `image-hover-transform`) are **not** requested from impeccable's `--gpt`/`--gemini` providers (which would need separate OpenAI/Gemini API keys). The deterministic `npx impeccable detect --json` run is key-free; these LLM-judgment tells belong to this semantic lane.
+
+When a cross-model second opinion on these tells is wanted, reuse the **critic's** gemini path — the same `@google/gemini-cli` binary and env the adversarial critic uses, not a new Gemini dependency:
+
+```sh
+# Same env as agents/critic.md §5 (CMC). No new key/config.
+GEMINI_BIN="${BLITZ_GEMINI_BIN:-gemini}"
+GEMINI_MODEL="${BLITZ_GEMINI_MODEL:-gemini-2.5-pro}"
+# hooks/scripts/critic-gemini.sh --mode design wraps this for the design lane.
+```
+
+If `$GEMINI_BIN` is unavailable, skip the gemini provider tells and note it in `coverage_boundary` — never silently pass them. Tunable via `BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS` (identical to the critic). Requires `@google/gemini-cli` installed + authenticated.
