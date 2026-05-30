@@ -87,10 +87,10 @@ Design rules are `check-registry.json` rows under a **new `pillar: "design"`**, 
 | `design-low-contrast` | 0 | universal | P2 / **reject** (a11y) | — |
 | `design-bounce-easing` | 1 | universal | P3 / advisory | `relaxFor: [tailwind-md3, quasar]`, cite M3 Expressive spring / Animate.css |
 | `design-ghost-card` | 1 | universal | P3 / advisory | `relaxFor: [tailwind, tailwind-md3, vuetify, quasar]`, cite elevation systems |
-| `design-raw-color-literal` | 1 | universal | P2 / advisory | resolved per adapter; never relaxed |
-| `design-tw-legacy-v3-class` | 2 | tailwind | P2 / advisory | — |
-| `design-md3-role-conformance` | 2 | tailwind-md3 | P2 / advisory | — |
-| `design-vuetify-important-override` | 2 | vuetify | P2 / advisory | — |
+| `design-raw-color-literal` | 1 | universal | P3 / advisory | resolved per adapter; never relaxed |
+| `design-tw-legacy-v3-class` | 2 | tailwind | P3 / advisory | — |
+| `design-md3-role-conformance` | 2 | tailwind-md3 | P3 / advisory | — |
+| `design-vuetify-important-override` | 2 | vuetify | P3 / advisory | — |
 | `design-quasar-tailwind-coexist` | 2 | quasar | P1 / **reject** (build conflict) | — |
 
 `detector_count` in the registry header gains a `design` block: `{ catalogued: 41 (vendored L0/L1) + N (new L2), by_layer: {0:39, 1:4, 2:N}, by_adapter: {...} }`.
@@ -113,7 +113,7 @@ fires(rule, stack) :=
 - **Layer 1 reconciled** → fires unless the detected primary is in `relaxFor`. `bounce-easing` fires on Tailwind/Vuetify, suppressed on MD3/Quasar. Every `relaxFor` carries a `cite` (the prescription) per the [`normalized-model.md`](normalized-model.md) §4 contract — a bare relax is rejected at registry-lint.
 - **Layer 2** → fires only when its `adapter` matches the detected stack. A Quasar rule never fires on a Tailwind project. The Vuetify-secondary case suppresses tailwind **color** rules (Vuetify owns color) but keeps tailwind layout/legacy rules.
 
-**Verdict authority** (derived, per existing registry contract): deterministic AND severity ∈ {P0,P1,P2} → `reject`; else `advisory`. Design is **advisory by default** (aesthetic judgment shouldn't hard-block a merge) with two reject-eligible classes: **a11y-contrast** (`low-contrast`, `gray-on-color` → P2) and **build-breaking** (`quasar-tailwind-coexist` → P1). This matches the registry's verdict-flip asymmetry: facts (a11y failure, build conflict) can flip a gate; taste (gradient text) only annotates.
+**Verdict authority** (derived, per existing registry contract): deterministic AND severity ∈ {P0,P1,P2} → `reject`; else `advisory`. Design is **advisory by default** (aesthetic judgment shouldn't hard-block a merge) with two reject-eligible classes: **a11y-contrast** (`low-contrast`, `gray-on-color` → P2) and **build-breaking** (`quasar-tailwind-coexist` → P1). This matches the registry's verdict-flip asymmetry: facts (a11y failure, build conflict) can flip a gate; taste (gradient text) only annotates. Because the derivation makes any deterministic P2 a `reject`, advisory design rules are pinned at **P3**; P2/P1 are reserved for the two reject-eligible classes. Enforced by `hooks/scripts/check-registry-validate.sh`.
 
 ---
 

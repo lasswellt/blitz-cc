@@ -48,6 +48,46 @@ if [ -f "package.json" ]; then
   fi
 fi
 
+# Adapter Stack (design pillar) — precedence-correct selector.
+# Spec: docs/integrations/impeccable/adapter-detection.md. Unlike the UI Framework
+# block above, a component framework (Quasar/Vuetify) wins over Tailwind, and
+# Quasar+Tailwind is flagged as an incompatibility rather than mislabeled Tailwind.
+if [ -f "package.json" ]; then
+  PKG="$(cat package.json)"
+  _has() { printf '%s' "$PKG" | grep -q "\"$1\""; }
+  _ver() { printf '%s' "$PKG" | tr ',' '\n' | grep -E "\"$1\"[[:space:]]*:" | grep -oE '[0-9]+' | head -1; }
+  MD3=""
+  if _has "@material/web" || _has "@material/material-color-utilities" || _has "material-color-utilities"; then
+    MD3="dep"
+  elif grep -rqsE -- "--md-sys-(color|typescale|shape)" src 2>/dev/null; then
+    MD3="token"
+  fi
+  PRIMARY="none"; VARIANT=""; SECONDARY=""; INCOMPAT=""; CONF="low"
+  if _has "quasar"; then
+    PRIMARY="quasar"; CONF="medium"
+    { [ -f "quasar.config.js" ] || [ -f "quasar.config.ts" ] || [ -f "src/css/quasar.variables.scss" ]; } && CONF="high"
+    _has "tailwindcss" && INCOMPAT="quasar+tailwind"
+  elif _has "vuetify" || _has "@vuetify/v0"; then
+    PRIMARY="vuetify"; CONF="medium"
+    if _has "@vuetify/v0"; then VARIANT="v0"
+    else case "$(_ver vuetify)" in 4) VARIANT="v4";; 3) VARIANT="v3";; *) VARIANT="v?";; esac; fi
+    grep -rqs "createVuetify" src 2>/dev/null && CONF="high"
+    _has "tailwindcss" && SECONDARY="tailwind (layout only; color owned by Vuetify)"
+  elif _has "tailwindcss" && [ -n "$MD3" ]; then
+    PRIMARY="tailwind-md3"; CONF="high"
+    case "$(_ver tailwindcss)" in 4) VARIANT="tw4";; 3) VARIANT="tw3";; esac
+  elif _has "tailwindcss"; then
+    PRIMARY="tailwind"; CONF="medium"
+    case "$(_ver tailwindcss)" in 4) VARIANT="v4";; 3) VARIANT="v3";; esac
+    grep -rqsE '@import +"tailwindcss"|@theme' src 2>/dev/null && CONF="high"
+  fi
+  echo "- **Adapter (primary)**: ${PRIMARY}${VARIANT:+ ($VARIANT)}"
+  [ -n "$SECONDARY" ] && echo "- **Adapter (secondary)**: $SECONDARY"
+  [ -n "$INCOMPAT" ] && echo "- **Adapter conflict**: $INCOMPAT — class collisions + unlayered-CSS specificity war; do NOT recommend Tailwind theming on Quasar"
+  echo "- **Adapter confidence**: $CONF"
+  echo "- **Design lanes**: Layer 0 universal slop always on; Layer 1/2 conformance gated to the primary${SECONDARY:+ + secondary}"
+fi
+
 # Firebase
 if [ -f "firebase.json" ]; then
   echo "- **Backend**: Firebase/GCP"

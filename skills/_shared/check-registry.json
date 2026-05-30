@@ -31,7 +31,7 @@
   "field_contract": {
     "id": "stable kebab/numeric key; deterministic detectors keep their taxonomy number as `det-NN`",
     "lane": "deterministic | semantic \u2014 the orthogonal-detection axis (Pillar A). deterministic = grep/AST/tsc/git/import-graph/npm-audit, zero-FP, no LLM. semantic = LLM agent reasoning about behavior/intent.",
-    "pillar": "architecture | performance | security | maintainability | robustness | shortcut | wiring | completeness | framework",
+    "pillar": "architecture | performance | security | maintainability | robustness | shortcut | wiring | completeness | framework | design",
     "base_confidence": "0.0-1.0 inverse-FP prior. deterministic ~0.6-1.0; single-pass semantic ~0.5; aggregated semantic (>=2 agreers) ~0.85.",
     "severity": "P0 | P1 | P2 | P3 \u2014 enforcement layer / ratchet-tracking importance. NOTE: severity != verdict authority. A semantic P2 (sem-sec) is still advisory because semantic findings never flip a verdict.",
     "verdict_authority": "reject | advisory. Derived: (lane==deterministic AND severity in {P0,P1,P2}) -> reject; else advisory. reject findings may flip a critic/gate verdict AND bypass the min-confidence gate (facts are not confidence-triaged). advisory findings only append to issues[] and are subject to min-confidence suppression.",
@@ -41,7 +41,10 @@
     "consolidated_target": "review | audit | both | orthogonal",
     "escape_hatch": "documented FP override (null if none)",
     "source": "primary-source citation for the failure class",
-    "notes": "design notes incl. Opus-4.8-honesty sensitivity and aggregation requirement"
+    "notes": "design notes incl. Opus-4.8-honesty sensitivity and aggregation requirement",
+    "layer": "design pillar only: 0 universal-slop (framework-independent, always on) | 1 token-discipline (normalized, adapter-resolved) | 2 adapter-conformance (fires only for the detected stack). See docs/integrations/impeccable/detector-rebuild.md.",
+    "adapter": "design pillar only: universal | tailwind | tailwind-md3 | vuetify | quasar. Selected by the stack signal from scripts/detect-stack.sh. universal = Layer 0 (all stacks); others gate Layer 1/2.",
+    "reconciliation": "design pillar only (Layer 1): {relaxFor: [<adapter ids>], cite: <prescription>} or null. Rule suppressed when stack.primary in relaxFor; every relaxFor MUST carry a cite (the stack feature justifying it). e.g. bounce-easing relaxFor [tailwind-md3, quasar]."
   },
   "checks": [
     {
