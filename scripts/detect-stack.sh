@@ -62,7 +62,7 @@ if [ -f "package.json" ]; then
   elif grep -rqsE -- "--md-sys-(color|typescale|shape)" src 2>/dev/null; then
     MD3="token"
   fi
-  PRIMARY="none"; VARIANT=""; SECONDARY=""; INCOMPAT=""; CONF="low"
+  PRIMARY="none"; VARIANT=""; SECONDARY=""; SECONDARY_ID="none"; INCOMPAT=""; CONF="low"
   if _has "quasar"; then
     PRIMARY="quasar"; CONF="medium"
     { [ -f "quasar.config.js" ] || [ -f "quasar.config.ts" ] || [ -f "src/css/quasar.variables.scss" ]; } && CONF="high"
@@ -72,7 +72,7 @@ if [ -f "package.json" ]; then
     if _has "@vuetify/v0"; then VARIANT="v0"
     else case "$(_ver vuetify)" in 4) VARIANT="v4";; 3) VARIANT="v3";; *) VARIANT="v?";; esac; fi
     grep -rqs "createVuetify" src 2>/dev/null && CONF="high"
-    _has "tailwindcss" && SECONDARY="tailwind (layout only; color owned by Vuetify)"
+    _has "tailwindcss" && { SECONDARY="tailwind (layout only; color owned by Vuetify)"; SECONDARY_ID="tailwind"; }
   elif _has "tailwindcss" && [ -n "$MD3" ]; then
     PRIMARY="tailwind-md3"; CONF="high"
     case "$(_ver tailwindcss)" in 4) VARIANT="tw4";; 3) VARIANT="tw3";; esac
@@ -85,6 +85,11 @@ if [ -f "package.json" ]; then
   [ -n "$SECONDARY" ] && echo "- **Adapter (secondary)**: $SECONDARY"
   [ -n "$INCOMPAT" ] && echo "- **Adapter conflict**: $INCOMPAT — class collisions + unlayered-CSS specificity war; do NOT recommend Tailwind theming on Quasar"
   echo "- **Adapter confidence**: $CONF"
+  # Normalized machine token (stable, single-line, parseable). variant codes
+  # collapsed to vN/none; consumers (review --only design, audit --pillar design,
+  # hooks/tests/design-pillar.bats) parse THIS line, not the prose above.
+  TOK_VARIANT="${VARIANT:-none}"; TOK_VARIANT="${TOK_VARIANT/tw/v}"   # tw4->v4, tw3->v3
+  echo "- **Design Adapter (token)**: \`DESIGN_ADAPTER primary=${PRIMARY} variant=${TOK_VARIANT} secondary=${SECONDARY_ID} incompat=${INCOMPAT:-none} confidence=${CONF}\`"
   echo "- **Design lanes**: Layer 0 universal slop always on; Layer 1/2 conformance gated to the primary${SECONDARY:+ + secondary}"
 fi
 

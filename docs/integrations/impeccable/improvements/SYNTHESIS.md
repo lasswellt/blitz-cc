@@ -65,7 +65,10 @@ Acceptance:
 
 ---
 
-## EPIC TEST-1 — Permanent design-pillar gate (MEDIUM)
+## EPIC TEST-1 — Permanent design-pillar gate (MEDIUM) — ✅ APPLIED
+
+Status: `detect-stack.sh` now emits a normalized `DESIGN_ADAPTER primary=… variant=… secondary=… incompat=… confidence=…` token (verified across tailwind / tailwind-md3 / vuetify v3+v4 / quasar / quasar+tailwind-incompat / vuetify+tailwind-secondary / none). `design-pillar.bats` grew from 12→**22 tests, all hard-pass, zero skips**: adapter-detection matrix (5), a selection harness mirroring `review --only design` (inclusion map + relaxFor) proving Layer-0-always / Layer-2-gated / reconciliation-suppression. review + audit reworded to parse the token + the inclusion map. The bats suite is wired into `hooks/tests/*.bats` (the CI/sprint-review run) — the permanent design gate.
+
 
 Stories:
 1. `scripts/detect-stack.sh` exposes a parseable design-adapter token (primary + variant + secondary) per `adapter-detection.md`, so tests 1–13 are assertable.

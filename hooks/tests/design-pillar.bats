@@ -133,12 +133,95 @@ scoped_hex() {  # $1 = root dir
   ! echo "$output" | grep -q 'DESIGN_LANE_UNAVAILABLE'
 }
 
-# --- Adapter detection + layer gating (gated on TEST-1) --------------------
+# --- Adapter detection (TEST-1: parse the DESIGN_ADAPTER token) ------------
 
-@test "detect-stack resolves tailwind-md3 variant from @theme role tokens" {
-  skip "TEST-1: detect-stack.sh must expose a parseable design-adapter token"
+# Emit the normalized token for the fixture in $PWD.
+adapter_token() { bash "$REPO_ROOT/scripts/detect-stack.sh" 2>/dev/null | grep -oE 'DESIGN_ADAPTER [^`]*'; }
+
+@test "detect-stack resolves tailwind-md3 from tailwind + --md-sys role tokens" {
+  printf '{"dependencies":{"tailwindcss":"^4.0.0"}}' > package.json
+  mkdir src; printf '.a{--md-sys-color-primary:#000}' > src/a.css
+  run adapter_token
+  echo "$output" | grep -q 'primary=tailwind-md3'
+  echo "$output" | grep -q 'variant=v4'
 }
 
-@test "Layer-2 MD3 rows not selected on a tailwind-only stack" {
-  skip "TEST-1: requires adapter-token + selection harness"
+@test "detect-stack: component framework wins over tailwind (vuetify primary)" {
+  printf '{"dependencies":{"vuetify":"^3.5.0","tailwindcss":"^3.4.0"}}' > package.json
+  run adapter_token
+  echo "$output" | grep -q 'primary=vuetify'
+  echo "$output" | grep -q 'variant=v3'
+  echo "$output" | grep -q 'secondary=tailwind'   # tailwind layered, not primary
+}
+
+@test "detect-stack: vuetify v4 variant distinguished from v3" {
+  printf '{"dependencies":{"vuetify":"^4.0.8"}}' > package.json
+  run adapter_token
+  echo "$output" | grep -q 'primary=vuetify'
+  echo "$output" | grep -q 'variant=v4'
+}
+
+@test "detect-stack: quasar + tailwind flagged as incompatibility, not secondary" {
+  printf '{"dependencies":{"quasar":"^2.14.0","tailwindcss":"^4.0.0"}}' > package.json
+  run adapter_token
+  echo "$output" | grep -q 'primary=quasar'
+  echo "$output" | grep -q 'incompat=quasar+tailwind'
+  ! echo "$output" | grep -q 'secondary=tailwind'
+}
+
+@test "detect-stack: no UI stack resolves to primary=none" {
+  printf '{"dependencies":{"vue":"^3.4.0"}}' > package.json
+  run adapter_token
+  echo "$output" | grep -q 'primary=none'
+}
+
+# --- Layer gating (TEST-1: selection harness mirroring review --only design) -
+
+# Rows fire iff adapter in inclusion(primary) AND relaxFor !contains primary.
+# inclusion: none->{universal}; tailwind->{universal,tailwind};
+# tailwind-md3->{universal,tailwind,tailwind-md3}; vuetify->{universal,vuetify};
+# quasar->{universal,quasar}. Returns the fired design row ids.
+select_design() {  # $1 = primary
+  local primary="$1" incl
+  case "$primary" in
+    tailwind)     incl='["universal","tailwind"]' ;;
+    tailwind-md3) incl='["universal","tailwind","tailwind-md3"]' ;;
+    vuetify)      incl='["universal","vuetify"]' ;;
+    quasar)       incl='["universal","quasar"]' ;;
+    *)            incl='["universal"]' ;;
+  esac
+  jq -r --argjson incl "$incl" --arg p "$primary" '
+    [.. | objects | select(.pillar=="design" and (.adapter as $a | $incl | index($a))
+      and ((.reconciliation.relaxFor // []) | index($p) | not))] | .[].id' "$REGISTRY"
+}
+
+@test "Layer-0 universal rows fire on every stack" {
+  for p in tailwind tailwind-md3 vuetify quasar none; do
+    run select_design "$p"
+    echo "$output" | grep -q 'design-side-tab'      # a Layer-0 universal slop row
+  done
+}
+
+@test "Layer-2 MD3 rows NOT selected on a tailwind-only stack" {
+  run select_design tailwind
+  # md3 conformance rows are adapter:tailwind-md3 — excluded for primary=tailwind
+  ! echo "$output" | grep -q 'design-md3-typescale-conformance'
+  ! echo "$output" | grep -q 'design-md3-elevation-conformance'
+  # but the tailwind Layer-2 rows ARE selected
+  echo "$output" | grep -q 'design-tw-legacy-v3-class'
+}
+
+@test "Layer-2 MD3 rows ARE selected on a tailwind-md3 stack" {
+  run select_design tailwind-md3
+  echo "$output" | grep -q 'design-md3-typescale-conformance'
+  echo "$output" | grep -q 'design-tw-legacy-v3-class'   # composite: tailwind rows too
+}
+
+@test "reconciliation suppresses bounce-easing-static on tailwind-md3 and quasar" {
+  run select_design tailwind-md3
+  ! echo "$output" | grep -q 'design-bounce-easing-static'
+  run select_design quasar
+  ! echo "$output" | grep -q 'design-bounce-easing-static'
+  run select_design tailwind
+  echo "$output" | grep -q 'design-bounce-easing-static'   # fires where not relaxed
 }
