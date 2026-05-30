@@ -495,6 +495,16 @@ Detail for the SKILL.md §"Phase 1.D / 2.0 / 2.5 / 3.5" contract. Source specs: 
 
 Load `/_shared/check-registry.json`, select `lane=="deterministic" && consolidated_target in {audit,both}`. Run each row's `detection.command` across the codebase (grep/tsc/import-graph). Zero-FP, no aggregation needed. Write findings to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. These complement the semantic pillars — the two lanes catch disjoint bug classes (a deleted-test/broken-build has no semantic signature; a wrong answer-key has no structural signature).
 
+### Phase 1.D2 — design pillar (adapter-aware)
+
+Triggered by `--pillar design` (or auto when a UI stack is detected). Extends Phase 1.D with the framework-adaptive design lane (specs: `docs/integrations/impeccable/`).
+
+1. **Resolve the adapter.** Read the `Adapter Stack` block from `scripts/detect-stack.sh` → `{primary, secondary, variant, incompatibilities, confidence}`.
+2. **Select + gate.** From the registry, take `pillar == design` rows. A row fires iff `adapter ∈ {universal} ∪ {primary} ∪ secondary` AND NOT (`reconciliation.relaxFor` includes `primary`). So Layer 0 (universal) always runs; Layer 1/2 gate to the stack; `bounce-easing`/`ghost-card` suppress where the stack prescribes spring/elevation. No cross-stack false positives.
+3. **Run once, filter.** Vendored rows (`detection.type == command`) all share `npx impeccable detect --json --gpt --gemini <targets>` — run it **once**, then attribute each output hit (`{antipattern, file, line, snippet}`) to the design row whose `detection.filter == antipattern`. New L1/L2 rows (`detection.type == regex`) run their own command. Write to `${AUDIT_RUN}/findings/00-design.md` tagged `lane: deterministic, pillar: design`.
+4. **Semantic aggregator.** For the design pillar, the semantic lane is **not** the 10 code-audit passes — it is `agents/design-critic.md` over rendered screenshots (5 dimensions; Creative Distinction scored against generic-within-the-stack's-idiom, per the adapter). Spawn it when screenshots are available (Playwright/dev-server); else note in `coverage_boundary`.
+5. **Verdict authority.** Design rows are advisory (P3) except `design-low-contrast` (P2 → reject, a11y) and `design-quasar-tailwind-coexist` (P1 → reject, build conflict). `coverage_boundary` (§Phase 3.5) records which engines ran (static vs browser-render) + any adapter-gated rows skipped.
+
 ### Phase 2.0 — Multi-Review aggregation
 
 The roster's 2 agents/pillar reason on the **same scope independently** (the legacy frontend/backend split gave no agreement signal). After Phase 2.1 parse:

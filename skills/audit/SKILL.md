@@ -205,6 +205,8 @@ done
 
 Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP — and write to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. The deterministic and semantic lanes catch **disjoint** bug classes (ianlpaterson 38-task) — a deleted test has no semantic signature; a wrong answer-key has no structural one — so run both. Detail: [references/main.md](references/main.md) §Recall hardening.
 
+**Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:review --only design`). Vendored rows share one `npx impeccable detect --json --gpt --gemini` run (filter by `detection.filter`); `agents/design-critic.md` is the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: [references/main.md](references/main.md) §Phase 1.D2.
+
 ## Phase 2: COMPILE RESULTS — Consolidate Findings
 
 ### 2.1 Read All Findings
