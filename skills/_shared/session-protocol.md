@@ -62,6 +62,13 @@ Execute this preamble **before any other work** in the skill:
    **5b. Conflict Check.** Check for conflicting sessions using the conflict matrix below.
    If a conflict is found, ABORT with a conflict report.
 
+   **5b-i. Background-session overlay (optional).** A session dispatched via `claude --bg` / `claude agents` (native agent view, CC >=2.1.139) may run a blitz skill in another worktree without ever writing a `.cc-sessions/*.json` file. To catch those, additionally enumerate background sessions:
+   ```bash
+   # Best-effort: empty when claude CLI / --json absent. Each entry: {sessionId,name,cwd,status,...}
+   claude agents --json 2>/dev/null | jq -r 'if type=="array" then .[] | select(.status!="completed" and .status!="failed" and .status!="stopped") | "\(.name // .sessionId)\t\(.cwd)" else empty end' 2>/dev/null || true
+   ```
+   Infer each background session's skill from its `name` (auto-generated from the dispatch prompt, e.g. `sprint-dev …`) and apply the same conflict matrix. Treat matches as WARN (the inference is heuristic, not authoritative like a `.cc-sessions/*.json` registration). Degrade silently to the `.cc-sessions/*.json`-only check when the CLI is unavailable or pre-v2.1.141. See [agent-view-dispatch.md](agent-view-dispatch.md).
+
 6. Read the activity feed (.cc-sessions/activity-feed.jsonl) —
    print a summary of recent activity (last 30 minutes) per
    verbose-progress.md. This provides cross-instance awareness.

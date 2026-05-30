@@ -104,6 +104,23 @@ ls .cc-sessions/reports/ 2>/dev/null | wc -l
 
 Report the number of session reports available.
 
+### 2.5 Background Agents (native agent view)
+
+Surface the native agent-view supervisor state so background-session interop (worktree isolation, conflict overlay) is observable. Best-effort — skip silently if `claude` CLI absent.
+
+```bash
+# Supervisor / daemon state (CC >=2.1.139)
+claude daemon status 2>/dev/null || echo "agent-view daemon: not running or unavailable"
+# Live background sessions, if any
+claude agents --json 2>/dev/null | jq -r 'if type=="array" then length else 0 end' 2>/dev/null || echo 0
+# Warn if agent view is disabled while blitz interop expects it
+if [ "${CLAUDE_CODE_DISABLE_AGENT_VIEW:-}" = "1" ] || grep -q '"disableAgentView"[[:space:]]*:[[:space:]]*true' .claude/settings.json 2>/dev/null; then
+  echo "WARN: agent view disabled — /blitz:worktree-prune live-session guard + conflict overlay degrade to .cc-sessions/*.json only"
+fi
+```
+
+Report: daemon reachable (y/n), live background-session count, and the disable warning if present. Cross-ref: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md) §Interop.
+
 ---
 
 ## Phase 3: REGISTRY CHECKS

@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (29 files). Required for every skill:
+All skills follow the protocols in `skills/_shared/` (30 files). Required for every skill:
 - **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
 - **verbose-progress.md** — Verbose output format and activity feed logging
 - **terse-output.md** — Output style + canonical exemptions list

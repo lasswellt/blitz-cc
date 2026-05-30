@@ -292,7 +292,11 @@ Track the last 8 dispatch task IDs in the orchestrator state. Detect:
 On detection:
 1. Inject a diagnostic prompt addendum: "Prior dispatches: <history>. Why is this not converging? Identify the contradiction before retrying."
 2. Dispatch ONE more time with the diagnostic addendum.
-3. If the next dispatch fails the same pattern, **PAUSE and surface to user**. Do not infinite-retry.
+3. If the next dispatch fails the same pattern, **PAUSE and surface to user**. Do not infinite-retry. Also fire a remote push so a user monitoring via `claude agents` is alerted off-screen (no-op if Remote Control unconfigured; see [agent-view-dispatch.md](agent-view-dispatch.md) §Remote alerts):
+   ```
+   PushNotification(title: "Session needs input", message: "<skill> stuck-loop on <unit> — paused, awaiting direction")
+   ```
+   Gate on developer-profile `notify` preference (skip when `notify: off`).
 
 Do NOT use a simple counter. A→B→A→B is correct sometimes (refactor A then test then refactor A); the disambiguation comes from "no progress signal in activity-feed."
 

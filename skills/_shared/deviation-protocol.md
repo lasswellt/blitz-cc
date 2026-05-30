@@ -93,7 +93,10 @@ When the orchestrator receives a deviation or escalation:
 1. Log the escalation to the activity feed.
 2. If the agent said `Blocked: no`, let them continue with other stories.
 3. If the agent said `Blocked: yes`, check if other agents can take their ready stories.
-4. Present the escalation to the user with the agent's options.
+4. Present the escalation to the user with the agent's options. Also fire a remote push so a user monitoring via `claude agents` is alerted off-screen (no-op if Remote Control unconfigured; gate on developer-profile `notify`):
+   ```
+   PushNotification(title: "Escalation — decision needed", message: "<skill>: <one-line what needs to change>")
+   ```
 5. After user decision, send resolution via `ASSIST:` message to the agent.
 
 ---

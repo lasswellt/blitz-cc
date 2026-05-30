@@ -15,7 +15,7 @@
 
 **A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase**
 
-**37 skills** · **10 agents** · **37 hook scripts across 16 events** · **29 shared protocols**
+**37 skills** · **10 agents** · **37 hook scripts across 16 events** · **30 shared protocols**
 
 Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -354,6 +354,18 @@ Builder agents run in isolated git worktrees on per-role branches (`sprint-N/{ba
 
 ---
 
+## Parallel Sessions (native agent view)
+
+Every blitz skill (`/blitz:*`) and agent (`@backend-dev`) is a valid dispatch target for Claude Code's native agent view (`claude agents`, CC ≥2.1.139) — run `claude --bg "/blitz:audit"` or type the command into the agent-view input to run blitz work as a background session. blitz does **not** reimplement the agents view, recaps, or terminal multiplexing; it interops:
+
+- **Worktree reconciliation** — background sessions auto-isolate into `.claude/worktrees/`; `/blitz:worktree-prune` never removes a worktree a live `claude agents` session owns (data-loss guard via `claude agents --json`).
+- **Conflict overlay** — blitz's semantic conflict matrix extends to background sessions (the platform manages processes, not semantic conflicts).
+- **Remote alerts** — `PushNotification` fires off-screen on stuck-loop / Tier-3 escalation (gated on developer-profile `notify`); `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell.
+
+Full contract: [`skills/_shared/agent-view-dispatch.md`](skills/_shared/agent-view-dispatch.md).
+
+---
+
 ## Token Budget
 
 Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work (docs) on Haiku, the bulk of builder/reviewer work on Sonnet, orchestration reasoning on Opus. Prompt caching (1-hr TTL) and lazy MCP/skill loading keep cost down; agents reply with a structured JSON contract rather than echoing findings. See [`skills/_shared/token-budget.md`](skills/_shared/token-budget.md).
@@ -401,9 +413,9 @@ Hooks are *the* enforcement layer — they fire on tool calls the model can't ta
 
 ---
 
-## Shared Protocols (29)
+## Shared Protocols (30)
 
-All skills share 29 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. The load-bearing ones:
+All skills share 30 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. The load-bearing ones:
 
 - **session-protocol.md** — multi-session safety (locks, conflict matrix, autonomy levels)
 - **check-registry.json / check-registry.md** — the single source of truth for every review/audit check (lane, verdict authority, confidence, detection)

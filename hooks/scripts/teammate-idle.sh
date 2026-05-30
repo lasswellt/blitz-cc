@@ -17,4 +17,13 @@ if [ -n "$ROOT" ] && [ -n "$AGENT_ID" ]; then
   blitz_log_event "hook" "teammate_idle" "Agent $AGENT_ID ($AGENT_TYPE) went idle" "$DETAIL"
 fi
 
+# Opt-in off-screen alert (the article's "audio signal via hooks" pattern).
+# A hook cannot invoke the PushNotification tool (that is agent-side), so this
+# emits a terminal bell when BLITZ_NOTIFY_ON_IDLE=1 — useful when monitoring
+# several sessions via `claude agents` and you want an idle nudge. Default off
+# to avoid notification fatigue. Never blocks; always exits 0.
+if [ "${BLITZ_NOTIFY_ON_IDLE:-0}" = "1" ]; then
+  printf '\a' >&2 2>/dev/null || true
+fi
+
 exit 0
