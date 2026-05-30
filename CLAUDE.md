@@ -74,7 +74,7 @@ Required for autonomous loops + quality:
 - **ratchet-protocol.md** (v1.11+) — 8 monotonic metrics (incl. `stale_worktree_branch_count`), schema, multi-agent worktree merge, auto-revert on regression
 - **shortcut-taxonomy.md** (v1.11+) — 19 anti-shortcut detectors with grep patterns + escape-hatch rules
 - **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
-- **frontend-design-heuristics.md** (v1.11+) — paraphrased aesthetic philosophy, NEVER list, density-vs-whitespace guidance
+- **docs/integrations/impeccable/** (v1.16+) — framework-adaptive design pillar (normalized model + Tailwind/MD3/Vuetify/Quasar adapters); supersedes the retired `frontend-design-heuristics.md`, now `references-regrounded.md` §8.1 + the registry `design` pillar (`/blitz:review --only design`, `/blitz:audit --pillar design`)
 - **quality-matrix.md** (v1.15+) — decision matrix for the 5 quality-related skills (sprint-review, audit, code-doctor, code-sweep, review — completeness + wiring checks folded into `/blitz:review --only completeness|wiring`); cites why apparent overlaps are real distinctions
 
 ## Hooks

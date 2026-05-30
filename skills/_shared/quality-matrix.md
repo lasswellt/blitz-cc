@@ -11,6 +11,7 @@ Updated 2026-05-29 (sprint-19 consolidation). The review/audit/quality surface i
 | "Just the placeholder/stub scan" | `/blitz:review --only completeness` |
 | "Just the wiring/orphan-route/auth check" | `/blitz:review --only wiring` |
 | "Vue/Firestore/Pinia framework misuse" | `/blitz:review --only framework`, or `/blitz:code-doctor --fix` |
+| "AI-aesthetic tells / design slop / design-system conformance" | `/blitz:review --only design` (precision) · `/blitz:audit --pillar design` (recall) |
 | "Continuous ratchet that only goes forward" | `/blitz:code-sweep` (loop) |
 | "Dependency CVEs / licenses" | `/blitz:dep-health` |
 | "Bundle size / Lighthouse / runtime perf" | `/blitz:perf-profile` |
@@ -71,6 +72,7 @@ Distinct scope + tempo + downstream + domain (the four-question test below). Inv
 | `research-critic` | citation/claim gate for research docs (graded claim-grounding, UNVERIFIED verdict, scope-claim blocker). |
 | `reviewer` | the 4 parallel reviewer agents review spawns (security/backend/frontend/patterns). |
 | `architect` | audit Architecture pillar. |
+| `design-critic` | design pillar's semantic/vision lane (5-dim screenshot score); backed by the deterministic Layer 0/1/2 detector + the detect-stack adapter. |
 
 ## Authoring guidance — before adding an 8th quality skill
 

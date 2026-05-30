@@ -92,6 +92,7 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | "check wiring", "integration check", "orphan routes" | `/blitz:review --only wiring` | Cross-module trace (integration-check folded; legacy slug still works) |
 | "quality metrics", "trend dashboard" | `/blitz:quality-metrics` | Snapshot + compare |
 | "audit UI consistency", "cross-page data drift" | `/blitz:ui-audit` | Read-only registry-based |
+| "design slop", "AI-aesthetic tells", "design-system conformance" | `/blitz:review --only design` (precision) · `/blitz:audit --pillar design` (recall) | Framework-adaptive design pillar; Layer 0 universal slop + adapter-gated Layer 1/2 via detect-stack |
 | "browse the app", "smoke test" | `/blitz:browse` | Playwright-driven crawl |
 | "profile perf", "lighthouse", "bundle size" | `/blitz:perf-profile` | Vue/Nuxt profiler |
 
