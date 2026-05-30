@@ -102,6 +102,21 @@ scoped_hex() {  # $1 = root dir
   [ "$output" -eq 0 ] || skip "LANE-1 not yet applied: $output impeccable rows still deterministic"
 }
 
+@test "check-registry passes the CI schema validator" {
+  # Guards the LANE-1 invariant locally: semantic rows must carry
+  # detection.type=='semantic' + verdict_authority=='advisory' (the CI gate
+  # that v2.2.0 tripped because it was not run locally).
+  run bash "$REPO_ROOT/hooks/scripts/check-registry-validate.sh" "$REGISTRY"
+  [ "$status" -eq 0 ]
+}
+
+@test "every semantic design row is detection.type semantic + advisory" {
+  run jq -r '[.. | objects | select(.pillar=="design" and .lane=="semantic")
+    | select(.detection.type != "semantic" or .verdict_authority != "advisory") | .id]
+    | length' "$REGISTRY"
+  [ "$output" -eq 0 ]
+}
+
 @test "no deterministic design row shells out to npx" {
   # Scoped to pillar==design: det-11/det-12 legitimately use `npx tsc`.
   run jq -r '[.. | objects | select(.pillar=="design" and .lane=="deterministic") | .detection.command // ""] | map(select(test("npx"))) | length' "$REGISTRY"

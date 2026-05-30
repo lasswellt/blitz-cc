@@ -706,7 +706,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "side-tab"
       },
@@ -732,7 +732,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "border-accent-on-rounded"
       },
@@ -758,7 +758,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "overused-font"
       },
@@ -784,7 +784,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "single-font"
       },
@@ -810,7 +810,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "flat-type-hierarchy"
       },
@@ -836,7 +836,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "gradient-text"
       },
@@ -862,7 +862,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "ai-color-palette"
       },
@@ -888,7 +888,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "cream-palette"
       },
@@ -914,7 +914,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "nested-cards"
       },
@@ -940,7 +940,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "monotonous-spacing"
       },
@@ -966,7 +966,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "bounce-easing"
       },
@@ -998,7 +998,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "dark-glow"
       },
@@ -1024,7 +1024,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "icon-tile-stack"
       },
@@ -1050,7 +1050,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "italic-serif-display"
       },
@@ -1076,7 +1076,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "hero-eyebrow-chip"
       },
@@ -1102,7 +1102,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "repeated-section-kickers"
       },
@@ -1128,7 +1128,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "numbered-section-markers"
       },
@@ -1154,7 +1154,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "em-dash-overuse"
       },
@@ -1180,7 +1180,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "marketing-buzzword"
       },
@@ -1206,7 +1206,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "aphoristic-cadence"
       },
@@ -1232,7 +1232,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "oversized-h1"
       },
@@ -1258,7 +1258,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "extreme-negative-tracking"
       },
@@ -1284,7 +1284,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "broken-image"
       },
@@ -1310,7 +1310,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "gray-on-color"
       },
@@ -1334,9 +1334,9 @@
       "adapter": "universal",
       "base_confidence": 0.7,
       "severity": "P2",
-      "verdict_authority": "reject",
+      "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "low-contrast"
       },
@@ -1362,7 +1362,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "layout-transition"
       },
@@ -1388,7 +1388,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "line-length"
       },
@@ -1414,7 +1414,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "cramped-padding"
       },
@@ -1440,7 +1440,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "body-text-viewport-edge"
       },
@@ -1466,7 +1466,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "tight-leading"
       },
@@ -1492,7 +1492,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "skipped-heading"
       },
@@ -1518,7 +1518,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "justified-text"
       },
@@ -1544,7 +1544,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "tiny-text"
       },
@@ -1570,7 +1570,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "all-caps-body"
       },
@@ -1596,7 +1596,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "wide-tracking"
       },
@@ -1622,7 +1622,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "text-overflow"
       },
@@ -1648,7 +1648,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "clipped-overflow-container"
       },
@@ -1674,7 +1674,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "gpt-thin-border-wide-shadow"
       },
@@ -1708,7 +1708,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "repeating-stripes-gradient"
       },
@@ -1734,7 +1734,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "theater-slop-phrase"
       },
@@ -1760,7 +1760,7 @@
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "command",
+        "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
         "filter": "image-hover-transform"
       },

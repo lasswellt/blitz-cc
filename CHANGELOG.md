@@ -21,6 +21,15 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.2.1] — 2026-05-30 · fix check-registry schema (v2.2.0 hotfix)
+
+v2.2.0's LANE-1 re-laned 41 rows to `lane: semantic` but left `detection.type: command` and one `verdict_authority: reject` — which the `check-registry-validate` CI gate rejects (semantic rows must be `detection.type: semantic` + `verdict_authority: advisory`). The gate runs in CI only and was not run locally, so v2.2.0 shipped with a schema-invalid registry (red CI on `main`).
+
+### Fixed
+- `check-registry.json` — the 41 semantic design rows now carry `detection.type: "semantic"` (the `npx impeccable detect` command is retained on the row) and `verdict_authority: "advisory"` (`design-low-contrast` was `reject`). Registry passes `hooks/scripts/check-registry-validate.sh` (90 checks, derivation clean).
+- `hooks/tests/design-pillar.bats` — added two guards that run the CI schema validator + assert every semantic design row is `type:semantic`/`advisory`, so this class of drift fails locally (suite 57→59).
+- `.github/workflows/{ci,publish}.yml` — `actions/checkout` + `actions/setup-node` bumped `v4 → v5` (Node 24 compat; silences the Node 20 deprecation warning).
+
 ## [2.2.0] — 2026-05-30 · design-pillar reliability + precision hardening
 
 Post-release hardening of the v2.1.0 design pillar. A validation pass found the absorption architecturally sound but with concrete reliability/precision gaps in the deterministic lane: an undeclared impeccable dependency that silently no-ops, 42 browser-rendered rows mislabeled `deterministic`, and regex rules that false-positive on the token definitions they protect. Fixed across five epics (`docs/integrations/impeccable/improvements/`), each gated by a new permanent test suite.
