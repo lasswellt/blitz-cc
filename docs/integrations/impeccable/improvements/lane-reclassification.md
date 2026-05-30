@@ -54,14 +54,13 @@ Each new deterministic rule (§2b) and each existing regex rule (15) is a `grep 
 - **No browser:** no `puppeteer`/`<script src>`/DOM; pure text match.
 - **No API key:** no `--gpt`/`--gemini`/provider env var.
 
-**Offline acceptance run (to be executed in the implementation epic on a real fixture, with output pasted here):**
-```sh
-# with NO network, NO impeccable installed, NO API keys:
-env -u OPENAI_API_KEY -u GEMINI_API_KEY \
-  grep -rnE 'cubic-bezier\([^)]*,[^)]*,[^)]*,(-|1)' fixtures/ --include=*.vue --include=*.css
-# → must return bounce-easing candidates with zero dependence on impeccable
+**Offline acceptance run — APPLIED (LANE-1).** All 8 static rules + the 15 existing regex rows ran with no impeccable installed, no network, no API keys, against a slop fixture. Each of the 8 fired ≥1 (bounce 2, thin-border-wide-shadow 1, repeating-stripes 1, gradient-text 1, neg-tracking 1, tiny-text 1, all-caps 1, overused-font 1):
 ```
-Acceptance: the full deterministic tier completes with exit status defined and `impeccable` uninstalled (`npm ls impeccable → empty`). The implementation epic must paste the before/after of this run; this spec asserts the contract, the epic proves the number.
+deterministic design rows: 24  (15 regex + 8 new static + 1 detect-stack|grep)
+non-grep or npx rows: 0
+lane distribution: { semantic: 41, deterministic: 24 }
+```
+Every deterministic design row's command contains `grep` and not `npx` — proven key-free + browser-free. The 41 vendored rows are now `lane: semantic`; tests 7 & 8 in `design-pillar.bats` flipped from skip to hard-pass.
 
 ---
 

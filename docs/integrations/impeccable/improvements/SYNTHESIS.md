@@ -27,7 +27,10 @@ Acceptance:
 
 ---
 
-## EPIC LANE-1 — Lane reclassification (HIGH — fixes the taxonomy)
+## EPIC LANE-1 — Lane reclassification (HIGH — fixes the taxonomy) — ✅ APPLIED
+
+Status: 41 vendored rows re-laned `deterministic → semantic`; 8 native deterministic static rules added (all grep, key-free/browser-free, each fires offline); `--gpt --gemini` already stripped (gemini pass). Result: `{ semantic: 41, deterministic: 24 }`, 0 deterministic design rows call npx, `design-pillar.bats` tests 7 & 8 hard-pass. `design-quasar-tailwind-coexist` left `type: command` (its `detect-stack.sh | grep` pipeline is a genuine command, already key-free — the "retype" suggestion was cosmetic). Remaining for FP-1: token-def exclusions + color consolidation.
+
 
 Stories:
 1. Re-lane all 41 `owner: impeccable` rows `deterministic → semantic`. (The `--gpt --gemini` removal from the shared command — `npx impeccable detect --json ${TARGETS}` — is **already applied**; impeccable's providers are never re-added. The 4 gemini/gpt-gated tells route through `design-critic`'s gemini CLI via the critic's `BLITZ_GEMINI_BIN`/`BLITZ_GEMINI_MODEL` env, not impeccable `--gemini`.)
