@@ -5,7 +5,7 @@
 #   . "$(dirname "$0")/_lib/common.sh"
 #
 # Provides: blitz_find_root, blitz_extract, blitz_session_id,
-#           blitz_log_event, blitz_atomic_write
+#           blitz_log_event, blitz_live_worktree_paths, blitz_atomic_write
 #
 # Designed for set -euo pipefail callers. Every function handles its own
 # error paths. Global fallback vars: SESSION_ID, SESSIONS_DIR, INPUT.
@@ -85,6 +85,30 @@ blitz_log_event() {
     --argjson det "$detail" \
     '{ts:$ts,session:$session,skill:$sk,event:$ev,message:$msg,detail:$det}' \
     >> "${sessions_dir}/activity-feed.jsonl" 2>/dev/null || true
+}
+
+# blitz_live_worktree_paths
+# Emit absolute worktree paths owned by background sessions tracked by the
+# native agent view (`claude agents`, CC >=2.1.141). One path per line.
+#
+# Best-effort DATA-LOSS GUARD: a background session edits inside its own
+# `.claude/worktrees/<id>` worktree, where uncommitted work lives. Native agent
+# view auto-isolates background sessions there (see worktree-lifecycle.md
+# §Interop), so the same `.claude/worktrees/` dir now holds BOTH blitz
+# `Agent({isolation:"worktree"})` worktrees AND native background-session
+# worktrees. Callers (worktree-prune, cleanup) MUST skip any worktree whose
+# path appears here, regardless of merge-status / age / --force — removing it
+# would destroy a live session's uncommitted changes.
+#
+# Prints nothing and returns 0 when the `claude` CLI or `--json` is unavailable
+# (older CC, Bedrock/Vertex, or agent view disabled). Never blocks the caller.
+blitz_live_worktree_paths() {
+  command -v claude >/dev/null 2>&1 || return 0
+  local json
+  json=$(claude agents --json 2>/dev/null) || return 0
+  [ -n "$json" ] || return 0
+  printf '%s' "$json" | jq -r 'if type=="array" then .[]?.cwd // empty else empty end' 2>/dev/null || true
+  return 0
 }
 
 # blitz_atomic_write target content

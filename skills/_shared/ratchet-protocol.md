@@ -25,6 +25,8 @@ Stored in `docs/sweeps/ratchet.json`, updated by `code-sweep` and `sprint-review
 
 `stale_worktree_branch_count` measures branches matching the spawn-protocol-controlled patterns from [worktree-lifecycle.md](worktree-lifecycle.md). Existing projects must run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt; otherwise the first sprint-review post-upgrade will fail Invariant 8 for projects with N>0 stale branches. After baselining, the ratchet tightens monotonically as `/blitz:worktree-prune` reduces the count.
 
+> **Native agent-view interop:** this detector counts blitz-controlled branch refs only. A live `claude agents` background session may transiently inflate the count via its `.claude/worktrees/<id>` worktree — a measurement-timing artifact, not a leak. Do **not** auto-prune to drive the count down: the live-session guard ([worktree-lifecycle.md](worktree-lifecycle.md) §Interop, invariant 6) forbids removing a live session's worktree. Let the count settle after the session completes.
+
 ---
 
 ## 2. File Schema

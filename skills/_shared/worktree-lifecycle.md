@@ -29,6 +29,22 @@ Without enforced cleanup, every sprint leaks 4-5 `sprint-${N}/{backend,frontend,
 
 5. **Manual prune skill** ([../worktree-prune/SKILL.md](../worktree-prune/SKILL.md)). `/blitz:worktree-prune --dry-run` lists every `worktree-*` and `sprint-*/{role}` branch with age, merge-status, divergence, disk usage. `--apply --merged-only` deletes ancestors of `origin/HEAD`. `--apply --all-older-than 30d --force` includes unmerged stale branches.
 
+6. **Live background-session guard** (`hooks/scripts/_lib/common.sh` `blitz_live_worktree_paths`, prune Phase 1.5). Any worktree path returned by `claude agents --json` is classified `live-bg` and is never removed — overrides merge-status, age, and `--force`. Prevents destroying a live background session's uncommitted work in `.claude/worktrees/<id>`. Best-effort: no-op when the `claude` CLI / `--json` is unavailable. See §Interop above.
+
+## Interop with native agent view (background sessions)
+
+Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs **background sessions** dispatched via `claude --bg` / `/bg`. Before editing files, the platform **auto-isolates each background session into its own `.claude/worktrees/<id>` worktree** — the same directory blitz `Agent({isolation:"worktree"})` worktrees live in. Two systems now create worktrees under `.claude/worktrees/`; this section reconciles them. Provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`.
+
+**Branch-naming distinction:**
+- blitz-controlled: `worktree-agent-<8hex>`, `worktree-sprint-*`, `sprint-${N}/{role}` (taxonomy above).
+- platform background-session worktrees: created + named by the supervisor under `.claude/worktrees/`, distinct from the `worktree-agent-<8hex>` agent-subagent naming. The blitz collision guard (invariant 1) is scoped to `worktree-agent-<8hex>` and therefore **does not false-abort** native background dispatch.
+
+**Live-session data-loss guard (invariant 6, below):** a background session's `.claude/worktrees/<id>` holds **uncommitted work**. `/blitz:worktree-prune` and any cleanup MUST query `claude agents --json` and skip any worktree path it returns — classified `live-bg`, never removed, even under `--force`. Helper: `blitz_live_worktree_paths` (`hooks/scripts/_lib/common.sh`); best-effort, no-op when the CLI/`--json` is absent (older CC, Bedrock/Vertex, agent view disabled). Prune detail: [worktree-prune/SKILL.md](../worktree-prune/SKILL.md) Phase 1.5.
+
+**Ratchet interop:** `stale_worktree_branch_count` ([ratchet-protocol.md](ratchet-protocol.md) §1) counts blitz-controlled branch refs only. A transient live background-session worktree may briefly inflate the count; this is a measurement-timing artifact, not a leak — do not auto-prune to "fix" it (the live-session guard forbids removal anyway).
+
+**Owning isolation end-to-end:** when a skill (e.g. sprint-dev) needs to control isolation itself with explicit `sprint-${N}/{role}` branches and is being run as a background session, set `worktree.bgIsolation: "none"` in `.claude/settings.json` (CC >=2.1.143) so the platform does not double-isolate. Whether sprint-dev should adopt this by default vs. lean on platform isolation is an open design question — see the research doc §7.
+
 ## Hook event semantics (Claude Code)
 
 | Event | Blocking? | Use case |
@@ -45,6 +61,7 @@ The WorktreeCreate hook **cannot** override the branch name — Claude Code dete
 | `BLITZ_ALLOW_WORKTREE_COLLISION` | `0` | When `1`, WorktreeCreate hook permits stale-branch reuse |
 | `BLITZ_SKIP_BRANCH_CLEANUP` | `0` | When `1`, sprint-dev Phase 4.4 and WorktreeRemove hook skip branch deletion |
 | `BLITZ_RESUME_ON_DIVERGENCE` | `halt` | `prompt` (interactive), `abandon` (auto-delete branch + restart), `halt` (refuse) |
+| `worktree.bgIsolation` (`.claude/settings.json`, not env) | platform default | `"none"` disables native background-session auto-isolation into `.claude/worktrees/` (CC >=2.1.143) — use when a skill owns isolation itself |
 
 ## Sprint-review enforcement
 

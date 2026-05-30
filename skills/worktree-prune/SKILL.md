@@ -63,6 +63,20 @@ Required regex coverage:
 - `^worktree-sprint-[0-9]+(-plan)?$` — harness-spawned sprint-plan background branches
 - `^sprint-[0-9]+/(backend|frontend|tests|infra|integration|merged)$` — blitz sprint-dev branches
 
+### Phase 1.5 — Live background-session guard (DATA-LOSS PROTECTION)
+
+Native agent view (`claude agents`, CC >=2.1.139) isolates each background session inside its own `.claude/worktrees/<id>` worktree, where **uncommitted work lives**. Those worktrees share the `.claude/worktrees/` dir with blitz `Agent({isolation:"worktree"})` worktrees, so a prune target may be a worktree a live session is actively using. Build the protected-path set BEFORE classifying:
+
+```bash
+# Absolute worktree paths owned by live background sessions. Best-effort:
+# empty when `claude` CLI / --json absent (older CC, Bedrock/Vertex, agent view off).
+LIVE_WT_PATHS=$(claude agents --json 2>/dev/null \
+  | jq -r 'if type=="array" then .[]?.cwd // empty else empty end' 2>/dev/null || true)
+# Hook scripts use the shared helper blitz_live_worktree_paths (_lib/common.sh).
+```
+
+Any branch whose `worktree_path` matches (equals or is under) a `LIVE_WT_PATHS` entry is classified `live-bg` (Phase 2) and is **never** removed — not by `--merged-only`, not by `--all-older-than --force`. See worktree-lifecycle.md §Interop.
+
 ## Phase 2 — Classify Each Branch
 
 For each branch, compute:
@@ -74,18 +88,20 @@ For each branch, compute:
 | `commits_ahead` | `git rev-list --count origin/HEAD..<branch>` |
 | `worktree_path` | grep branch in `wt-prune-list.txt` → preceding `worktree` line |
 | `worktree_exists` | `[ -d "$worktree_path" ]` |
+| `live_bg` | `worktree_path` matches (equals or under) a `LIVE_WT_PATHS` entry (Phase 1.5) |
 | `disk_kb` | `du -sk "$worktree_path" 2>/dev/null \|\| echo 0` (skip if no worktree) |
 | `action` | per matrix below |
 
-**Action matrix:**
+**Action matrix** (evaluated top-down; first match wins):
 
-| merged | worktree_exists | commits_ahead | age_days | Action |
-|---|---|---|---|---|
-| true | false | 0 | any | `safe-delete` — branch fully merged, no worktree |
-| true | true | 0 | any | `remove-worktree-then-delete` — clean both |
-| false | false | >0 | >threshold | `stale-orphan` — flag for review (no worktree, has commits) |
-| false | true | >0 | >threshold | `stale-divergent` — flag for review (worktree exists, has unmerged commits) |
-| false | true | >0 | <threshold | `active` — leave alone |
+| live_bg | merged | worktree_exists | commits_ahead | age_days | Action |
+|---|---|---|---|---|---|
+| true | any | any | any | any | `live-bg` — owned by a live `claude agents` session; **never touch** |
+| false | true | false | 0 | any | `safe-delete` — branch fully merged, no worktree |
+| false | true | true | 0 | any | `remove-worktree-then-delete` — clean both |
+| false | false | false | >0 | >threshold | `stale-orphan` — flag for review (no worktree, has commits) |
+| false | false | true | >0 | >threshold | `stale-divergent` — flag for review (worktree exists, has unmerged commits) |
+| false | false | true | >0 | <threshold | `active` — leave alone |
 
 ## Phase 3 — Render Report
 
@@ -96,11 +112,12 @@ BRANCH                                  AGE     MERGED  AHEAD   WT      DISK    
 sprint-289/backend                      14d     no      12      yes     412M    stale-divergent
 sprint-289/frontend                     14d     no      8       no      —       stale-orphan
 worktree-agent-aae6004a                 28d     yes     0       no      —       safe-delete
+worktree-agent-7c5dcf5d                 1h      no      3       yes     180M    live-bg
 worktree-sprint-291-plan                3d      yes     0       yes     220M    remove-worktree-then-delete
 ...
 
-Summary: 47 branches matched | 18 safe-delete | 4 remove-worktree-then-delete | 23 stale-divergent | 2 active
-Total disk reclaimable: 6.2 GB
+Summary: 48 branches matched | 18 safe-delete | 4 remove-worktree-then-delete | 23 stale-divergent | 2 active | 1 live-bg (protected)
+Total disk reclaimable: 6.2 GB (live-bg worktrees excluded)
 ```
 
 ## Phase 4 — Apply (gated on `--apply`)
@@ -110,7 +127,8 @@ If `--dry-run` (default): print "Run with `--apply --merged-only` to delete the 
 If `--apply --merged-only`:
 
 ```bash
-# Safe path — only ancestors of origin/HEAD
+# Safe path — only ancestors of origin/HEAD. action=live-bg rows are excluded
+# by construction (never in {safe-delete, remove-worktree-then-delete}).
 for ROW in <classified rows where action ∈ {safe-delete, remove-worktree-then-delete}>; do
   if [ "$worktree_exists" = "true" ]; then
     git worktree remove "$worktree_path" --force \
@@ -127,6 +145,7 @@ If `--apply --all-older-than <dur>`:
 1. Require `--force` flag — abort if absent with message "destructive: requires --force".
 2. Confirm count to user (one line, no AskUserQuestion in scripted contexts).
 3. Use `git branch -D` (force delete) ONLY for `stale-divergent` / `stale-orphan` branches that exceed the age threshold.
+4. **Hard-skip `action=live-bg` rows even under `--force`** — `--force` overrides the age/merge gate, NOT the live-session guard. Removing a live background session's worktree destroys its uncommitted work.
 
 Log every deletion to activity feed:
 ```
@@ -148,6 +167,7 @@ Exit codes:
 ## Safety rules
 
 - **Never delete the current branch** (`git branch --show-current`).
+- **Never remove a worktree owned by a live `claude agents` background session** (`action=live-bg`, Phase 1.5) — applies even under `--force`. Removing it destroys uncommitted work in `.claude/worktrees/<id>`.
 - **Never delete `main`, `master`, `develop`, `release/*`, `hotfix/*`** — regex allowlist enforced.
 - **Never delete a branch that has open PRs** — best-effort `gh pr list --head <branch> --state open` check; skip the branch with a warning if any PR is open.
 - `git branch -d` (lowercase) refuses unmerged. Only `--apply --all-older-than` with `--force` uses `git branch -D`.

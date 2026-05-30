@@ -27,6 +27,12 @@ BRANCH=$(blitz_extract branch)
 # blitz's sprint-289/CAP-148. Refuse re-use when the existing branch is ahead of
 # origin/HEAD; user runs /blitz:worktree-prune to inspect, or sets
 # BLITZ_ALLOW_WORKTREE_COLLISION=1 to force-proceed.
+#
+# INTEROP (native agent view, CC >=2.1.139): this guard is scoped to the
+# `worktree-agent-<8hex>` branch name only, so it does NOT fire for native
+# background-session worktrees (`claude --bg` / `claude agents`), which the
+# platform isolates under .claude/worktrees/ with different branch naming.
+# No false-abort on background dispatch. See worktree-lifecycle.md §Interop.
 if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
    && [ "${BLITZ_ALLOW_WORKTREE_COLLISION:-0}" != "1" ]; then
   if git -C "$ROOT" rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
