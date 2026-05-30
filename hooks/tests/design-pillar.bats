@@ -60,6 +60,27 @@ scoped_hex() {  # $1 = root dir
   echo "$output" | grep -q '#eeeeee'
 }
 
+# --- FP-1: token-def exclusions + color consolidation (assert hard) --------
+
+@test "design.exclude set exists with files + content + line guards" {
+  run jq -e '.design.exclude | (.files|length>0) and (.contentGuards|length>0) and (.lineGuards|length>0)' "$REGISTRY"
+  [ "$status" -eq 0 ]
+}
+
+@test "consolidated color rule carries perAdapter + exclude ref" {
+  run jq -r '.. | objects | select(.id=="design-raw-color-literal") | "\(.perAdapter|type) \(.detection.exclude)"' "$REGISTRY"
+  echo "$output" | grep -q 'object design.exclude'
+}
+
+@test "the 5 duplicate color rules are removed" {
+  for id in design-tw-arbitrary-color design-md3-role-conformance \
+            design-vuetify-hardcoded-color design-quasar-inline-hex \
+            design-quasar-color-outside-brand; do
+    run jq -e --arg id "$id" '[.. | objects | select(.id==$id)] | length == 0' "$REGISTRY"
+    [ "$status" -eq 0 ]
+  done
+}
+
 # --- Reconciliation table (assert hard today, straight off registry) -------
 
 @test "bounce-easing suppressed on tailwind-md3 and quasar" {

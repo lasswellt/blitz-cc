@@ -70,6 +70,8 @@ This is expressible today with `grep -rl … | grep -v <files> | while read f; g
 
 ---
 
+> **APPLIED (FP-1).** `design.exclude` added to the registry; review/audit apply the two-step scoped filter + FP-verify; the 5 duplicate color rules removed and folded into `design-raw-color-literal` (perAdapter + `--include=*.html`). Design rows 65→60, deterministic 24→19. Honest correction to the §3 plan below: only 3 of the 6 were byte-identical greps, but `raw-color-literal` (any hex in .vue/.css/.scss) **subsumes all 5** CSS/inline variants, so all 5 were removed (not just consolidated-with-messaging), with `tw-arbitrary-color`'s unique `*.html` scan absorbed.
+
 ## 3. Consolidate the six near-duplicate color rules
 
 Today six rows are "raw color in a color context," differing only by adapter tag:

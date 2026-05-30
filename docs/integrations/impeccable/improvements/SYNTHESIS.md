@@ -47,7 +47,10 @@ Acceptance:
 
 ---
 
-## EPIC FP-1 — Token-definition exclusions + color-rule consolidation (HIGH — precision)
+## EPIC FP-1 — Token-definition exclusions + color-rule consolidation (HIGH — precision) — ✅ APPLIED
+
+Status: top-level `design.exclude` added (files + contentGuards + lineGuards + appliesTo); review/audit wired to apply the two-step scoped filter + FP-verify. Color rules consolidated honestly — `design-raw-color-literal` **subsumes** the 5 others (it greps any hex in .vue/.css/.scss; the CSS/inline rules were strict subsets), so removed `tw-arbitrary-color` (its unique `*.html` coverage absorbed via `--include=*.html`), `md3-role-conformance`, `vuetify-hardcoded-color`, `quasar-inline-hex`, `quasar-color-outside-brand`. The canonical rule carries `perAdapter` messaging. Design rows 65→60, deterministic 24→19. `design-pillar.bats` adds 3 hard FP-1 tests (exclude set, perAdapter+exclude ref, 5 removals) — all pass. Proven FP 75%→0% on the universal fixture (fp-reduction.md §1).
+
 
 Stories:
 1. Add `design.exclude` glob set (fp-reduction.md §2): file globs (`tailwind.config.*`, `quasar.variables.*`, `*.tokens.*`, Vuetify theme files), content guards (`@theme`, `createVuetify(`), line guards (comments, SVG paint). Reference it from every L1/L2 regex row's `detection.exclude`.
