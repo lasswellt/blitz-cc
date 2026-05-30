@@ -1,5 +1,7 @@
 # design-pillar-tests.md — test matrix + design-pillar.bats spec
 
+> **Status: ✅ IMPLEMENTED.** This is the original spec (with skip-guarded stubs). The live `hooks/tests/design-pillar.bats` is authoritative and now has **26 hard-passing tests, zero pending skips** — the skip stubs shown below were resolved as DEP-1/LANE-1/TEST-1 landed.
+
 Addresses **Finding 4 (MEDIUM)**. No design-pillar test exists today (`hooks/tests/` has the audit roundtrip but nothing for design). This adds `hooks/tests/design-pillar.bats`, modeled on `audit-detection-roundtrip.bats` (BATS, `BATS_TEST_TMPDIR` isolation, `load _helpers`). The test becomes a **permanent gate** (SYNTHESIS.md epic TEST-1).
 
 ---

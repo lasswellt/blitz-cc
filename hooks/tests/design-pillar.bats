@@ -5,9 +5,9 @@
 # loud-failure contract.
 # Spec: docs/integrations/impeccable/improvements/design-pillar-tests.md
 #
-# Tests that assert hard today: FP exclusions, reconciliation table, registry shape.
-# Tests gated on not-yet-landed work (DEP-1 preflight, LANE-1 reclassification,
-# TEST-1 adapter token) `skip` with a reason so the gaps stay visible.
+# All epics (DEP-1, LANE-1, FP-1, TEST-1, POLISH-1) are landed: every test below
+# asserts hard. The only `skip`s are environment guards (jq / preflight.sh
+# absent), never "not yet implemented".
 
 load _helpers
 
@@ -60,6 +60,41 @@ scoped_hex() {  # $1 = root dir
   echo "$output" | grep -q '#eeeeee'
 }
 
+@test "Vuetify createVuetify() theme file is excluded (content guard)" {
+  mkdir -p src/plugins
+  printf 'export default createVuetify({ theme:{ themes:{ light:{ colors:{ primary:"#1976d2" }}}}})\n' > src/plugins/vuetify.js
+  # the .js content-guard file is not in scoped_hex includes, but its hex must
+  # never surface; the component below is the true positive.
+  printf '<style>.x{color:#abcdef}</style>\n' > src/Comp.vue
+  run scoped_hex "$PWD"
+  ! echo "$output" | grep -q '#1976d2'   # theme def suppressed
+  echo "$output" | grep -q '#abcdef'      # component usage fires
+}
+
+# Per-adapter before/after FP matrix (fp-reduction.md §5): each adapter pairs a
+# token-definition surface (hex must NOT fire) with a component (hex MUST fire).
+# Asserts the scoped rule drops the token-def FPs while keeping the true positive.
+@test "per-adapter FP: token-def hex suppressed, component hex kept (md3/vuetify/quasar/tailwind)" {
+  mkdir -p src styles
+  # token-definition surfaces (raw hex CORRECT here):
+  printf '@theme {\n  --md-sys-color-primary: #6750a4;\n}\n' > styles/md3.css          # tailwind-md3
+  printf '$primary: #1976d2;\n' > quasar.variables.scss                                  # quasar
+  printf 'export default createVuetify({theme:{themes:{light:{colors:{primary:"#3f51b5"}}}}})\n' > src/vuetify.js  # vuetify
+  printf 'export default { theme:{ colors:{ brand:"#0ea5e9" }}}\n' > tailwind.config.js   # tailwind
+  # component usages (raw hex VIOLATION here) — one per line so counts are line-based:
+  printf '<style>\n.a{color:#111111}\n.b{background:#222222}\n</style>\n' > src/Card.vue
+  before=$(grep -rnE '#[0-9a-fA-F]{3,8}' "$PWD" --include=*.vue --include=*.css --include=*.scss | wc -l)
+  run scoped_hex "$PWD"
+  after=$(echo "$output" | grep -c '#')
+  # before counts the @theme + quasar.variables + component lines; after keeps only the component's two.
+  [ "$before" -ge 4 ]            # FPs present pre-scope
+  [ "$after" -eq 2 ]             # exactly the two component usages
+  echo "$output" | grep -q '#111111'
+  echo "$output" | grep -q '#222222'
+  ! echo "$output" | grep -q '#6750a4'   # md3 @theme token def
+  ! echo "$output" | grep -q '#1976d2'   # quasar variable
+}
+
 # --- FP-1: token-def exclusions + color consolidation (assert hard) --------
 
 @test "design.exclude set exists with files + content + line guards" {
@@ -94,12 +129,12 @@ scoped_hex() {  # $1 = root dir
   for a in tailwind tailwind-md3 vuetify quasar; do echo "$output" | grep -q "$a"; done
 }
 
-# --- Lane integrity (skip-pre-fix / hard-post-fix ratchet for LANE-1) -------
+# --- Lane integrity (LANE-1, hard assertions) ------------------------------
 
 @test "no impeccable-owned row is tagged lane: deterministic" {
   run jq -r '[.. | objects | select(.owner=="impeccable" and .lane=="deterministic")] | length' "$REGISTRY"
   [ "$status" -eq 0 ]
-  [ "$output" -eq 0 ] || skip "LANE-1 not yet applied: $output impeccable rows still deterministic"
+  [ "$output" -eq 0 ]
 }
 
 @test "check-registry passes the CI schema validator" {
@@ -120,14 +155,14 @@ scoped_hex() {  # $1 = root dir
 @test "no deterministic design row shells out to npx" {
   # Scoped to pillar==design: det-11/det-12 legitimately use `npx tsc`.
   run jq -r '[.. | objects | select(.pillar=="design" and .lane=="deterministic") | .detection.command // ""] | map(select(test("npx"))) | length' "$REGISTRY"
-  [ "$output" -eq 0 ] || skip "LANE-1 not yet applied: $output deterministic design rows still call npx"
+  [ "$output" -eq 0 ]
 }
 
 # --- Preflight loud-failure (gated on DEP-1) -------------------------------
 
 @test "preflight reports DESIGN_LANE_UNAVAILABLE when impeccable absent" {
   PF="$REPO_ROOT/scripts/design/preflight.sh"
-  [ -f "$PF" ] || skip "DEP-1 not yet applied: preflight.sh absent"
+  [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
   # $PWD is the clean BATS_TEST TMPDIR — a target project with no impeccable.
   run bash "$PF" "$PWD"
   [ "$status" -eq 0 ]                                   # never blocks deterministic tier
@@ -139,7 +174,7 @@ scoped_hex() {  # $1 = root dir
 
 @test "preflight reports semantic=OK when target has pinned impeccable" {
   PF="$REPO_ROOT/scripts/design/preflight.sh"
-  [ -f "$PF" ] || skip "DEP-1 not yet applied: preflight.sh absent"
+  [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
   mkdir -p node_modules/impeccable
   printf '{"name":"impeccable","version":"2.3.2"}' > node_modules/impeccable/package.json
   run bash "$PF" "$PWD"

@@ -112,7 +112,17 @@ Wiring: `skills/review/SKILL.md` `--only design` and `skills/audit/references/ma
 
 ## 5. Per-adapter fixture matrix (recall + precision proof, executed in the test epic)
 
-before/after FP counts to be produced on a real fixture per adapter (Tailwind, Tailwind+MD3, Vuetify v3/v4, Quasar). Each fixture pairs a token-definition file (hex must NOT fire) with a component file (hex MUST fire). The §1 run is the universal/Tailwind+Quasar case (75%→0%). The test epic pastes the remaining adapters' numbers here; design-pillar.bats asserts them so they can't regress.
+Produced and asserted in `design-pillar.bats` ("per-adapter FP" + the four "raw hex …" tests). Each fixture pairs a token-definition surface (hex must NOT fire) with a component (hex MUST fire):
+
+| Adapter | Token-def surface (must NOT fire) | Before (unscoped) | After (scoped) |
+|---|---|---|---|
+| universal / Tailwind | `@theme` + `tailwind.config` + comment + SVG | 8 | 2 (FP 75%→0%) |
+| Tailwind+MD3 | `@theme { --md-sys-color-* }` | — | suppressed |
+| Vuetify | `createVuetify({theme…})` (content guard) | — | suppressed |
+| Quasar | `quasar.variables.scss` (file glob) | — | suppressed |
+| combined matrix | md3 `@theme` + quasar.variables + vuetify + tailwind.config, 1 component | ≥4 | 2 (exactly the 2 component usages) |
+
+The combined matrix test asserts `before ≥ 4` (token-def FPs present pre-scope) and `after == 2` (only the component's two usages survive), with the md3/quasar token-def hex (`#6750a4`, `#1976d2`) proven absent from output. `design-pillar.bats` locks these so they can't regress.
 
 **Acceptance (grep-based):**
 - every `lane: deterministic` regex row has a `detection.exclude` referencing `design.exclude`.

@@ -6,7 +6,7 @@ Verified counts that drive the epics (findings-confirmed.md): 57 design rows, al
 
 ---
 
-## EPIC DEP-1 — Dependency resolution + preflight (CRITICAL, first — stops silent no-op)
+## EPIC DEP-1 — Dependency resolution + preflight (CRITICAL) — ✅ APPLIED
 
 **Why first:** the worst outcome is a green design lane that never ran. Until the preflight exists, every other fix sits on a lane that can silently no-op.
 
@@ -29,7 +29,7 @@ Acceptance:
 
 ## EPIC LANE-1 — Lane reclassification (HIGH — fixes the taxonomy) — ✅ APPLIED
 
-Status: 41 vendored rows re-laned `deterministic → semantic`; 8 native deterministic static rules added (all grep, key-free/browser-free, each fires offline); `--gpt --gemini` already stripped (gemini pass). Result: `{ semantic: 41, deterministic: 24 }`, 0 deterministic design rows call npx, `design-pillar.bats` tests 7 & 8 hard-pass. `design-quasar-tailwind-coexist` left `type: command` (its `detect-stack.sh | grep` pipeline is a genuine command, already key-free — the "retype" suggestion was cosmetic). Remaining for FP-1: token-def exclusions + color consolidation.
+Status: 41 vendored rows re-laned `deterministic → semantic`; 8 native deterministic static rules added (all grep, key-free/browser-free, each fires offline); `--gpt --gemini` already stripped (gemini pass). Result: `{ semantic: 41, deterministic: 24 }`, 0 deterministic design rows call npx, `design-pillar.bats` tests 7 & 8 hard-pass. `design-quasar-tailwind-coexist` left `type: command` (its `detect-stack.sh | grep` pipeline is a genuine command, already key-free — the "retype" suggestion was cosmetic).
 
 
 Stories:
