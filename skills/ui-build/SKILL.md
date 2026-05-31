@@ -123,6 +123,21 @@ Commit to typography + color + motion principle:
 - **MOTION PRINCIPLE**: pick one — `one orchestrated reveal (staggered animation-delay)`, `scattered micro-interactions`, or `none/static`. Do not blend.
 - **COMPOSITION**: pick one — `generous whitespace` or `controlled density`. Asymmetry, overlap, diagonal flow, grid-breaking are encouraged when they serve the tone.
 
+#### 3.0.1.1 Generation rubric — steer with the criteria the evaluator will grade (E1)
+
+Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** into generation, as
+forward steering — not just into the evaluator at Phase 5.4. Canonical single source:
+[`/_shared/design-criteria.md`](/_shared/design-criteria.md). Internalize before wireframing:
+
+> The best designs are museum quality. Build to that bar from the first pass.
+> Prompt Adherence · Aesthetic Fit · Visual Polish · UX · **Creative Distinction** (the hardest
+> bar — if it could come from any AI tool circa 2025, it fails). Grade-hardest emphasis:
+> Creative Distinction + Aesthetic Fit.
+
+This lifts the first iteration before any evaluator cycle runs, and shortens the Phase 5.4 loop
+(fewer iterations to PASS). For informal committed tones (`playful/toy-like`, `lo-fi/zine`,
+`handcrafted/artisanal`) use the tone-conditional steering phrasing in the shared rubric.
+
 #### 3.0.2 Document choices to DESIGN.md
 
 Write or update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with the chosen tone, typography, palette, motion principle. This file is the durable handoff between aesthetic decisions and implementation; subsequent ui-build runs read it instead of rediscovering. The aesthetic NEVER-list + 13-tone palette are now the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md) + the Layer 0 detector); the inline aesthetic greps in the Implementation Gate below are superseded by `/blitz:review --only design` (adapter-resolved — e.g. a Quasar `bg-primary` is not a "hardcoded color").
@@ -304,7 +319,7 @@ For every interactive element:
 
 ### 5.4 Visual Validation + Design-Quality Critique
 
-Use ToolSearch to check for Playwright MCP tools. If unavailable, skip and warn the user that visual validation is incomplete.
+Use ToolSearch to check for Playwright MCP tools. The design-critic **navigates the live page** before scoring (E2), so it needs the dev server running + Playwright MCP available. If Playwright is unavailable, fall back to the static-screenshot path and warn the user that interaction/responsive/console coverage is incomplete (never silently pass interaction-dependent dimensions).
 
 #### 5.4.1 Layout sanity (existing)
 
@@ -312,27 +327,59 @@ Navigate to the new page/component. Screenshot at 375 / 768 / 1440 widths. Verif
 
 #### 5.4.2 Design-quality critique (vision agent)
 
-Story frontmatter `design_quality:` controls this step:
-- `skip` (default for internal admin pages) — skip 5.4.2
-- `standard` (most user-facing UI) — run once
-- `high` (marketing, landing, customer-facing) — run with up to 3 iteration cycles
+**Capability-relative trigger (E4).** Story frontmatter `design_quality:` is the coarse tier, but
+the evaluator is *worth its cost only when the page sits beyond what the model does reliably solo*
+— a boundary that moves outward each model release (re-examine per release; precedent for the same
+stress-test-and-strip discipline on the code side: `docs/validation/v1.16.0/agents/critic.md:20`
+A5, `docs/audits/cohesion-2026-05/agents/critic.md:81`, `check-registry.json` det-20). Trigger:
 
-When triggered, spawn `agents/design-critic.md` with the screenshots + DESIGN.md heuristics:
+- `skip` (internal admin pages) — never evaluate.
+- `high` (marketing, landing, customer-facing) — **always** evaluate (stakes justify it regardless
+  of model capability). Run the bounded refine-vs-pivot loop below.
+- `standard` (most user-facing UI) — evaluate **only if** an edge-of-solo-capability signal fires:
+  (a) **novel aesthetic** — committed tone not previously shipped in this project (absent from
+  DESIGN.md / run history); (b) **interaction complexity** — forms, multi-step flows, stateful
+  widgets; (c) **low generator self-confidence** — generator self-reports uncertainty after Phase 4;
+  (d) **deterministic-lane hits** — `npx impeccable detect` (design pillar) returned findings.
+  If none fire, ship solo — the evaluator is unnecessary overhead at this tier under Opus 4.8.
+
+When triggered, spawn `agents/design-critic.md`. It navigates the **live dev-server URL** (passed
+below); pre-captured screenshots from 5.4.1 are the static fallback:
 
 ```
 Agent({
   subagent_type: "blitz:design-critic",
-  description: "Design-quality critique",
-  prompt: "Critique screenshots at /tmp/ui-build-screenshots/*.png against DESIGN.md (or frontend-design heuristics if no DESIGN.md). Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass threshold ≥7 on all five. Output style: terse-technical per /_shared/terse-output.md. Return ONLY the canonical JSON — no prose, no preamble."
+  description: "Design-quality critique (live nav)",
+  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/terse-output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })
 ```
 
-On any dimension <7 (and `design_quality: high`):
-1. Surface the specific critique to the user.
-2. If user approves: feed critique back to Phase 4 IMPLEMENT for one revision.
-3. Max 3 revisions per page; then escalate to user choice (accept current, manual rework, or skip).
+**Bounded refine-vs-pivot loop (E2/E3, `design_quality: high`).** After each evaluation, decide
+*strategically* — refine the current direction if scores trend up, or **pivot** to a different tone
+if stuck (the article's late-iteration creative leap). Refine-only foreclosed this; the pivot space
+is the 13-tone menu (§3.0.1).
 
-For `design_quality: standard`: report scores; do not auto-iterate. User decides.
+```
+ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
+                                                               # (article ran 5–15; cost-aware midpoint)
+                                                               # budget bound per /_shared/token-budget.md
+after evaluation N (scores S_N), trend = mean(S_N) - mean(S_{N-1}):   # first iter has no trend → REFINE
+  PASS (all dims ≥7)                          → STOP (ship)
+  trend > +0.5                                → REFINE: feed critique to Phase 4 IMPLEMENT, one
+                                                 revision of the CURRENT tone (surface to user first)
+  N ≥ PIVOT_AFTER (default 4) and trend ≤ +0.5 → PIVOT: abandon current tone, re-enter §3.0.1 and
+                                                 commit to a DIFFERENT untried tone; regenerate
+                                                 carrying forward structure/content, not the failed
+                                                 aesthetic; log the pivot (tone→tone, why) to the feed
+  else                                        → REFINE
+exit: PASS | ceiling reached | all reasonable tones tried → escalate to user (accept / rework / skip)
+```
+
+Track tried tones in run state so each PIVOT picks an untried tone. The escalate exit is the
+**bound**, not a flat 3.
+
+For `design_quality: standard` (when the trigger fires): report scores; run at most one revision;
+do not auto-pivot. User decides.
 
 ---
 

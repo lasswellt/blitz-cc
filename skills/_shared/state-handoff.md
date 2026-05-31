@@ -64,6 +64,7 @@ Reading order: **Producer → Artifact → Required-By**. Every artifact has exa
 
 | Artifact | Producer | Consumer | Required? |
 |---|---|---|---|
+| Negotiated sprint-contract (`${SESSION_TMP_DIR}/HANDOFF.json` `scope.acceptance`) | sprint-dev Phase 0.6 (generator ↔ evaluator) | sprint-dev Phase 3.5 verification, sprint-review | Optional (skipped for trivial single-story sprints) |
 | Worktrees `.cc-sessions/${SESSION_ID}/worktrees/agent-<role>/` | sprint-dev Phase 2.3 | Internal (agent dispatch); merged back at Phase 4.1 | Internal |
 | `STATE.md` (in repo root or `.cc-sessions/`) | sprint-dev Phase 3.2 step 1b (per checkpoint-protocol) | sprint-dev resume on next invocation, sprint-review report | Required by checkpoint-protocol |
 | Story `status` transitions (`in-progress`, `done`, `blocked`) | sprint-dev Phase 4.8 | sprint-review (report), next sprint-plan (carry-forward injection) | Required |

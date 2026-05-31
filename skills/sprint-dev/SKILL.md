@@ -124,6 +124,31 @@ Produce a **REUSE THESE — do not recreate** list with file paths and what each
 
 ---
 
+## Phase 0.6: SPRINT-CONTRACT NEGOTIATION (generator ↔ evaluator) (E4)
+
+Before any code is written, bridge the gap between the planner's stories and testable implementation
+by **negotiating a sprint contract** the evaluator co-owns — rather than consuming planner-assigned
+DoD one-directionally. Concept: `docs/integrations/harness-design/` (Gap 3).
+
+1. **Generator proposes** (this orchestrator): for the sprint's stories, propose what will be built
+   and *how the evaluator will verify it* — concrete testable behaviors, beyond the high-level
+   `acceptance_criteria`/`done` already in story frontmatter.
+2. **Evaluator reviews** — spawn `agents/critic.md` (code/QA) and, for UI stories, `agents/design-critic.md`,
+   to review the proposal and amend the verification criteria.
+3. **Converge** — iterate (bounded: **max 3 rounds**, else escalate to user) until both agree.
+4. **Persist** — write the agreed criteria to `${SESSION_TMP_DIR}/HANDOFF.json` as the sprint's
+   co-owned `scope.acceptance`; downstream verification (Phase 3.5, sprint-review) reads it.
+
+**Scope the negotiation to the gap** between high-level acceptance and testable behaviors — do NOT
+re-author what `sprint-plan` already pinned. If stories already carry detailed testable criteria, the
+evaluator merely amends/co-signs; if deliberately high-level, it co-authors. Cheap (one short
+file-based round per sprint); skip for single-story trivial sprints. In `autonomy=high|full`, cap at
+1 round and proceed with the generator's proposal if no amendment, logging a `decision` event.
+
+**Gate:** Contract persisted (or explicitly skipped for a trivial sprint) before spawning agents.
+
+---
+
 ## Phase 1: LOAD SPRINT — Find and Parse Planned Sprint
 
 ### 1.1 Find Latest Planned Sprint
