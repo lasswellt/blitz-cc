@@ -9,6 +9,7 @@
 #
 # Escape hatch: inline same-line comment `// blitz:skip-pinned: #<issue-or-url>`
 # justifies the .skip with a tracked reason.
+# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/threat-model.md §2 (env-first).
 #
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail

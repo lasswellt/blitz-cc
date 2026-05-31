@@ -11,6 +11,23 @@ ROOT=$(blitz_find_root || true)
 SESSIONS_DIR="$ROOT/.cc-sessions"
 mkdir -p "$SESSIONS_DIR"
 
+# --- Containment: pre-trust field sanitization (TB-1, AP-1) ---
+# This hook runs at SessionStart and echoes project-local .cc-sessions/ fields into
+# Claude's context. Those files are UNTRUSTED inbound data (a cloned repo controls them),
+# so every echoed free-text field is capped at 200 chars (parity with orchestrator.md:146)
+# and injection-scanned — replaced with a quarantine marker on a hit. This hook NEVER
+# eval/sources project-controlled content; it only parses (jq) and echoes sanitized text.
+# Canonical posture: /_shared/threat-model.md §3 TB-1 + /_shared/hook-trust.md.
+INJ_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|</?(system|tool|assistant)>|tool_call|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE)|exfiltrat)'
+sanitize() {
+  local s; s=$(cut -c1-200)
+  if printf '%s' "$s" | grep -qiE "$INJ_RX"; then
+    printf '[quarantined: suspicious field — see startup-validate.sh]'
+  else
+    printf '%s' "$s"
+  fi
+}
+
 # --- HANDOFF.json auto-resume detection ---
 # If a recent PreCompact wrote HANDOFF.json, surface it so Claude resumes
 # the in-flight task instead of starting fresh.
@@ -19,11 +36,11 @@ if [ -f "$HANDOFF" ]; then
   HANDOFF_AGE_SEC=$(( $(date +%s) - $(stat -c %Y "$HANDOFF" 2>/dev/null || stat -f %m "$HANDOFF" 2>/dev/null || echo 0) ))
   # Surface only if HANDOFF.json is fresh (≤24h). Older = stale, ignore.
   if [ "$HANDOFF_AGE_SEC" -le 86400 ]; then
-    HANDOFF_PHASE=$(jq -r '.phase // "unknown"' "$HANDOFF" 2>/dev/null || echo "unknown")
-    HANDOFF_SPRINT=$(jq -r '.sprint // "none"' "$HANDOFF" 2>/dev/null || echo "none")
-    HANDOFF_BRANCH=$(jq -r '.branch // "unknown"' "$HANDOFF" 2>/dev/null || echo "unknown")
+    HANDOFF_PHASE=$(jq -r '.phase // "unknown"' "$HANDOFF" 2>/dev/null | sanitize || echo "unknown")
+    HANDOFF_SPRINT=$(jq -r '.sprint // "none"' "$HANDOFF" 2>/dev/null | sanitize || echo "none")
+    HANDOFF_BRANCH=$(jq -r '.branch // "unknown"' "$HANDOFF" 2>/dev/null | sanitize || echo "unknown")
     HANDOFF_UNCOMMITTED_COUNT=$(jq -r '.uncommitted | length' "$HANDOFF" 2>/dev/null || echo 0)
-    HANDOFF_LAST=$(jq -r '.last_activity // ""' "$HANDOFF" 2>/dev/null || echo "")
+    HANDOFF_LAST=$(jq -r '.last_activity // ""' "$HANDOFF" 2>/dev/null | sanitize || echo "")
     cat <<EOF
 [blitz] HANDOFF detected (compaction-resume artifact):
   sprint:      $HANDOFF_SPRINT
@@ -46,9 +63,9 @@ if [ -f "$FEED" ] && [ -s "$FEED" ]; then
   if [ -n "$LINES" ]; then
     echo "[blitz] Recent activity:"
     echo "$LINES" | while IFS= read -r line; do
-      SESSION=$(echo "$line" | grep -o '"session":"[^"]*"' | head -1 | sed 's/"session":"//;s/"$//' || true)
-      MSG=$(echo "$line" | grep -o '"message":"[^"]*"' | head -1 | sed 's/"message":"//;s/"$//' || true)
-      SKILL=$(echo "$line" | grep -o '"skill":"[^"]*"' | head -1 | sed 's/"skill":"//;s/"$//' || true)
+      SESSION=$(echo "$line" | grep -o '"session":"[^"]*"' | head -1 | sed 's/"session":"//;s/"$//' | sanitize || true)
+      MSG=$(echo "$line" | grep -o '"message":"[^"]*"' | head -1 | sed 's/"message":"//;s/"$//' | sanitize || true)
+      SKILL=$(echo "$line" | grep -o '"skill":"[^"]*"' | head -1 | sed 's/"skill":"//;s/"$//' | sanitize || true)
       [ -n "$MSG" ] && echo "  [$SESSION] $SKILL: $MSG"
     done
   fi

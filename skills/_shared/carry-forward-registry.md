@@ -74,6 +74,11 @@ Every line is a JSON object. Eight fields are **load-bearing** (required to dete
   "drop_reason":       "<required if status=dropped>",
   "revival_candidate": true|false,              // Required if status=dropped; true means a future sprint should revisit
   "rollover_count":    <integer>,               // Incremented each sprint the entry remains status ∈ {active, partial}
+  "provenance": {                               // S-1 (TB-2): integrity tag for startup-validate.sh
+    "source":            "<skill-name|blitz-internal>", // WHO wrote this line (≠ scope `source` doc)
+    "write_session":     "<SESSION_ID>",         // Session that wrote it; lets the validator trust same-repo entries
+    "first_seen_sprint": "sprint-<N>"            // Anchors temporal-decoupling re-verification (research-critic §2.7)
+  },
   "notes":             "<free text>"
 }
 ```
@@ -86,6 +91,7 @@ Every line is a JSON object. Eight fields are **load-bearing** (required to dete
 - **`scope.acceptance`** — the executable DoD. Prefer `grep_absent` / `grep_present` / `shell` over prose — they can be run in `/blitz:review --only completeness` without human interpretation.
 - **`coverage`** — precomputed on write. Dashboards and invariants must not re-derive it from prior lines; they read the latest-wins value directly.
 - **`rollover_count`** — incremented by `sprint-review` at sprint close if `status ∈ {active, partial}` and the entry was not touched this sprint. Any entry with `rollover_count >= 3` escalates to mandatory human review instead of auto-injecting into the next sprint (prevents infinite bounce loops).
+- **`provenance`** (S-1, TB-2) — integrity tag read by `hooks/scripts/startup-validate.sh`. Because a carry-forward entry **auto-injects into `sprint-plan`**, it is high-blast-radius persistent state (the article's AP-4; memory-poisoning literature's *temporally-decoupled* attack — a poisoned entry can trigger sprints later). `provenance.source` lets the validator distinguish entries written by a registered same-repo session from injected ones; `first_seen_sprint` anchors the re-verification cadence (`/blitz:next` re-runs `research-critic.md` §2.7 grounding on entries older than 2 sprints). Pre-S-1 entries lack this field — the validator treats its absence as a migration advisory, never a block. New writers MUST populate it. See [threat-model.md](threat-model.md) §3 TB-2.
 
 ---
 

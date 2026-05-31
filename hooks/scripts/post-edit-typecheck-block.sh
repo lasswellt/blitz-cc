@@ -6,6 +6,7 @@
 # Why blocking: post-edit-test.sh always exits 0 (advisory). This hook actively
 # rejects edits that introduce type errors, preventing the "rush to completion"
 # failure mode where agents declare done on a broken build.
+# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/threat-model.md §2 (env-first).
 #
 # Skip conditions: no tsconfig.json (not a TS project), CI env, BLITZ_DISABLE_TYPECHECK_BLOCK=1,
 #   edited file not in tsconfig include scope.

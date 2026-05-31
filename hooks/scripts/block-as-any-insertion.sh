@@ -9,6 +9,7 @@
 # Escape hatch (per skills/_shared/shortcut-taxonomy.md §4): inline same-line
 # comment `// blitz:any-allowed: <reason>` justifies the use. Without justification
 # the edit is blocked.
+# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/threat-model.md §2 (env-first).
 #
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail

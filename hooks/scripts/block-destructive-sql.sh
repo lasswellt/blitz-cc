@@ -8,6 +8,7 @@
 #  - Replit Rogue Agent DROP TABLE incident, July 2025
 #
 # Allows DROP/DELETE/TRUNCATE in migration files (path contains migrations/).
+# Containment: environment-layer guard (user-misuse). Canonical posture: /_shared/threat-model.md §2 (env-first).
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail
 

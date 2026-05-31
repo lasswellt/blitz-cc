@@ -164,6 +164,14 @@ already evident in the diff or tool output. Format: fragments OK.
 - [ ] **Authentication flows**: Are tokens stored securely? Are refresh mechanisms implemented correctly?
 - [ ] **Error information leakage**: Do error responses expose stack traces, internal paths, or sensitive data?
 
+#### Containment Scope (sec-containment) — applies to agent/plugin codebases (blitz-self-audit)
+Per [/_shared/threat-model.md](/_shared/threat-model.md). Frame `allowed-tools` as **capability grants, not toggles** (AP-3 / `sec-capability-grant`):
+- [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion — else flag.
+- [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`/carry-forward/CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
+- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the orchestrator cap+scan interpolated reply fields? (`spawn-protocol.md` §8.0)
+- [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
+- [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or `eval`/`source` a project-controlled file? ([/_shared/hook-trust.md](/_shared/hook-trust.md))
+
 ### Pillar 4: Maintainability
 
 #### Frontend Scope (maint-frontend)

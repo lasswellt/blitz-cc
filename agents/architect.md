@@ -10,6 +10,9 @@ description: |
   assistant: "I'll delegate this to the architect agent to map the dependency graph and evaluate module boundaries."
   </example>
 tools: Read, Glob, Grep, Bash
+# capability rationale (TB-4 / sec-capability-grant): Bash is read-subset only — git log, grep,
+# jq, dependency-graph queries. Strictly read-only role; no Write/Edit/Agent. Bash is an exec+egress
+# capability — keep read-only in use; do NOT add WebFetch/network/MCP egress. Posture: /_shared/threat-model.md §5.
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 15
 # Sonnet by default per /_shared/token-budget.md routing matrix. For genuinely

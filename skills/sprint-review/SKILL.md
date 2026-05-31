@@ -309,8 +309,17 @@ Full invariant procedures (Invariants 1-4, the hard-gate decision, report schema
 3. Run **Invariant 6** (ratchet — see [/_shared/ratchet-protocol.md](/_shared/ratchet-protocol.md)): read `docs/sweeps/ratchet.json`. For each metric, recompute `current` and verify direction. If any metric regresses without a covering carry-forward entry, the sprint cannot reach PASS. On improvements, tighten thresholds and append a history snapshot.
 4. Run **Invariant 7** (critic adversarial review — see [/_shared/shortcut-taxonomy.md](/_shared/shortcut-taxonomy.md) and `agents/critic.md`): spawn the `blitz:critic` agent. It returns `{verdict: "LGTM" | "REJECT", issues: [...]}`. REJECT verdict blocks PASS; the issues array describes the single reject reason.
 5. Run **Invariant 8** (worktree branch hygiene — see [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)): assert sprint-dev Phase 4.4 deleted every `sprint-${SPRINT_NUMBER}/{backend,frontend,tests,infra,integration}` branch. Any surviving match → FAIL. Resolution: `/blitz:worktree-prune --apply --merged-only`. Full procedure: `references/main.md` §Invariant 8 — Branch Hygiene.
+5b. Run the **Security-posture gate** (containment — see [/_shared/threat-model.md](/_shared/threat-model.md)). The deterministic security-pillar checks, complementary to the 8 invariants:
+   ```bash
+   bash hooks/scripts/check-registry-validate.sh          # security-pillar rows schema-valid
+   bash hooks/scripts/startup-validate.sh --strict --quiet # persistent-state clean (TB-2); exit 2 = injection in .cc-sessions/
+   # Capability grants (TB-4): every read-only agent's tool grant is justified
+   grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' hooks/scripts/*.sh | grep -v '_lib/common.sh' \
+     && echo "FAIL: pre-trust execution of project content" || true   # hook-trust.md invariant
+   ```
+   Any non-zero (injection in persistent state, hook executing project content) → CONDITIONAL at best. Semantic checks (`sec-content-inspection`) are advisory. Registry: `sec-startup-*`, `sec-content-inspection`, `sec-capability-grant`. This is the permanent security gate ([SYNTHESIS.md](../../docs/security/containment/SYNTHESIS.md) Epic 6).
 6. Write the Invariants Report section to the review report.
-7. **Hard gate**: Reader Algorithm exit 0 + Invariants 3, 5, 6, 7, 8 pass → proceed to Phase 4. Any fail → `CONDITIONAL` at best; ESCALATION (exit 3), Invariant 5 fail, Invariant 8 fail, ratchet regression with no carry-forward, or critic REJECT → FAIL.
+7. **Hard gate**: Reader Algorithm exit 0 + Invariants 3, 5, 6, 7, 8 + security-posture gate pass → proceed to Phase 4. Any fail → `CONDITIONAL` at best; ESCALATION (exit 3), Invariant 5 fail, Invariant 8 fail, ratchet regression with no carry-forward, critic REJECT, or a security-posture injection/pre-trust-execution finding → FAIL.
 
 ### Invariants 6 and 7 — Ratchet + Critic (BLOCKERs)
 

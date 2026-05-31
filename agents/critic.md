@@ -15,6 +15,9 @@ description: |
   assistant: "Spawning the critic agent to find any reason to reject before PASS."
   </example>
 tools: Read, Grep, Glob, Bash
+# capability rationale (TB-4 / sec-capability-grant): Bash runs deterministic detectors (git diff,
+# grep, tsc/lint readouts) — read-subset only. Strictly read-only review role; no Write/Edit/Agent.
+# Bash is exec+egress — keep read-only; do NOT add network/MCP egress. Posture: /_shared/threat-model.md §5.
 maxTurns: 30
 model: sonnet
 color: red

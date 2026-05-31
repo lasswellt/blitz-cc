@@ -5,6 +5,7 @@
 # `git push --force` to main/master.
 #
 # Allowed when working tree is clean (no risk of losing work).
+# Containment: environment-layer guard (user-misuse). Canonical posture: /_shared/threat-model.md §2 (env-first).
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail
 

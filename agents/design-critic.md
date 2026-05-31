@@ -14,6 +14,9 @@ description: |
   the rendered output against DESIGN.md heuristics and iterate on weak dimensions."
   </example>
 tools: Read, Grep, Glob, Bash
+# capability rationale (TB-4 / sec-capability-grant): Bash drives detect-stack + screenshot/token
+# readouts — read-subset only. Read-only design-review role; no Write/Edit/Agent. Bash is exec+egress —
+# keep read-only; do NOT add network/MCP egress. Posture: /_shared/threat-model.md §5.
 maxTurns: 15
 model: sonnet
 color: purple
