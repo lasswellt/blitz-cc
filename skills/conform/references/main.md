@@ -5,7 +5,7 @@ Detailed schema-migration tables, version probes, and validator inventory refere
 ## Table of Contents
 
 1. [Schema Detection Rules](#schema-detection-rules)
-2. [Story Schema Versions (v0.x → v1.9 migration)](#story-schema-versions)
+2. [Story Schema Versions (`registry_entries` additive migration)](#story-schema-versions)
 3. [STATE.md Format Variants](#statemd-format-variants)
 4. [Roadmap Canonical-vs-Extension Inventory](#roadmap-canonical-vs-extension-inventory)
 5. [Session Model Variants](#session-model-variants)
@@ -21,7 +21,7 @@ For each artifact category that supports multiple schema versions, conform must 
 
 | Artifact | Version probe | Versions |
 |---|---|---|
-| Story frontmatter | YAML keys present | v0.x: `epic` + `verify` + `done`. v1.9: `epic_id` + `acceptance_criteria` + `registry_entries` |
+| Story frontmatter | YAML keys present | pre-registry: `epic` + `verify`, no `registry_entries`. current: `epic` + `verify` + `registry_entries` (canonical field names per `/_shared/story-frontmatter.md`). The only additive field is `registry_entries`; `epic`/`verify` are canonical — NOT renamed. |
 | STATE.md | first heading after `# Sprint N — STATE` | field-form (one bullet per field) vs table-form (markdown table with one row per field) |
 | Sprint manifest | `version` field if present, else infer from key set | `manifest.json` v1+ has `points_total`, `story_count_required`. Older manifests may lack these. |
 | Activity feed line | required-field probe | v1: `ts`, `session`, `skill`, `event`, `message`, `detail` (current). Older lines may lack `detail`. |
@@ -30,13 +30,15 @@ For each artifact category that supports multiple schema versions, conform must 
 
 ## Story Schema Versions
 
-### v0.x (pre-v1.9.0 blitz, common in legacy projects)
+**Canonical field names are `epic` and `verify`** (per [`/_shared/story-frontmatter.md`](/_shared/story-frontmatter.md) — `epic` required, `verify` required, `registry_entries` optional). There is **no** `epic_id`/`acceptance_criteria` rename — earlier drafts of this skill described one, but the canonical schema never adopted it. The only real schema evolution is the **additive `registry_entries`** field (added in the carry-forward-registry era). Do NOT rename `epic`→`epic_id` or `verify`→`acceptance_criteria`; doing so de-conforms an already-conformant story and breaks `sprint-review` Invariant 3 (which reads `epic`) and the `done` gate (which reads `verify`).
+
+### pre-registry (older stories, before carry-forward integration)
 
 ```yaml
 ---
 id: S200-001
 title: 'EngagementTier type + classifyTier + decayFactor pure functions'
-epic: EPIC-104                         # ← v0.x field name
+epic: EPIC-104                         # canonical field name
 status: incomplete
 priority: 1
 points: 1
@@ -44,48 +46,45 @@ depends_on: []
 assigned_agent: backend-dev
 files:
   - packages/domain/src/types/engagement-score.ts
-verify:                                # ← v0.x field (v1.9 calls this acceptance_criteria)
+verify:                                # canonical field name
   - 'pnpm --filter @mbk/domain build'
 commit: 'feat(sprint-200/backend): ...'
 ---
+# ← lacks `registry_entries` (the one additive field)
 ```
 
-### v1.9 (current canonical, per `/_shared/story-frontmatter.md`)
+### current canonical (per `/_shared/story-frontmatter.md`)
 
 ```yaml
 ---
 id: S200-001
 title: 'EngagementTier type + classifyTier + decayFactor pure functions'
-epic_id: EPIC-104                      # ← v1.9 field name
+epic: EPIC-104                         # unchanged — canonical
 status: incomplete
-acceptance_criteria:                   # ← v1.9 field
+verify:                                # unchanged — canonical
   - 'pnpm --filter @mbk/domain build'
-registry_entries: []                   # ← v1.9 field (links story to carry-forward.jsonl entries)
-# Optional / project extensions preserved as-is:
+registry_entries: []                   # additive: links story to carry-forward.jsonl entries
 priority: 1
 points: 1
 depends_on: []
 assigned_agent: backend-dev
 files: [...]
-verify: [...]                          # may keep alongside acceptance_criteria
 commit: '...'
 ---
 ```
 
 ### Migration algorithm
 
-For each story flagged MIGRATE:
+A story is flagged MIGRATE **only** if it lacks `registry_entries` AND the project uses the carry-forward registry (`.cc-sessions/carry-forward.jsonl` exists). A story already carrying `epic` + `verify` + `registry_entries` is **conformant** — emit NO finding. For each genuine MIGRATE:
 
 1. Backup: `cp <story>.md <story>.md.pre-conform.<ts>`
 2. Parse YAML frontmatter into a dict.
-3. **Rename**: if `epic` key present and `epic_id` absent → `dict['epic_id'] = dict.pop('epic')`
-4. **Derive**: if `verify` present and `acceptance_criteria` absent → `dict['acceptance_criteria'] = dict['verify']` (do not pop — keep `verify` as project extension)
-5. **Add**: if `registry_entries` absent → `dict['registry_entries'] = []`
-6. **Preserve all other fields verbatim.** No fields removed.
-7. Write back. Re-parse to verify YAML validity.
-8. If parse fails after write, restore backup and log to `migration-failures.log`.
+3. **Add only**: if `registry_entries` absent → `dict['registry_entries'] = []`.
+4. **Preserve all other fields verbatim** — never rename `epic`/`verify`/`done`. No fields removed.
+5. Write back. Re-parse to verify YAML validity.
+6. If parse fails after write, restore backup and log to `migration-failures.log`.
 
-**Idempotency**: rerunning on a v1.9 story is a no-op (epic_id already present, acceptance_criteria already present, registry_entries already present).
+**Idempotency**: rerunning on a conformant story is a no-op (`registry_entries` already present). **Caveat**: if the project does not use the carry-forward registry, absence of `registry_entries` is NOT drift — it is an optional field (Safety Rule 9). Emit INFO, not MIGRATE.
 
 ---
 

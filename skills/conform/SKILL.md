@@ -1,6 +1,6 @@
 ---
 name: conform
-description: Conforms blitz runtime artifacts to current canonical schemas. Detects drift in `.cc-sessions/`, sprint dirs, roadmap JSON, and research `scope:` blocks. Schema-version aware — migrates pre-v1.9.0 story frontmatter (epic→epic_id, verify→acceptance_criteria) preserving project extensions. Read-only by default; `--fix` applies idempotent migrations. Use after upgrading blitz, when sprint-dev/review complains about schema fields, or when a forked plugin needs structural alignment. `--scope plugin` targets SKILL.md + hooks rather than runtime artifacts.
+description: Conforms blitz runtime artifacts to current canonical schemas. Detects drift in `.cc-sessions/`, sprint dirs, roadmap JSON, and research `scope:` blocks. Schema-version aware — migrates story frontmatter additively (adds `registry_entries` when a project adopts the carry-forward registry; `epic`/`verify` are canonical, never renamed) preserving project extensions. Read-only by default; `--fix` applies idempotent migrations. Use after upgrading blitz, when sprint-dev/review complains about schema fields, or when a forked plugin needs structural alignment. `--scope plugin` targets SKILL.md + hooks rather than runtime artifacts.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: low
@@ -30,7 +30,7 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 
 ## Additional Resources
 
-- For per-artifact schema versioning rules + migration tables (story frontmatter v0.x→v1.9, STATE.md formats, roadmap canonical-vs-extension table, session model variants), see [references/main.md](references/main.md)
+- For per-artifact schema versioning rules + migration tables (story frontmatter `registry_entries` additive migration, STATE.md formats, roadmap canonical-vs-extension table, session model variants), see [references/main.md](references/main.md)
 - For the carry-forward registry schema, see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
 - For the activity-feed JSONL schema, see [verbose-progress.md](/_shared/verbose-progress.md)
 - For the canonical story frontmatter, see [story-frontmatter.md](/_shared/story-frontmatter.md)
@@ -50,7 +50,7 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 
 4. **Determine scope.** `--scope project` (default) | `--scope plugin` | `--scope all`.
 
-5. **Sample-mode autodetect.** If sprints/ has >50 entries OR total stories >300, switch to sample mode unless `--full` passed. In sample mode: audit all in latest 3 sprints + a **random sample of 10 older stories drawn uniformly across all older sprints** (not file-system order — use `find ... | shuf -n 10`). Remainder gets `INFO: not sampled` line in report. After auditing the sample, **extrapolate finding counts**: e.g., "86/100 sample stories on schema v0.x → projected ~876 of 1018 v0.x → MIGRATE finding for the population."
+5. **Sample-mode autodetect.** If sprints/ has >50 entries OR total stories >300, switch to sample mode unless `--full` passed. In sample mode: audit all in latest 3 sprints + a **random sample of 10 older stories drawn uniformly across all older sprints** (not file-system order — use `find ... | shuf -n 10`). Remainder gets `INFO: not sampled` line in report. After auditing the sample, **extrapolate finding counts**: e.g., "86/100 sample stories lack `registry_entries` → projected ~876 of 1018 → MIGRATE finding for the population (add `registry_entries: []`)."
 
 6. **Sanity check target.** Refuse to proceed unless target contains at least one of `.cc-sessions/`, `sprints/`, `.claude-plugin/plugin.json`, or `skills/*/SKILL.md`. Else exit `NOT_A_BLITZ_DIR`.
 
@@ -71,7 +71,7 @@ For each artifact, record **presence**, **count**, and **schema version** (where
 | Orphan locks | `.cc-sessions/*.lock` not paired with active session | n/a | n/a |
 | Sprints | `sprints/sprint-*/` | yes | manifest version field if present |
 | Sprint manifests | `sprints/sprint-N/manifest.{json,md}` | per-sprint | shape |
-| Stories | `sprints/sprint-N/stories/*.md` | per-sprint | **v1.9 (epic_id+acceptance_criteria+registry_entries) vs v0.x (epic+verify+done)** — see references/main.md §Story Schema Versions |
+| Stories | `sprints/sprint-N/stories/*.md` | per-sprint | **canonical = `epic`+`verify`(+`registry_entries`); pre-registry stories lack `registry_entries`** — see references/main.md §Story Schema Versions. `epic`/`verify` are canonical names, NOT renamed. |
 | STATE.md | `sprints/sprint-N/STATE.md`, `STATE.md` (root) | per-sprint | **field-form vs table-form** — try both parsers |
 | Roadmap (canonical) | the 6 files: `capability-index.json`, `epic-registry.json`, `phase-plan.json`, `domain-index.json`, `ROADMAP.md`, `gap-analysis.md` | yes | jq -e shape probes |
 | Roadmap (extensions) | any other file in `docs/roadmap/` | n/a | INFO only — project-specific extensions are not drift |
@@ -91,7 +91,7 @@ For each artifact, validate against the schema **at its detected version** (don'
 
 Findings classified as:
 
-- **MIGRATE** — auto-applicable schema-version migration (e.g., v0.x story → v1.9 story). Distinct from MECHANICAL because it's not just "missing field" but "different field name to rename".
+- **MIGRATE** — auto-applicable schema-version migration (e.g., adding `registry_entries` when a project adopts the carry-forward registry). Additive only — conform never renames canonical fields.
 - **MECHANICAL** — fixable by trivial inline edit (missing optional default, schema field truly absent at the detected version).
 - **MANUAL** — needs human judgment (stale entries, contradictory state, ambiguous fix).
 - **NO ACTION (INFO)** — informational (extension files, sample-mode skipped artifacts, optional features absent).
@@ -103,7 +103,7 @@ Findings classified as:
 | `activity-feed.jsonl` schema | line JSON parse + required-fields probe per verbose-progress.md | always run if file exists |
 | `carry-forward.jsonl` Reader Algorithm | per carry-forward-registry.md §Reader Algorithm `MODE=audit` | **skip** if file absent and no consumer found |
 | `developer-profile.json` autonomy | `jq '.autonomy'` in `{low, medium, high, full}` | **skip** if file absent and no skill/hook references it |
-| Story frontmatter | shape per story-frontmatter.md | **detect version first**: v0.x → emit MIGRATE finding (not MECHANICAL); v1.9 → field-presence check |
+| Story frontmatter | shape per story-frontmatter.md | field-presence check on canonical `epic`+`verify`; if `registry_entries` absent AND carry-forward in use → MIGRATE (add `[]`); else conformant |
 | STATE.md required fields | per state-handoff.md, with table-form fallback parser | **try both formats** before flagging MANUAL |
 | Active sessions older than 4h | compare `started`/dir mtime to now | works for both file + dir model |
 | Orphan locks | set diff `*.lock` minus active sessions | works for both models |
@@ -122,7 +122,7 @@ Build a migration plan as a table (sample shape — actual will reflect target):
 
 | Finding | Scope | Category | Fix approach | Idempotent? |
 |---|---|---|---|---|
-| 1018 stories on schema v0.x | project | MIGRATE | inline transform: rename `epic`→`epic_id`, derive `acceptance_criteria` from `verify`, add `registry_entries: []`, preserve all extra fields | yes |
+| 312 stories lacking `registry_entries` (project uses carry-forward) | project | MIGRATE | inline transform: add `registry_entries: []` only; never rename `epic`/`verify` (those are canonical); preserve all fields | yes |
 | 47 activity-feed entries missing `detail` field | project | MECHANICAL | inline Edit: append `"detail":{}` | yes |
 | `carry-forward.jsonl` absent + no consumer | project | NO ACTION | feature not in use | n/a |
 | `developer-profile.json` absent + no consumer | project | NO ACTION | feature not in use | n/a |
@@ -138,17 +138,18 @@ Print plan as verbose-progress table. If `--report-only`, skip to Phase 6.
 
 ## Phase 4: MIGRATE (only if `--fix`) — Apply Mechanical Fixes
 
-### Story-frontmatter v0.x → v1.9 migration (the big one)
+### Story-frontmatter `registry_entries` migration
 
-For each story flagged MIGRATE:
+**Canonical field names are `epic` + `verify`** ([/_shared/story-frontmatter.md](/_shared/story-frontmatter.md)) — NOT `epic_id`/`acceptance_criteria`. Never rename them; the only additive field is `registry_entries`. A story with `epic` + `verify` + `registry_entries` is conformant.
+
+For each story flagged MIGRATE (lacks `registry_entries` AND project uses carry-forward registry):
 
 1. Backup: copy file to `<file>.pre-conform.<ts>`.
 2. Parse YAML frontmatter.
-3. Transform:
-   - Rename `epic:` → `epic_id:` (preserve value)
-   - If `verify:` exists and `acceptance_criteria:` does not, copy `verify` value to `acceptance_criteria` (keep `verify` as well — it's atp-specific extension and doesn't conflict)
-   - If `registry_entries:` missing, add `registry_entries: []` (empty array — populated later by carry-forward integration if/when the project adopts it)
-4. Preserve all other fields verbatim (`priority`, `points`, `depends_on`, `assigned_agent`, `files`, `done`, `commit`, etc.).
+3. Transform — **add only**:
+   - If `registry_entries:` missing, add `registry_entries: []` (empty array — populated later by carry-forward integration if/when the project adopts it).
+   - Do NOT rename `epic`/`verify`/`done` — they are canonical; renaming de-conforms the story and breaks sprint-review Invariant 3 (`epic`) + the done gate (`verify`).
+4. Preserve all other fields verbatim (`epic`, `verify`, `priority`, `points`, `depends_on`, `assigned_agent`, `files`, `done`, `commit`, etc.).
 5. Write back. Verify YAML parses.
 
 Per-story migration is independent — failure on one story does not abort the batch. Failed stories logged to `migration-failures.log`.
@@ -223,7 +224,7 @@ Sample mode: on (auditing latest 3 + 5 random; <N> sprints not sampled) | off
   Developer profile: present (autonomy=<value>)  |  not in use
   Sessions: <N> file-style + <M> dir-style (<stale>)
   Sprints: <N> (latest: sprint-<X>)
-  Stories: <N> total (<v1.9>/<v0.x>)
+  Stories: <N> total (<with registry_entries>/<without>)
   Roadmap canonical: <N>/6 present  |  Extensions (INFO): <N>
   Research docs: <N> (<scope-blocks>)
 
@@ -234,7 +235,7 @@ Sample mode: on (auditing latest 3 + 5 random; <N> sprints not sampled) | off
   INFO: <count> (informational, no action)
 
 ## Migrations applied (Phase 4) — only if --fix
-  Story v0.x→v1.9: <N> migrated, <N> failed (see migration-failures.log)
+  Story registry_entries add: <N> migrated, <N> failed (see migration-failures.log)
   Activity-feed normalization: <N> lines
   Carry-forward dedup: <N> entries  |  skipped (no file)
   Orphan lock cleanup: <N>
