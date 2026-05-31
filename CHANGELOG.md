@@ -21,6 +21,21 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.3.0] — 2026-05-31 · GAN-harness design-loop integration (E1–E5)
+
+Closes the five deltas between blitz's design loop and the planner/generator/evaluator harness in [anthropic.com/engineering/harness-design-long-running-apps](https://www.anthropic.com/engineering/harness-design-long-running-apps). Blitz already had the architecture (sprint-plan → ui-build/sprint-dev → design-critic/critic); these are the deltas, not a rebuild. Specs: `docs/integrations/harness-design/`.
+
+### Added
+- **`skills/_shared/design-criteria.md`** — single-source 5-dimension design rubric, shared by the generator (steering) and evaluator (scoring). The criteria themselves steer the model off generic defaults before any evaluator cycle.
+- **E1 criteria-as-steering** — `ui-build` Phase 3.0.1.1 carries the 5 dims ("museum quality") into generation, not just into the evaluator. Tone-conditional phrasing for informal tones.
+- **E2 live-navigating evaluator** — `agents/design-critic.md` granted the Playwright navigation subset and navigates the live page before scoring (click primaries, exercise states, resize for responsive, read console). New `coverage_boundary` reply field; static-screenshot path retained as fallback (never silently passes interaction dims). `maxTurns` 15→30. `browser_run_code_unsafe`/`browser_evaluate` deliberately NOT granted (threat-model §5 posture).
+- **E3 iterate + pivot** — `ui-build` Phase 5.4.2 flat-3 cap replaced with `ceiling = min(10, budget)`; refine-vs-pivot strategic decision after each evaluation (pivot space = the 13-tone menu).
+- **E4 sprint-contract negotiation** — `sprint-dev` Phase 0.6: generator↔evaluator negotiate testable acceptance before code; persisted as co-owned `scope.acceptance`. Registered in `state-handoff.md`.
+- **E5 capability-relative trigger** — `ui-build` `standard` tier evaluates only on edge-of-capability signals (novel aesthetic / interaction complexity / low generator confidence / deterministic-lane hits); `high` always evaluates. Re-examine per model release; cites the v1.16.0/cohesion/det-20 detector re-justification precedent.
+
+### Changed
+- `agents/design-critic.md` — "read screenshots, not source" → "read the rendered app, not the source" (input surface expands to live DOM; the source prohibition stands).
+
 ## [2.2.1] — 2026-05-30 · fix check-registry schema (v2.2.0 hotfix)
 
 v2.2.0's LANE-1 re-laned 41 rows to `lane: semantic` but left `detection.type: command` and one `verdict_authority: reject` — which the `check-registry-validate` CI gate rejects (semantic rows must be `detection.type: semantic` + `verdict_authority: advisory`). The gate runs in CI only and was not run locally, so v2.2.0 shipped with a schema-invalid registry (red CI on `main`).
