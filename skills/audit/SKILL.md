@@ -269,52 +269,7 @@ Calculate:
 
 ### 2.6 Write Consolidated Report
 
-Write `${AUDIT_RUN}/reports/audit-report.md` using the report template from `references/main.md`:
-
-```markdown
-# Codebase Audit Report
-**Date**: <ISO-8601>
-**Stack**: <detected stack>
-**Files Analyzed**: <count>
-**Agents Succeeded**: <N>/10
-
-## Executive Summary
-<2-3 sentence overview with overall health score>
-
-## Health Scorecard
-| Pillar | Score | Critical | High | Medium | Low |
-|--------|-------|----------|------|--------|-----|
-| Architecture | XX/100 | N | N | N | N |
-| Performance | XX/100 | N | N | N | N |
-| Security | XX/100 | N | N | N | N |
-| Maintainability | XX/100 | N | N | N | N |
-| Robustness | XX/100 | N | N | N | N |
-
-## Critical Findings
-<list all Critical severity findings>
-
-## Findings by Pillar
-### Architecture
-<findings sorted by severity>
-
-### Performance
-...
-
-### Security
-...
-
-### Maintainability
-...
-
-### Robustness
-...
-
-## Hotspot Files
-<top 10 files with most findings>
-
-## Recommended Actions
-<prioritized list of what to fix first>
-```
+Write `${AUDIT_RUN}/reports/audit-report.md` using the report template. Full report template detail: [references/main.md](references/main.md#consolidated-report-template-phase-26).
 
 ### 2.7 Copy Report to Project
 
@@ -424,43 +379,7 @@ The emitter MUST populate every field documented in Phase 3.5 schema on EVERY ep
 
 ### 3.5 Write Machine-Readable Index
 
-Write a JSON index for consumption by the roadmap skill:
-```
-${REPORT_DIR}/audit-$(date +%Y%m%d)-index.json
-```
-Schema:
-```json
-{
-  "audit_date": "<ISO-8601>",
-  "proposed_epics": [
-    {
-      "id": "<EPIC-A...>",
-      "theme": "<theme-name>",
-      "pillar": "<pillar>",
-      "priority": 0,
-      "impact": 0,
-      "effort": "<Small|Medium|Large>",
-      "finding_count": 0,
-      "severity_breakdown": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
-      "proposed_stories": ["<story descriptions>"],
-      "success_criteria": ["<criteria>"],
-      "status": "proposed",
-      "defer_reason": null,
-      "multi_sprint": false,
-      "sprint_estimate": null,
-      "ingested_at": null
-    }
-  ]
-}
-```
-
-**Backward-compat defaults** (consumers MUST tolerate omitted fields by defaulting):
-- `id` — stable string key, format `EPIC-A<NN>`. Required for `/blitz:next` Phase 0.9b cross-reference.
-- `status` — defaults to `"proposed"`. Enum: `proposed | deferred | active | complete`. Drives `/blitz:next` row 6e detection.
-- `defer_reason` — defaults to `null`. Free-form string when `status: "deferred"`.
-- `multi_sprint` — defaults to `false`. Operator-set boolean; signals work spans multiple sprints (orthogonal to `effort` — a 6-file refactor across 3 sprints sets `multi_sprint: true` + `sprint_estimate: 3` even when `effort: Medium`).
-- `sprint_estimate` — defaults to `null`. Integer count of sprints the operator expects to complete this epic.
-- `ingested_at` — defaults to `null`. ISO-8601 timestamp set by `/blitz:roadmap extend` after registry ingestion.
+Write a JSON index for consumption by the roadmap skill at `${REPORT_DIR}/audit-$(date +%Y%m%d)-index.json`. Full index schema + backward-compat defaults: [references/main.md](references/main.md#machine-readable-index-schema-phase-35).
 
 ### 3.6 Final Output
 

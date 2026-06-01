@@ -340,25 +340,7 @@ already evident in the diff or tool output. Format: fragments OK.
 
 MUST appear in every `skills/*/references/main.md` that contains an agent-prompt template (7 files: audit, codebase-map, code-sweep, quality-metrics, research, sprint-dev, sprint-plan). Any missing snippet is a Critical finding; sprint status transitions to **FAIL**.
 
-Audit command (sprint-review runs this in Phase 3.6 — covers SKILL.md AND references/main.md):
-
-```bash
-SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output.md'
-
-# Every SKILL.md must include the snippet (Anthropic-canonical SKILL.md template requirement).
-SKILL_TOTAL=$(ls skills/*/SKILL.md | wc -l)
-SKILL_PRESENT=$(grep -lE "$SNIPPET_RE" skills/*/SKILL.md | wc -l)
-[ "$SKILL_PRESENT" -eq "$SKILL_TOTAL" ] \
-  || echo "Invariant 5 FAIL (SKILL.md): $SKILL_PRESENT / $SKILL_TOTAL contain canonical OUTPUT STYLE snippet"
-
-# Every references/main.md that contains an Agent-prompt template must include the snippet.
-REF_WITH_PROMPTS=$(grep -l "Agent Prompt Template\|prompt:" skills/*/references/main.md 2>/dev/null | wc -l)
-REF_PRESENT=$(grep -lE "$SNIPPET_RE" skills/*/references/main.md 2>/dev/null | wc -l)
-[ "$REF_PRESENT" -ge "$REF_WITH_PROMPTS" ] \
-  || echo "Invariant 5 FAIL (references/main.md): $REF_PRESENT / $REF_WITH_PROMPTS contain canonical OUTPUT STYLE snippet"
-```
-
-The check is total-coverage on SKILL.md (no exemptions) and present-where-needed on references/main.md (only files with embedded agent prompts). Adding a new SKILL.md without the snippet auto-fails the next review.
+Full Invariant 5 audit command detail: [references/main.md](references/main.md#invariant-5--audit-command).
 
 ---
 

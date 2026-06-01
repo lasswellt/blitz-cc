@@ -32,7 +32,7 @@ The per-change quality gate. **Precision-biased**: it runs constantly, so a fals
 
 Per [check-registry.md](/_shared/check-registry.md), select `consolidated_target ∈ {review, both}`:
 
-1. **Deterministic lane** (run first, fast, zero-FP): `lane == deterministic` checks — tsc/lint/test/build (det-11/12), shortcut detectors (det-01..19), anti-mock O2 (o2-*, was completeness-gate), wiring O3 (o3-*, was integration-check, conditional on new modules), framework rules (fw-*, conditional on Vue/Firestore/Pinia). `reject`-authority findings may flip the verdict and bypass the confidence gate.
+1. **Deterministic lane** (run first, fast, zero-FP): `lane == deterministic` checks — tsc/lint/test/build (det-11/12), shortcut detectors (det-01..20), anti-mock O2 (o2-*, was completeness-gate), wiring O3 (o3-*, was integration-check, conditional on new modules), framework rules (fw-*, conditional on Vue/Firestore/Pinia). `reject`-authority findings may flip the verdict and bypass the confidence gate.
 2. **Semantic lane** (single-pass — diff is small, bias is precision): the 4 parallel reviewer agents (security/backend/frontend/patterns). Single-pass findings start at base_confidence ≈0.5 and MUST pass FP-verification to survive; un-reproduced findings are dropped. FP-verification cannot *raise* confidence (only aggregation does, and review is single-pass) — so a default-review semantic finding stays a sub-threshold advisory, never a blocker. Aggregation is opt-in (`--aggregate`); audit is where it re-surfaces.
 
 **FP-verification** (mandatory before any blocker on a `base_confidence < 1.0` finding): re-read the cited code, confirm the flaw reproduces against actual behavior, attach the excerpt. No evidence → downgrade to advisory.

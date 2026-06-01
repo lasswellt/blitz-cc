@@ -22,42 +22,27 @@ underspecified request and route it to the correct skill(s) with a clear plan.
 
 ## Phase 1: Classify
 
-**Canonical routing table: [`agents/orchestrator.md`](../../agents/orchestrator.md) §2 (O4).** The table below MIRRORS the orchestrator's intent→skill map for standalone `ask` invocations. To add/change a route, edit orchestrator.md §2 first, then sync this mirror — do not maintain divergent mappings.
+**Canonical routing map: [`agents/orchestrator.md`](../../agents/orchestrator.md) §2.** That table is the single source of truth for intent→skill routing. Read it at runtime and match the user's request against it:
 
-Match the user's request against this routing table:
+```bash
+sed -n '/## 2. Skill routing matrix/,/## 3\./p' agents/orchestrator.md
+```
 
-| Intent Keywords                           | Primary Skill  | Follow-up Chain                  |
-| ----------------------------------------- | -------------- | -------------------------------- |
-| "fix bug", "broken", "issue #N"           | fix-issue      | → test-gen → browse              |
-| "look better", "improve UI", "redesign"   | ui-build       | → browse                         |
-| "new page", "new feature", "add X"        | sprint-plan    | → sprint-dev → sprint-review     |
-| "add tests", "test coverage"              | test-gen       | → browse (if UI)                 |
-| "refactor", "extract", "simplify"         | refactor       | → test-gen                       |
-| "research", "how should we", "compare"    | research       | → (context-dependent)            |
-| "sprint", "next sprint"                   | /sprint cmd    | —                                |
-| "check pages", "console errors", "smoke"  | browse         | → fix-issue (per finding)        |
-| "roadmap", "plan phases"                  | roadmap        | → sprint-plan                    |
-| "audit codebase", "code quality"          | audit | → roadmap                        |
-| "performance", "bundle size", "slow"      | perf-profile   | → fix-issue (per finding)        |
-| "migrate", "upgrade library", "update X"  | migrate        | —                                |
-| "bootstrap", "scaffold", "new project"    | bootstrap      | → sprint-plan                    |
-| "ship", "deploy", "release", "publish"    | ship           | —                                |
-| "generate docs", "document API"           | doc-gen        | —                                |
-| "dependencies", "outdated", "npm audit"   | dep-health     | —                                |
-| "quality dashboard", "metrics"            | quality-metrics| → (context-dependent)            |
-| "completeness", "production ready"        | `/blitz:review --only completeness` | → fix-issue (per finding)     |
-| "retrospective", "retro", "postmortem", "reflect", "improve plugin" | retrospective | —                    |
-| "quick", "small change", "just do it", "trivial", "one-liner" | quick | —                     |
-| "next", "what now", "continue", "what's next" | next          | —                                |
-| "health", "status", "check plugin"        | health         | —                                |
-| "map codebase", "analyze project", "understand codebase", "brownfield" | codebase-map | → roadmap                |
-| "todo", "note", "remember to", "add todo" | todo           | —                                |
-| "check integration", "wiring check", "are modules connected" | `/blitz:review --only wiring` | —                   |
-| "fix gaps", "close gaps", "gap closure"   | sprint (--gaps) | —                               |
-| "setup", "doctor", "claude.md conflict", "check config", "conflict check" | setup | —           |
+Do NOT maintain a divergent copy here — the prior mirror drifted (stale slugs, malformed rows). Orchestrator §2 carries the full grouped matrix (greenfield, sprint pipeline, research/audit/quality, dev/maintenance, diagnostics) plus the Vue-conditional and HARD_SPEC ask-before-code routing rules. Honor those when present.
 
-If the request does not clearly match any row, ask the user to clarify before
-proceeding.
+**Fallback (only if `agents/orchestrator.md` is unreadable/missing).** Route the highest-frequency intents from this minimal table, then proceed:
+
+| Intent Keywords                          | Primary Skill | Follow-up Chain            |
+| ---------------------------------------- | ------------- | -------------------------- |
+| "fix bug", "broken", "issue #N"          | fix-issue     | → test-gen                 |
+| "new page", "new feature", "add X"       | sprint-plan   | → sprint-dev → review      |
+| "implement sprint", "develop stories"    | sprint-dev    | → review                   |
+| "review", "quality gate", "mergeable?"   | review        | —                          |
+| "audit codebase", "tech debt"            | audit         | → roadmap                  |
+| "research", "compare", "how should we"   | research      | —                          |
+
+If the request matches neither the canonical map nor the fallback, ask the user
+to clarify before proceeding.
 
 ## Phase 1.5: Load Developer Profile (Optional)
 

@@ -72,14 +72,14 @@ Required for skills that spawn agents:
 
 Required for autonomous loops + quality:
 - **ratchet-protocol.md** (v1.11+) — 8 monotonic metrics (incl. `stale_worktree_branch_count`), schema, multi-agent worktree merge, auto-revert on regression
-- **shortcut-taxonomy.md** (v1.11+) — 19 anti-shortcut detectors with grep patterns + escape-hatch rules
+- **shortcut-taxonomy.md** (v1.11+) — 20 anti-shortcut detectors (13 reject, 7 advisory) with grep patterns + escape-hatch rules
 - **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
 - **docs/integrations/impeccable/** (v1.16+) — framework-adaptive design pillar (normalized model + Tailwind/MD3/Vuetify/Quasar adapters); supersedes the retired `frontend-design-heuristics.md`, now `references-regrounded.md` §8.1 + the registry `design` pillar (`/blitz:review --only design`, `/blitz:audit --pillar design`)
 - **quality-matrix.md** (v1.15+) — decision matrix for the 5 quality-related skills (sprint-review, audit, code-doctor, code-sweep, review — completeness + wiring checks folded into `/blitz:review --only completeness|wiring`); cites why apparent overlaps are real distinctions
 
 ## Hooks
 
-37 hook scripts wired through `hooks/hooks.json` across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
+38 hook scripts (35 event-wired through `hooks/hooks.json`, 2 sub-invoked, 1 critic-spawned) across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
 
 ## Clarification Gate (Karpathy Principle 1)
 

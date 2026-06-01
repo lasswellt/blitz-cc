@@ -784,3 +784,41 @@ if [ "${#DIVERGENT[@]}" -gt 0 ]; then
   esac
 fi
 ```
+
+---
+
+## Agent Work Loop
+
+Each agent follows this loop for each assigned story:
+
+1. **Read story** — Parse frontmatter and body. Note `verify` and `done` fields if present.
+2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/deviation-protocol.md) for unexpected issues.
+3. **Verify** — Run the story's `verify` commands if defined. If no `verify` field, fall back to type-check:
+   ```bash
+   # If story has verify commands, run each one:
+   cd <worktree> && <verify_command_1> && <verify_command_2> ...
+   # Otherwise fall back to generic type-check:
+   cd <worktree> && npm run type-check 2>&1
+   ```
+4. **Check done criteria** — Verify the story's `done` field is satisfied (all stated conditions are met).
+5. **Commit** — If verification passes:
+   ```bash
+   git add -A && git commit -m "feat(sprint-${N}/<role>): S${N}-XXX <title>"
+   ```
+6. **Complete** — Update task status to `completed` via `TaskUpdate`.
+7. **Next** — Request next story from orchestrator.
+
+### Story Distribution Rules
+
+Stories are sent to agents in this priority order:
+
+| Priority | Story Type | Rationale |
+|---|---|---|
+| 1 | Schema / type definitions | Everything else depends on types |
+| 2 | Server functions / API routes | Backend logic before frontend |
+| 3 | Stores / state management | Data layer before UI |
+| 4 | Components / pages | UI after data layer exists |
+| 5 | Navigation / layout integration | After components exist |
+| 6 | Tests | After implementation is stable |
+
+Within same priority, higher `priority` field stories go first, then lower `points` (smaller stories first).

@@ -846,3 +846,25 @@ PR may merge under `auto-merge-safe` for behavior correctness; human reviewer ow
 Written to review report under `## Automation Coverage` between `## Story Status` and `## Recommendations`.
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+
+## Invariant 5 — Audit Command
+
+Audit command (sprint-review runs this in Phase 3.6 — covers SKILL.md AND references/main.md):
+
+```bash
+SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output.md'
+
+# Every SKILL.md must include the snippet (Anthropic-canonical SKILL.md template requirement).
+SKILL_TOTAL=$(ls skills/*/SKILL.md | wc -l)
+SKILL_PRESENT=$(grep -lE "$SNIPPET_RE" skills/*/SKILL.md | wc -l)
+[ "$SKILL_PRESENT" -eq "$SKILL_TOTAL" ] \
+  || echo "Invariant 5 FAIL (SKILL.md): $SKILL_PRESENT / $SKILL_TOTAL contain canonical OUTPUT STYLE snippet"
+
+# Every references/main.md that contains an Agent-prompt template must include the snippet.
+REF_WITH_PROMPTS=$(grep -l "Agent Prompt Template\|prompt:" skills/*/references/main.md 2>/dev/null | wc -l)
+REF_PRESENT=$(grep -lE "$SNIPPET_RE" skills/*/references/main.md 2>/dev/null | wc -l)
+[ "$REF_PRESENT" -ge "$REF_WITH_PROMPTS" ] \
+  || echo "Invariant 5 FAIL (references/main.md): $REF_PRESENT / $REF_WITH_PROMPTS contain canonical OUTPUT STYLE snippet"
+```
+
+The check is total-coverage on SKILL.md (no exemptions) and present-where-needed on references/main.md (only files with embedded agent prompts). Adding a new SKILL.md without the snippet auto-fails the next review.

@@ -31,7 +31,7 @@ When updating the canonical wording: change this file first, then propagate to t
 ```bash
 # Detect drift between canonical wording and inline copies
 CANONICAL="For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see \[spawn-protocol.md\]"
-EXPECTED_FILES=7
+EXPECTED_FILES=6
 ACTUAL=$(grep -rl "$CANONICAL" skills/ --include="SKILL.md" | wc -l)
 [ "$ACTUAL" = "$EXPECTED_FILES" ] || echo "DRIFT: $ACTUAL/$EXPECTED_FILES files carry canonical Additional Resources block"
 ```
@@ -47,7 +47,7 @@ When the same multi-line cross-reference block appears in ≥4 SKILL.md files, e
 3. Add the `<!-- import: from _shared/skill-cross-references.md §<name> -->` marker comment immediately above each inline copy.
 4. List the carrying SKILL.md files explicitly in the canonical section.
 
-**Anti-pattern**: do NOT extract blocks that look similar across skills but have one-line differences. Each SKILL.md's Additional Resources legitimately diverges when the skill has additional skill-specific shared-protocol refs (carry-forward, story-frontmatter, etc.). The dedup target is only for the 2-line spawn+style pair shared across the 7 files above.
+**Anti-pattern**: do NOT extract blocks that look similar across skills but have one-line differences. Each SKILL.md's Additional Resources legitimately diverges when the skill has additional skill-specific shared-protocol refs (carry-forward, story-frontmatter, etc.). The dedup target is only for the 2-line spawn+style pair shared across the 6 files above.
 
 ---
 

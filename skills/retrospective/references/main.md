@@ -281,3 +281,67 @@ Fields used by retrospective analysis:
 - `status`: Failure rate calculation
 - `working_on`: Understanding what was attempted
 - `errors`: Failure pattern identification (if populated)
+
+## Developer Profile Derivation
+
+Detail for Phase 2.5 (UPDATE DEVELOPER PROFILE).
+
+### 2.5.1 Analyze Session Patterns
+
+From the session data collected in Phase 0 and patterns from Phase 1, derive:
+
+| Dimension | How to Derive | Values |
+|---|---|---|
+| **verbosity** | Did the user request more/less output? Did they skip clarification phases? | `concise` / `standard` / `detailed` |
+| **autonomy** | How often did sessions complete without user intervention? Did the user confirm plans or say "just do it"? | `low` / `medium` / `high` |
+| **commit_style** | How are commits structured in git log? Per-story, per-phase, or manual? | `atomic` / `batched` / `manual` |
+| **pr_size** | Average lines changed per session or sprint | `small` (<200) / `medium` / `large` (>800) |
+| **review_tolerance** | How did the user respond to review findings? Fixed all, or dismissed low-severity? | `lenient` / `standard` / `strict` |
+| **framework_focus** | Which frameworks appear most in modified files? | e.g., `vue-nuxt`, `react`, `node` |
+| **common_skills** | Top 3 most-invoked skills | e.g., `["fix-issue", "sprint-dev", "refactor"]` |
+| **peak_hours** | When do sessions typically occur? | e.g., `"09:00-17:00"` |
+
+### 2.5.2 Write Developer Profile
+
+Write (or update) `.cc-sessions/developer-profile.json`:
+
+```json
+{
+  "updated": "<ISO-8601>",
+  "sessions_analyzed": <count>,
+  "preferences": {
+    "verbosity": "standard",
+    "autonomy": "high",
+    "commit_style": "atomic",
+    "pr_size": "medium",
+    "review_tolerance": "standard",
+    "framework_focus": "vue-nuxt",
+    "common_skills": ["fix-issue", "sprint-dev", "refactor"],
+    "peak_hours": "09:00-17:00"
+  },
+  "patterns": {
+    "avg_session_duration_minutes": 45,
+    "most_common_first_action": "fix-issue",
+    "typical_sprint_size": 12,
+    "auto_fix_acceptance_rate": 0.85
+  }
+}
+```
+
+### 2.5.3 Profile Update Rules
+
+- **First run**: Create the profile from scratch based on available data.
+- **Subsequent runs**: Merge new data with existing profile. Weight recent sessions (last 30 days) more heavily than older ones.
+- **Insufficient data**: If fewer than 5 sessions exist, mark the profile as `"confidence": "low"`. If 5-15, mark as `"medium"`. If 15+, mark as `"high"`.
+- **Safety**: The profile is informational only. It MUST NOT override explicit user instructions. It SHOULD NOT change safety rules.
+
+### 2.5.4 Report Profile Changes
+
+If the profile was updated, note the changes:
+
+```
+[retrospective] Developer Profile updated:
+  ├─ verbosity: standard → detailed (user requested more output in recent sessions)
+  ├─ autonomy: medium → high (3 recent sessions completed without intervention)
+  └─ common_skills: added "ui-build" (invoked 4 times in analysis period)
+```

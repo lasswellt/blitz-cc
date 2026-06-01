@@ -339,3 +339,63 @@ New version must be greater than current:
 ### Tag Format
 
 Tags use `v` prefix: `v1.2.3`, `v2.0.0-beta.1`
+
+## Phase 6 Rollback Recipe
+
+### 6.1 Assess Rollback Scope
+
+Determine what was completed before failure:
+- Tag created locally? → Delete local tag
+- Tag pushed to remote? → Delete remote tag (with user confirmation)
+- GitHub release created? → Delete GitHub release (with user confirmation)
+- Release branch merged to main? → Revert the merge commit
+- Version files updated? → Revert the version bump commit
+
+### 6.2 Delete Tag
+
+```bash
+# Local tag
+git tag -d vX.Y.Z
+
+# Remote tag (ONLY with user confirmation)
+echo "Delete remote tag vX.Y.Z? This cannot be undone. [y/n]"
+git push origin :refs/tags/vX.Y.Z
+```
+
+### 6.3 Delete GitHub Release
+
+```bash
+gh release delete vX.Y.Z --yes 2>/dev/null || echo "No GitHub release to delete"
+```
+
+### 6.4 Revert Commits
+
+```bash
+# Revert the release prep commit
+git revert HEAD --no-edit
+```
+
+If the release was merged to main, revert the merge:
+```bash
+git checkout main
+git revert -m 1 HEAD --no-edit
+git push origin main
+```
+
+### 6.5 Delete Release Branch
+
+```bash
+git branch -d release/vX.Y.Z 2>/dev/null
+git push origin --delete release/vX.Y.Z 2>/dev/null
+```
+
+### 6.6 Rollback Report
+
+```
+Rollback complete for vX.Y.Z:
+  Local tag:      DELETED/NOT_FOUND
+  Remote tag:     DELETED/NOT_FOUND/SKIPPED
+  GitHub release: DELETED/NOT_FOUND
+  Merge reverted: YES/NO/NOT_NEEDED
+  Release branch: DELETED/NOT_FOUND
+```

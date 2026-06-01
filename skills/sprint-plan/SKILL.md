@@ -293,12 +293,7 @@ Use the YAML frontmatter schema defined in `references/main.md`. Every story MUS
 
 **Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code snippets, file paths, YAML frontmatter, verify-command shells, grep patterns. Fragments OK in story bodies. Story titles and AC phrasing stay imperative and concrete.
 
-The body must include:
-- **Description**: 1-3 fragments on what and why (verb-first; drop articles). Example: "Add null guard on profile.load(). Prevents dashboard crash when user.profile undefined."
-- **Acceptance Criteria**: Numbered list, each testable and specific.
-- **Implementation Notes**: Key code patterns, imports, relevant research references.
-- **Code Snippets**: Starter code where helpful (types, function signatures, test skeletons).
-- **Dependencies**: Which stories or external things must be done first.
+Full story-body section detail: [references/main.md](references/main.md#story-body-sections).
 
 ### 3.3 Dependency Graph Validation
 

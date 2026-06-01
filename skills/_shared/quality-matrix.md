@@ -43,7 +43,7 @@ Both select checks from [`check-registry.json`](check-registry.json) by `consoli
 | `completeness-gate` | review Phase 1.5 (O2: `o2-*`, det-09/10) | `/blitz:review --only completeness` |
 | `integration-check` | review Phase 1.6 (O3: `o3-*`, det-16) | `/blitz:review --only wiring` |
 
-Both retain functional deprecation shims (slug + existing call-sites work) until the sprint-20 cutover. Canonical patterns live in the registry, not in the skill bodies.
+**Cutover complete (sprint-20).** The standalone `completeness-gate` / `integration-check` skill dirs are removed; the legacy slugs no longer resolve. Use the `--only` invocations above. Canonical patterns live in the registry, not in the skill bodies.
 
 ## Standalone tools (NOT folded — distinct tempo/mechanism)
 

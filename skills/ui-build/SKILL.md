@@ -385,38 +385,7 @@ do not auto-pivot. User decides.
 
 ## UI Framework Variants
 
-### When UI Framework is Tailwind CSS:
-- Use utility classes exclusively — never write custom CSS unless unavoidable
-- Skeletons: `animate-pulse bg-slate-200 rounded` (adapt shade to project palette)
-- Colors: use Tailwind color tokens from `tailwind.config.*` — never raw hex
-- Spacing: use Tailwind spacing scale (`p-4`, `gap-6`, etc.)
-- Responsive: use Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`)
-- Dark mode: use `dark:` variant if project supports it
-- Layout: use Tailwind `flex`, `grid` utilities
-- Typography: use Tailwind text utilities (`text-sm`, `font-medium`, etc.)
-
-### When UI Framework is Quasar:
-- Use `<q-*>` components exclusively — never use raw HTML equivalents
-- Skeletons: `<q-skeleton type="rect" />`, `<q-skeleton type="text" />`, `<q-skeleton type="circle" />`
-- Colors: use Quasar color system (`color="primary"`, `text-color="grey-8"`)
-- Spacing: use Quasar CSS helpers (`q-pa-md`, `q-mt-sm`, `q-gutter-md`)
-- Layout: use `<q-page>`, `<q-card>`, `<q-list>`, `<q-item>` hierarchy
-- Tables: use `<q-table>` with column definitions, not raw `<table>`
-- Forms: use `<q-form>`, `<q-input>`, `<q-select>` with validation rules
-- Dialogs: use `<q-dialog>` or `$q.dialog()` plugin
-- Notifications: use `$q.notify()` — never build custom toast components
-- Icons: use the project's configured icon set (Material Icons, etc.)
-
-### When UI Framework is Vuetify:
-- Use `<v-*>` components exclusively — never use raw HTML equivalents
-- Skeletons: `<VSkeletonLoader type="card" />`, `<VSkeletonLoader type="table-row" />`
-- Colors: use Vuetify theme colors (`color="primary"`, `class="text-error"`)
-- Spacing: use Vuetify spacing helpers (`pa-4`, `mt-2`, `ga-4`)
-- Layout: use `<VContainer>`, `<VRow>`, `<VCol>` grid system
-- Tables: use `<VDataTable>` with headers array
-- Forms: use `<VForm>`, `<VTextField>`, `<VSelect>` with rules
-- Dialogs: use `<VDialog>` with `v-model`
-- Snackbars: use `<VSnackbar>` — never build custom toast components
+Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references/main.md](references/main.md#ui-framework-variants).
 
 ---
 

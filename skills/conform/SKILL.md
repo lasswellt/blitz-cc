@@ -28,6 +28,8 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 | **`plugin`** | `skills/*/SKILL.md`, `skills/_shared/`, `hooks/`, `.claude-plugin/` | A blitz fork. Brings structure into spec (frontmatter, companion files, hook wiring). |
 | **`all`** | both | Full sweep — uncommon. |
 
+**Boundary vs health.** conform **repairs** (schema-version drift migration via `--fix`); `/blitz:health` **asserts** (read-only structural + runtime probe, no mutation). The plugin-scope frontmatter + hook-wiring checks overlap health by design — same validators, different verb. Runtime probes (sessions, locks, activity-feed, background agents) stay in health.
+
 ## Additional Resources
 
 - For per-artifact schema versioning rules + migration tables (story frontmatter `registry_entries` additive migration, STATE.md formats, roadmap canonical-vs-extension table, session model variants), see [references/main.md](references/main.md)

@@ -245,3 +245,15 @@ To keep successful steps:
 | 22.x | Active LTS | April 2027 |
 | 20.x | Maintenance LTS | April 2026 |
 | 18.x | End of Life | April 2025 |
+
+## Target Interpretation Examples
+
+| Input | Interpretation |
+|-------|---------------|
+| `vue 3.5` | Upgrade Vue from current version to 3.5 |
+| `vitest` | Migrate test runner from Jest/Mocha to Vitest |
+| `eslint 9` | Upgrade ESLint to v9 (flat config migration) |
+| `pinia 3` | Upgrade Pinia to v3 |
+| `typescript 5.5` | Upgrade TypeScript to 5.5 |
+| `esm` | Migrate from CommonJS to ES Modules |
+| `vite` | Migrate from Webpack to Vite |

@@ -423,3 +423,75 @@ done
 | Implement service worker caching | Repeat visit speed | 50-80% improvement | High |
 | Defer non-critical JavaScript | TBT | 100-500ms improvement | Medium |
 | Server-side render critical content | LCP, FCP | 500ms-2s improvement | High |
+
+## Phase 2 Anti-Pattern Catalog
+
+### 2.1 Vue-Specific Anti-Patterns
+
+Scan source files for performance anti-patterns. Use the patterns from `references/main.md`.
+
+**Reactive overhead:**
+- Reactive objects in module scope (should be in `setup()` or composables)
+- Missing `shallowRef` / `shallowReactive` for large objects that do not need deep reactivity
+- Large reactive arrays without virtual scrolling
+
+**Render performance:**
+- Missing `v-once` on static content in frequently re-rendered components
+- Computed properties with side effects (should be pure)
+- Inline function creation in templates (`@click="() => handleClick(item)"` in `v-for`)
+- `v-if` vs `v-show` misuse: frequent toggle should use `v-show`, rare toggle should use `v-if`
+
+**Watcher issues:**
+- Deep watchers on large objects (`{ deep: true }` on complex state)
+- Watchers without cleanup (missing `onUnmounted` or `onScopeDispose`)
+- Watchers that trigger other watchers (cascading updates)
+
+### 2.2 Data Fetching Patterns
+
+Scan for data fetching issues:
+
+**N+1 query patterns:**
+```bash
+# Fetch calls inside loops or v-for setup
+grep -rn "\.forEach\|\.map\|for (" --include="*.ts" --include="*.vue" -A 5 . | grep -B 3 "fetch\|getDoc\|getDocs\|\$fetch"
+```
+
+**Missing request deduplication:**
+- Multiple components fetching the same data independently
+- No caching layer for repeated API calls
+
+**Unbounded collection queries:**
+```bash
+# Firestore queries without limit
+grep -rn "getDocs\|collection(" --include="*.ts" --include="*.vue" . | grep -v "limit\|where"
+```
+
+**Waterfall data fetching:**
+- Sequential `await` calls that could run in parallel with `Promise.all`
+```bash
+grep -rn "await.*await" --include="*.ts" --include="*.vue" . | grep -v node_modules
+```
+
+### 2.3 Memory Patterns
+
+Scan for memory leak patterns:
+
+**Event listeners without removal:**
+```bash
+grep -rn "addEventListener\|window\.on\|document\.on" --include="*.ts" --include="*.vue" . | grep -v node_modules
+```
+Cross-reference with `removeEventListener` or `onUnmounted` cleanup.
+
+**Intervals without cleanup:**
+```bash
+grep -rn "setInterval\|setTimeout" --include="*.ts" --include="*.vue" . | grep -v node_modules
+```
+Cross-reference with `clearInterval` or `clearTimeout` in cleanup hooks.
+
+**Growing arrays without bounds:**
+- Arrays that are pushed to but never trimmed
+- History/log arrays without maximum size limits
+
+**Closure-based memory leaks:**
+- Large objects captured in closures passed to long-lived callbacks
+- Closures referencing DOM elements in detached trees

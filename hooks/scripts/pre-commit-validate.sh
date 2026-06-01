@@ -167,6 +167,31 @@ if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
   fi
 fi
 
+# --- Check PROSE COUNT drift (skills/agents/shared/hooks/detectors) ---
+# Companion to version-sync: validates the hand-maintained counts in README,
+# CLAUDE.md, and the manifests against the filesystem-derived counts.json.
+COUNT_SYNC_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/scripts/check-count-sync.sh"
+if [[ -f "$COUNT_SYNC_SCRIPT" && ! -x "$COUNT_SYNC_SCRIPT" ]]; then
+  echo "[pre-commit] WARN: $COUNT_SYNC_SCRIPT not executable — fix with chmod +x." >&2
+fi
+if [[ -x "$COUNT_SYNC_SCRIPT" ]]; then
+  COUNT_EXIT=0
+  COUNT_OUTPUT=$("$COUNT_SYNC_SCRIPT" 2>&1) || COUNT_EXIT=$?
+  if [[ "$COUNT_EXIT" -ne 0 ]]; then
+    echo "" >&2
+    echo "$COUNT_OUTPUT" >&2
+    # Block only when a count-bearing doc or the inventory is staged; otherwise warn.
+    if echo "$STAGED_FILES" | grep -qE '^(README\.md|CLAUDE\.md|\.claude-plugin/(plugin|marketplace|counts)\.json|CHANGELOG\.md)$'; then
+      echo "" >&2
+      echo "BLOCKED: count drift in a staged count-bearing doc." >&2
+      echo "  Run scripts/check-count-sync.sh --write, reconcile the prose above, re-stage." >&2
+      echo "  Override with --no-verify if intentional." >&2
+      exit 2
+    fi
+    echo "  (Warning — commit allowed. Count drift will be re-flagged until fixed.)" >&2
+  fi
+fi
+
 # --- Check SKILL.md frontmatter conformance for staged SKILL.md files ---
 STAGED_SKILLS=$(echo "$STAGED_FILES" | grep -E '^skills/[^/]+/SKILL\.md$' || true)
 if [[ -n "$STAGED_SKILLS" ]]; then

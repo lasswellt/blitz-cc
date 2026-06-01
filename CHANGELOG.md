@@ -21,6 +21,24 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.3.2] — 2026-05-31 · cohesion + count-drift cleanup
+
+Plugin-wide cohesion pass: eliminated count/version drift, de-duplicated the routing surface, clarified maintenance-skill boundaries, and brought every SKILL.md body under 450 lines — without touching the holistic-machine contracts (orchestrator → skill → worktree-agent → registry-gated critic → disk-state). No skill merged, demoted, or deleted (all three overlap clusters resolved KEEP-SEPARATE), so this is a patch.
+
+### Added
+- **`.claude-plugin/counts.json`** — authoritative, filesystem-computed plugin inventory (skills, agents, shared protocol files, hook scripts/wired/sub-invoked/critic-spawned, events, detectors). Single source of truth for every prose count.
+- **`scripts/check-count-sync.sh`** — recomputes counts from disk, asserts `counts.json` is current, and validates curated prose claims in `README.md` / `CLAUDE.md` / `plugin.json` / `marketplace.json`. Wired into `pre-commit-validate.sh` (blocks when a count-bearing doc is staged with drift). `--write` regenerates `counts.json`. Root-cause fix for the count drift `check-version-sync.sh` (semver-only) never caught.
+
+### Changed
+- **Count drift fixed** (`counts.json` truth): shared protocol files 29/30 → **32**; anti-shortcut detectors 19 → **20** (13 reject / 7 advisory); hook scripts 37 → **38** (35 event-wired, 2 sub-invoked, 1 critic-spawned); `skill-cross-references.md` `EXPECTED_FILES` off-by-one 7 → **6**.
+- **Routing table de-duplicated** — `skills/ask` Phase 1 now reads `agents/orchestrator.md §2` as the canonical intent→skill map at runtime + a 6-row fallback; the divergent prose mirror (with its malformed `audit` row and stale `ship`/`migrate`/`/sprint cmd` slugs) is gone (123 → 107 lines).
+- **Maintenance boundaries tightened** — reciprocal one-line statements added to `health` (read-only assert + runtime probes) and `conform` (`--fix` schema repair); `setup` (CLAUDE.md-rule conflicts) already orthogonal. No merge.
+- **`implement` slimmed to pure dispatch** — re-declared sprint-dev flags + duplicated pre-flight removed; slug preserved (61 → 30 lines).
+- **Conciseness pass** — 12 SKILL.md bodies relocated their largest non-startup blocks to `references/main.md` (verbatim, zero behavioral loss); all now ≤450 (was 450–496). `next` gained its first `references/main.md`.
+
+### Removed
+- **sprint-19 deprecation cutover finalized** — `completeness-gate` / `integration-check` standalone skill dirs were already removed; updated the live docs (`orchestrator §2`, `quality-matrix`) that still claimed "legacy slug still works" to reflect the completed sprint-20 cutover (use `/blitz:review --only completeness|wiring`). Historical validation/consolidation docs + CHANGELOG retain the old names by design. Fixed stale `det-01..19` → `det-01..20` range in `review`.
+
 ## [2.3.1] — 2026-05-31 · browse broken-wiring detection + interaction coverage
 
 Ports the two functional (non-aesthetic) behaviors of v2.3.0's design-critic E2 live-navigation pattern into `/blitz:browse`. From research `docs/_research/2026-05-31_browse-live-navigation-e2.md` (R1 + R3); R2/R4/R5 deferred. Sprint 22.

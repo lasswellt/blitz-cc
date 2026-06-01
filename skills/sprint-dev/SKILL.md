@@ -290,25 +290,7 @@ Worktree paths are managed by the Agent tool's `isolation: "worktree"` parameter
 ## Phase 3: IMPLEMENT — Monitor and Coordinate
 
 ### 3.1 Agent Work Loop
-
-Each agent follows this loop for each assigned story:
-
-1. **Read story** — Parse frontmatter and body. Note `verify` and `done` fields if present.
-2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/deviation-protocol.md) for unexpected issues.
-3. **Verify** — Run the story's `verify` commands if defined. If no `verify` field, fall back to type-check:
-   ```bash
-   # If story has verify commands, run each one:
-   cd <worktree> && <verify_command_1> && <verify_command_2> ...
-   # Otherwise fall back to generic type-check:
-   cd <worktree> && npm run type-check 2>&1
-   ```
-4. **Check done criteria** — Verify the story's `done` field is satisfied (all stated conditions are met).
-5. **Commit** — If verification passes:
-   ```bash
-   git add -A && git commit -m "feat(sprint-${N}/<role>): S${N}-XXX <title>"
-   ```
-6. **Complete** — Update task status to `completed` via `TaskUpdate`.
-7. **Next** — Request next story from orchestrator.
+Each agent follows a per-story loop: read → implement → verify → check done → commit → complete → next. Full detail: [references/main.md](references/main.md#agent-work-loop).
 
 ### 3.2 Orchestrator Monitoring Loop
 
@@ -341,18 +323,7 @@ Agents communicate through the orchestrator using prefixed messages (DONE, BLOCK
 
 ### 3.4 Story Distribution Rules
 
-Stories are sent to agents in this priority order:
-
-| Priority | Story Type | Rationale |
-|---|---|---|
-| 1 | Schema / type definitions | Everything else depends on types |
-| 2 | Server functions / API routes | Backend logic before frontend |
-| 3 | Stores / state management | Data layer before UI |
-| 4 | Components / pages | UI after data layer exists |
-| 5 | Navigation / layout integration | After components exist |
-| 6 | Tests | After implementation is stable |
-
-Within same priority, higher `priority` field stories go first, then lower `points` (smaller stories first).
+Dependency-layer priority order (schemas → server → stores → components → nav → tests); within same priority, higher `priority` field first, then smaller `points`. Full table: [references/main.md](references/main.md#story-distribution-rules).
 
 ---
 
@@ -374,9 +345,7 @@ The integration agent verifies and implements: **Navigation entries**, **Design 
 
 ### 3.5.3 Integration Commit
 
-```bash
-git add -A && git commit -m "feat(sprint-${N}/integration): UI/UX integration pass"
-```
+Commit the integration pass: `git add -A && git commit -m "feat(sprint-${N}/integration): UI/UX integration pass"`.
 
 ---
 

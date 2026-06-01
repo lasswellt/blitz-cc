@@ -25,6 +25,8 @@ Verify the structural integrity and operational health of the blitz plugin. Repo
 
 **No session protocol required.** This skill is lightweight and read-only.
 
+**Boundary vs conform/setup.** `health` = *read-only* assertion of structural **and runtime** state (hooks, sessions, locks, activity-feed, background agents) — it never mutates. `/blitz:conform --scope plugin` runs the same structural checks **plus `--fix`** schema migration but defers runtime probes here. `/blitz:setup` is the orthogonal CLAUDE.md-rule conflict + permission audit. The frontmatter + hook-wiring checks below intentionally overlap conform's plugin scope (both call the same validators); the distinction is assert-only vs repair.
+
 ---
 
 ## Phase 0: STRUCTURAL CHECKS

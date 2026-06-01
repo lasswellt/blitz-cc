@@ -86,10 +86,10 @@ Grouped by intent class. Within a group, prefer the most-specific match.
 | "review change/sprint", "quality gate", "mergeable?" | `/blitz:review` | Consolidated precision gate (8 invariants + critic); `--only` for folded concerns |
 | "what was learned recently", "explain the codebase" | `/blitz:codebase-map` | Read-only |
 | "audit deps", "security check" | `/blitz:dep-health` | npm audit + license + outdated |
-| "check completeness", "production readiness" | `/blitz:review --only completeness` | Placeholder/stub scan (completeness-gate folded; legacy slug still works) |
+| "check completeness", "production readiness" | `/blitz:review --only completeness` | Placeholder/stub scan (completeness-gate folded → review Phase 1.5; standalone slug removed sprint-20) |
 | "check API misuse", "framework anti-patterns" | `/blitz:review --only framework`, `/blitz:code-doctor --fix` | Firestore/Vue audit |
 | "sweep code quality", "cleanup", "improve code" | `/blitz:code-sweep` | Iterative ratchet sweep |
-| "check wiring", "integration check", "orphan routes" | `/blitz:review --only wiring` | Cross-module trace (integration-check folded; legacy slug still works) |
+| "check wiring", "integration check", "orphan routes" | `/blitz:review --only wiring` | Cross-module trace (integration-check folded → review Phase 1.6; standalone slug removed sprint-20) |
 | "quality metrics", "trend dashboard" | `/blitz:quality-metrics` | Snapshot + compare |
 | "audit UI consistency", "cross-page data drift" | `/blitz:ui-audit` | Read-only registry-based |
 | "design slop", "AI-aesthetic tells", "design-system conformance" | `/blitz:review --only design` (precision) · `/blitz:audit --pillar design` (recall) | Framework-adaptive design pillar; Layer 0 universal slop + adapter-gated Layer 1/2 via detect-stack |

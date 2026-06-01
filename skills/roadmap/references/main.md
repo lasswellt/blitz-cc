@@ -659,3 +659,64 @@ The following epic fields link roadmap to carry-forward registry described in [c
 - **Agent failure in Phases 5/7**: Retry once. If still failing, generate specs manually for that domain; note reduced quality.
 - **Insufficient capabilities**: If fewer than 5 capabilities extracted, warn roadmap may be too thin. Proceed but flag in summary.
 - **Conflicting research**: If two documents contradict, flag conflict in capability notes; use more recent document as primary source.
+
+---
+
+## Phase 2.4: Carry-Forward Registry Coverage Recompute (`refresh` mode)
+
+**This sub-phase runs in `refresh` mode only.** It re-verifies every carry-forward registry entry against the current codebase by executing the `scope.acceptance` checks stored on the entry. This is how a sprint's actual progress gets reconciled with the registry without waiting for sprint-review.
+
+**Procedure:**
+
+1. **Load the registry.** Reduce `.cc-sessions/carry-forward.jsonl` to latest-wins:
+   ```bash
+   jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl > "${SESSION_TMP_DIR}/registry-latest.json"
+   ```
+
+2. **For every entry with `status ∈ {active, partial}`**, run each `scope.acceptance` check against the live codebase. Each acceptance entry is one of:
+   - `grep_absent: <pattern>` — run `git grep -c <pattern>` under the project root. Passes if count is 0.
+   - `grep_present: { pattern: <p>, min: <n> }` — run `git grep -c <p>`. Passes if count ≥ `min`.
+   - `shell: <command>` — run the command. Passes if exit code is 0.
+   - `ast_absent: <query>` — run the project's AST tool if available (e.g., `ast-grep`). Passes if the query returns no matches.
+
+3. **Compute `delivered.actual`.** For unit-counted scopes (files, components, routes, tests), derive the current actual:
+   - If all acceptance checks pass → `actual = target`, `coverage = 1.0`, `status = complete`.
+   - If the entry has a `scope.baseline_count` hint in its metadata (optional), compute `actual = scope.baseline_count - (current grep count)`.
+   - Otherwise, count matching files via the `grep_present` / `grep_absent` checks:
+     ```bash
+     # Example: "migrate modals to @mbk/ui" — count files that import the new component
+     NEW_COUNT=$(git grep -l 'from.*@mbk/ui.*Modal' | wc -l)
+     ACTUAL=$NEW_COUNT
+     COVERAGE=$(echo "scale=3; $ACTUAL / $TARGET" | bc)
+     ```
+
+4. **Append update lines.** For each entry whose computed `actual` or `status` differs from the latest registry state, append a `progress` line:
+   ```jsonl
+   {"id":"<id>","ts":"<ISO-8601>","event":"progress","delivered":{"unit":"<unit>","actual":<computed>,"last_sprint":"<latest-sprint-from-activity>"},"coverage":<computed>,"status":"<complete|partial|active>","last_touched":{"sprint":"<latest-sprint>","date":"<ISO-8601>"},"notes":"Coverage recomputed by roadmap refresh Phase 2.4"}
+   ```
+   If the recompute transitions an entry to `status: complete`, also log a companion activity-feed event:
+   ```jsonl
+   {"ts":"<ISO-8601>","session":"${SESSION_ID}","skill":"roadmap","event":"registry_complete","message":"Entry <id> recomputed to complete (coverage 1.0)","detail":{"registry_id":"<id>","parent_epic":"<E-NNN>"}}
+   ```
+
+5. **Propagate to epic-registry.** For each entry whose status changed, recompute the parent epic's `coverage`, `acceptance_criteria_met`, and `carry_forward_count` fields in `docs/roadmap/epic-registry.json` (see `references/main.md` Epic Registry JSON Schema). If all of an epic's `registry_entries` are now `complete`, the epic is eligible to transition to `status: done` — but DO NOT auto-transition here; that's the operator's call via `sprint-review` invariant 3 or manual update.
+
+6. **Report.** Print a refresh summary:
+   ```
+   [roadmap:refresh] Registry coverage recompute:
+     Scanned: 12 entries
+     Unchanged: 7
+     Advanced: 3 (cf-2026-03-01-*, cf-2026-04-02-*, cf-2026-04-07-*)
+     Completed: 2 (cf-2026-02-14-*, cf-2026-03-21-*)
+     Failed DoD check: 0
+   ```
+
+**Backfill path for legacy research docs:** If a consumer project has pre-existing research docs that predate the scope-block convention (e.g., `docs/_research/2026-04-02_modal-consistency.md` from before the registry feature shipped), the canonical backfill procedure is:
+
+1. **Edit the legacy doc.** Add a `scope:` YAML frontmatter block at the top of the file with best-guess `unit`, `target`, and `acceptance` values. Set `delivered.actual: 0` to start — the recompute in step 2.4 will correct it.
+2. **Run `/blitz:roadmap refresh`.** Phase 1.1.5 ingests the new block as a registry line (duplicate check passes since this is a new id). Phase 2.4 runs the acceptance checks against the current codebase and writes a `progress` line with the real `delivered.actual` and `coverage`.
+3. **Verify.** Read the latest-wins registry state. The entry should reflect the true current coverage, not zero.
+
+If the actual coverage is already 1.0 at backfill time (legacy work was already fully shipped), the recompute will mark the entry `complete` on the first pass, and the epic-registry rollup will mark the parent epic ready to close. No silent drops possible: the registry state and the code state are reconciled.
+
+See `skills/_shared/carry-forward-registry.md` for the full protocol.

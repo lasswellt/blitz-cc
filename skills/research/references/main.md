@@ -468,4 +468,62 @@ Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. 
 - **Key insight**: <one sentence>
 - **Confidence level**: <High | Medium | Low>
 - **Gaps**: <what could not be determined>
+
+---
+
+## Structured Scope Emission
+
+(SKILL.md §3.1.1 — full format, rules, and cross-check)
+
+**Format:**
+
+```yaml
+---
+scope:
+  - id: cf-YYYY-MM-DD-<short-slug>
+    unit: files                              # files | components | routes | tests | endpoints | ...
+    target: 130                              # Integer count
+    description: |
+      Migrate all modal components in apps/web/src/ to @mbk/ui Modal.vue,
+      removing the legacy class="modal-overlay" pattern and deprecating
+      shared/ConfirmDialog.vue.
+    acceptance:
+      # Executable DoD — each check must be verifiable by `/blitz:review --only completeness`
+      # without human interpretation. Prefer grep/shell/AST over prose.
+      - grep_absent: 'class="modal-overlay"'
+      - grep_absent: 'from.*shared/ConfirmDialog'
+      - grep_present:
+          pattern: 'from.*@mbk/ui.*Modal'
+          min: 30
+---
+
+# <Research Doc Title>
+...
+```
+
+**Rules:**
+
+1. **One entry per distinct quantified claim.** A doc that says "migrate 130 files AND add 4 new components AND fix 12 tests" must emit three `scope:` entries, not one bundled entry.
+2. **The `id` must be unique across the registry.** Use the research doc date as the stem, e.g., `cf-2026-04-02-modal-consistency`. The roadmap extend step will reject duplicate ids.
+3. **`acceptance` must be executable.** Prefer `grep_absent`, `grep_present` (with `min` count), `ast_absent`, or `shell` commands over checklist prose. A DoD that requires human interpretation to verify will not be audited and will fail Invariant 1 at sprint-review time.
+4. **If scope cannot be quantified,** do not fake a number. Write an explicit HTML comment above the quantified language: `<!-- no-registry: <reason> -->`. Acceptable reasons include "scope is exploratory — will be quantified after spike story" or "scope is qualitative UX research with no countable artifacts." `sprint-review` Invariant 1 will honor this comment.
+5. **When the research doc is later ingested** by `/blitz:roadmap extend`, each `scope:` entry becomes both (a) a `scope_metric` on the derived Capability in `capability-index.json` and (b) a registry line in `.cc-sessions/carry-forward.jsonl` with `status: active`, `delivered.actual: 0`, `coverage: 0.0`. The registry is then authoritative.
+
+**Cross-check before writing the doc:** scan your own Summary, Findings, and Recommendation for quantified language. If you count the word "all" near a noun that has a knowable cardinality (e.g., "migrate all 130 modals"), that is a quantified scope claim and needs a `scope:` entry.
+
+---
+
+## Follow-Up Skill Graph
+
+(SKILL.md §4.2 — research-outcome → suggested-skill table)
+
+| Research Outcome | Suggested Skill | Rationale |
+|---|---|---|
+| Research with `scope:` block written | `roadmap extend` | Ingest scope into capability-index + carry-forward registry. Required before sprint. |
+| Research complete, roadmap already current | `sprint` | Auto-detects uningested docs, chains roadmap extend if needed, then plans and implements. |
+| Architecture decision made, roadmap already current | `sprint-plan` | Plan implementation stories directly. |
+| Library selected, ready to integrate | `refactor` | Refactor existing code to use the new library. |
+| Feature approach decided | `ui-build` | Build the feature UI. |
+| Security concern identified | `audit` | Audit for related vulnerabilities. |
+| Performance approach selected | `test-gen` | Generate performance-related tests. |
 ```

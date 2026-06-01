@@ -15,7 +15,7 @@
 
 **A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase**
 
-**37 skills** · **10 agents** · **37 hook scripts across 16 events** · **30 shared protocols**
+**37 skills** · **10 agents** · **38 hook scripts across 16 events** · **32 shared protocol files**
 
 Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -383,10 +383,10 @@ blitz-cc/
 ├── agents/                      # 10 agents (6 builder · 3 critic · 1 orchestrator)
 ├── skills/
 │   ├── <name>/SKILL.md          # 37 skills (Anthropic-canonical, auto-discovered)
-│   └── _shared/                 # 29 shared protocol files + check-registry.json
+│   └── _shared/                 # 32 shared protocol files + check-registry.json
 ├── hooks/
 │   ├── hooks.json               # 16 events
-│   └── scripts/                 # 37 scripts: 36 hook-wired + critic-gemini.sh utility
+│   └── scripts/                 # 38 scripts: 35 event-wired + 2 sub-invoked + 1 critic-spawned
 ├── scripts/                     # detect-stack, version-sync, plugin-structure validators
 └── installer/                   # npx blitz-cc CLI
 ```
@@ -403,9 +403,9 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 ---
 
-## Hook Reference (37 scripts, 16 events)
+## Hook Reference (38 scripts, 16 events)
 
-Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
+Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Of the 38 scripts, 35 are event-wired; the rest are sub-invoked (`check-registry-validate.sh`, `startup-validate.sh`) or critic-spawned (`critic-gemini.sh`). Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
 
 ### Environment overrides
 

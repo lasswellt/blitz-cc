@@ -337,3 +337,12 @@ OUTPUT FORMAT:
 - **Research agent failure**: Retry once. If still failing, proceed with partial research and flag gaps in summary.
 - **Circular dependencies detected**: Report the cycle and ask user to resolve before continuing. *(If autonomy is `high` or `full`, break the cycle by removing the weakest dependency edge — the one with the lowest story priority — log the decision to the activity feed, and proceed.)*
 - **GitHub CLI unavailable**: Skip issue creation, note in summary. Stories are still valid without issues.
+
+## Story Body Sections
+
+The body must include:
+- **Description**: 1-3 fragments on what and why (verb-first; drop articles). Example: "Add null guard on profile.load(). Prevents dashboard crash when user.profile undefined."
+- **Acceptance Criteria**: Numbered list, each testable and specific.
+- **Implementation Notes**: Key code patterns, imports, relevant research references.
+- **Code Snippets**: Starter code where helpful (types, function signatures, test skeletons).
+- **Dependencies**: Which stories or external things must be done first.
