@@ -21,6 +21,17 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.3.1] — 2026-05-31 · browse broken-wiring detection + interaction coverage
+
+Ports the two functional (non-aesthetic) behaviors of v2.3.0's design-critic E2 live-navigation pattern into `/blitz:browse`. From research `docs/_research/2026-05-31_browse-live-navigation-e2.md` (R1 + R3); R2/R4/R5 deferred. Sprint 22.
+
+### Added
+- **Broken-wiring detection (R1)** — `skills/browse` Phase 3.5 / loop Phase 4.6: after each existing safe-allow-listed click (tabs / pagination / sort / accordion), a control that renders but produces no observable response (no a11y-tree change AND no route change AND no network request) is recorded as a `broken_wiring` finding — Warning, or Error when the inert control is a primary action. Couples the snapshot-diff with the network check to separate renders-but-inert from handler-fires-backend-404. False-positive guard for legitimately-inert clicks. New "Broken Wiring" report section + Error-Classification taxonomy row.
+- **interaction_coverage schema (R3)** — additive per-page fields in `crawl-visited.json`: `interaction_coverage {safe_clicks, broken_wiring_checked, responsive_checked}` + `broken_wiring[]`. Non-breaking (existing readers unaffected). `responsive_checked` is a forward-compat placeholder for the deferred R2 opt-in responsive pass.
+
+### Notes
+- Rides **only** browse's existing safe-interaction allow-list — the 7 NON-NEGOTIABLE safety rules + "NEVER interact with" list are unchanged. No new tool grant (`browser_snapshot`/`browser_network_requests`/`browser_click` already loaded at Phase 1.2); `allowed-tools` frontmatter unchanged. `skills/browse/SKILL.md` 389/500 lines. Critic LGTM.
+
 ## [2.3.0] — 2026-05-31 · GAN-harness design-loop integration (E1–E5)
 
 Closes the five deltas between blitz's design loop and the planner/generator/evaluator harness in [anthropic.com/engineering/harness-design-long-running-apps](https://www.anthropic.com/engineering/harness-design-long-running-apps). Blitz already had the architecture (sprint-plan → ui-build/sprint-dev → design-critic/critic); these are the deltas, not a rebuild. Specs: `docs/integrations/harness-design/`.

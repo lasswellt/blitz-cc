@@ -44,6 +44,7 @@
 | **Empty data views** | Container visible but no content, no empty state message | Error |
 | **Console.log left in** | `console.log` in production build output | Info |
 | **Unstyled content** | Flash of unstyled content, missing CSS | Error |
+| **Broken wiring** | Safe interactive control clicked, but no a11y-tree change AND no route change AND no network request (Phase 4.6 detection) | Warning (Error if primary action) |
 
 ---
 
@@ -274,6 +275,16 @@ const Component = defineAsyncComponent({
 
 ---
 
+## Broken Wiring
+
+Safe interactive controls that rendered but produced no observable response when clicked (no a11y-tree change, no route change, no network request). Deduplicated across routes ("seen on N routes"). `Error` severity instead of `Warning` when the inert control is a primary page action.
+
+| Route | Element | Selector | Severity |
+|-------|---------|----------|----------|
+| [path] | [label] | [selector] | [Warning\|Error] |
+
+---
+
 ## Info / Observations
 
 - [Observation 1]
@@ -426,7 +437,15 @@ Tracks pages already crawled and their status.
       "status": "has_issues",
       "links_found": 8,
       "findings_count": 3,
-      "fixes_applied": 1
+      "fixes_applied": 1,
+      "interaction_coverage": {
+        "safe_clicks": 3,
+        "broken_wiring_checked": true,
+        "responsive_checked": false
+      },
+      "broken_wiring": [
+        { "element": "Sort by date", "selector": "th[data-sort=date]", "route": "/dashboard" }
+      ]
     }
   }
 }
@@ -439,6 +458,11 @@ Tracks pages already crawled and their status.
 - `needs_re_verify` — A shared file was modified by a fix; this page imports that file and needs re-checking
 - `unreachable` — Navigation failed 3+ times
 - `re-verified` — Re-checked after fixes, now clean
+
+**Per-page interaction fields (additive — pre-existing readers unaffected):**
+- `interaction_coverage` — `{ safe_clicks: int (count of allow-listed clicks exercised), broken_wiring_checked: bool, responsive_checked: bool }`. Records what Phase 4.6 exercised on the page.
+- `broken_wiring` — array of `{ element, selector, route }` from Phase 4.6 broken-wiring detection; empty array when none found.
+- `responsive_checked` defaults `false`; reserved for the opt-in `--interaction-depth=full` responsive pass (not enabled by default — forward-compat placeholder).
 
 ### `docs/crawls/hierarchy.json`
 
@@ -936,8 +960,35 @@ After each interaction:
 - Wait 1 second for UI to settle
 - Check for new console errors and network failures
 - **Re-snapshot** — interactions (especially tabs) often reveal new content with new links. Collect links from each post-interaction snapshot for Phase 5-LOOP.
+- **Broken-wiring check** (below) — record a `broken_wiring` finding if the click produced no observable response.
 
 **NEVER interact with**: buttons (except tabs), form inputs, toggles, checkboxes, links that navigate away, anything inside modal/dialog.
+
+##### Broken-Wiring Detection
+
+A safe-allow-listed control that renders but produces **no observable response** when clicked is a functional bug (the "broken-wiring" class — a control wired to nothing, or to a dead handler). Detect by diffing page state across the click already performed above, reusing the snapshot + network reads already taken. **No new tools; rides ONLY the safe-interaction allow-list — never broaden to buttons / forms / destructive controls (the 7 SAFETY RULES in SKILL.md remain authoritative).**
+
+```
+# wraps the EXISTING safe click — adds before/after capture, no new navigation
+snap_before = browser_snapshot();   net_before = browser_network_requests().length
+browser_click(target);  wait 1s     # existing settle
+snap_after  = browser_snapshot();   net_after  = browser_network_requests().length
+
+if a11y_tree(snap_after) == a11y_tree(snap_before)   # no DOM/content change
+   and url unchanged                                  # no route change
+   and net_after == net_before:                       # no request fired
+     finding {
+       type: "broken_wiring",
+       severity: primary_action(target) ? "Error" : "Warning",
+       element: <label>, selector: <selector>, route: <current route>
+     }
+```
+
+**Couple the snapshot-diff WITH the network check** — separates two distinct defects:
+- *renders-but-inert* (no a11y change AND no request) → `broken_wiring` here.
+- *handler fires, backend fails* (a request DID fire, returned ≥400) → already a network-failure finding via Phase 4.4 / Phase 3.3; NOT broken-wiring.
+
+**False-positive guard.** Some safe clicks legitimately produce no change: re-clicking an already-sorted column, toggling an already-open accordion, clicking the current tab. The triple-condition (a11y-tree AND url AND network all unchanged) suppresses most; remaining noise is bounded by Warning severity + cross-route dedupe ("seen on N routes"). Never promote a single inconclusive observation to Error unless the control is a primary page action.
 
 #### 4.7 Extract Page Title
 - Read page `<title>` or first `<h1>` from snapshot
@@ -1175,7 +1226,7 @@ State files have interdependencies — crash mid-write can leave inconsistent st
 2. **Append** to `fix-log.jsonl` — fix attempts (append-only, crash-safe)
 3. **Write** `latest-tick.json` — tick snapshot (write last so overlap guard works)
 4. **Write** `crawl-queue.json` — updated queue
-5. **Write** `crawl-visited.json` — updated visited map
+5. **Write** `crawl-visited.json` — updated visited map (include this page's `interaction_coverage` + `broken_wiring[]` from Phase 4.6)
 6. **Write** `hierarchy.json` — updated hierarchy
 
 For JSON files (steps 3-6): write to `.tmp` file first, then rename to final path. Ensures each file is either fully old or fully new, never partially written.

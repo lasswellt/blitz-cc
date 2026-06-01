@@ -195,6 +195,7 @@ After each interaction:
 - Wait 1 second for UI to settle
 - Check for new console errors
 - Check for new network failures
+- **Broken-wiring check**: if the safe click produced no a11y-tree change AND no route change AND no network request, record a `broken_wiring` finding (Warning; Error if a primary action). Full detection rule + false-positive guard in references/main.md §Broken-Wiring Detection. Rides ONLY this safe-interaction allow-list — never broaden to the NEVER-interact set above.
 
 **NEVER interact with**: buttons (except tabs), form inputs, toggles, checkboxes, links that navigate away, anything inside a modal/dialog.
 
@@ -237,6 +238,7 @@ Classify every finding into one of these severity levels:
 - Mock/placeholder data in production-like views
 - Accessibility issues (missing labels, poor contrast)
 - Dead links (`href="#"`)
+- Broken wiring — safe control clicked, no observable response (Error if primary action). Persisted per-page in `crawl-visited.json` `broken_wiring[]`; see references/main.md.
 
 ### Info (track but do not fix)
 - Third-party library warnings
