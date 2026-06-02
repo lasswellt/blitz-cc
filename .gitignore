@@ -16,6 +16,9 @@ Thumbs.db
 # Claude Code local settings
 .claude/settings.local.json
 
+# Scheduled-task runtime lock (machine-local, not committed)
+.claude/scheduled_tasks.lock
+
 # Session state (machine-local, not committed)
 .cc-sessions/
 
