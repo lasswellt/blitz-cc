@@ -21,6 +21,19 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.3.3] — 2026-06-01 · audit remediation + README rewrite
+
+### Fixed
+- **orchestrator boot summary**: removed unsupported `initialPrompt` frontmatter (silently ignored per the documented plugin-agent field allowlist) and folded the boot state-summary into the system-prompt body so it actually fires.
+- **trigger collisions**: added reciprocal routing boundaries for `review`↔`sprint-review`, `ship`↔`release`, and the bare-`audit`/`security audit` overload (object-noun routing); secondary boundaries for `sprint`↔`implement`↔`sprint-dev`, `codebase-map`↔architect, `browse`↔`ui-audit`.
+- **hook path robustness**: quoted all 38 `"${CLAUDE_PLUGIN_ROOT}"` command values in `hooks.json` (shell-form, install-paths-with-spaces safe); taught `scripts/validate-plugin-structure.sh` to strip the quotes when resolving.
+- **version-gating**: surfaced the effective Claude Code minimum (`>=2.1.117`) in `plugin.json` description (no manifest `engines` field exists).
+- **orphan agents**: documented `architect` + `doc-writer` as orchestrator-only freeform targets.
+- de-orphaned `_shared/scheduling.md` (linked from `next` + `code-sweep`); removed unsupported `color` frontmatter from 4 agents; added worker-agent invocation markers (`reviewer`/`test-writer`/`doc-writer`); documented external deps (Playwright MCP, Gemini CLI).
+
+### Changed
+- **README**: full rewrite — corrected the ANSI Shadow ASCII banner; converted 4 ASCII diagrams to Mermaid (holistic-machine overview, the Blitz cycle, review/audit registry core, carry-forward lifecycle); corrected stale counts (shared protocols → 32, check-registry → 94 checks); dropped the nonexistent typed-agent-definitions section.
+
 ## [2.3.2] — 2026-05-31 · cohesion + count-drift cleanup
 
 Plugin-wide cohesion pass: eliminated count/version drift, de-duplicated the routing surface, clarified maintenance-skill boundaries, and brought every SKILL.md body under 450 lines — without touching the holistic-machine contracts (orchestrator → skill → worktree-agent → registry-gated critic → disk-state). No skill merged, demoted, or deleted (all three overlap clusters resolved KEEP-SEPARATE), so this is a patch.
