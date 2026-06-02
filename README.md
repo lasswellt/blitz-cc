@@ -1,23 +1,19 @@
 <div align="center">
 
 ```
-   ─── ⚡ ──────────────────────────────────
-
-   ██████╗ ██╗     ██╗████████╗███████╗
-   ██╔══██╗██║     ██║╚══██╔══╝╚══███╔╝
-   ██████╔╝██║     ██║   ██║     ███╔╝
-   ██╔══██╗██║     ██║   ██║    ███╔╝
-   ██████╔╝███████╗██║   ██║   ███████╗
-   ╚═════╝ ╚══════╝╚═╝   ╚═╝   ╚══════╝
-
-   ──────────────────────────────── ⚡ ───
+██████╗ ██╗     ██╗████████╗███████╗
+██╔══██╗██║     ██║╚══██╔══╝╚══███╔╝
+██████╔╝██║     ██║   ██║     ███╔╝ 
+██╔══██╗██║     ██║   ██║    ███╔╝  
+██████╔╝███████╗██║   ██║   ███████╗
+╚═════╝ ╚══════╝╚═╝   ╚═╝   ╚══════╝
 ```
 
-**A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase**
+**⚡ A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase ⚡**
 
 **37 skills** · **10 agents** · **38 hook scripts across 16 events** · **32 shared protocol files**
 
-Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
+Orchestrator main-thread router · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
@@ -29,9 +25,23 @@ Orchestrator main-thread agent · 7 anti-shortcut hooks · 8-invariant quality r
 
 ## What is Blitz?
 
-Blitz is a **holistic machine**: a set of parts wired so that natural-language intent goes in one end and shippable, gated code comes out the other — with no step able to silently skip the one after it. It turns Claude Code into an opinionated, partly-autonomous development environment for Vue/Nuxt + Firebase.
+Blitz is a **holistic machine**: a set of parts wired so natural-language intent goes in one end and shippable, gated code comes out the other — with no step able to silently skip the one after it. It turns Claude Code into an opinionated, partly-autonomous development environment for Vue/Nuxt + Firebase.
 
-The mechanism, in one breath: **freeform input lands on a read-only orchestrator that routes to a `/blitz:*` skill; skills spawn worker agents in isolated worktrees; every artifact they produce is checked at a gate that runs off a single shared rule registry; an adversarial critic must sign off before anything reaches `PASS`; and the whole loop persists its state to disk so it can resume itself unattended.**
+The mechanism in one breath: **freeform input lands on a read-only orchestrator that routes to a `/blitz:*` skill; skills spawn worker agents in isolated worktrees; every artifact they produce is checked at a gate that runs off a single shared rule registry; an adversarial critic must sign off before anything reaches `PASS`; and the whole loop persists its state to disk so it can resume itself unattended.**
+
+```mermaid
+flowchart LR
+  U([Freeform intent]) --> O[Orchestrator<br/>read-only router]
+  CMD([/blitz:skill/]) --> SK
+  O -- routes to --> SK[Skill]
+  SK -- spawns --> AG[Worker agents<br/>isolated worktrees]
+  AG --> G[Gate<br/>shared check-registry]
+  G --> C{Critic<br/>LGTM?}
+  C -- REJECT --> SK
+  C -- LGTM --> P([PASS / ship])
+  G -. writes state .-> ST[(.cc-sessions/)]
+  ST -. resume / re-tick .-> O
+```
 
 Four properties make it a *machine* rather than a pile of prompts:
 
@@ -47,8 +57,8 @@ Four properties make it a *machine* rather than a pile of prompts:
 | Audience | Read |
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
-| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut Blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-37-scripts-16-events) · [Shared Protocols](#shared-protocols-29) · [Sprint-review Invariants](#3-sprint-review-invariants-8) |
+| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-32) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -85,8 +95,9 @@ Or just type freeform — the orchestrator routes for you.
 
 ### Prerequisites
 
-- **Claude Code** ≥ v2.1.71 (orchestrator main-thread agent requires ≥ 2.1.117)
+- **Claude Code** ≥ v2.1.117 for the full feature set (orchestrator main-thread activation + recent hook events). Individual `/blitz:*` slash skills run on ≥ v2.1.71; `/blitz:health` needs ≥ v2.1.152.
 - **bash**, **Node.js / npx** ≥ 18.0.0, **python3**, **jq**
+- **Optional external tools** (unbundled): Playwright MCP for the UI skills (`browse`, `ui-build`, `ui-audit`, `design-critic`); Gemini CLI for the opt-in Cross-Model Critic.
 
 ---
 
@@ -109,20 +120,17 @@ Or just type freeform — the orchestrator routes for you.
 
 The pipeline is a conveyor belt where **each station hands a typed artifact to the next, and the carry-forward registry threads every scope claim end-to-end so nothing is silently dropped**:
 
-```
-/blitz:research <topic>
-        │ writes docs/_research/<date>_<slug>.md with quantified `scope:` YAML
-        │ research-critic probes every cited URL + verifies quoted spans (Phase 3.2.5)
-        ▼
-/blitz:roadmap extend   → seeds epic-registry.json + carry-forward.jsonl from scope claims
-        ▼
-/blitz:sprint-plan      → unblocked epics → stories w/ dependency ordering + GitHub issues
-        ▼
-/blitz:sprint-dev       → builder agents in isolated worktrees, merged per-role on completion
-        ▼
-/blitz:review           → both detection lanes + parallel reviewers + critic + 8 invariants
-        ▼
-/blitz:ship             → review --only completeness → quality-metrics → release → notify
+```mermaid
+flowchart TD
+  R["/blitz:research &lt;topic&gt;"] -- "docs/_research/*.md + quantified scope: YAML<br/>research-critic verifies every cite + quoted span" --> RM["/blitz:roadmap extend"]
+  RM -- "seeds epic-registry.json + carry-forward.jsonl" --> SP["/blitz:sprint-plan"]
+  SP -- "unblocked epics → stories + dependency order + GitHub issues" --> SD["/blitz:sprint-dev"]
+  SD -- "builder agents in isolated worktrees, merged per-role" --> RV["/blitz:review"]
+  RV -- "both lanes + reviewers + critic + 8 invariants" --> SH["/blitz:ship"]
+  SH -- "review --only completeness → quality-metrics → release → notify" --> DONE([Published])
+  CF[("carry-forward.jsonl<br/>scope ledger")]
+  CF -. mandatory input .-> SP
+  RV -. reconciles .-> CF
 ```
 
 **Why it holds together:** every `scope:` claim from research becomes a carry-forward entry; sprint-plan *must* read that ledger; sprint-review reconciles it; and an entry that rolls over three sprints escalates for human review. The claim cannot evaporate between stations.
@@ -152,7 +160,7 @@ Four layers turn a skill collection into a partly-autonomous environment. Slash 
 
 ### 1. Orchestrator (freeform-input router)
 
-`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked, and the orchestrator *routes to it* rather than running it. See [`skills/_shared/agent-routing.md`](skills/_shared/agent-routing.md).
+`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agent-routing.md`](skills/_shared/agent-routing.md).
 
 ```bash
 export BLITZ_DISABLE_ORCHESTRATOR=1   # opt out per session
@@ -164,11 +172,11 @@ Six `PreToolUse` blockers and one `PostToolUse` typecheck ratchet stop the most 
 
 `--no-verify` bypass · destructive git on a dirty tree · destructive SQL outside a migration · test deletion · `as any` insertion · test disabling · type-error regression.
 
-These are the catastrophic (P0) classes from the shortcut taxonomy; they're enforced as hooks precisely because their blast radius is too large to defer to review.
+These are the catastrophic (P0) plus high-risk (P1) classes from the shortcut taxonomy; they're enforced as hooks precisely because their blast radius is too large to defer to review.
 
 ### 3. Sprint-review invariants (8)
 
-A sprint cannot reach `PASS` while any invariant fails. They are deliberately mostly *deterministic* — carry-forward consistency, the monotonic quality ratchet (`type_errors` is an absolute floor), branch hygiene, and the **critic LGTM** (Invariant 7). The one judgment-heavy invariant is advisory by design. Facts gate; opinions annotate.
+A sprint cannot reach `PASS` while any invariant fails. They are deliberately mostly *deterministic* — carry-forward consistency, the monotonic quality ratchet (`type_errors` is an absolute floor), branch hygiene, and the **critic LGTM** (Invariant 7). The judgment-heavy parts are advisory by design. Facts gate; opinions annotate.
 
 ### 4. Cross-Model Critic (optional)
 
@@ -186,22 +194,18 @@ The adversarial critic can be lifted verbatim and piped to a different model fam
 
 ## How review & audit work (the shared-registry core)
 
-The quality surface is **two entry points over one rule registry** — the cleanest illustration of "gates run on data, not vibes."
+The quality surface is **two entry points over one rule registry** — the cleanest illustration of "gates run on data, not vibes." `skills/_shared/check-registry.json` holds 94 checks split evenly across a *deterministic* and a *semantic* lane, each row tagged with its pillar, `verdict_authority`, and `base_confidence`.
 
-```
-                 skills/_shared/check-registry.json   (30 checks)
-                 each row: lane · verdict_authority · base_confidence · detection
-                          │
-         ┌────────────────┴────────────────┐
-         ▼                                 ▼
-   /blitz:review                      /blitz:audit
-   precision · per-change             recall · pre-release
-   both lanes, semantic single-pass   both lanes, semantic AGGREGATED
-   --min-confidence high              --min-confidence low
-   FP-verify inline                   FP-verify panel (refute + majority vote)
-         └───────────────┬─────────────────┘
-                         ▼
-   agents/critic.md  +  agents/research-critic.md  (read-only, registry-driven)
+```mermaid
+flowchart TD
+  REG[("check-registry.json — 94 checks<br/>each row: lane · pillar · verdict_authority · base_confidence")]
+  REG --> RV["/blitz:review<br/>precision · per-change<br/>--min-confidence high · FP-verify inline"]
+  REG --> AU["/blitz:audit<br/>recall · pre-release<br/>--min-confidence low · FP-verify panel + vote"]
+  RV --> CR
+  AU --> CR
+  CR["agents/critic.md + agents/research-critic.md<br/>read-only · registry-driven"] --> V{verdict_authority}
+  V -- ground-truth --> REJ[may flip to REJECT]
+  V -- judgment --> ANN[annotate only]
 ```
 
 Three ideas do the work:
@@ -220,13 +224,13 @@ Three ideas do the work:
 
 | Skill | What it does | Invocation |
 |---|---|---|
-| **next** | Reads sprint/roadmap/carry-forward state, recommends (or `--loop` auto-dispatches) the next action. | `/blitz:next [--loop]` |
+| **next** | Reads sprint/roadmap/carry-forward state, recommends (or `--loop` auto-dispatches) the next action. Canonical autonomous engine. | `/blitz:next [--loop]` |
 | **ask** | Classifies a vague request and routes it via decision tree. | `/blitz:ask <request>` |
 | **sprint** | Full cycle: plan → implement → review. `--loop` aliases `/blitz:next --loop`. | `/blitz:sprint [--plan-only\|--skip-review\|--loop\|--gaps\|--resume]` |
-| **implement** | Thin dispatcher to sprint-dev. | `/blitz:implement [--sprint N\|--resume]` |
-| **review** | Consolidated **precision** gate — both lanes, confidence gate, FP-verify, critic; `--only` runs a folded concern. | `/blitz:review [--sprint N\|--only completeness\|wiring\|framework\|full\|--dual]` |
-| **audit** | Consolidated **recall** deep audit — 5 pillars + aggregation + FP-verify panel + coverage boundary. | `/blitz:audit [scope\|--min-confidence low\|high\|--dual]` |
-| **ship** | review → review --only completeness → quality-metrics → release → notify. | `/blitz:ship [version]` |
+| **implement** | Thin router to sprint-dev (no plan/review). | `/blitz:implement [--sprint N\|--resume]` |
+| **review** | Consolidated **precision** gate — both lanes, confidence gate, FP-verify, critic; `--only` runs a folded concern. Front door that delegates the full 8-invariant gate to sprint-review. | `/blitz:review [--sprint N\|--only completeness\|wiring\|framework\|design\|full\|--dual]` |
+| **audit** | Consolidated **recall** deep audit — 5 pillars + aggregation + FP-verify panel + coverage boundary. | `/blitz:audit [scope\|--pillar P\|--min-confidence low\|high\|--dual]` |
+| **ship** | review → review --only completeness → quality-metrics → release → notify. Slash-only. | `/blitz:ship [version]` |
 
 ### Sprint lifecycle
 
@@ -260,7 +264,7 @@ Three ideas do the work:
 | **refactor** | Snapshot tests, refactor one piece at a time, revert on any regression. | `/blitz:refactor <target> <goal>` |
 | **test-gen** | Tests in project conventions (Vitest/Jest), AAA + factories. | `/blitz:test-gen <file>` |
 | **fix-issue** | GitHub issue → research → fix with tests → close via `gh`. | `/blitz:fix-issue <#>` |
-| **migrate** | Framework/library migrations; atomic verified steps. | `/blitz:migrate <target>` |
+| **migrate** | Framework/library migrations; atomic verified steps. Slash-only. | `/blitz:migrate <target>` |
 | **bootstrap** | Greenfield scaffold or feature/package into an existing project. | `/blitz:bootstrap <type> <name>` |
 | **quick** | Small targeted edits without sprint ceremony. | `/blitz:quick <request>` |
 
@@ -269,7 +273,7 @@ Three ideas do the work:
 | Skill | What it does | Invocation |
 |---|---|---|
 | **doc-gen** | API/component docs, Mermaid diagrams, CHANGELOG from commits. | `/blitz:doc-gen [api\|components\|architecture\|changelog\|full]` |
-| **release** | Semver, CHANGELOG, GitHub release. | `/blitz:release [prepare\|verify\|publish\|rollback]` |
+| **release** | Semver, CHANGELOG, GitHub release. Slash-only. | `/blitz:release [prepare\|verify\|publish\|rollback]` |
 
 ### Analysis & meta
 
@@ -280,16 +284,16 @@ Three ideas do the work:
 | **retrospective** | Mines activity-feed + diffs → safety-classified self-improvement proposals. | `/blitz:retrospective` |
 | **setup** | Detects CLAUDE.md ↔ skill conflicts; validates permissions/stack. | `/blitz:setup` |
 | **health** | Plugin structural integrity (hooks, sessions, locks, frontmatter). | `/blitz:health` |
-| **conform** | Migrates a project's blitz runtime artifacts to current schemas. | `/blitz:conform [dir] [--fix]` |
+| **conform** | Migrates a project's blitz runtime artifacts to current schemas. | `/blitz:conform [dir] [--fix\|--scope plugin]` |
 | **todo** | Tracks todos in `.cc-sessions/todos.jsonl` with `file:line`. | `/blitz:todo [add\|list\|resolve]` |
 | **worktree-prune** | Safely deletes stale agent-spawned branches (dry-run default). | `/blitz:worktree-prune [--apply --merged-only]` |
 
 ### At a glance
 
-- **Loop-safe** (4): browse, code-sweep, next, ui-audit
-- **Read-only by default** (6): conform, design-extract, health, perf-profile, setup, worktree-prune
-- **Multi-agent super-orchestrators** (slash-invoked): sprint-dev, sprint-plan, sprint-review, research, audit, quality-metrics, code-sweep, code-doctor, ui-audit
-- **Pure chainers**: sprint, ship, fix-issue, ui-build, review, bootstrap, conform, setup, browse, perf-profile, next
+- **Loop-safe** (4): `browse`, `code-sweep`, `next`, `ui-audit` — one unit of work per tick (`sprint --loop` aliases `next --loop`).
+- **Slash-only** (`disable-model-invocation`, 3): `migrate`, `release`, `ship` — destructive/irreversible, never auto-fire.
+- **Read-only by default**: `conform`, `design-extract`, `dep-health`, `health`, `perf-profile`, `setup`, `ui-audit`, `worktree-prune` — mutate only with an explicit `--fix`/`--apply` flag.
+- **Multi-agent super-orchestrators** (slash-invoked, spawn parallel waves): `sprint-dev`, `sprint-plan`, `sprint-review`, `research`, `audit`, `quality-metrics`, `code-sweep`, `code-doctor`, `ui-audit`.
 
 ---
 
@@ -303,18 +307,18 @@ Three roles. **Builder agents** are spawned by skills via `Agent({isolation: "wo
 |---|---|---|
 | **backend-dev** | sonnet | Cloud Functions v2 / Zod / Firestore; numbered flow (Auth → Validate → Logic → Audit → Return). |
 | **frontend-dev** | sonnet | Vue 3 `<script setup>` / Pinia; adapts to Tailwind / Quasar / Vuetify. |
-| **test-writer** | sonnet | Vitest/Jest, AAA + factories. |
-| **reviewer** | sonnet | OWASP top-10 + pattern violations; writes findings incrementally. |
-| **architect** | sonnet | Read-only structural analysis — coupling, cohesion, circular deps. |
-| **doc-writer** | haiku | API docs, ADRs, README sections (mechanical → cheaper model). |
+| **test-writer** | sonnet | Vitest/Jest, AAA + factories. Spawned by `test-gen` / sprint-dev. |
+| **reviewer** | sonnet | OWASP top-10 + pattern violations; writes findings incrementally. Spawned by `review` / sprint-review. |
+| **architect** | sonnet | Read-only structural analysis — coupling, cohesion, circular deps. Orchestrator-delegated. |
+| **doc-writer** | haiku | API docs, ADRs, README sections (mechanical → cheaper model). Spawned via `doc-gen` / orchestrator. |
 
 ### Critic agents (3) — adversarial reviewers
 
 | Agent | Model | Role | Verdict |
 |---|---|---|---|
 | **critic** | sonnet | Registry-driven pre-`PASS` reviewer: 20-detector taxonomy + ratchet + acceptance-checks + reflog/rename scans. **Verdict-flip asymmetry** — ground-truth → REJECT, judgment → annotate. Halts at first reject. | `LGTM \| REJECT` |
-| **research-critic** | sonnet | Probes every cited URL (LIVE/DEAD/LIKELY_HALLUCINATED/UNKNOWN), verifies quoted spans (Deterministic Quoting) + grounds quantified claims; `scope:` claim with no resolvable cite is a blocker. | `PASS \| UNVERIFIED \| CITATIONS_MISSING` |
-| **design-critic** | sonnet | Vision-based aesthetic scorer against `DESIGN.md`; 5 dimensions. | `PASS \| ITERATE \| REWORK` |
+| **research-critic** | sonnet | Probes every cited URL (LIVE/DEAD/LIKELY_HALLUCINATED/UNKNOWN), verifies quoted spans (Deterministic Quoting) + grounds quantified claims; a `scope:` claim with no resolvable cite is a blocker. | `PASS \| UNVERIFIED \| CITATIONS_MISSING` |
+| **design-critic** | sonnet | Vision-based aesthetic scorer against `DESIGN.md`; 5 dimensions; Playwright nav-subset only (no `browser_evaluate`). | `PASS \| ITERATE \| REWORK` |
 
 ### Orchestrator (1)
 
@@ -322,9 +326,7 @@ Three roles. **Builder agents** are spawned by skills via `Agent({isolation: "wo
 |---|---|---|
 | **orchestrator** | sonnet | Read-only main-thread router (no Write/Edit/Agent — cannot spawn subagents). Surfaces in-flight state from `HANDOFF.json` + activity feed, routes to a `/blitz:*` skill. `BLITZ_DISABLE_ORCHESTRATOR=1` to opt out. |
 
-### Typed agent definitions
-
-Drop typed agent YAML into `.claude/agents/` to scope MCP server access per agent (sprint-dev auto-detects at spawn): `blitz-backend-dev.md` (firebase), `blitz-frontend-dev.md` (playwright), `blitz-test-writer.md` (read-only).
+Model defaults follow a 60/35/5 Haiku/Sonnet/Opus routing recorded in `.claude-plugin/model-profiles.json`; a spawning skill may bump a worker to opus for genuinely heavy reasoning.
 
 ---
 
@@ -334,17 +336,23 @@ Drop typed agent YAML into `.claude/agents/` to scope MCP server access per agen
 
 ### Lifecycle
 
-```
-provisional → active → partial → complete
-                 │         │         ▲
-                 └─ rolls over ──────┘  (≥3 sprints → LOOP_ESCALATE, human review)
+```mermaid
+stateDiagram-v2
+  [*] --> provisional: research scope claim
+  provisional --> active: a sprint adopts it
+  active --> partial: some acceptance checks pass
+  partial --> complete: all acceptance checks pass
+  complete --> [*]
+  partial --> active: rolls over to next sprint
+  active --> escalated: ≥3 sprints → LOOP_ESCALATE
+  escalated --> [*]: human review
 ```
 
 A claim enters `provisional` from research, becomes `active` when a sprint adopts it, `partial` when some acceptance checks pass, and `complete` only when all do. Every reader follows one canonical Reader Algorithm; writers append, never rewrite.
 
 ### Quality ratchet
 
-Eight monotonic metrics (type errors, test count, mocks-in-src, `as any` count, …) are persisted and **may only improve**. A regression without a covering carry-forward entry auto-reverts. `type_errors > 0` is an absolute floor — it can never ratchet up.
+Eight monotonic metrics (type errors, test count, mocks-in-src, `as any` count, stale worktree branches, …) are persisted and **may only improve**. A regression without a covering carry-forward entry auto-reverts. `type_errors > 0` is an absolute floor — it can never ratchet up.
 
 ---
 
@@ -356,7 +364,7 @@ Builder agents run in isolated git worktrees on per-role branches (`sprint-N/{ba
 
 ## Parallel Sessions (native agent view)
 
-Every blitz skill (`/blitz:*`) and agent (`@backend-dev`) is a valid dispatch target for Claude Code's native agent view (`claude agents`, CC ≥2.1.139) — run `claude --bg "/blitz:audit"` or type the command into the agent-view input to run blitz work as a background session. blitz does **not** reimplement the agents view, recaps, or terminal multiplexing; it interops:
+Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude Code's native agent view (`claude agents`, CC ≥2.1.139) — run `claude --bg "/blitz:audit"` or type the command into the agent-view input to run blitz work as a background session. blitz does **not** reimplement the agents view, recaps, or terminal multiplexing; it interops:
 
 - **Worktree reconciliation** — background sessions auto-isolate into `.claude/worktrees/`; `/blitz:worktree-prune` never removes a worktree a live `claude agents` session owns (data-loss guard via `claude agents --json`).
 - **Conflict overlay** — blitz's semantic conflict matrix extends to background sessions (the platform manages processes, not semantic conflicts).
@@ -377,9 +385,11 @@ Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work 
 ```
 blitz-cc/
 ├── .claude-plugin/
-│   ├── plugin.json              # plugin manifest (main-thread agent = orchestrator)
-│   ├── marketplace.json         # marketplace listing
-│   └── settings.json            # { "agent": "orchestrator" }
+│   ├── plugin.json              # manifest (main-thread agent = orchestrator)
+│   ├── marketplace.json         # single-plugin marketplace (source: ./)
+│   ├── settings.json            # { "agent": "orchestrator" }
+│   ├── counts.json              # CI-enforced authoritative component counts
+│   └── model-profiles.json      # per-agent model defaults (60/35/5 routing)
 ├── agents/                      # 10 agents (6 builder · 3 critic · 1 orchestrator)
 ├── skills/
 │   ├── <name>/SKILL.md          # 37 skills (Anthropic-canonical, auto-discovered)
@@ -387,7 +397,9 @@ blitz-cc/
 ├── hooks/
 │   ├── hooks.json               # 16 events
 │   └── scripts/                 # 38 scripts: 35 event-wired + 2 sub-invoked + 1 critic-spawned
-├── scripts/                     # detect-stack, version-sync, plugin-structure validators
+├── output-styles/
+│   └── terse-technical.md       # the plugin output style
+├── scripts/                     # detect-stack, count-sync, version-sync, structure validators
 └── installer/                   # npx blitz-cc CLI
 ```
 
@@ -399,7 +411,7 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 ### Conforming after upgrades
 
-`/blitz:conform` detects schema drift in a project's `.cc-sessions/` + sprint artifacts after a blitz upgrade and migrates them idempotently (`--fix`). Read-only by default.
+`/blitz:conform` detects schema drift in a project's `.cc-sessions/` + sprint artifacts after a blitz upgrade and migrates them idempotently (`--fix`). `--scope plugin` targets SKILL.md + hooks instead. Read-only by default.
 
 ---
 
@@ -407,15 +419,17 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Of the 38 scripts, 35 are event-wired; the rest are sub-invoked (`check-registry-validate.sh`, `startup-validate.sh`) or critic-spawned (`critic-gemini.sh`). Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
 
+> Hook commands reference scripts via `"${CLAUDE_PLUGIN_ROOT}"` (quoted, shell-form) so install paths with spaces resolve correctly. No blitz hook executes project-controlled content pre-trust — see [`skills/_shared/hook-trust.md`](skills/_shared/hook-trust.md).
+
 ### Environment overrides
 
-`BLITZ_DISABLE_ORCHESTRATOR`, `BLITZ_DISPATCH` (auto\|workflow\|agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD` — each documented at its point of use.
+`BLITZ_DISABLE_ORCHESTRATOR`, `BLITZ_DISPATCH` (auto\|workflow\|agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`, `BLITZ_NOTIFY_ON_IDLE` — each documented at its point of use.
 
 ---
 
-## Shared Protocols (30)
+## Shared Protocols (32)
 
-All skills share 30 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. The load-bearing ones:
+All skills share 32 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. The load-bearing ones:
 
 - **session-protocol.md** — multi-session safety (locks, conflict matrix, autonomy levels)
 - **check-registry.json / check-registry.md** — the single source of truth for every review/audit check (lane, verdict authority, confidence, detection)
@@ -423,6 +437,7 @@ All skills share 30 protocol files in [`skills/_shared/`](skills/_shared/) that 
 - **carry-forward-registry.md** — the scope-ledger Reader Algorithm + writer contract
 - **spawn-protocol.md** / **workflow-dispatch.md** — agent fan-out + the opt-in `Workflow` dispatch path
 - **ratchet-protocol.md** — 8 monotonic metrics + auto-revert
+- **scheduling.md** — `/loop` (session-scoped) vs `/schedule` (persistent) mechanics
 - **terse-output.md** — the output style + canonical exemptions
 
 ---
@@ -435,13 +450,13 @@ All skills share 30 protocol files in [`skills/_shared/`](skills/_shared/) that 
 
 ## Installer CLI
 
-`npx blitz-cc@latest` (source in `installer/`) detects the stack, registers the plugin + marketplace, writes permissions, wires hooks, and copies typed agent definitions. `--yes` for non-interactive; a pure-bash `install.sh` fallback exists for Node-less environments. `uninstall.js` reverses it.
+`npx blitz-cc@latest` (source in `installer/`) detects the stack, registers the plugin + marketplace, writes permissions, and wires the hooks. `--yes` for non-interactive; a pure-bash `install.sh` fallback exists for Node-less environments. `uninstall.js` reverses it.
 
 ---
 
 ## Contributing
 
-Blitz develops *itself* through its own cycle — this README's structure, the review/audit consolidation, and the count you're reading were produced by sprints that ran `/blitz:sprint-review` and the adversarial critic on their own output. Fork-friendly: `/blitz:conform --scope plugin` audits structural drift, and the frontmatter + link + registry validators run on every commit.
+Blitz develops *itself* through its own cycle — this README's structure, the review/audit consolidation, and the counts you're reading were produced by sprints that ran `/blitz:sprint-review` and the adversarial critic on their own output. Fork-friendly: `/blitz:conform --scope plugin` audits structural drift, and the frontmatter + link + count-sync + structure validators run on every commit (`scripts/check-count-sync.sh`, `scripts/check-version-sync.sh`, `scripts/validate-plugin-structure.sh`).
 
 ---
 
