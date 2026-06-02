@@ -151,6 +151,8 @@ for event_type in hooks:
       [[ -z "$script_path" ]] && continue
       # hooks.json `command` may include args (e.g. `foo.sh --all`); validate only the script token
       script_only="${script_path%% *}"
+      # shell-form commands quote the var ("${CLAUDE_PLUGIN_ROOT}"/...) per Claude Code docs; strip quotes before resolving
+      script_only="${script_only//\"/}"
       resolved="${script_only//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
       if [[ ! -f "$resolved" ]]; then
         check_fail "hooks.json references missing script: $script_path"

@@ -1,6 +1,6 @@
 ---
 name: browse
-description: "Automated browser testing and site crawling via Playwright MCP. Captures console errors, failed network requests, and screenshots; classifies findings (Critical/Error/Warning). Loop-safe — one page per tick, builds navigational hierarchy. Use when the user says 'test pages', 'smoke test', 'crawl site', 'visual audit', or 'click through the app'."
+description: "Automated browser testing and site crawling via Playwright MCP. Captures console errors, failed network requests, and screenshots; classifies findings (Critical/Error/Warning). Loop-safe — one page per tick, builds navigational hierarchy. Use when the user says 'test pages', 'smoke test', 'crawl site', 'visual smoke test', or 'click through the app'. For cross-page data-consistency/role-leak/placeholder checks use /blitz:ui-audit instead."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 effort: high

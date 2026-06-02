@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-compact-snapshot.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-compact-snapshot.sh"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-compact-log.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-compact-log.sh",
             "async": true
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/blitz-prompt-expansion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/blitz-prompt-expansion.sh"
           }
         ]
       }
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/session-start.sh"
           }
         ]
       }
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/teammate-idle.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/teammate-idle.sh"
           }
         ]
       }
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/task-completed-validate.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/task-completed-validate.sh"
           }
         ]
       }
@@ -70,37 +70,37 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-edit-activity-log.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-activity-log.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-edit-format.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-format.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-edit-lint.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-lint.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-edit-test.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-test.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/analysis-paralysis-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/analysis-paralysis-guard.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/skill-frontmatter-validate.sh --all",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/skill-frontmatter-validate.sh --all",
             "async": true
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/agent-frontmatter-validate.sh --all",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/agent-frontmatter-validate.sh --all",
             "async": true
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-edit-typecheck-block.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-typecheck-block.sh"
           }
         ]
       },
@@ -109,11 +109,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/analysis-paralysis-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/analysis-paralysis-guard.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/context-monitor.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/context-monitor.sh"
           }
         ]
       },
@@ -122,7 +122,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/context-monitor.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/context-monitor.sh"
           }
         ]
       }
@@ -132,7 +132,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-start.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/subagent-start.sh",
             "async": true
           }
         ]
@@ -143,7 +143,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-stop.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/subagent-stop.sh",
             "async": true
           }
         ]
@@ -154,7 +154,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-tool-batch.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-tool-batch.sh",
             "async": true
           }
         ]
@@ -165,7 +165,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-tool-failure.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-tool-failure.sh",
             "async": true
           }
         ]
@@ -176,7 +176,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/stop-failure.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/stop-failure.sh",
             "async": true
           }
         ]
@@ -187,7 +187,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-request.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/permission-request.sh",
             "async": true
           }
         ]
@@ -198,7 +198,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/worktree-create.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/worktree-create.sh"
           }
         ]
       }
@@ -208,7 +208,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/worktree-remove.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/worktree-remove.sh",
             "async": true
           }
         ]
@@ -220,23 +220,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-edit-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-edit-guard.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-edit-backup.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-edit-backup.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-test-deletion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-as-any-insertion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-as-any-insertion.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-test-disabling.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-disabling.sh"
           }
         ]
       },
@@ -245,35 +245,35 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-validate.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-commit-validate.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/reference-compression-validate.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/reference-compression-validate.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/markdown-link-validate.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/markdown-link-validate.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/workflow-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/workflow-guard.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-no-verify.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-no-verify.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-destructive-git.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-git.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-destructive-sql.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-sql.sh"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/block-test-deletion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
           }
         ]
       }

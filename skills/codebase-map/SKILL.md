@@ -1,6 +1,6 @@
 ---
 name: codebase-map
-description: "Builds CODEBASE-MAP.md for brownfield onboarding: Technology (stack/deps/build), Architecture (modules/layers/data flow), Quality (test coverage, lint debt), and Concerns (security/perf risks). Use when the user says 'map the codebase', 'analyze this project', 'I just inherited this repo', or when no CODEBASE-MAP.md exists."
+description: "Builds CODEBASE-MAP.md for brownfield onboarding: Technology (stack/deps/build), Architecture (modules/layers/data flow), Quality (test coverage, lint debt), and Concerns (security/perf risks). Use when the user says 'map the codebase', 'analyze this project', 'I just inherited this repo', or when no CODEBASE-MAP.md exists. For deep coupling/dependency-graph structural analysis use the architect agent; for quality/tech-debt findings use /blitz:audit."
 allowed-tools: Read, Write, Bash, Glob, Grep, Agent
 model: opus
 effort: medium
