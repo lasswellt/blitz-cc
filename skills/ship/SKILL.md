@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Chains the full release workflow (sprint-review → review --only completeness → quality-metrics → release) with quality gates between each step. Use when the user says 'ship it', 'cut a release', 'release v1.X', or 'ready to ship'. Refuses to publish if any gate fails."
+description: "Chains the full release workflow (sprint-review → review --only completeness → quality-metrics → release) with quality gates between each step. Use for the full gated release chain from a finished sprint: 'ship it', 'cut a release', 'release v1.X', 'ready to ship'. Refuses to publish if any gate fails. For the versioning/changelog/tag/publish/rollback step in isolation (no preceding quality chain), use /blitz:release directly."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: low

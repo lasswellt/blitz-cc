@@ -1,6 +1,6 @@
 ---
 name: audit
-description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 independent same-scope passes per pillar) for Multi-Review aggregation. Produces findings formatted for /blitz:roadmap and /blitz:sprint-plan ingestion. Use when the user says 'audit codebase', 'full code review', 'comprehensive quality audit', 'health of this codebase', 'find tech debt', 'security audit', or before a major release."
+description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness). Spawns 10 parallel agents (2 independent same-scope passes per pillar) for Multi-Review aggregation. Produces findings formatted for /blitz:roadmap and /blitz:sprint-plan ingestion. Use when the user says 'audit codebase', 'full code review', 'comprehensive quality audit', 'health of this codebase', 'find tech debt', 'source-code security audit', or before a major release. Object-noun routing for 'audit X': codebase/code→audit, dependencies/packages/CVEs→/blitz:dep-health, Firestore/Vue/Pinia APIs→/blitz:code-doctor, cross-page UI data→/blitz:ui-audit, sprint→/blitz:sprint-review. Bare 'audit' with no object → /blitz:ask."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: opus
 effort: high
