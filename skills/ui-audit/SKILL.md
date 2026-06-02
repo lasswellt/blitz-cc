@@ -4,7 +4,7 @@ description: "Cross-page semantic consistency + data-quality + UI/UX heuristic a
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: opus
 compatibility: ">=2.1.71"
-argument-hint: "[mode] -- modes: full | smoke | data | buttons | events | consistency | heuristics | role <name> | --loop"
+argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
 effort: low
 ---
 

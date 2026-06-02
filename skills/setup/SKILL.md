@@ -6,7 +6,7 @@ disallowed-tools: Edit, Write, NotebookEdit
 model: sonnet
 effort: low
 compatibility: ">=2.1.71"
-argument-hint: "[--fix | --check] [--scope global|project|all] -- detects conflicts between CLAUDE.md files and blitz behaviors; --check audits read-only, --fix applies safe migrations; --scope chooses global config (~/.claude) / current project / both"
+argument-hint: "[--fix|--check] [--scope global|project|all]"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

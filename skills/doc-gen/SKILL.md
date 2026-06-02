@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: opus
 effort: medium
 compatibility: ">=2.1.71"
-argument-hint: "<mode> -- api (TypeDoc/JSDoc → docs/api/) | components (Vue prop+event tables) | architecture (Mermaid graphs) | changelog (commits since last tag) | full (all of the above)"
+argument-hint: "<api|components|architecture|changelog|full>"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

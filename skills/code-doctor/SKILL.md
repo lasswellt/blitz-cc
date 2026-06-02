@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 model: opus
 effort: low
 compatibility: ">=2.1.71"
-argument-hint: "[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication] -- framework-API correctness audit; --scan reports only (default), --fix applies low-risk auto-fixes, --fix-all is more aggressive; --rules narrows the categories"
+argument-hint: "[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication]"
 paths:
   - "**/*.vue"
   - "**/firestore.rules"

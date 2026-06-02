@@ -4,7 +4,7 @@ description: Conforms blitz runtime artifacts to current canonical schemas. Dete
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: low
-argument-hint: "[target-dir] [--fix | --report-only] [--scope project|plugin|all] [--sample-mode] -- detects + fixes drift in blitz runtime artifacts after upgrades; --report-only audits, --fix applies idempotent migrations; --scope project (default) | plugin (fork) | all; --sample-mode shows first fix per type"
+argument-hint: "[target-dir] [--fix|--report-only] [--scope project|plugin|all] [--sample-mode]"
 disable-model-invocation: false
 compatibility: ">=2.1.71"
 ---

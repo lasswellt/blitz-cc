@@ -1,7 +1,7 @@
 ---
 name: next
 description: "Reads project, sprint, and carry-forward state then recommends the next blitz command. With --loop, auto-dispatches the recommended phase and exits cleanly for /loop or ScheduleWakeup re-tick. Canonical autonomous reconciliation engine (supersedes /blitz:sprint --loop). Use when the user asks 'what should I do next?', 'where are we?', '/blitz:next', or starts autonomous loop mode."
-argument-hint: "[--loop] -- default: read state and suggest a command. --loop: auto-dispatch the recommended phase, commit/push, exit; designed for /loop /blitz:next --loop or self-scheduled ScheduleWakeup."
+argument-hint: "[--loop]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup
 model: sonnet
 effort: low

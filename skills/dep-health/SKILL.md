@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
 model: sonnet
 effort: medium
 compatibility: ">=2.1.71"
-argument-hint: "<mode> -- audit (read-only CVE scan + outdated check) | upgrade (interactive bumps with breaking-change notes) | report (CSV/JSON output with license compliance + transitive risk)"
+argument-hint: "<audit|upgrade|report>"
 ---
 
 <!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `health` qualified). -->

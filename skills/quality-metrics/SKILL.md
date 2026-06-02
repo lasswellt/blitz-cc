@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Bash, Glob, Grep, Agent
 model: opus
 effort: medium
 compatibility: ">=2.1.71"
-argument-hint: "<mode> -- collect (snapshot to .cc-sessions/quality-metrics.jsonl) | dashboard (HTML over time) | trend (delta vs last sprint) | compare <date1> <date2> (diff between two snapshots)"
+argument-hint: "<collect|dashboard|trend|compare <date1> <date2>>"
 ---
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
