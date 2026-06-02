@@ -1,6 +1,7 @@
 ---
 name: research
 description: "Investigates libraries, APIs, frameworks, and architecture patterns via parallel research agents (domain, library, codebase, optional infra). Produces a structured docs/_research/<date>_<topic>.md with scope: YAML for /blitz:roadmap ingestion. Use when the user says 'research X', 'compare options', 'evaluate library Y', or '/blitz:research <topic>'."
+argument-hint: "<topic>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 model: opus
 effort: high

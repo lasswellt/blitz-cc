@@ -1,6 +1,7 @@
 ---
 name: sprint-review
 description: "Reviews sprint quality with automated gates (type-check, lint, tests, build) and parallel reviewer agents (security, backend, frontend, patterns). Auto-fixes safe categories (types, lint, imports). Enforces the carry-forward registry hard gate (Phase 3.6 Invariants 1-8 — including ratchet, critic, and worktree branch hygiene). This is the full end-of-sprint gate engine: use when the user says 'review sprint', 'sprint quality gate', or 'audit sprint'. For a lightweight per-change/pre-commit review of a diff (not the full sprint gate), use /blitz:review instead."
+argument-hint: "[--sprint N]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, Agent
 disable-model-invocation: false
 model: opus

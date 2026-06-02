@@ -1,6 +1,7 @@
 ---
 name: compress
 description: "Rewrites a markdown or plain-text file into terse form to reduce input tokens when the file is loaded. Preserves code, URLs, paths, commands, headings, tables, YAML, and JSON verbatim. Writes a .original backup before modifying the source. Use when the user says 'compress this file', 'shrink this doc', 'reduce tokens in <file>', 'make this terse', or when a research doc / SKILL.md gets too long."
+argument-hint: "<file-path>"
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 effort: low
