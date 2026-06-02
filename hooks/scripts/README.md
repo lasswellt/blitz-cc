@@ -101,6 +101,10 @@
 |---|---|
 | `stop-failure.sh` | Logs failure_type to activity feed. Stub — logging only; future: write advisories to KNOWLEDGE.md. |
 
+### `Stop` — intentionally not wired
+
+No plain `Stop` hook is registered. Turn-end state persistence is handled out-of-band: `PreCompact` snapshot/handoff + the always-on activity-feed protocol (model-written, see CLAUDE.md). A `Stop` hook would only add another logging stub (cf. `stop-failure.sh`, `subagent-stop.sh`), so it is omitted by design. `StopFailure` (API-error turn end) and `SubagentStop` are wired because they capture states the activity-feed protocol cannot.
+
 ### `PermissionRequest` — fires when a permission dialog is about to be shown
 
 | Script | Purpose |

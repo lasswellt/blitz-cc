@@ -24,7 +24,6 @@ tools: Read, Grep, Glob, Bash, mcp__plugin_playwright_playwright__browser_naviga
 # dev-server URL ui-build passes. Still no Write/Edit/Agent; output remains the JSON reply contract.
 maxTurns: 30
 model: sonnet
-color: purple
 ---
 
 # Design Critic — Vision-Based Aesthetic Scorer

@@ -3,7 +3,7 @@ name: test-writer
 description: |
   Test specialist for unit tests, integration tests, and E2E tests. Generates
   tests following AAA pattern with factory functions. Adapts to project's test
-  framework (Vitest or Jest).
+  framework (Vitest or Jest). Worker agent spawned by /blitz:test-gen and sprint-dev — for a freeform 'write tests' request invoke the test-gen skill, which orchestrates this agent.
 
   <example>
   Context: User needs tests for a newly implemented store

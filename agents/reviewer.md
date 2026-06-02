@@ -3,7 +3,7 @@ name: reviewer
 description: |
   Code quality and security reviewer. Writes findings incrementally to a temp
   file. Identifies correctness issues, security vulnerabilities, and pattern
-  violations. Use for code review requests.
+  violations. Use for code review requests. Worker agent spawned by /blitz:review and /blitz:sprint-review — not invoked freeform. Different from `critic` (which tries to REJECT a sprint) and the `/blitz:review` skill (which orchestrates the gate): reviewer surveys and writes findings.
 
   <example>
   Context: User wants a security and quality review of recent changes

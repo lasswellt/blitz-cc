@@ -31,7 +31,6 @@ maxTurns: 30
 # `hooks/scripts/critic-gemini.sh --mode research`; BLITZ_DUAL_CRITIC=1 runs both
 # and requires both PASS. See agents/critic.md §5 for the mode matrix.
 model: sonnet
-color: orange
 background: true
 ---
 

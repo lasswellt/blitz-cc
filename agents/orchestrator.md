@@ -25,7 +25,6 @@ maxTurns: 30
 #   sonnet workers anyway. Opus would be over-provisioned. If routing accuracy
 #   ever regresses, this is the first knob to flip.
 model: sonnet
-color: cyan
 ---
 
 # Blitz Orchestrator — Holistic Development Router

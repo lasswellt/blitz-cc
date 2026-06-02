@@ -20,7 +20,6 @@ tools: Read, Grep, Glob, Bash
 # Bash is exec+egress — keep read-only; do NOT add network/MCP egress. Posture: /_shared/threat-model.md §5.
 maxTurns: 30
 model: sonnet
-color: red
 memory: project
 ---
 

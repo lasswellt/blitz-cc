@@ -3,7 +3,7 @@ name: doc-writer
 description: |
   Documentation specialist. Generates API docs, component docs, ADRs, README
   sections, and migration guides from source code. Produces accurate, well-structured
-  documentation that stays in sync with the codebase.
+  documentation that stays in sync with the codebase. Worker agent spawned via /blitz:doc-gen / orchestrator delegation — for a freeform docs request invoke the doc-gen skill.
 
   <example>
   Context: User needs API documentation for a set of Cloud Functions
