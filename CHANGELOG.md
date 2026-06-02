@@ -21,6 +21,14 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.3.4] — 2026-06-01 · argument-hint coverage + concision
+
+### Fixed
+- **argument-hint coverage**: added the field to the 7 arg-taking skills that lacked it (`audit`, `research`, `compress`, `sprint-dev`, `sprint-plan`, `sprint-review`, `ui-build`) — all 37 skills now show an autocomplete arg chip. Display-only field; no change to invocation or argument delivery.
+
+### Changed
+- **argument-hint concision**: trimmed the `-- <prose explanation>` tails from 15 hints (`review`, `browse`, `code-doctor`, `conform`, `dep-health`, `doc-gen`, `next`, `perf-profile`, `quality-metrics`, `roadmap`, `release`, `setup`, `ship`, `sprint`, `ui-audit`) to short chips, keeping every flag spelling. Aligns with the field's short-chip intent. Background: `docs/_research/2026-06-01_command-argument-hints.md`.
+
 ## [2.3.3] — 2026-06-01 · audit remediation + README rewrite
 
 ### Fixed

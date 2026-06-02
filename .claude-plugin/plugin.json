@@ -1,6 +1,6 @@
 {
   "name": "blitz",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Holistic-machine Claude Code plugin for Vue/Nuxt + Firebase. 37 skills, 10 agents, 38 hook scripts across 16 events, 32 shared protocol files. Orchestrator main-thread agent routes freeform input; slash commands bypass. Includes sprint workflows, adversarial critic review (in-Claude or Cross-Model via Gemini), 8-invariant ratchet-enforced quality gates, design-quality vision critique, token-budget protocol, autonomous-loop primitives (PreCompact handoff, auto-resume), worktree lifecycle enforcement, and 7 anti-shortcut hooks (no-verify, destructive-git, destructive-sql, test-deletion, as-any insertion, test-disabling, type-error regression). Effective Claude Code minimum: >=2.1.117 (orchestrator main-thread activation + recent hook events: TeammateIdle, PostToolBatch, PostToolUseFailure, StopFailure, WorktreeCreate, WorktreeRemove, SubagentStart, UserPromptExpansion, PostCompact). Individual /blitz:* slash skills run on >=2.1.71; health needs >=2.1.152. External tools (not bundled, not in dependencies which is plugin-only): Playwright MCP (browse, ui-build, ui-audit, design-critic) and Gemini CLI (optional Cross-Model Critic, opt-in via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC).",
   "author": {
     "name": "lasswellt"
