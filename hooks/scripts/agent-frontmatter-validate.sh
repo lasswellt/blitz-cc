@@ -76,10 +76,7 @@ fi
 
 [ "${#TARGETS[@]}" -eq 0 ] && { echo "[$SCRIPT_NAME] No agent .md files found" >&2; exit 1; }
 
-fail() {
-  printf '  ✗ %s: %s\n' "$1" "$2" >&2
-  RC=1
-}
+# fail() is provided by _lib/common.sh (sourced above).
 
 validate_one() {
   local f="$1"

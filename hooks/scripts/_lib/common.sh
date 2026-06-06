@@ -124,3 +124,11 @@ blitz_atomic_write() {
     printf '%s' "$content" > "$target"
   fi
 }
+
+# fail rel message
+# Emit a "✗ rel: message" line to stderr and set RC=1 in the caller's scope.
+# Used by the frontmatter validators (which initialize RC=0 before validating).
+fail() {
+  printf '  ✗ %s: %s\n' "$1" "$2" >&2
+  RC=1
+}
