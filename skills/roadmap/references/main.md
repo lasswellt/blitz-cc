@@ -404,12 +404,7 @@ After all agents complete:
 
 #### 7.6 Write Epic Registry
 
-**Registry Lock — `docs/roadmap/epic-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
-1. CHECK if `docs/roadmap/epic-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
-2. ACQUIRE by writing `docs/roadmap/epic-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
-3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
-4. OPERATE — read, modify, and write the registry file.
-5. RELEASE — delete `docs/roadmap/epic-registry.json.lock` and append `lock_released` to the operation log.
+**Registry Lock — `docs/roadmap/epic-registry.json`**: Before writing, acquire `docs/roadmap/epic-registry.json.lock` via the CHECK→ACQUIRE→VERIFY→OPERATE→RELEASE sequence in [session-lifecycle.md §File-Based Locking Protocol](/_shared/session-lifecycle.md#file-based-locking-protocol).
 
 Write/update `docs/roadmap/epic-registry.json` using Epic Registry JSON Schema defined below. Include all epics generated across all phases, their dependency graph, phase groupings.
 
@@ -456,12 +451,7 @@ Write `docs/roadmap/SUMMARY.md`:
 
 #### 8.2 Update Indexes
 
-**Registry Lock — `docs/roadmap/roadmap-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
-1. CHECK if `docs/roadmap/roadmap-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
-2. ACQUIRE by writing `docs/roadmap/roadmap-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
-3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
-4. OPERATE — read, modify, and write the registry file.
-5. RELEASE — delete `docs/roadmap/roadmap-registry.json.lock` and append `lock_released` to the operation log.
+**Registry Lock — `docs/roadmap/roadmap-registry.json`**: Before writing, acquire `docs/roadmap/roadmap-registry.json.lock` via the CHECK→ACQUIRE→VERIFY→OPERATE→RELEASE sequence in [session-lifecycle.md §File-Based Locking Protocol](/_shared/session-lifecycle.md#file-based-locking-protocol).
 
 Write/update `docs/roadmap/roadmap-registry.json`:
 ```json
