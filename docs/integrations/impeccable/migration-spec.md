@@ -129,7 +129,7 @@ Add to `agents/orchestrator.md` §2 routing table:
 
 ## 10. Out of scope (this pass)
 
-Implementation (registry rows, `stack` probe code, skill edits, file deletion) is the follow-up sprint behind Blitz's gates ([`SYNTHESIS.md`](SYNTHESIS.md) sequences it). This doc specifies *what* changes and *why*; the sprint does it under sprint-review's 8-invariant gate.
+Implementation (registry rows, `stack` probe code, skill edits, file deletion) is the follow-up sprint behind Blitz's gates (sequenced in archived design history; see pre-v2.5.0 git history). This doc specifies *what* changes and *why*; the sprint does it under sprint-review's 8-invariant gate.
 
 ---
 
