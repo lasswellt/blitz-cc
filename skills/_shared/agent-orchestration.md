@@ -721,13 +721,7 @@ Mid-run liveness signal. Canonical spec in [spawn-protocol.md §3](#3-heartbeat-
 
 #### File-append form (default)
 
-```
-HEARTBEAT PROTOCOL:
-At the start of each phase, append this line to your output file:
-  HEARTBEAT: <phase-name> at <ISO-8601-timestamp>
-Use at least 3 heartbeats across your task. Use Bash `date -u +%Y-%m-%dT%H:%M:%SZ`
-to produce the timestamp.
-```
+Canonical block in [§3](#3-heartbeat-and-partial-protocols) — paste it verbatim.
 
 #### JSON-finding variant (for agents whose output is a JSON array)
 
@@ -756,20 +750,7 @@ Graceful degradation on budget exhaustion. Canonical spec in [spawn-protocol.md 
 
 #### Heavy-class canonical form
 
-```
-PARTIAL DEGRADATION:
-If you have 3 or fewer tool calls remaining (or detect approaching the turn
-limit, output-token limit, or wall-clock budget), STOP and append this block
-to the output file:
-  ---
-  PARTIAL: true
-  COMPLETED: [list of sections finished]
-  MISSING: [list of sections skipped]
-  CONFIDENCE: low|medium|high
-  ---
-Then write a one-line confirmation to the caller: "PARTIAL: <N> sections
-complete, <M> missing" and end.
-```
+Canonical block in [§3](#3-heartbeat-and-partial-protocols) — paste it verbatim.
 
 #### Sprint-dev variant (story-id granularity)
 
