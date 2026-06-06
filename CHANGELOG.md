@@ -21,9 +21,9 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
-## [2.5.0] — 2026-06-06 · compaction pass II
+## [2.4.1] — 2026-06-06 · compaction passes II–III
 
-Maintenance/refactor pass — **zero behavior change** (validator-attested: skill-frontmatter, agent-frontmatter, markdown-link, check-registry, reference-compression, plugin-structure, count-sync, version-sync all exit 0). Skill semantics, hook wiring, agent roles, and flags are identical. Attacks the two content pools v2.4.0 left untouched (`docs/`, `references/main.md`).
+Maintenance/refactor pass — **zero behavior change** (validator-attested: skill-frontmatter, agent-frontmatter, markdown-link, check-registry, reference-compression, plugin-structure, count-sync, version-sync all exit 0; hook test suite 66/66). Skill semantics, hook wiring, agent roles, and flags are identical. Attacks the content pools v2.4.0 left untouched (`docs/`, `references/main.md`), plus changelog history and duplicated hook helpers.
 
 **Tracked lines 54,803 → 42,301 (−12,502).**
 
@@ -32,6 +32,8 @@ Maintenance/refactor pass — **zero behavior change** (validator-attested: skil
 - **`counts.json` phrasing fix** — `canonical_phrasing.shared` now reads "12 shared protocol files".
 - **`references/main.md` (12,718 → 12,708)** — collapsed two duplicated file-lock step-lists in `roadmap/references` to cite `session-lifecycle.md §File-Based Locking Protocol`. The hypothesized large de-boilerplating win did not materialize: the top reference files are dense skill-specific procedure protected by named-section SKILL.md contracts and the agent-prompt-payload invariant (intentional verbatim duplication), not boilerplate.
 - **`agent-orchestration.md` (1,454 → 1,435)** — removed two HEARTBEAT/PARTIAL default blocks re-embedded in the boilerplate section, which already declared §3 canonical. No `_shared` file re-split.
+- **`CHANGELOG.md` (870 → 201 lines, −87 KB)** — archived the 16 `1.x` releases (1.16.0 → 1.5.0) to `CHANGELOG-ARCHIVE.md` behind an "Older releases" pointer; kept `[Unreleased]`, the Release-Process header, and all `2.x` releases live so version-sync stays green.
+- **`hooks/scripts/_lib/common.sh`** — hoisted the byte-identical `fail()` helper out of `agent-frontmatter-validate.sh` + `skill-frontmatter-validate.sh` (both already sourced common.sh). `find_project_root`/`block`/`validate_one`/`usage` left inline — not byte-identical across call sites (or semantically distinct from `blitz_find_root`). Hook-script count unchanged (38).
 
 ## [2.4.0] — 2026-06-06 · unification & slimming pass
 
