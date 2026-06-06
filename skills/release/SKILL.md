@@ -52,11 +52,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ## Phase 0: PARSE — Determine Mode
 
-### 0.0 Register Session
-
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
-
-### 0.1 Parse Mode and Version
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition and decision point.
 
 Extract from `$ARGUMENTS`:
 
@@ -67,36 +63,16 @@ Extract from `$ARGUMENTS`:
 | `publish` | Tag, push, create GitHub release (requires prior prepare + verify) |
 | `rollback` | Revert a failed release |
 
-Optional explicit version override: `prepare 2.0.0`
-
-If no mode is provided, default to `prepare`. If mode is `publish`, verify that a release branch exists and verification has passed before proceeding.
+Optional explicit version override: `prepare 2.0.0`. If mode is `publish`, verify that a release branch exists and verification has passed before proceeding.
 
 ---
 
 ## Phase 1: CONTEXT — Gather Release State
 
-### 1.1 Current Version
-
-Read version from the project's version source:
-```bash
-# Check package.json first
-node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0"
-```
-
-Also check: `lerna.json`, `plugin.json`, `marketplace.json`, `version.txt`.
-
-### 1.2 Latest Tag
-
-```bash
-git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"
-```
-
-### 1.3 Registry State
-
-Check if this is a publishable package (`private` field in `package.json`). If `private: true`, this package will not be published to npm — tag and GitHub release only.
-
-### 1.4 Commit History Since Last Tag
-
+1. **Current version** — `node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0"`. Also check: `lerna.json`, `plugin.json`, `marketplace.json`, `version.txt`.
+2. **Latest tag** — `git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"`
+3. **Registry state** — check `private` field in `package.json`; if `private: true`, tag and GitHub release only (no npm publish).
+4. **Commit history since last tag:**
 ```bash
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 if [ -n "$LAST_TAG" ]; then
@@ -105,20 +81,15 @@ else
   git log --pretty=format:"%H|%s|%an|%ai"
 fi
 ```
-
-### 1.5 Unreleased Changes Check
-
-If no commits exist since the last tag, inform the user: "No unreleased changes found since the last tag. Nothing to release." and stop.
+5. **Unreleased check** — if no commits since last tag, inform user and stop.
 
 ---
 
 ## Phase 2: CALCULATE — Determine Version Bump
 
-### 2.1 Parse Conventional Commits
+**Canonical changelog owner (O1/O5).** `skills/release` is the SINGLE source of the commit-type → changelog-section map and Keep a Changelog emit logic. `doc-gen` (`changelog` mode) and `ship` (Phase 2) MUST delegate here — they do not restate this map.
 
-**Canonical changelog owner (O1/O5).** `skills/release` is the SINGLE source of the commit-type → changelog-section map and the Keep a Changelog emit logic. `doc-gen` (`changelog` mode) and `ship` (Phase 2) MUST delegate here — they do not restate this map. Edit the table below; consumers cite it.
-
-Categorize commits since last tag using patterns from `references/main.md` (Keep a Changelog format):
+Categorize commits since last tag (from `references/main.md`):
 
 | Commit Prefix | Bump | Changelog Section |
 |---------------|------|-------------------|
@@ -133,60 +104,30 @@ Categorize commits since last tag using patterns from `references/main.md` (Keep
 | `style:` | none (excluded from changelog) | — |
 | `test:` | none (excluded from changelog) | — |
 
-### 2.2 Calculate New Version
-
 Apply semver rules:
-1. If any commit triggers a major bump → increment major, reset minor and patch to 0
-2. Else if any commit triggers a minor bump → increment minor, reset patch to 0
-3. Else if any commit triggers a patch bump → increment patch
-4. If no bump-triggering commits exist (only docs, chore, etc.) → inform user and ask whether to proceed with a patch bump or skip
+1. Any major-bump commit → increment major, reset minor+patch to 0
+2. Any minor-bump commit → increment minor, reset patch to 0
+3. Any patch-bump commit → increment patch
+4. No bump commits (only docs/chore/etc.) → inform user, ask whether to patch-bump or skip
 
-If an explicit version was provided in Phase 0, validate it:
-- Must be valid semver
-- Must be greater than current version
-- Use it instead of the calculated version
+If explicit version provided: validate semver, validate > current, use it.
 
-### 2.3 Major Bump Confirmation
-
-If the calculated version is a major bump, STOP and present to the user:
-
+**Major bump confirmation** — STOP and present:
 ```
 Breaking changes detected:
-  - <commit hash short> <commit message>
   - <commit hash short> <commit message>
 
 This will bump from X.Y.Z to (X+1).0.0. Proceed? [y/n]
 ```
-
-Wait for user confirmation. If declined, suggest a minor bump instead.
+Wait for confirmation. If declined, suggest minor bump.
 
 ---
 
 ## Phase 3: PREPARE — Create Release Artifacts
 
-### 3.1 Create Release Branch
-
-```bash
-git checkout -b release/vX.Y.Z
-```
-
-If the branch already exists, inform the user and ask whether to continue on the existing branch or start fresh.
-
-### 3.2 Bump Version
-
-Update version in all relevant files:
-
-1. `package.json` — update `version` field
-2. Workspace `package.json` files (if monorepo) — update `version` field
-3. `plugin.json` — update `version` field (if exists)
-4. `marketplace.json` — update `version` field (if exists)
-5. Any other files containing a version string matching the old version (search and confirm with user)
-
-### 3.3 Generate Changelog
-
-Parse commits and generate/update `CHANGELOG.md` following Keep a Changelog format. Use the template from `references/main.md`.
-
-Structure:
+1. **Create release branch** — `git checkout -b release/vX.Y.Z`. If branch exists, ask to continue or start fresh.
+2. **Bump version** — update `package.json`, workspace `package.json` files (monorepo), `plugin.json`, `marketplace.json`, and any other files containing the old version string (confirm with user).
+3. **Generate changelog** — parse commits, update `CHANGELOG.md` (Keep a Changelog format; template in `references/main.md`). Structure:
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
@@ -208,111 +149,37 @@ Structure:
 ### Other
 - <description> (<hash-short>)
 ```
+Rules: prepend new section below header; create `CHANGELOG.md` if absent; strip commit prefixes; capitalize first word; link short hash to GitHub if remote available; omit empty sections.
 
-Rules:
-- Prepend the new version section to the existing CHANGELOG.md (below the header)
-- If CHANGELOG.md does not exist, create it with a standard header
-- Strip conventional commit prefixes from descriptions (e.g., `feat: add login` becomes `Add login`)
-- Capitalize the first word of each description
-- Include short commit hash in parentheses, linked to the commit on GitHub if remote is available
-- Remove empty sections (e.g., if no breaking changes, omit that section)
-
-### 3.4 Generate Release Notes Excerpt
-
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Reuse CHANGELOG bullets verbatim — no narrative preamble, no "Thanks for using …" closer, no marketing framing. Preserve verbatim: version numbers, commit hashes, issue/PR numbers, `BREAKING CHANGE:` markers. **LITE intensity** required for breaking-change descriptions (users need the migration reasoning, not fragments). Migration instructions: full sentences + commands preserved exactly.
-
-Write a standalone release notes file for the GitHub release body:
+4. **Generate release notes** — terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Reuse CHANGELOG bullets verbatim. **LITE intensity** for breaking-change descriptions (migration reasoning needed). Migration instructions: full sentences + commands preserved exactly.
 ```bash
-# Write to session temp dir
 cat > ${SESSION_TMP_DIR}/release-notes.md << 'NOTES'
-<release notes content — same as changelog section but without the version header>
+<release notes — same as changelog section without version header>
 NOTES
 ```
-
-### 3.5 Commit Release Prep
-
+5. **Commit release prep:**
 ```bash
 git add package.json CHANGELOG.md
 # Add any other modified version files
 git commit -m "chore(release): prepare vX.Y.Z"
 ```
-
-### 3.6 Report Preparation Status
-
-```
-Release vX.Y.Z prepared.
-  Branch: release/vX.Y.Z
-  Version files updated: N
-  Changelog: CHANGELOG.md updated
-  Commits included: N
-
-Next step: run 'release verify' to validate quality gates.
-```
+6. **Report** — version, branch, version files updated count, changelog status, commit count. Next step: `release verify`.
 
 ---
 
 ## Phase 4: VERIFY — Quality Gates
 
-### 4.1 Detect Available Commands
+Detect available scripts: `node -p "Object.keys(require('./package.json').scripts || {}).join('\n')" 2>/dev/null`
 
-```bash
-# Read package.json scripts
-node -p "Object.keys(require('./package.json').scripts || {}).join('\n')" 2>/dev/null
-```
+Run each available gate:
+1. **Type-check** — `npm run type-check 2>&1 || npx tsc --noEmit 2>&1` — must exit 0
+2. **Lint** — `npm run lint 2>&1` — must exit with 0 errors (warnings OK)
+3. **Tests** — `npm test 2>&1` — must exit 0; record total/passed/failed
+4. **Build** — `npm run build 2>&1` — must exit 0
+5. **Completeness** — invoke `/blitz:review --only completeness` if available; score ≥70 required; else SKIPPED
+6. **Version sync** — `grep -r "X.Y.Z" package.json plugin.json marketplace.json 2>/dev/null` — all version files must match
 
-Determine which commands are available: type-check, lint, test, build.
-
-### 4.2 Type Check
-
-```bash
-npm run type-check 2>&1 || npx tsc --noEmit 2>&1
-```
-
-Must exit 0. Record pass/fail.
-
-### 4.3 Lint
-
-```bash
-npm run lint 2>&1
-```
-
-Must exit with 0 errors (warnings are acceptable). Record pass/fail.
-
-### 4.4 Tests
-
-```bash
-npm test 2>&1
-```
-
-Must exit 0. Record total/passed/failed counts. Record pass/fail.
-
-### 4.5 Build
-
-```bash
-npm run build 2>&1
-```
-
-Must exit 0. Record pass/fail.
-
-### 4.6 Completeness Gate (Optional)
-
-If the `/blitz:review --only completeness` skill is available in this plugin suite, invoke it:
-- Run `/blitz:review --only completeness` against the full codebase
-- Score must be 70 or higher (C grade minimum)
-- If `/blitz:review --only completeness` is not available, mark as SKIPPED
-
-### 4.7 Version Consistency Check
-
-Verify that all version files contain the same version string:
-```bash
-# Check all files that should contain the version
-grep -r "X.Y.Z" package.json plugin.json marketplace.json 2>/dev/null
-```
-
-### 4.8 Gate Summary
-
-Print the verification results:
-
+Print results:
 ```
 Release Verification: PASS/FAIL
   Type-check:     PASS/FAIL/SKIPPED
@@ -323,23 +190,14 @@ Release Verification: PASS/FAIL
   Version sync:   PASS/FAIL
 ```
 
-If ANY required gate fails, STOP. Do not proceed to publish. Inform the user which gates failed and suggest fixes.
+If ANY required gate fails, STOP. Do not proceed to publish. Report which gates failed.
 
 ---
 
 ## Phase 5: PUBLISH — Tag and Release
 
-### 5.1 Pre-Publish Validation
-
-Verify that:
-1. Current branch is `release/vX.Y.Z`
-2. All quality gates have passed (Phase 4 completed successfully)
-3. Working directory is clean (`git status --porcelain` is empty)
-
-If any validation fails, inform the user and stop.
-
-### 5.2 Confirm with User
-
+1. **Pre-publish validation** — branch is `release/vX.Y.Z`, Phase 4 passed, `git status --porcelain` is empty. Stop if any fails.
+2. **Confirm with user:**
 ```
 Ready to publish vX.Y.Z. This will:
   1. Create git tag vX.Y.Z
@@ -348,45 +206,30 @@ Ready to publish vX.Y.Z. This will:
 
 Proceed? [y/n]
 ```
-
-Wait for explicit confirmation.
-
-### 5.3 Create Tag
-
-```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-```
-
-### 5.4 Push to Remote
-
+3. **Create tag** — `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+4. **Push to remote:**
 ```bash
 git push origin release/vX.Y.Z
 git push origin vX.Y.Z
 ```
-
-### 5.5 Create GitHub Release
-
+5. **Create GitHub release:**
 ```bash
 gh release create vX.Y.Z \
   --title "vX.Y.Z" \
   --notes-file ${SESSION_TMP_DIR}/release-notes.md \
   --target release/vX.Y.Z
 ```
+If `gh` unavailable, instruct user to create manually and provide release notes content.
 
-If `gh` is not available, instruct the user to create the release manually and provide the release notes content.
-
-### 5.6 Merge Back to Main
-
+6. **Merge back to main:**
 ```bash
 git checkout main
 git merge release/vX.Y.Z --no-edit
 git push origin main
 ```
+If merge conflicts occur, stop and inform user. Do not force-resolve.
 
-If merge conflicts occur, stop and inform the user. Do not force-resolve conflicts.
-
-### 5.7 Cleanup Release Branch
-
+7. **Cleanup release branch:**
 ```bash
 git branch -d release/vX.Y.Z
 git push origin --delete release/vX.Y.Z
@@ -404,30 +247,24 @@ Full rollback recipe (6.1 scope assessment, 6.2 delete tag, 6.3 delete GitHub re
 
 ## Phase 7: REPORT — Final Status
 
-### 7.1 Print Final Summary
-
-Print a mode-appropriate summary:
-- **prepare**: version, branch name, commit count, changelog status, next step (`release verify`)
+Print mode-appropriate summary:
+- **prepare**: version, branch, commit count, changelog status, next step (`release verify`)
 - **verify**: gate results (N/N passed), next step (`release publish` if PASS)
 - **publish**: version, tag, GitHub release URL, changelog summary (N features, N fixes, N other)
-- **rollback**: confirmation that artifacts were removed and repo is restored
+- **rollback**: confirmation artifacts removed and repo restored
 
-### 7.2 Session Cleanup
-
-1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed`
-2. Release any held locks
-3. Append `session_end` to the operations log
+Session cleanup: set `status: completed` in `.cc-sessions/${SESSION_ID}.json`, release locks, append `session_end` to operations log.
 
 ---
 
 ## Error Recovery
 
-- **Git tag already exists**: Suggest incrementing the patch version (e.g., v1.2.1 if v1.2.0 exists). Never overwrite existing tags.
-- **Push fails (no remote)**: Save tag locally, instruct user to push manually when remote is available.
-- **GitHub release fails**: Tag is still valid on remote. Instruct user to create the release manually via `gh release create` or the GitHub UI. Provide the release notes content.
-- **Quality gates fail during publish**: Abort publish immediately. Keep the release branch intact for fixes. Instruct user to fix issues and re-run `release verify`.
-- **Rollback fails**: Provide manual rollback steps from `references/main.md`. List each artifact that needs manual cleanup.
-- **No conventional commits found**: Warn user that version calculation cannot proceed automatically. Ask for an explicit version.
-- **Monorepo version sync fails**: List which packages have mismatched versions. Ask user to resolve manually before retrying.
-- **Merge conflict on merge-back**: Stop and inform user. Provide the branch names and suggest manual resolution.
-- **Working directory not clean**: Warn user about uncommitted changes. Suggest committing or stashing before proceeding.
+- **Git tag already exists**: suggest incrementing patch (e.g., v1.2.1 if v1.2.0 exists). Never overwrite.
+- **Push fails (no remote)**: save tag locally, instruct user to push manually.
+- **GitHub release fails**: tag valid on remote; instruct user to create release via `gh release create` or GitHub UI; provide notes content.
+- **Quality gates fail during publish**: abort immediately; keep release branch intact; instruct to fix and re-run `release verify`.
+- **Rollback fails**: provide manual steps from `references/main.md`; list artifacts needing manual cleanup.
+- **No conventional commits found**: warn, ask for explicit version.
+- **Monorepo version sync fails**: list mismatched packages; ask user to resolve manually before retrying.
+- **Merge conflict on merge-back**: stop, inform user, suggest manual resolution.
+- **Working directory not clean**: warn about uncommitted changes; suggest commit or stash before proceeding.

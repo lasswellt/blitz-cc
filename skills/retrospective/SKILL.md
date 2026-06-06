@@ -32,17 +32,11 @@ Analyze completed development sessions for patterns of failure, inefficiency, an
 These rules override ALL other instructions. Violating any of these is a critical failure.
 
 1. **NEVER apply proposals classified as "review" or "never-auto-apply" without user confirmation.** Only "safe" proposals can be auto-applied.
-
 2. **NEVER modify skills in ways that remove safety rules.** Safety rules are sacrosanct. No proposal may weaken, delete, or circumvent them.
-
 3. **NEVER reduce the number of verification gates in any skill.** Verification gates exist to catch regressions. Removing them is always unsafe.
-
 4. **ALWAYS validate plugin structure after applying changes.** Run `./scripts/validate-plugin-structure.sh` after every applied proposal.
-
 5. **Minimum 3 completed sessions required before running retrospective.** Insufficient data leads to bad conclusions.
-
 6. **NEVER modify session data.** Session files are read-only input. Never edit, delete, or rewrite session JSONs or operation logs.
-
 7. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
 
 ---
@@ -55,7 +49,7 @@ Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registrat
 
 ### 0.1 Check Minimum Sessions
 
-Count completed work signals from two sources: session JSON files (`.cc-sessions/*.json` with `status: completed`) AND `task_complete` events in the activity feed within the last 30 days. Projects that log via the activity-feed but don't register full session JSONs are valid retrospective input.
+Count completed work signals from two sources: session JSON files (`.cc-sessions/*.json` with `status: completed`) AND `task_complete` events in the activity feed within the last 30 days.
 
 ```bash
 # Signal 1: completed session JSONs
@@ -80,11 +74,9 @@ if [ "$TOTAL_SIGNAL" -lt 3 ]; then
 fi
 ```
 
-If the combined signal is ≥ 3, proceed. If the signal is primarily activity-feed events (not session JSONs), note this in the analysis report — patterns derived from feed events have less structured metadata (no duration, no lock conflicts) than full session JSONs.
+If signal ≥ 3, proceed. If signal is primarily feed events (not session JSONs), note it in the report — feed-derived patterns lack duration/lock-conflict metadata.
 
 ### 0.2 Gather Data Sources
-
-Collect all available data for analysis:
 
 | Source | Path | What It Contains |
 |--------|------|-----------------|
@@ -96,32 +88,16 @@ Collect all available data for analysis:
 | Audit reports | `docs/audits/*.md` | Codebase health over time |
 
 ```bash
-# Session data
 ls -la .cc-sessions/*.json 2>/dev/null | wc -l
-
-# Operation log
 wc -l .cc-sessions/operations.log 2>/dev/null || echo "No operations log"
-
-# Review reports
 find . -name "review-findings.md" -o -name "review-report.md" 2>/dev/null | grep -v node_modules | head -20
-
-# Recent git history
 git log --oneline -50
-
-# Quality metrics
 ls docs/metrics/*.json 2>/dev/null || echo "No metrics files"
 ```
 
 ### 0.3 Parse Session Data
 
-For each completed session JSON, extract:
-- `session_id`: Unique identifier
-- `skill`: Which skill was invoked
-- `started` / `ended`: Timestamps (for duration calculation)
-- `status`: Final status (completed, failed)
-- `working_on`: What the session was doing
-
-Build an in-memory dataset of sessions for analysis.
+For each completed session JSON extract: `session_id`, `skill`, `started`/`ended`, `status`, `working_on`. Build an in-memory dataset for analysis.
 
 ---
 
@@ -129,89 +105,64 @@ Build an in-memory dataset of sessions for analysis.
 
 ### 1.1 Failure Analysis
 
-Look for recurring failure patterns:
-
-**Failed Sessions**
+**Failed sessions:**
 ```bash
 find .cc-sessions -maxdepth 1 -name "*.json" -exec grep -l '"status": "failed"' {} \; 2>/dev/null
 ```
-For each failed session: which skill failed? What was it working on? Is there a pattern?
 
-**Revert Commits**
+**Revert commits:**
 ```bash
 git log --oneline --all | grep -i "revert" | head -20
 ```
-What was reverted and why? Are certain skills producing code that gets reverted more often?
 
-**Fixup Commits**
+**Fixup commits** (rushed implementation signal):
 ```bash
 git log --oneline --all | grep -iE "fix\(|fixup|fix:" | head -20
 ```
-Fixup commits shortly after feature commits suggest rushed implementation.
 
-**Recurring Critical Findings**
-Search review reports for repeated critical-severity findings:
+**Recurring critical findings:**
 ```bash
 grep -r "Critical" --include="*review*" --include="*findings*" -l . 2>/dev/null | grep -v node_modules | head -10
 ```
 
 ### 1.2 Efficiency Analysis
 
-Look for wasted effort:
-
-**Lock Conflicts**
+**Lock conflicts:**
 ```bash
 grep '"conflict_detected"' .cc-sessions/operations.log 2>/dev/null | wc -l
 ```
-Which skills compete for the same locks? Could the conflict matrix be improved?
 
-**Long Sessions**
-Compare session durations. Sessions significantly longer than average for the same skill suggest problems:
-- Excessive research loops
-- Repeated verification failures
-- Tool availability issues
-
-**Redundant Work**
-Check if the same files are modified by multiple sessions in sequence (suggesting rework):
+**Redundant work** (same files modified repeatedly):
 ```bash
 git log --oneline --name-only -30 | sort | uniq -c | sort -rn | head -20
 ```
 
+Compare session durations per skill. Outliers suggest excessive research loops, repeated verification failures, or tool issues.
+
 ### 1.3 Quality Analysis
 
-Look for declining quality indicators:
-
-**Recurring Lint/Type Failures**
+**Recurring lint/type failures:**
 ```bash
 grep -r "FAIL" --include="*review*" --include="*findings*" . 2>/dev/null | grep -v node_modules | head -10
 ```
 
-**Test Coverage Trends**
-If metrics files exist, compare coverage percentages over time.
-
-**Completeness Gate Scores**
-Search for completeness gate reports and track scores:
+**Completeness gate reports:**
 ```bash
 find . -name "*completeness*" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -10
 ```
 
+If metrics files exist, compare coverage percentages over time.
+
 ### 1.4 Coverage Analysis
 
-Look for blind spots:
-
-**Untested Directories**
+**Untested directories:**
 ```bash
-# Find source directories with no corresponding test files
 find . -name "*.ts" -not -name "*.test.*" -not -name "*.spec.*" -not -path "*/node_modules/*" -not -path "*/.git/*" | sed 's|/[^/]*$||' | sort -u > /tmp/src-dirs.txt
 find . -name "*.test.*" -o -name "*.spec.*" | grep -v node_modules | sed 's|/[^/]*$||' | sort -u > /tmp/test-dirs.txt
 comm -23 /tmp/src-dirs.txt /tmp/test-dirs.txt | head -20
 ```
 
-**Unused Skills**
-Cross-reference all available skills with session history. Which skills are never invoked?
-
-**Never-Spawned Agent Types**
-Check if certain agent types in multi-agent skills are consistently skipped.
+Cross-reference all available skills with session history — identify unused skills and consistently skipped agent types.
 
 ---
 
@@ -219,7 +170,7 @@ Check if certain agent types in multi-agent skills are consistently skipped.
 
 ### 2.1 Classify Each Proposal
 
-Every proposal MUST be classified into exactly one category using the rules from `references/main.md`:
+Every proposal MUST be classified into exactly one category (rules from `references/main.md`):
 
 | Classification | Auto-Apply? | Examples |
 |---------------|-------------|---------|
@@ -229,36 +180,18 @@ Every proposal MUST be classified into exactly one category using the rules from
 
 ### 2.2 Generate Proposals from Patterns
 
-For each pattern identified in Phase 1, generate a concrete proposal:
-
-**From Failure Patterns:**
-- If a skill consistently fails at a specific phase → propose adding a pre-check or better error recovery
-- If codemods are missing for common migrations → propose adding them to the codemod registry
-- If review findings repeat → propose adding the pattern to the relevant checklist
-
-**From Efficiency Patterns:**
-- If lock conflicts are frequent → propose expanding the conflict matrix documentation
-- If research queries repeat → propose caching results or adding to references/main.md
-- If sessions are longer than expected → propose better entry-point guidance
-
-**From Quality Patterns:**
-- If certain file patterns are never tested → propose adding them to the test-gen target list
-- If lint failures recur → propose adding pre-flight lint checks to relevant skills
-- If completeness scores decline → propose tightening verification gates (classified as "review")
-
-**From Coverage Patterns:**
-- If skills are unused → propose better routing in the ask skill
-- If directories are untested → propose test-gen targets
+- **Failure patterns:** recurring phase failures → pre-check or error recovery; missing codemods → codemod registry; repeated review findings → relevant checklist
+- **Efficiency patterns:** frequent lock conflicts → conflict matrix docs; repeated research queries → cache or references/main.md; long sessions → better entry-point guidance
+- **Quality patterns:** untested file patterns → test-gen targets; recurring lint failures → pre-flight lint checks in relevant skills; declining completeness scores → tighten verification gates (classified "review")
+- **Coverage patterns:** unused skills → better routing in ask skill; untested dirs → test-gen targets
 
 ### 2.3 Write Proposals
-
-Create the proposals document:
 
 ```bash
 mkdir -p docs/retrospective
 ```
 
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Each proposal's field values (Pattern observed, Proposed change, Expected impact) use fragments, not full sentences. Field **labels** preserved verbatim (downstream parsers grep them). Preserve verbatim: file paths, grep patterns, session IDs, frontmatter. **LITE intensity** required for Classification rationale on "Never Auto-Apply" proposals — operator accepts/rejects based on reasoning chain; compression must not lose the why.
+Output style: terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Field values use fragments; field **labels** preserved verbatim (downstream parsers grep them). **LITE intensity** required for Classification rationale on "Never Auto-Apply" proposals.
 
 Write to `docs/retrospective/YYYY-MM-DD-proposals.md`:
 
@@ -280,9 +213,6 @@ Analysis period: <earliest-session-date> to <latest-session-date>
 - **File**: <path to file being changed>
 - **Classification rationale**: <why this is safe>
 
-### Proposal S2: <title>
-...
-
 ---
 
 ## Review Required
@@ -296,9 +226,6 @@ Analysis period: <earliest-session-date> to <latest-session-date>
 - **Classification rationale**: <why this needs review>
 - **Risk if applied incorrectly**: <what could go wrong>
 
-### Proposal R2: <title>
-...
-
 ---
 
 ## Never Auto-Apply
@@ -308,20 +235,15 @@ Analysis period: <earliest-session-date> to <latest-session-date>
 - **Proposed change**: <what a human might consider>
 - **Why never auto-apply**: <specific safety concern>
 - **Recommendation**: <what the user should evaluate>
-
-### Proposal N2: <title>
-...
 ```
 
 ---
 
 ## Phase 2.5: UPDATE DEVELOPER PROFILE
 
-Generate or update a developer profile from the session history analyzed in Phase 1. This profile helps other skills adapt their behavior to the user's preferences.
-
 Derive profile dimensions (verbosity, autonomy, commit_style, pr_size, review_tolerance, framework_focus, common_skills, peak_hours) from session patterns. Write/merge `.cc-sessions/developer-profile.json`. Profile is informational only — MUST NOT override explicit user instructions or change safety rules. Confidence: <5 sessions `low`, 5-15 `medium`, 15+ `high`.
 
-Full developer-profile detail (derivation table, JSON payload, update rules, change-report format): [references/main.md](references/main.md#developer-profile-derivation).
+Full derivation table, JSON payload, update rules, change-report format: [references/main.md](references/main.md#developer-profile-derivation).
 
 ---
 
@@ -329,20 +251,16 @@ Full developer-profile detail (derivation table, JSON payload, update rules, cha
 
 ### 3.1 Apply Each Safe Proposal
 
-For each proposal classified as "safe":
-
 1. **Read the target file** to confirm it exists and the edit location is valid.
 2. **Make the change** using the Edit tool.
-3. **Validate plugin structure**:
+3. **Validate plugin structure:**
    ```bash
    ./scripts/validate-plugin-structure.sh 2>&1
    ```
-4. **If validation passes**: mark the proposal as "APPLIED" in the proposals document.
-5. **If validation fails**: revert the change, reclassify the proposal as "review", and note the validation error.
+4. **If validation passes:** mark proposal "APPLIED" in the proposals document.
+5. **If validation fails:** revert the change, reclassify as "review", note the validation error.
 
 ### 3.2 Commit Applied Changes
-
-After all safe proposals are applied and validated:
 
 ```bash
 git add <changed-files> docs/retrospective/
@@ -351,18 +269,13 @@ git commit -m "improve: apply retrospective proposals — $(date +%Y-%m-%d)"
 
 ### 3.3 Handle Validation Failures
 
-If `validate-plugin-structure.sh` does not exist:
-- Skip post-apply validation.
-- Warn the user that structural validation was not possible.
-- Reclassify all remaining "safe" proposals as "review" out of caution.
+If `validate-plugin-structure.sh` does not exist: skip post-apply validation, warn user, reclassify all remaining "safe" proposals as "review".
 
 ---
 
 ## Phase 4: REPORT
 
 ### 4.1 Summary
-
-Output a summary to the user:
 
 ```
 Retrospective Analysis Complete
@@ -395,13 +308,12 @@ Proposals document: docs/retrospective/YYYY-MM-DD-proposals.md
 
 ### 4.2 Highlight Review-Required Proposals
 
-If there are "review" proposals, list them prominently:
+If "review" proposals exist, list them:
 
 ```
 Proposals Requiring Your Review:
   R1: <title> — <one-line summary>
   R2: <title> — <one-line summary>
-  ...
 
 To review: read docs/retrospective/YYYY-MM-DD-proposals.md
 ```
@@ -416,10 +328,10 @@ To review: read docs/retrospective/YYYY-MM-DD-proposals.md
 
 ## Error Recovery
 
-- **No session files exist**: Abort with message: "No session data found in `.cc-sessions/`. Run at least 3 skills with session registration before running retrospective."
-- **Operations log is corrupted or missing**: Skip efficiency analysis (lock conflicts, timing). Use git log and session JSONs only. Note the gap in the report.
-- **validate-plugin-structure.sh does not exist**: Skip post-apply validation. Warn user. Reclassify remaining safe proposals as review.
-- **A safe proposal application breaks validation**: Revert the change immediately using `git checkout -- <file>`. Reclassify as "review" with the validation error noted.
-- **Git state is dirty before starting**: Warn user. Suggest committing or stashing first. Proceed with analysis (read-only phases) but skip Phase 3 (apply) to avoid mixing changes.
-- **Insufficient session diversity**: If all sessions used the same skill, warn that findings may be biased toward that skill's patterns.
-- **Session JSON is malformed**: Skip that session. Log a warning. Do not abort the entire analysis for one bad file.
+- **No session files:** Abort — "No session data found in `.cc-sessions/`. Run at least 3 skills with session registration before running retrospective."
+- **Operations log corrupted/missing:** Skip efficiency analysis (lock conflicts, timing). Use git log and session JSONs only. Note gap in report.
+- **validate-plugin-structure.sh missing:** Skip post-apply validation. Warn user. Reclassify remaining safe proposals as review.
+- **Safe proposal breaks validation:** Revert immediately via `git checkout -- <file>`. Reclassify as "review" with validation error noted.
+- **Git state dirty before starting:** Warn user. Suggest committing or stashing. Proceed with read-only phases; skip Phase 3 to avoid mixing changes.
+- **All sessions used same skill:** Warn that findings may be biased toward that skill's patterns.
+- **Session JSON malformed:** Skip that session. Log warning. Do not abort entire analysis.

@@ -22,12 +22,11 @@ paths:
 
 ## Overview
 
-You build production-grade Vue 3 UI that feels native to any project. Follow the 5-phase workflow below strictly in order. Never skip phases. Each phase produces an artifact that feeds the next.
+Build production-grade Vue 3 UI native to the project. Follow the 5-phase workflow strictly in order. Never skip phases. Each phase feeds the next.
 
 ## Additional Resources
-- For UX design principles, wireframe templates, and accessibility checklist, see [references/main.md](references/main.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
+- UX principles, wireframe templates, accessibility checklist: [references/main.md](references/main.md)
+- Output style: [/_shared/terse-output.md](/_shared/terse-output.md)
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
 
@@ -43,31 +42,11 @@ Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registrat
 
 **Goal**: Build a mental model of how this project constructs UI.
 
-### 1.1 Design Tokens
-- Find the theme/token source (CSS variables, Tailwind config, Quasar variables, Vuetify theme)
-- Document: color palette names, spacing scale, typography scale, border-radius tokens, shadow tokens, z-index layers
-- Use Glob to search: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`
-
-### 1.2 Component Inventory
-- Identify shared/base components the project already provides
-- Search: `**/components/base/**`, `**/components/shared/**`, `**/components/common/**`, `**/components/ui/**`
-- For each, note: name, props interface, slots, emitted events
-
-### 1.3 Page Anatomy
-- Read 2-3 representative pages that are similar to what you will build
-- Document: layout wrapper used, section structure, spacing patterns, how data flows in
-
-### 1.4 Data Patterns
-- Find stores (Pinia), composables, API clients relevant to the feature
-- Document: data shapes (TypeScript interfaces), loading patterns, error handling conventions
-
-### 1.5 Output
-Write a discovery summary to your working memory. Include:
-- Token map (color names, spacing scale)
-- Reusable components list with signatures
-- Layout wrapper(s) to use
-- Data layer conventions (composable vs store, loading/error patterns)
-- Naming conventions (file naming, component naming, CSS class naming)
+1. **Design Tokens** — Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
+2. **Component Inventory** — Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
+3. **Page Anatomy** — Read 2-3 representative pages. Document: layout wrapper, section structure, spacing, data flow.
+4. **Data Patterns** — Find Pinia stores, composables, API clients. Document: TypeScript interfaces, loading/error conventions.
+5. **Output** — Write discovery summary: token map, reusable components + signatures, layout wrapper(s), data layer conventions, naming conventions (files, components, CSS).
 
 ---
 
@@ -75,8 +54,7 @@ Write a discovery summary to your working memory. Include:
 
 **Goal**: Synthesize discovery into a machine-readable design profile.
 
-### 2.1 Design Profile
-Produce a mental design profile containing:
+Produce a mental design profile:
 
 ```
 Framework: [Vue 3 + Vite | Nuxt 3 | ...]
@@ -94,8 +72,7 @@ Naming - Components: [PascalCase with prefix | ...]
 Naming - CSS: [BEM | utility | scoped | ...]
 ```
 
-### 2.2 Validation
-Cross-check the profile against actual code. If any field is uncertain, re-read source files to confirm.
+Cross-check every field against actual code. Re-read source to resolve uncertainty.
 
 ---
 
@@ -105,78 +82,64 @@ Cross-check the profile against actual code. If any field is uncertain, re-read 
 
 ### 3.0 Aesthetic Direction (mandatory; precedes wireframe)
 
-Before any wireframe, commit to an aesthetic direction. This step prevents the generic-AI-aesthetics failure mode (Inter/Roboto/purple-gradient sameness across every output) by forcing intentional design before implementation.
+**Brownfield (existing tokens detected in Phase 1.1):** stay native. Reuse project typography, palette, spacing. Skip to §3.0.2.
 
-**Brownfield projects (existing tokens detected in Phase 1.1):** stay native to the project. Reuse the project's typography pair, palette, and spacing scale. Skip to §3.0.2.
-
-**Greenfield / no existing design system:** invoke the Anthropic `frontend-design:frontend-design` skill if available (returns aesthetic direction + typography + motion plan). Otherwise execute §3.0.1 inline.
+**Greenfield / no design system:** invoke `frontend-design:frontend-design` if available. Otherwise execute §3.0.1.
 
 #### 3.0.1 Inline tone selection (when frontend-design unavailable)
 
-Pick exactly ONE tone from this list (do not blend; commit to one):
+Pick exactly ONE tone (do not blend):
 
 `brutalist/minimal`, `maximalist`, `retro-futuristic`, `organic/natural`, `luxury/refined`, `playful/toy-like`, `editorial/magazine`, `art-deco`, `soft/pastel`, `industrial`, `dark/moody`, `lo-fi/zine`, `handcrafted/artisanal`
 
-Commit to typography + color + motion principle:
-
-- **TYPOGRAPHY PAIR**: distinctive display font + refined body font. Both must be characterful. **BANNED**: Inter, Roboto, Arial, system-ui as primary, Space Grotesk.
-- **ACCENT COLOR**: one accent unless multi-color system genuinely required. **BANNED**: purple-gradient-on-white. Use CSS variables.
-- **MOTION PRINCIPLE**: pick one — `one orchestrated reveal (staggered animation-delay)`, `scattered micro-interactions`, or `none/static`. Do not blend.
-- **COMPOSITION**: pick one — `generous whitespace` or `controlled density`. Asymmetry, overlap, diagonal flow, grid-breaking are encouraged when they serve the tone.
+Commit to:
+- **TYPOGRAPHY PAIR**: distinctive display + refined body. **BANNED**: Inter, Roboto, Arial, system-ui as primary, Space Grotesk.
+- **ACCENT COLOR**: one accent unless multi-color system required. **BANNED**: purple-gradient-on-white. Use CSS variables.
+- **MOTION PRINCIPLE** (pick one): `one orchestrated reveal (staggered animation-delay)`, `scattered micro-interactions`, or `none/static`.
+- **COMPOSITION** (pick one): `generous whitespace` or `controlled density`. Asymmetry, overlap, diagonal flow encouraged when serving the tone.
 
 #### 3.0.1.1 Generation rubric — steer with the criteria the evaluator will grade (E1)
 
-Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** into generation, as
-forward steering — not just into the evaluator at Phase 5.4. Canonical single source:
-[`/_shared/design-criteria.md`](/_shared/design-criteria.md). Internalize before wireframing:
+Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** as forward steering. Canonical single source: [`/_shared/design-criteria.md`](/_shared/design-criteria.md). Internalize before wireframing:
 
 > The best designs are museum quality. Build to that bar from the first pass.
 > Prompt Adherence · Aesthetic Fit · Visual Polish · UX · **Creative Distinction** (the hardest
 > bar — if it could come from any AI tool circa 2025, it fails). Grade-hardest emphasis:
 > Creative Distinction + Aesthetic Fit.
 
-This lifts the first iteration before any evaluator cycle runs, and shortens the Phase 5.4 loop
-(fewer iterations to PASS). For informal committed tones (`playful/toy-like`, `lo-fi/zine`,
-`handcrafted/artisanal`) use the tone-conditional steering phrasing in the shared rubric.
-
 #### 3.0.2 Document choices to DESIGN.md
 
-Write or update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with the chosen tone, typography, palette, motion principle. This file is the durable handoff between aesthetic decisions and implementation; subsequent ui-build runs read it instead of rediscovering. The aesthetic NEVER-list + 13-tone palette are now the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md) + the Layer 0 detector); the inline aesthetic greps in the Implementation Gate below are superseded by `/blitz:review --only design` (adapter-resolved — e.g. a Quasar `bg-primary` is not a "hardcoded color").
+Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md)); inline aesthetic greps in the Implementation Gate are superseded by `/blitz:review --only design`.
 
-For brownfield projects without DESIGN.md, run `/blitz:design-extract` first to read the existing tokens and emit the file.
+For brownfield without DESIGN.md, run `/blitz:design-extract` first.
 
 ### 3.1 Requirements Clarification
-If the user's request is ambiguous on any of these, use the `AskUserQuestion` tool:
+
+If ambiguous, use `AskUserQuestion`:
 - What data does this page/component display?
 - What actions can the user take?
-- Are there role-based visibility rules?
-- What should empty state / zero-data state look like?
-- What is the navigation entry point?
+- Role-based visibility rules?
+- Empty/zero-data state?
+- Navigation entry point?
 
 ### 3.2 Wireframe
-Produce an ASCII wireframe showing:
-- Layout grid (columns, rows)
-- Component placement with names
-- Responsive breakpoint behavior (sm/md/lg)
 
-Use the wireframe template format from references/main.md.
+ASCII wireframe showing: layout grid, component placement + names, responsive breakpoint behavior (sm/md/lg). Use the wireframe template format from references/main.md.
 
 ### 3.3 Component Specs
-For each new component, produce a spec:
-- **Name**: PascalCase, following project conventions
+
+For each new component:
+- **Name**: PascalCase per project conventions
 - **Props**: TypeScript interface with defaults
-- **Emits**: Event names and payload types
-- **Slots**: Named slots with expected content
+- **Emits**: event names + payload types
+- **Slots**: named slots with expected content
 - **States**: Loading, Empty, Error, Populated
-- **Composition**: Child components used
-- **Estimated lines**: Must be under 300
+- **Composition**: child components used
+- **Estimated lines**: under 300
 
 ### 3.4 Data Flow
-Document:
-- Which store/composable owns the data
-- Fetch trigger (route guard, onMounted, watch)
-- Mutation flow (optimistic vs pessimistic)
-- Cache/invalidation strategy
+
+Document: owning store/composable, fetch trigger (route guard / onMounted / watch), mutation flow (optimistic vs pessimistic), cache/invalidation strategy.
 
 ---
 
@@ -184,18 +147,18 @@ Document:
 
 **Goal**: Build bottom-up, smallest pieces first.
 
-### Build Order (strict)
-1. **TypeScript types** — interfaces, enums, type guards
-2. **Composable / Store** — data fetching, state, actions
-3. **Atom components** — smallest UI pieces (badges, chips, status indicators)
-4. **Composite components** — cards, list items, form sections
-5. **Page component** — orchestrates composites, handles layout
-6. **Router entry** — add route definition
-7. **Navigation entry** — add menu/nav item
+Build order (strict):
+1. TypeScript types — interfaces, enums, type guards
+2. Composable / Store — data fetching, state, actions
+3. Atom components — badges, chips, status indicators
+4. Composite components — cards, list items, form sections
+5. Page component — orchestrates composites, handles layout
+6. Router entry — add route definition
+7. Navigation entry — add menu/nav item
 
 ### Implementation Gate
 
-Before proceeding from implementation to Phase 5 (REFINE), verify:
+Before entering Phase 5, verify:
 
 | Check | Threshold | Action on Failure |
 |-------|-----------|-------------------|
@@ -209,7 +172,6 @@ Before proceeding from implementation to Phase 5 (REFINE), verify:
 | **`console.log`** | Zero in `.vue`/`.ts` source | Remove or replace with structured logger |
 | **Inline `style="..."`** | Forbidden except for dynamic dimensions (e.g., calc'd widths) | Move to scoped styles or design tokens |
 
-Run these checks after completing all implementation steps:
 ```bash
 npm run type-check 2>&1 | tail -20
 npx eslint <new-files> 2>&1 | tail -20
@@ -236,11 +198,11 @@ CHANGED=$(git diff --name-only HEAD -- '*.vue' '*.css' '*.ts' '*.tsx')
 }
 ```
 
-If any check fails, fix before entering Phase 5. Maximum 3 fix iterations.
+Fix all failures before Phase 5. Maximum 3 fix iterations.
 
 ### Implementation Rules
 
-#### Every data-displaying component MUST handle three states:
+Every data-displaying component MUST handle three states:
 ```vue
 <template>
   <!-- LOADING STATE -->
@@ -259,24 +221,16 @@ If any check fails, fix before entering Phase 5. Maximum 3 fix iterations.
 </template>
 ```
 
-#### Code Quality Gates
+Code quality gates:
 - No component over 300 lines — extract sub-components
 - No `any` types — use proper interfaces
 - No hardcoded colors — use design tokens only
 - No new layout wrappers if project has existing ones
 - No `!important` overrides
-- All user-facing strings must be extractable (no buried literals in template logic)
-- Props must have TypeScript types and sensible defaults
-- Emits must be typed
+- All user-facing strings extractable (no buried literals in template logic)
+- Props must have TypeScript types and sensible defaults; emits must be typed
 
-#### File Creation Pattern
-```
-# For each component:
-1. Create the .vue file
-2. Add TypeScript types if new (or extend existing)
-3. Export from index if project uses barrel exports
-4. Add to router if it's a page
-```
+File creation pattern: create `.vue` file → add TypeScript types → export from barrel if used → add to router if a page.
 
 ---
 
@@ -285,26 +239,23 @@ If any check fails, fix before entering Phase 5. Maximum 3 fix iterations.
 **Goal**: Polish, verify, harden.
 
 ### 5.1 Quality Checklist
-Run through every created file:
-- [ ] Three states present (loading, empty, error) on every data view
+
+- [ ] Three states (loading, empty, error) on every data view
 - [ ] No hardcoded colors or magic numbers
 - [ ] No component exceeds 300 lines
-- [ ] Props are typed with defaults
-- [ ] Emits are typed
+- [ ] Props typed with defaults; emits typed
 - [ ] Naming follows project conventions
-- [ ] Responsive behavior is defined (not just desktop)
+- [ ] Responsive behavior defined (not just desktop)
 
 ### 5.1.5 Completeness Gate
 
-Run the completeness gate on all created/modified UI files:
 ```bash
 CHANGED_FILES=$(git diff --name-only HEAD~1 -- '*.vue' '*.ts')
 ```
-Invoke: `/blitz:review --only completeness` scoped to the changed files.
-Verify that three-state coverage (check 2.10) passes for all new data views. Any critical or high findings must be resolved before proceeding.
+Invoke: `/blitz:review --only completeness` scoped to changed files. Three-state coverage (check 2.10) must pass for all new data views. Critical/high findings must be resolved before proceeding.
 
 ### 5.2 Accessibility Audit
-For every interactive element:
+
 - [ ] Buttons have accessible names
 - [ ] Form inputs have labels
 - [ ] Color contrast meets WCAG 2.1 AA (4.5:1 for text)
@@ -313,39 +264,29 @@ For every interactive element:
 - [ ] Keyboard navigation works (no mouse-only interactions)
 
 ### 5.3 Performance Check
-- [ ] No N+1 data fetching (batch requests)
+
+- [ ] No N+1 data fetching
 - [ ] Large lists use virtual scrolling or pagination
 - [ ] Images have dimensions set (no layout shift)
-- [ ] Heavy components use `defineAsyncComponent` if below the fold
+- [ ] Heavy below-fold components use `defineAsyncComponent`
 
 ### 5.4 Visual Validation + Design-Quality Critique
 
-Use ToolSearch to check for Playwright MCP tools. The design-critic **navigates the live page** before scoring (E2), so it needs the dev server running + Playwright MCP available. If Playwright is unavailable, fall back to the static-screenshot path and warn the user that interaction/responsive/console coverage is incomplete (never silently pass interaction-dependent dimensions).
+Use ToolSearch to check for Playwright MCP tools. Design-critic **navigates the live page** before scoring (E2); needs dev server running + Playwright MCP. If Playwright unavailable, fall back to static-screenshot path and warn user that interaction/responsive/console coverage is incomplete (never silently pass interaction-dependent dimensions).
 
-#### 5.4.1 Layout sanity (existing)
+#### 5.4.1 Layout sanity
 
-Navigate to the new page/component. Screenshot at 375 / 768 / 1440 widths. Verify: no overflow, no overlapping elements, correct spacing, readable text.
+Navigate to new page/component. Screenshot at 375 / 768 / 1440 widths. Verify: no overflow, no overlapping elements, correct spacing, readable text.
 
 #### 5.4.2 Design-quality critique (vision agent)
 
-**Capability-relative trigger (E4).** Story frontmatter `design_quality:` is the coarse tier, but
-the evaluator is *worth its cost only when the page sits beyond what the model does reliably solo*
-— a boundary that moves outward each model release (re-examine per release; precedent for the same
-stress-test-and-strip discipline on the code side: `docs/validation/v1.16.0/agents/critic.md:20`
-A5, `docs/audits/cohesion-2026-05/agents/critic.md:81`, `check-registry.json` det-20). Trigger:
+**Capability-relative trigger (E4).** Story frontmatter `design_quality:` is the coarse tier, but the evaluator is worth its cost only when the page sits beyond what the model does reliably solo. Trigger:
 
 - `skip` (internal admin pages) — never evaluate.
-- `high` (marketing, landing, customer-facing) — **always** evaluate (stakes justify it regardless
-  of model capability). Run the bounded refine-vs-pivot loop below.
-- `standard` (most user-facing UI) — evaluate **only if** an edge-of-solo-capability signal fires:
-  (a) **novel aesthetic** — committed tone not previously shipped in this project (absent from
-  DESIGN.md / run history); (b) **interaction complexity** — forms, multi-step flows, stateful
-  widgets; (c) **low generator self-confidence** — generator self-reports uncertainty after Phase 4;
-  (d) **deterministic-lane hits** — `npx impeccable detect` (design pillar) returned findings.
-  If none fire, ship solo — the evaluator is unnecessary overhead at this tier under Opus 4.8.
+- `high` (marketing, landing, customer-facing) — **always** evaluate. Run the bounded refine-vs-pivot loop below.
+- `standard` (most user-facing UI) — evaluate **only if** an edge-of-solo-capability signal fires: (a) **novel aesthetic** — committed tone absent from DESIGN.md/run history; (b) **interaction complexity** — forms, multi-step flows, stateful widgets; (c) **low generator self-confidence** — generator self-reports uncertainty after Phase 4; (d) **deterministic-lane hits** — `npx impeccable detect` returned findings. If none fire, ship solo.
 
-When triggered, spawn `agents/design-critic.md`. It navigates the **live dev-server URL** (passed
-below); pre-captured screenshots from 5.4.1 are the static fallback:
+When triggered, spawn `agents/design-critic.md`:
 
 ```
 Agent({
@@ -355,10 +296,7 @@ Agent({
 })
 ```
 
-**Bounded refine-vs-pivot loop (E2/E3, `design_quality: high`).** After each evaluation, decide
-*strategically* — refine the current direction if scores trend up, or **pivot** to a different tone
-if stuck (the article's late-iteration creative leap). Refine-only foreclosed this; the pivot space
-is the 13-tone menu (§3.0.1).
+**Bounded refine-vs-pivot loop (E2/E3, `design_quality: high`).** After each evaluation, decide strategically — refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
 
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
@@ -376,11 +314,9 @@ after evaluation N (scores S_N), trend = mean(S_N) - mean(S_{N-1}):   # first it
 exit: PASS | ceiling reached | all reasonable tones tried → escalate to user (accept / rework / skip)
 ```
 
-Track tried tones in run state so each PIVOT picks an untried tone. The escalate exit is the
-**bound**, not a flat 3.
+Track tried tones so each PIVOT picks an untried tone. The escalate exit is the **bound**, not a flat 3.
 
-For `design_quality: standard` (when the trigger fires): report scores; run at most one revision;
-do not auto-pivot. User decides.
+For `design_quality: standard` (when trigger fires): report scores; run at most one revision; do not auto-pivot. User decides.
 
 ---
 
@@ -392,21 +328,14 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 ## Critical Anti-Patterns (NEVER DO THESE)
 
-1. **Never hardcode hex/rgb colors** — Always use design tokens (CSS vars, Tailwind classes, framework theme colors). Hardcoded colors break theming and dark mode.
-
-2. **Never ship fewer than three states on data views** — Every component displaying fetched data MUST have: loading skeleton, empty state, error state, and populated state. No exceptions.
-
-3. **Never use `any` type** — Define proper TypeScript interfaces. If the shape is unknown, use `unknown` with type guards. `Record<string, unknown>` is acceptable for truly dynamic objects.
-
-4. **Never invent new layout wrappers** — If the project has `<AppLayout>`, `<PageContainer>`, `<q-page>`, or similar, use them. Creating parallel layout systems causes visual inconsistency.
-
-5. **Never ship a component over 300 lines** — Extract sub-components. A 500-line component is two 250-line components that are easier to test and reuse.
-
-6. **Never fight the UI framework** — No `!important` overrides, no CSS that counteracts framework defaults. If you need to override, you are using the framework wrong. Find the correct prop, slot, or theme configuration.
-
-7. **Never skip the discovery phase** — Building UI without understanding the project's existing patterns guarantees inconsistency. The 15 minutes spent in discovery saves hours of rework.
-
-8. **Never assume desktop-only** — Every layout decision must account for mobile. Use the framework's responsive system from the start, not as an afterthought.
+1. **Never hardcode hex/rgb colors** — use design tokens (CSS vars, Tailwind classes, framework theme).
+2. **Never ship fewer than three states on data views** — loading skeleton, empty, error, populated. No exceptions.
+3. **Never use `any` type** — use proper interfaces; `unknown` + type guards; `Record<string, unknown>` for truly dynamic objects.
+4. **Never invent new layout wrappers** — use `<AppLayout>`, `<PageContainer>`, `<q-page>`, or whatever the project provides.
+5. **Never ship a component over 300 lines** — extract sub-components.
+6. **Never fight the UI framework** — no `!important`, no CSS counteracting framework defaults. Use the correct prop, slot, or theme config.
+7. **Never skip the discovery phase** — building without understanding existing patterns guarantees inconsistency.
+8. **Never assume desktop-only** — every layout decision must account for mobile from the start.
 
 ---
 
@@ -414,13 +343,13 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 Every component and function must be fully implemented. See [Definition of Done](/_shared/sprint-contracts.md).
 
-**BANNED PATTERNS** — if any of these appear in your code, the work is not done:
+**BANNED PATTERNS** — if any appear, the work is not done:
 
 - `return {}` / `return []` / `return null` as placeholder returns
 - `throw new Error('Not implemented')` / `throw new Error('TODO')`
 - Empty event handlers (`() => {}`, `@click=""`)
-- Store actions that return hardcoded data instead of calling real APIs
+- Store actions returning hardcoded data instead of calling real APIs
 - `// TODO: implement` / `// FIXME` / `// PLACEHOLDER` / `// STUB` where code should be
-- Components that render static text where dynamic data should be
+- Components rendering static text where dynamic data should be
 
-**SELF-CHECK:** For every component, ask: *"If this page went live right now, would every button, form, and data display actually work?"*
+**SELF-CHECK:** *"If this page went live right now, would every button, form, and data display actually work?"*

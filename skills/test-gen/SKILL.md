@@ -31,22 +31,14 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ## Phase 0: PARSE TARGET — Identify What to Test
 
-### 0.0 Register Session
-
 Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
-### 0.1 Parse Arguments
-
-Extract the target file path from `$ARGUMENTS`. If not provided, ask the user.
-
-Validate the file exists:
+Extract target file path from `$ARGUMENTS`. If not provided, ask the user. Validate:
 ```bash
 [ -f "<target-file>" ] && echo "FOUND" || echo "NOT FOUND"
 ```
 
-### 0.2 Classify Target
-
-Determine the target type:
+Classify target type:
 
 | Type | Detection | Test Strategy |
 |------|-----------|---------------|
@@ -65,47 +57,26 @@ Determine the target type:
 
 ### 1.1 Analyze Target File
 
-Read the target file and extract:
-- **Exports**: Every exported function, class, type, constant, or default export
-- **Parameters**: For each function, its parameter types and optional/required status
-- **Return types**: What each function returns (including Promise types for async)
-- **Side effects**: API calls, file writes, store mutations, event emissions
-- **Error conditions**: try/catch blocks, thrown errors, error return paths
-- **Dependencies**: What the file imports (these may need mocking)
-- **Branching logic**: if/else, switch, ternary (each branch needs a test)
+Read target file and extract: exports (functions, classes, types, constants, default), parameter types and optional/required status, return types (including Promise types), side effects (API calls, store mutations, event emissions), error conditions (try/catch, thrown errors), dependencies (imports that may need mocking), branching logic (each branch needs a test).
 
 ### 1.2 Find Existing Test Patterns (Broad Discovery)
 
-Search for ALL test files in the project:
 ```bash
 find . -name "*.test.*" -o -name "*.spec.*" | grep -v node_modules | head -40
 ```
 
 Read from **3 categories** (minimum 6 files total):
 
-**Category A — Same type as target** (2-3 files):
-Tests for similar files in the same directory pattern as the target. These show how code like yours is typically tested.
+**Category A — Same type as target** (2-3 files): Tests for similar files in the same directory pattern. Show how code like yours is typically tested.
 
-**Category B — Well-established tests** (2 files):
-The largest/most comprehensive test files in the project. These reveal the team's full testing vocabulary (custom matchers, setup patterns, assertion depth).
+**Category B — Well-established tests** (2 files): Largest/most comprehensive test files. Reveal full testing vocabulary (custom matchers, setup patterns, assertion depth).
 
 **Category C — Test utilities/factories** (all found):
 ```bash
 find . -path "*/test*" -name "*.ts" -o -path "*/test*" -name "*.js" | grep -E "(helper|util|setup|factory|fixture|mock)" | grep -v node_modules | head -10
 ```
-Helper files, factories, mock setups. These are shared infrastructure you MUST use.
 
-From these files, extract:
-- **Test runner**: Vitest (`import { describe, it, expect } from 'vitest'`) or Jest (globals or imports)
-- **File naming**: `*.test.ts` vs `*.spec.ts` vs `__tests__/*.ts`
-- **File location**: Co-located (next to source) vs centralized (`tests/` directory)
-- **Import style**: Named imports, default imports, barrel imports
-- **Mocking strategy**: `vi.mock()` vs `jest.mock()`, manual mocks, fixture factories
-- **Assertion depth**: Shallow (`toBeDefined`) vs deep (`toEqual` with full shape)
-- **Setup/teardown**: `beforeEach`, `afterEach`, `beforeAll`, factory functions
-- **Factory patterns**: How test data is constructed (factory functions, fixtures, inline)
-- **Custom matchers**: Any project-specific matchers or assertion helpers
-- **Describe/it style**: Nested describes, BDD style ("should..."), or flat
+Extract: test runner, file naming (`*.test.ts` vs `*.spec.ts`), file location (co-located vs centralized), import style, mocking strategy, assertion depth, setup/teardown patterns, factory patterns, custom matchers, describe/it style.
 
 ### 1.3 Detect Test Runner
 
@@ -122,25 +93,20 @@ fi
 
 ### 1.4 Check for Existing Tests
 
-Does the target file already have tests?
 ```bash
 TARGET_NAME=$(basename "<target-file>" | sed 's/\.[^.]*$//')
 find . -name "${TARGET_NAME}.test.*" -o -name "${TARGET_NAME}.spec.*" | grep -v node_modules
 ```
 
-If tests exist:
-- Read them to understand what is already covered.
-- Generate tests ONLY for uncovered exports, branches, and edge cases.
-- Do NOT duplicate existing tests.
+If tests exist: read them, generate tests ONLY for uncovered exports/branches/edge cases, do NOT duplicate.
 
 ### 1.5 Check for Test Utilities
 
-Search for existing test helpers:
 ```bash
 find . -path "*/test*" -name "*.ts" -o -path "*/test*" -name "*.js" | grep -E "(helper|util|setup|factory|fixture|mock)" | grep -v node_modules | head -10
 ```
 
-If factories or fixtures exist, use them instead of creating inline test data.
+If factories or fixtures exist, use them instead of inline test data.
 
 ---
 
@@ -150,7 +116,7 @@ If factories or fixtures exist, use them instead of creating inline test data.
 
 For each exported function/component/composable, generate test cases following the AAA pattern (Arrange, Act, Assert):
 
-#### For Functions:
+**Functions:**
 | Category | Test Cases |
 |----------|-----------|
 | **Happy path** | Call with valid, typical inputs. Verify expected output. |
@@ -160,7 +126,7 @@ For each exported function/component/composable, generate test cases following t
 | **Type boundaries** | Max integers, very long strings, deeply nested objects |
 | **Async behavior** | Resolved promises, rejected promises, timeout scenarios |
 
-#### For Components:
+**Components:**
 | Category | Test Cases |
 |----------|-----------|
 | **Render** | Mounts without error with required props |
@@ -170,7 +136,7 @@ For each exported function/component/composable, generate test cases following t
 | **States** | Loading, empty, error, populated states render correctly |
 | **Reactivity** | Prop changes trigger re-renders |
 
-#### For Stores:
+**Stores:**
 | Category | Test Cases |
 |----------|-----------|
 | **Initial state** | Store initializes with correct defaults |
@@ -179,23 +145,11 @@ For each exported function/component/composable, generate test cases following t
 | **Error handling** | Failed actions set error state |
 | **Reset** | Store resets to initial state |
 
-### 2.2 Prioritize Test Cases
+### 2.2 Prioritize and Mock
 
-Order by value:
-1. Happy path (ensures basic functionality works)
-2. Error paths (ensures failures are handled)
-3. Edge cases (ensures robustness)
-4. Boundary conditions (ensures correctness at limits)
+Order: happy path → error paths → edge cases → boundary conditions.
 
-### 2.3 Determine Mocking Strategy
-
-For each external dependency:
-- **API calls**: Mock the HTTP client or fetch
-- **Stores**: Mock the store or provide a real store with test data
-- **Router**: Mock `useRouter` / `useRoute`
-- **External services**: Mock the service client
-- **File system**: Mock fs operations
-- **Time**: Mock `Date.now()`, timers if time-dependent logic exists
+Mock strategy per dependency type: API calls → mock HTTP client/fetch; stores → mock or provide with test data; router → mock `useRouter`/`useRoute`; external services → mock client; file system → mock fs; time-dependent → mock `Date.now()`, timers.
 
 ---
 
@@ -203,7 +157,7 @@ For each external dependency:
 
 ### 3.1 Determine Test File Path
 
-Follow the project's convention discovered in Phase 1:
+Follow project convention from Phase 1:
 ```
 # Co-located (most common)
 src/utils/format.ts      -> src/utils/format.test.ts
@@ -216,30 +170,24 @@ src/utils/format.ts      -> tests/unit/utils/format.test.ts
 
 ### 3.2 Write Test File
 
-Generate the test file following project conventions. Use the AAA pattern for every test:
-
+Use the AAA pattern for every test:
 ```typescript
 // ARRANGE — Set up test data and mocks
 // ACT — Call the function or trigger the behavior
 // ASSERT — Verify the result
 ```
 
-**Test file structure:**
-1. Imports (test runner, target module, mocks, utilities)
-2. Mock setup (top-level mocks)
-3. Describe block per exported function/component
-4. Nested describe for categories (happy path, error cases, edge cases)
-5. Individual `it` blocks following BDD naming ("should return X when Y")
+Structure: imports → mock setup → describe block per export → nested describes per category → `it` blocks with BDD naming ("should return X when Y").
 
 ### 3.3 Implementation Rules
 
-- **One assertion focus per test.** A test can have multiple `expect` calls, but they should all verify the same behavior.
-- **No test interdependence.** Tests must pass in any order. Use `beforeEach` to reset state.
-- **Descriptive names.** Test names should read as documentation: `it('should return empty array when input is null')`.
-- **Real types, mock data.** Use the project's TypeScript types for test data. Satisfy the type system.
-- **No network calls.** All external calls must be mocked.
-- **Clean up.** If a test creates side effects, clean them in `afterEach`.
-- **Follow existing patterns.** If the project uses factory functions, use them. If it uses inline objects, do the same.
+- One assertion focus per test (multiple `expect` calls OK if verifying the same behavior).
+- No test interdependence — use `beforeEach` to reset state.
+- Descriptive names: `it('should return empty array when input is null')`.
+- Real types, mock data — satisfy the type system.
+- No network calls — all external calls must be mocked.
+- Clean up side effects in `afterEach`.
+- Follow existing patterns (factories if project uses them, inline if not).
 
 ### 3.4 Test Integrity Gate
 
@@ -326,22 +274,19 @@ See references/main.md for the Firestore rules testing pattern using `@firebase/
 
 ### 4.2 Handle Failures
 
-For each failing test:
-
 | Failure Type | Action |
 |---|---|
 | **Import error** | Fix import path or missing mock |
 | **Type error** | Fix test data to match TypeScript types |
 | **Mock not working** | Adjust mock setup (wrong module path, missing return value) |
-| **Assertion wrong** | Re-read the source code; the assertion may be incorrect |
-| **Source bug found** | The test is correct and found a real bug. Keep the test, note the bug. |
+| **Assertion wrong** | Re-read source code; assertion may be incorrect |
+| **Source bug found** | Keep the test, note the bug |
 | **Timeout** | Add proper async handling (`await`, `vi.useFakeTimers()`) |
 
 Fix and re-run until all tests pass. Maximum 5 fix iterations.
 
 ### 4.3 Run Full Test Suite
 
-After the new tests pass individually, run the full suite:
 ```bash
 <TEST_CMD> 2>&1 | tail -50
 ```
@@ -358,19 +303,11 @@ npx vitest run --coverage <test-file-path> 2>&1 | tail -30
 npx jest --coverage <test-file-path> 2>&1 | tail -30
 ```
 
-If a coverage tool is configured, report:
-- **Statements**: X%
-- **Branches**: X%
-- **Functions**: X%
-- **Lines**: X%
-
-If no coverage tool is configured, estimate coverage based on the test cases generated vs exports analyzed.
+Report Statements/Branches/Functions/Lines % if coverage tool configured; otherwise estimate from test cases vs exports analyzed.
 
 ---
 
 ## Phase 5: REPORT — Summarize Results
-
-### 5.1 Output Summary
 
 ```
 Tests Generated: <target-file>
@@ -393,14 +330,9 @@ Test Breakdown:
   Boundary:        <N> tests
 ```
 
-### 5.2 Note Untested Areas
+Note untested areas and why (private functions, complex integration scenarios, visual rendering).
 
-List anything that was NOT tested and why:
-- Private functions (not exported, tested indirectly)
-- Complex integration scenarios (would require full environment)
-- Visual rendering (requires browser testing, not unit tests)
-
-### 5.3 Follow-Up Suggestions
+Follow-up suggestions:
 
 | Condition | Suggested Skill | Rationale |
 |---|---|---|
@@ -412,8 +344,6 @@ List anything that was NOT tested and why:
 ---
 
 ## Error Recovery
-
-Specific recovery procedures for common test generation failures:
 
 | # | Scenario | Detection | Recovery |
 |---|----------|-----------|----------|

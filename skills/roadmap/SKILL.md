@@ -30,50 +30,35 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 Generate phased implementation roadmaps from research documents. Execute the appropriate mode based on arguments. Do NOT skip phases.
 
----
-
 ## Mode Routing
 
-Parse `$ARGUMENTS` to determine execution mode:
+Parse `$ARGUMENTS`; default to `full` if absent.
 
-| Argument | Mode | Description |
-|----------|------|-------------|
-| `full` (default) | Full Generation | Run all phases (0-8). Use when no roadmap exists. |
-| `refresh` | Refresh | Re-read research docs, update capabilities, re-assess codebase state, regenerate phases. Preserves completed work. |
-| `extend` | Extend | Add new capabilities from new research docs. Append to existing roadmap without disrupting current phases. |
-| `status` | Status | Report current roadmap progress: completed/in-progress/pending epics, blockers, and next actions. |
-
-If no argument is provided, default to `full`.
-
-**For `status` mode**: Skip to Phase 0 context loading, then print a status report and STOP. Do not generate anything.
-
-**For `refresh` mode**: Run Phases 0-4, then selectively re-run Phases 5-8 only for changed domains. Phase 1 also re-scans the carry-forward registry against existing research docs — see Phase 1.1.6 and the refresh-specific backfill path documented in `skills/_shared/sprint-contracts.md`.
-
-**For `extend` mode**: Run Phase 0, then Phase 1 for new documents only (including Phase 1.1.5 scope-block ingestion — hard-fails on duplicate registry ids), skip to Phase 4 for dependency re-resolution, then Phases 5-8 for new domains only.
+| Argument | Mode | Phases run |
+|----------|------|------------|
+| `full` (default) | Full Generation | 0-8. Use when no roadmap exists. |
+| `refresh` | Refresh | 0-4, then Phases 5-8 for changed domains only. Phase 1 re-scans carry-forward registry — see Phase 1.1.6 and `skills/_shared/sprint-contracts.md`. |
+| `extend` | Extend | Phase 0; Phase 1 for new docs only (Phase 1.1.5 hard-fails on duplicate registry ids); Phase 4 for dependency re-resolution; Phases 5-8 for new domains only. |
+| `status` | Status | Phase 0 load only → print status report → STOP. No generation. |
 
 ---
 
 ## Phase 0: CONTEXT — Load Project State
 
 ### 0.0 Register Session
-
 Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Locate Registry Files
-
-Search for existing roadmap artifacts:
 ```
 Glob: **/roadmap-registry.json, **/epic-registry.json, **/roadmap/**/*.md, **/docs/roadmap/**/*
 ```
 
 ### 0.2 Load Research Index
-
-Search for research documents AND audit-derived `-epics.md` files:
 ```
 Glob: **/docs/_research/**/*.md, **/docs/research/**/*.md, **/research/**/*.md, **/_research/**/*.md, **/docs/audits/*-epics.md
 ```
 
-Audit-derived docs (filename `*-epics.md` under `docs/audits/`) follow the same `scope:` block protocol as research docs — see `skills/audit/SKILL.md` Phase 3.3a for the writer contract, and Phase 1.1.5 below for the ingestion path. Only `*-epics.md` files are ingested; the full audit report (`audit-YYYYMMDD.md`) and machine-readable index (`audit-YYYYMMDD-index.json`) are NOT consumed by `roadmap extend`.
+Audit-derived docs (`*-epics.md` under `docs/audits/`) follow the same `scope:` block protocol — see `skills/audit/SKILL.md` Phase 3.3a. Only `*-epics.md` files are ingested; `audit-YYYYMMDD.md` and `audit-YYYYMMDD-index.json` are NOT consumed by `roadmap extend`.
 
 If no research documents OR audit `-epics.md` files found:
 ```bash
@@ -82,27 +67,17 @@ exit 1
 ```
 
 ### 0.3 Build Codebase Inventory
-
-Run:
 ```bash
 find . -maxdepth 3 -name 'package.json' -not -path '*/node_modules/*' | head -30
 ```
-
-Read root `package.json` and workspace configs. Identify:
-- Project structure (monorepo vs single package)
-- Existing packages/modules and their purposes
-- Current dependencies and versions
+Read root `package.json` and workspace configs. Identify project structure (monorepo vs single), packages/modules and purposes, current dependencies.
 
 ### 0.4 Load Existing Roadmap (if any)
+If a roadmap registry exists, read registry JSON; note completed/in-progress/pending epics; load capability index if present.
 
-If a roadmap registry exists:
-- Read the registry JSON.
-- Note completed epics, in-progress epics, and pending epics.
-- Load the capability index if it exists.
+For `status` mode: print the status report now and STOP. Report = `# Roadmap Status Report` with: Last Updated, Total Capabilities, Total Epics; **Phase Summary** table (`| Phase | Epics | Completed | In Progress | Pending | Blocked |`); **Next Actions** (unblocked epics ready to start); **Blockers** (blocked epics + what they wait on).
 
-For `status` mode: print the status report now and STOP. Report = `# Roadmap Status Report` with: Last Updated, Total Capabilities, Total Epics; a **Phase Summary** table (`| Phase | Epics | Completed | In Progress | Pending | Blocked |`); **Next Actions** (unblocked epics ready to start); **Blockers** (blocked epics + what they wait on).
-
-**Gate:** For `full` mode, you must have at least 1 research document. For `refresh`/`extend`, you must have an existing roadmap.
+**Gate:** `full` mode requires ≥1 research document. `refresh`/`extend` requires an existing roadmap.
 
 ---
 
@@ -112,17 +87,8 @@ For `status` mode: print the status report now and STOP. Report = `# Roadmap Sta
 
 Read every file found in Phase 0.2. For each document:
 
-1. **Classify the document** using the 8-type classification table from `references/main.md`:
-   - `product_definition` — Vision, goals, target users, value propositions
-   - `feature_spec` — Detailed feature descriptions, user stories, acceptance criteria
-   - `competitive_analysis` — Market research, competitor features, differentiators
-   - `nfr` — Non-functional requirements (performance, security, accessibility)
-   - `architecture` — System design, data models, API contracts, infrastructure
-   - `brand_ux` — Design system, UX guidelines, brand voice, accessibility standards
-   - `integration_spec` — Third-party integrations, API contracts, protocols
-   - `operational` — Deployment, monitoring, CI/CD, runbooks
-
-2. **Extract capabilities** from the document. A capability is a discrete unit of functionality that can be implemented. Assign sequential IDs: `CAP-001`, `CAP-002`, etc.
+1. **Classify** using the 8-type table from `references/main.md` (`product_definition`, `feature_spec`, `competitive_analysis`, `nfr`, `architecture`, `brand_ux`, `integration_spec`, `operational`).
+2. **Extract capabilities** — discrete implementable units. Assign sequential IDs: `CAP-001`, `CAP-002`, etc.
 
 ### 1.1.5 Parse `scope:` YAML Frontmatter (Carry-Forward Registry Ingestion)
 
@@ -194,10 +160,7 @@ registry_entry_id: "cf-<id>"        # Back-link to .cc-sessions/carry-forward.js
 
 ### 1.3 Deduplicate Capabilities
 
-After extracting from all documents:
-- Compare capabilities by title similarity and description overlap.
-- If two capabilities from different documents describe the same thing, merge them. Keep the richer description and combine acceptance criteria.
-- Record the merge in a dedup log.
+Compare capabilities across documents by title/description overlap. Merge duplicates: keep richer description, combine acceptance criteria, record in dedup log.
 
 ### 1.4 Write Capability Index
 
@@ -220,64 +183,25 @@ Write `docs/roadmap/capability-index.json`:
 ## Phase 1B: RESEARCH ENRICHMENT — Fill Knowledge Gaps
 
 ### 1B.1 Build Research Agenda
-
-From the capability index, collect all capabilities where `research_needed: true`. Group their `research_triggers` by theme.
-
-Prioritize research by:
-1. Capabilities with `complexity: very_high` or `high`
-2. Capabilities involving external integrations
-3. Capabilities with security or compliance implications
+Collect capabilities where `research_needed: true`. Group `research_triggers` by theme. Prioritize: `complexity: very_high|high` → external integrations → security/compliance.
 
 ### 1B.2 Context7 Lookups (max 8)
-
-Use ToolSearch to check for Context7 MCP tools. If available:
-- Look up documentation for detected libraries/frameworks.
-- Focus on APIs, migration guides, and best practices relevant to high-complexity capabilities.
-- Cache results in `${SESSION_TMP_DIR}/roadmap-research/context7/`.
+Use ToolSearch to check for Context7 MCP tools. If available, look up docs for detected libraries/frameworks (APIs, migration guides, best practices for high-complexity capabilities). Cache in `${SESSION_TMP_DIR}/roadmap-research/context7/`.
 
 ### 1B.3 Web Research (max 12)
-
-Use WebSearch for:
-- Best practices for identified architectural patterns.
-- Pricing/limits for third-party services referenced in capabilities.
-- Security advisories for planned integrations.
-- Performance benchmarks for chosen technologies.
-
-Cache results in `${SESSION_TMP_DIR}/roadmap-research/web/`.
+Use WebSearch for architectural best practices, third-party pricing/limits, security advisories, performance benchmarks. Cache in `${SESSION_TMP_DIR}/roadmap-research/web/`.
 
 ### 1B.4 Synthesize Research Cache
-
-Write `docs/roadmap/research-cache.json` using the schema from `references/main.md`. Each entry includes:
-- Source (context7 or web)
-- Query used
-- Key findings (bulleted)
-- Confidence level (high, medium, low)
-- Related capabilities (CAP-IDs)
+Write `docs/roadmap/research-cache.json` (schema from `references/main.md`). Each entry: source (context7|web), query, key findings, confidence (high|medium|low), related CAP-IDs.
 
 ---
 
 ## Phase 2: CODEBASE STATE ASSESSMENT — What Exists Today
 
 ### 2.1 Load Architecture Context
-
-Read key architectural files:
-- Framework config files
-- Type definitions and schemas
-- Existing route definitions
-- Store/state management files
-- Database schemas or rules
+Read framework config files, type definitions/schemas, route definitions, state management files, database schemas.
 
 ### 2.2 Build Evidence Matrix
-
-For each capability, assess the current codebase state:
-
-| Status | Meaning |
-|--------|---------|
-| `not_started` | No related code exists |
-| `partial` | Some infrastructure exists but feature incomplete |
-| `implemented` | Feature exists but may not match spec |
-| `complete` | Feature matches all acceptance criteria |
-
 For each capability, record:
 ```yaml
 capability: CAP-NNN
@@ -289,15 +213,13 @@ coverage: 0.0  # 0.0 to 1.0
 gaps:
   - "<what's missing>"
 ```
+Status meanings: `not_started` = no related code; `partial` = infrastructure exists, feature incomplete; `implemented` = exists but may not match spec; `complete` = matches all acceptance criteria.
 
 ### 2.3 Gap Analysis
-
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Bullet lists only. Format: `<capability-or-module> — <status> — <1-fragment rationale>`. Preserve verbatim: capability IDs, file paths, module paths, JSON records, registry IDs. No prose preamble. Phase + domain docs stay as structured registries, not narrative reports.
-
-Write `docs/roadmap/gap-analysis.md`:
-- Capabilities with no codebase support (greenfield)
-- Capabilities with partial support (extend/refactor)
-- Capabilities already implemented (verify/skip)
+Write `docs/roadmap/gap-analysis.md` (terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md)):
+- Greenfield capabilities (no codebase support)
+- Partial capabilities (extend/refactor needed)
+- Already implemented (verify/skip)
 - Infrastructure gaps (missing packages, services, configs)
 
 ### 2.4 Carry-Forward Registry Coverage Recompute (`refresh` mode)
@@ -311,19 +233,10 @@ Full Phase 2.4 procedure (load, acceptance-check, compute `delivered.actual`, ap
 ## Phase 3: DOMAIN ANALYSIS — Feature Clustering
 
 ### 3.1 Feature Clustering
-
-Group capabilities into domains based on:
-- **Shared data models**: Capabilities that read/write the same entities
-- **Shared workflows**: Capabilities that belong to the same user journey
-- **Shared infrastructure**: Capabilities that need the same backend services
-- **UI proximity**: Capabilities that appear in the same screens/sections
+Group capabilities into domains by: shared data models, shared workflows, shared infrastructure, UI proximity.
 
 ### 3.2 Architecture-Informed Mapping
-
-Align domains to the detected project structure:
-- Map domains to existing packages/modules where applicable.
-- Identify new packages/modules needed for unmapped domains.
-- Ensure each domain has a clear owner in the architecture.
+Align domains to detected project structure. Map to existing packages/modules; identify new ones needed for unmapped domains; ensure each domain has a clear architectural owner.
 
 ### 3.3 Write Domain Index
 
@@ -351,41 +264,29 @@ Write `docs/roadmap/domain-index.json`:
 ## Phase 4: DEPENDENCY RESOLUTION — Sequencing
 
 ### 4.1 Build Dependency Graph
-
-For each capability, resolve dependencies:
-- **Data dependencies**: A depends on B's data model
-- **Infrastructure dependencies**: A needs B's service to exist
-- **UI dependencies**: A's screen requires B's component
-- **Auth dependencies**: A needs B's auth/permission system
-
-Build a directed acyclic graph (DAG). Detect and report cycles.
+Resolve dependencies per capability (data, infrastructure, UI, auth). Build a DAG; detect and report cycles.
 
 ### 4.2 Apply Sequencing Rules
-
-1. **Foundation first**: Auth, data models, shared infrastructure before features.
-2. **Backend before frontend**: APIs and data layers before UI that consumes them.
-3. **Core before extensions**: MVP features before enhancements.
-4. **Independent domains in parallel**: Domains with no cross-dependencies can run simultaneously.
-5. **Testing alongside implementation**: Test infrastructure in the same phase as the code it tests.
+1. Foundation first: auth, data models, shared infrastructure before features.
+2. Backend before frontend: APIs/data layers before consuming UI.
+3. Core before extensions: MVP before enhancements.
+4. Independent domains in parallel: no cross-dependencies → simultaneous.
+5. Testing alongside implementation: test infrastructure in same phase as code.
 
 ### 4.3 Calculate Critical Path
-
-Identify the longest dependency chain. This determines the minimum number of phases.
+Identify the longest dependency chain — determines minimum number of phases.
 
 ### 4.4 Assign Implementation Phases
-
-Group capabilities into phases:
 - **Phase 1**: Foundation (auth, data models, core infrastructure, project setup)
-- **Phase 2**: Core features (MVP capabilities, primary user flows)
+- **Phase 2**: Core features (MVP, primary user flows)
 - **Phase 3**: Extended features (secondary capabilities, integrations)
 - **Phase 4**: Polish (NFRs, optimizations, advanced features)
 - **Phase 5+**: Future (nice-to-haves, stretch goals)
 
-Each phase should be independently deployable.
+Each phase must be independently deployable.
 
 ### 4.5 Identify Parallel Workstreams
-
-Within each phase, identify capabilities that can be worked on simultaneously by different developers/teams.
+Within each phase, identify capabilities workable simultaneously by different developers/teams.
 
 ### 4.6 Write Phase Plan
 

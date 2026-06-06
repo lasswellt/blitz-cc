@@ -55,127 +55,62 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ## Phase 0: PARSE — Understand Migration Target
 
-### 0.0 Register Session
-
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
-
-### 0.1 Parse Target
-
-Extract the migration target from `$ARGUMENTS`. Full target-interpretation examples: [references/main.md](references/main.md#target-interpretation-examples).
-
-If the target is ambiguous, ask the user for clarification.
-
-### 0.2 Detect Current Versions
-
-Read `package.json` (and any workspace `package.json` files) to find:
-- Current version of the target package
-- Related packages that may need coordinated upgrades (e.g., `@vue/compiler-sfc` when upgrading Vue)
-- Peer dependency relationships
-- Lock file format (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`)
-
-```bash
-cat package.json | grep -E '"(name|version)"' | head -5
-cat package.json | grep -A1 '"<target-package>"' || echo "Package not found in package.json"
-```
-
-### 0.3 Create Rollback Branch
-
-```bash
-ROLLBACK_BRANCH="migrate/pre-<target>-$(date +%Y%m%d)"
-git checkout -b "${ROLLBACK_BRANCH}"
-git checkout -  # Return to original branch
-echo "Rollback branch created: ${ROLLBACK_BRANCH}"
-```
-
-If the branch already exists, append a timestamp:
-```bash
-ROLLBACK_BRANCH="migrate/pre-<target>-$(date +%Y%m%d-%H%M%S)"
-```
+1. Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
+2. Extract migration target from `$ARGUMENTS`. Ambiguous target → ask for clarification. Full examples: [references/main.md](references/main.md#target-interpretation-examples).
+3. Read `package.json` (all workspace files) for current target version, related peer packages, and lock file format:
+   ```bash
+   cat package.json | grep -E '"(name|version)"' | head -5
+   cat package.json | grep -A1 '"<target-package>"' || echo "Package not found in package.json"
+   ```
+4. Create rollback branch:
+   ```bash
+   ROLLBACK_BRANCH="migrate/pre-<target>-$(date +%Y%m%d)"
+   git checkout -b "${ROLLBACK_BRANCH}"
+   git checkout -  # Return to original branch
+   echo "Rollback branch created: ${ROLLBACK_BRANCH}"
+   ```
+   If branch exists, append timestamp: `migrate/pre-<target>-$(date +%Y%m%d-%H%M%S)`
 
 ---
 
 ## Phase 1: RESEARCH — Gather Migration Intelligence
 
-### 1.1 Spawn Research Agent (if WebSearch available)
-
-Use WebSearch to research the migration target. Search for:
-- Official migration guide / upgrade guide
-- Breaking changes list / changelog
-- Available codemods (automated transforms)
-- Known issues and workarounds
-- Community migration experiences and gotchas
-
-Recommended search queries:
+If WebSearch is available, search for the official migration guide, breaking changes, codemods, and known gotchas:
 ```
 "<package> <old-version> to <new-version> migration guide"
 "<package> <new-version> breaking changes"
 "<package> <new-version> codemod"
 ```
-
-Write research results to `${SESSION_TMP_DIR}/migration-research.md`.
-
-### 1.2 Analyze Breaking Changes
-
-For each breaking change found, document:
-
-| Field | Description |
-|-------|-------------|
-| **Change** | What API/behavior changed |
-| **Pattern** | Grep pattern to find affected code |
-| **Impact** | Number of files affected in this project |
-| **Migration path** | Manual fix or codemod available |
-| **Risk** | High / Medium / Low |
-
+Write results to `${SESSION_TMP_DIR}/migration-research.md`. If WebSearch unavailable, fall back to the package changelog:
 ```bash
-# For each breaking change pattern, count affected files
+cat node_modules/<package>/CHANGELOG.md 2>/dev/null | head -200
+npm info <package> --json 2>/dev/null | head -50
+```
+
+For each breaking change, document: Change, Grep pattern, Impact (files affected), Migration path (manual or codemod), Risk level.
+```bash
 grep -r "<pattern>" --include="*.ts" --include="*.tsx" --include="*.vue" --include="*.js" --include="*.jsx" -l . | grep -v node_modules | wc -l
 ```
 
-### 1.3 Check Codemod Availability
-
-Consult the codemod registry in `references/main.md` and check for available codemods:
-
+Consult codemod registry in `references/main.md`. Check availability:
 ```bash
-# Check if common codemod packages exist
 npm info <codemod-package> version 2>/dev/null || echo "Not found"
 ```
-
-Common codemod commands:
-- Vue: `npx @vue/compat` migration build, `npx vue-codemod`
-- ESLint: `npx @eslint/migrate-config`
-- TypeScript: built-in migration via strict flags
-- Nuxt: `npx nuxi upgrade`
-- Jest to Vitest: `npx jest-to-vitest`
-
-### 1.4 Read Package Changelog
-
-If web research is unavailable, fall back to the package changelog:
-```bash
-# Check for CHANGELOG in node_modules
-cat node_modules/<package>/CHANGELOG.md 2>/dev/null | head -200
-# Or fetch from npm
-npm info <package> --json 2>/dev/null | head -50
-```
+Common codemods: Vue → `npx vue-codemod`; ESLint → `npx @eslint/migrate-config`; Nuxt → `npx nuxi upgrade`; Jest→Vitest → `npx jest-to-vitest`.
 
 ---
 
 ## Phase 2: IMPACT — Assess Scope
 
-### 2.1 Count Affected Files
-
-For each breaking change, grep the codebase for affected patterns:
-
+Count affected files per breaking change:
 ```bash
-# Count files per breaking change
 for pattern in "<pattern1>" "<pattern2>" "<pattern3>"; do
   count=$(grep -r "$pattern" --include="*.ts" --include="*.tsx" --include="*.vue" --include="*.js" -l . | grep -v node_modules | wc -l)
   echo "Pattern: $pattern — Files: $count"
 done
 ```
 
-### 2.2 Risk Assessment
-
-Classify the overall migration using the risk matrix from `references/main.md`:
+Classify risk using the matrix from `references/main.md`:
 
 | Risk Level | Criteria |
 |-----------|----------|
@@ -184,15 +119,7 @@ Classify the overall migration using the risk matrix from `references/main.md`:
 | **High** | Major upgrade, >50 files, manual migration required |
 | **Critical** | Multiple major upgrades, deep architectural changes, no codemods |
 
-### 2.3 Effort Estimate
-
-Calculate estimated effort:
-```
-Total steps = config changes + codemod runs + (manual fixes per breaking change)
-Estimated time = steps × average time per step
-```
-
-Present the assessment to the user:
+Present assessment and prompt to proceed:
 ```
 Migration Assessment: <target>
   Current version: <X.Y.Z>
@@ -210,9 +137,7 @@ Migration Assessment: <target>
 
 ## Phase 3: PLAN — Build Migration Steps
 
-### 3.1 Order Steps
-
-Create atomic, verifiable steps ordered by dependency and risk:
+Create atomic steps ordered by dependency and risk:
 
 | Priority | Step Type | Risk | Example |
 |----------|-----------|------|---------|
@@ -225,28 +150,12 @@ Create atomic, verifiable steps ordered by dependency and risk:
 | 7 | Update tests for new APIs | Medium | Test imports, test utilities |
 | 8 | Clean up deprecations | Low | Remove compatibility shims |
 
-### 3.2 Define Verification Gates
-
-After each step, run the full verification suite:
-```bash
-# Type check
-npx tsc --noEmit 2>&1 | tail -30
-
-# Tests
-npm test 2>&1 | tail -50
-
-# Build
-npm run build 2>&1 | tail -30
-```
-
-Determine the project's actual commands:
+Determine verification commands for this project:
 ```bash
 cat package.json | grep -E '"(test|type-check|typecheck|tsc|lint|build)"'
 ```
 
-### 3.3 Present Plan
-
-Show the step-by-step plan to the user:
+Present the plan:
 ```
 Migration Plan: <current> → <target>
 ===================================
@@ -257,12 +166,6 @@ Step 1: <description>
   Files: <count>
   Risk: Low
   Codemod: <yes/no>
-
-Step 2: <description>
-  Files: <count>
-  Risk: Medium
-  Codemod: <no — manual>
-
 ...
 ```
 
@@ -270,45 +173,25 @@ Step 2: <description>
 
 ## Phase 4: EXECUTE — Incremental Migration
 
-### 4.1 Execute Steps
-
-For each step in the plan:
-
-#### 4.1.1 Make the Change
-
-Execute the step — edit files, run codemods, update configs. Follow the principle of least change.
-
-#### 4.1.2 Verify
-
-Run the verification suite:
+For each step: make the change (edit files, run codemods, update configs — least change principle), then verify:
 ```bash
 <TYPE_CHECK_CMD> 2>&1 | tail -30
 <TEST_CMD> 2>&1 | tail -50
 <BUILD_CMD> 2>&1 | tail -30
 ```
 
-#### 4.1.3 Handle Result
-
-**If verification passes:**
+**If verification passes:** commit and proceed:
 ```bash
 git add <changed-files>
 git commit -m "migrate(<target>): step <N> — <description>"
 ```
-Proceed to next step.
 
-**If verification fails:**
-1. Analyze the error output.
-2. Attempt to fix (max 3 attempts per step).
-3. After each fix attempt, re-run verification.
-4. If fixed: commit and proceed.
-5. If not fixed after 3 attempts: revert the step, note as blocked, try next step.
-   ```bash
-   git checkout -- <changed-files>
-   ```
+**If verification fails:** analyze, fix, re-verify (max 3 attempts). If still failing after 3 attempts, revert and note as blocked:
+```bash
+git checkout -- <changed-files>
+```
 
-### 4.2 Track Progress
-
-Maintain a progress checklist and display after each step:
+Display progress after each step:
 ```
 Migration Progress: <current> → <target>
   [x] Step 1: Update package version — PASS
@@ -363,10 +246,7 @@ Rollback: git checkout <rollback-branch>
 
 ## Phase 5: VERIFY — Full Suite
 
-### 5.1 Complete Verification
-
-After all steps complete (or all possible steps are done), run the full verification:
-
+Run full verification and compare against pre-migration baseline:
 ```bash
 <TYPE_CHECK_CMD> 2>&1
 <LINT_CMD> 2>&1
@@ -374,19 +254,14 @@ After all steps complete (or all possible steps are done), run the full verifica
 <BUILD_CMD> 2>&1
 ```
 
-Compare results against the pre-migration baseline (captured in Phase 0).
-
-### 5.2 Check for Remaining Deprecations
-
+Check for remaining deprecations:
 ```bash
 npm run build 2>&1 | grep -i "deprecat" || echo "No deprecation warnings in build"
 npx tsc --noEmit 2>&1 | grep -i "deprecat" || echo "No deprecation warnings in type-check"
 npm test 2>&1 | grep -i "deprecat" || echo "No deprecation warnings in tests"
 ```
 
-### 5.3 Verify Package Versions
-
-Confirm the target package is at the expected version:
+Confirm target package is at expected version:
 ```bash
 cat package.json | grep -A1 '"<target-package>"'
 npm ls <target-package> 2>/dev/null | head -5
@@ -396,8 +271,7 @@ npm ls <target-package> 2>/dev/null | head -5
 
 ## Phase 6: REPORT
 
-### 6.1 Migration Summary
-
+Print migration summary:
 ```
 Migration Complete: <target>
 ==============================
@@ -417,7 +291,7 @@ Commits created: <N>
 Rollback: git checkout <rollback-branch>
 ```
 
-### 6.2 Follow-Up Suggestions
+Follow-up suggestions:
 
 | Condition | Suggested Skill | Rationale |
 |---|---|---|
@@ -426,21 +300,17 @@ Rollback: git checkout <rollback-branch>
 | Large refactoring needed | `refactor` | Clean up migration artifacts |
 | Test coverage dropped | `test-gen` | Generate tests for new API usage |
 
-### 6.3 Session Cleanup
-
-1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed` or `failed`.
-2. Release any held locks.
-3. Append `session_end` to the operation log.
+Session cleanup: update `.cc-sessions/${SESSION_ID}.json` status to `completed` or `failed`, release held locks, append `session_end` to the operation log.
 
 ---
 
 ## Error Recovery
 
-- **No internet for research**: Proceed with package changelog from `node_modules` only. Warn that migration guidance may be incomplete.
-- **Codemod fails**: Fall back to manual migration for affected patterns. Note which patterns were not auto-migrated.
-- **Rollback branch already exists**: Append timestamp to make unique (e.g., `migrate/pre-vue3-20260318-143022`).
-- **Package install fails**: Check for peer dependency conflicts. Try `--legacy-peer-deps` or `--force` only as last resort. Report conflicts to user.
-- **Git state is dirty before starting**: Warn user and suggest stashing or committing changes first. Do not proceed with dirty state unless user confirms.
-- **Lock file conflicts**: Delete lock file and regenerate with `npm install` / `pnpm install`.
-- **Monorepo complications**: Identify affected workspaces and migrate them one at a time, starting with shared packages.
-- **Version not found**: If target version does not exist, list available versions and ask user to pick one.
+- **No internet**: Use `node_modules` changelog; warn guidance may be incomplete.
+- **Codemod fails**: Fall back to manual migration; note unautomated patterns.
+- **Rollback branch exists**: Append timestamp (e.g., `migrate/pre-vue3-20260318-143022`).
+- **Package install fails**: Check peer conflicts; `--legacy-peer-deps` or `--force` only as last resort.
+- **Dirty git state**: Warn user; suggest stash or commit first; do not proceed without confirmation.
+- **Lock file conflicts**: Delete lock file and regenerate (`npm install` / `pnpm install`).
+- **Monorepo**: Migrate workspaces one at a time, starting with shared packages.
+- **Version not found**: List available versions; ask user to pick.
