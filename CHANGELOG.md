@@ -21,6 +21,27 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.4.0] — 2026-06-06 · unification & slimming pass
+
+Maintenance/refactor pass — **zero behavior change**. Reduces redundancy and lazy-loaded context across the suite. Skill semantics, hook wiring, agent roles, and flags are identical.
+
+**`_shared/` protocols: 32 → 12 `.md` files** (+ `check-registry.json`). Fragmented single-concern protocols collapsed into cohesive docs so a skill loads one file per concern instead of many. All inbound cross-references rewritten mechanically; every linked anchor preserved:
+
+- `terse-output.md` ← `verbose-progress.md` (canonical OUTPUT STYLE block untouched — validator-pinned).
+- `agent-orchestration.md` ← `spawn-protocol`, `agent-prompt-boilerplate`, `agent-routing`, `agent-view-dispatch`, `workflow-dispatch`, `token-budget`.
+- `session-lifecycle.md` ← `session-protocol`, `checkpoint-protocol`, `context-management`, `state-handoff`, `scheduling`.
+- `sprint-contracts.md` ← `carry-forward-registry`, `story-frontmatter`, `definition-of-done`, `deviation-protocol`, `scope-limit-protocol`.
+- `quality-engine.md` ← `check-registry.md`, `quality-matrix`, `shortcut-taxonomy`, `ratchet-protocol`, `deterministic-test-recipe` (the `check-registry.json` data file stays separate).
+- `security.md` ← `threat-model`, `hook-trust`, `package-install-policy`.
+
+> **Forking note:** if your fork references `skills/_shared/<old-name>.md` directly, repoint to the consolidated file above. Each consolidated file carries a top-of-file map listing what it absorbed; former section anchors are preserved.
+
+**SKILL.md bodies de-boilerplated** — 11 oversized skills slimmed by 916 lines total (over-granular sub-phase numbering collapsed, prose tightened to terse-technical). Every distinct top-level Phase, command, safety block, and the verbatim OUTPUT STYLE line preserved.
+
+**Cleanup** — dropped 17 tracked `*.original` compress backups (git history is the backup; pattern gitignored); fixed the retired `frontend-design-heuristics.md` link and the pre-existing CLAUDE.md 30-vs-32 shared-count drift.
+
+No skills merged (quality surface + UX routers stay deliberately distinct per the `quality-engine.md` four-question test). Validators green: count-sync, version-sync, plugin-structure, skill/agent-frontmatter (OUTPUT STYLE hash resolves), markdown-link, check-registry, reference-compression.
+
 ## [2.3.5] — 2026-06-06 · critic-gemini stderr JSON fix
 
 ### Fixed

@@ -42,7 +42,7 @@ echo -e "${DIM}   ╚═════╝ ╚══════╝╚═╝   ╚�
 echo ""
 echo -e "${CYAN}   ──────────────────────────────── ⚡ ───${NC}"
 echo ""
-echo -e "${DIM}     Claude Code Plugin Installer · v2.3.5${NC}"
+echo -e "${DIM}     Claude Code Plugin Installer · v2.4.0${NC}"
 echo -e "${DIM}       37 skills · 10 agents · 37 hooks${NC}"
 echo ""
 
