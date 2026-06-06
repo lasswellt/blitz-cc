@@ -142,7 +142,7 @@ impeccable's setup (run `context.mjs` → load register ref → read existing to
 | Contrast floors (WCAG) | contrast mechanism → enforced-by-role vs computed-fallback |
 | Color strategy / anti-cream philosophy | elevation bans → defer to stack elevation system |
 
-**Coverage guarantee:** every section of the retired [`frontend-design-heuristics.md`](../../../skills/_shared/frontend-design-heuristics.md) maps into this doc + the normalized model + the Layer 0 detector (proven in [`migration-spec.md`](migration-spec.md) §coverage).
+**Coverage guarantee:** every section of the retired `frontend-design-heuristics.md` (removed; see `migration-spec.md` §2 and git history) maps into this doc + the normalized model + the Layer 0 detector (proven in [`migration-spec.md`](migration-spec.md) §coverage).
 
 ---
 

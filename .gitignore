@@ -41,3 +41,6 @@ docs/sweeps/
 # Installer
 installer/node_modules/
 .cc-sessions/KNOWLEDGE.md
+
+# compress skill local backups (git history is the backup)
+*.original

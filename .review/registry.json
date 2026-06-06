@@ -1,0 +1,2617 @@
+{
+ "meta": {
+  "plugin_name": "blitz",
+  "plugin_version": "2.3.2",
+  "phase": 5,
+  "last_component": null,
+  "started": "2026-06-02T02:17:26Z",
+  "updated": "2026-06-02T03:03:24Z",
+  "validate_strict_clean": true,
+  "repo_validators": {
+   "validate_plugin_structure_sh": "pass",
+   "check_count_sync_sh": "pass",
+   "check_version_sync_sh": "pass"
+  },
+  "count_sync": {
+   "counts_json": {
+    "skills": 37,
+    "agents": 10,
+    "shared": 32,
+    "hook_scripts": 38,
+    "hook_events": 16
+   },
+   "disk": {
+    "skills": 37,
+    "agents": 10,
+    "shared": 32,
+    "hook_scripts": 38,
+    "hook_events": 16
+   },
+   "prose_locations_match": true
+  }
+ },
+ "components": [
+  {
+   "id": "skill:ask",
+   "type": "skill",
+   "path": "skills/ask/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Bash, Glob, AskUserQuestion",
+    "disallowed_tools": null,
+    "argument_hint": "\"<describe what you want to do>\"",
+    "name_matches_dir": true,
+    "desc_len": 357,
+    "body_lines": 99,
+    "has_fm": true,
+    "shared_refs": [
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:audit",
+   "type": "skill",
+   "path": "skills/audit/SKILL.md",
+   "status": "reviewed",
+   "score": 88,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 475,
+    "body_lines": 408,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "context-management.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md",
+     "workflow-dispatch.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:bootstrap",
+   "type": "skill",
+   "path": "skills/bootstrap/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch",
+    "disallowed_tools": null,
+    "argument_hint": "\"<type: project|feature|package> <name>\"",
+    "name_matches_dir": true,
+    "desc_len": 444,
+    "body_lines": 305,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "package-install-policy.md",
+     "session-protocol.md",
+     "state-handoff.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:browse",
+   "type": "skill",
+   "path": "skills/browse/SKILL.md",
+   "status": "reviewed",
+   "score": 94,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch",
+    "disallowed_tools": null,
+    "argument_hint": "\"[mode] [target] -- modes: full | smoke | page <path> | fix | --loop\"",
+    "name_matches_dir": true,
+    "desc_len": 349,
+    "body_lines": 381,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:code-doctor",
+   "type": "skill",
+   "path": "skills/code-doctor/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication] -- framework-API correctness audit; --scan reports only (default), --fix applies low-risk auto-fixes, --fix-all is more aggressive; --rules narrows the categories\"",
+    "name_matches_dir": true,
+    "desc_len": 309,
+    "body_lines": 265,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:code-sweep",
+   "type": "skill",
+   "path": "skills/code-sweep/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"<scope> | --fix | --scan-only | --fix-all | --deep | --loop | --discover | --standards-report | --category <list>\"",
+    "name_matches_dir": true,
+    "desc_len": 265,
+    "body_lines": 241,
+    "has_fm": true,
+    "shared_refs": [
+     "quality-matrix.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:codebase-map",
+   "type": "skill",
+   "path": "skills/codebase-map/SKILL.md",
+   "status": "reviewed",
+   "score": 94,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Bash, Glob, Grep, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"(no arguments \u2014 analyzes the current project)\"",
+    "name_matches_dir": true,
+    "desc_len": 327,
+    "body_lines": 168,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:compress",
+   "type": "skill",
+   "path": "skills/compress/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Grep, Glob",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 400,
+    "body_lines": 142,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:conform",
+   "type": "skill",
+   "path": "skills/conform/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"[target-dir] [--fix | --report-only] [--scope project|plugin|all] [--sample-mode] -- detects + fixes drift in blitz runtime artifacts after upgrades; --report-only audits, --fix applies idempotent migrations; --scope project (default) | plugin (fork) | all; --sample-mode shows first fix per type\"",
+    "name_matches_dir": true,
+    "desc_len": 633,
+    "body_lines": 278,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "session-protocol.md",
+     "state-handoff.md",
+     "story-frontmatter.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:dep-health",
+   "type": "skill",
+   "path": "skills/dep-health/SKILL.md",
+   "status": "reviewed",
+   "score": 94,
+   "facts": {
+    "model": "sonnet",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch",
+    "disallowed_tools": null,
+    "argument_hint": "\"<mode> -- audit (read-only CVE scan + outdated check) | upgrade (interactive bumps with breaking-change notes) | report (CSV/JSON output with license compliance + transitive risk)\"",
+    "name_matches_dir": true,
+    "desc_len": 364,
+    "body_lines": 383,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "package-install-policy.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:design-extract",
+   "type": "skill",
+   "path": "skills/design-extract/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.117\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"[--from <path>] [--out DESIGN.md]\"",
+    "name_matches_dir": true,
+    "desc_len": 361,
+    "body_lines": 185,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "token-budget.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:doc-gen",
+   "type": "skill",
+   "path": "skills/doc-gen/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"<mode> -- api (TypeDoc/JSDoc \u2192 docs/api/) | components (Vue prop+event tables) | architecture (Mermaid graphs) | changelog (commits since last tag) | full (all of the above)\"",
+    "name_matches_dir": true,
+    "desc_len": 361,
+    "body_lines": 367,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:fix-issue",
+   "type": "skill",
+   "path": "skills/fix-issue/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"<issue-number>\"",
+    "name_matches_dir": true,
+    "desc_len": 366,
+    "body_lines": 374,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:health",
+   "type": "skill",
+   "path": "skills/health/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.152\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Bash, Glob, Grep",
+    "disallowed_tools": "Edit, Write, NotebookEdit",
+    "argument_hint": "\"(no arguments \u2014 runs all checks)\"",
+    "name_matches_dir": true,
+    "desc_len": 386,
+    "body_lines": 196,
+    "has_fm": true,
+    "shared_refs": [
+     "terse-output.md",
+     "worktree-lifecycle.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:implement",
+   "type": "skill",
+   "path": "skills/implement/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"--sprint NNN | --stories STORY-XXX-001,STORY-XXX-002 | --resume | --mode <autonomous|checkpoint|interactive>\"",
+    "name_matches_dir": true,
+    "desc_len": 213,
+    "body_lines": 21,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:migrate",
+   "type": "skill",
+   "path": "skills/migrate/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "true",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>\"",
+    "name_matches_dir": true,
+    "desc_len": 373,
+    "body_lines": 437,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "package-install-policy.md",
+     "session-protocol.md",
+     "state-handoff.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:next",
+   "type": "skill",
+   "path": "skills/next/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup",
+    "disallowed_tools": null,
+    "argument_hint": "\"[--loop] -- default: read state and suggest a command. --loop: auto-dispatch the recommended phase, commit/push, exit; designed for /loop /blitz:next --loop or self-scheduled ScheduleWakeup.\"",
+    "name_matches_dir": true,
+    "desc_len": 385,
+    "body_lines": 373,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "scope-limit-protocol.md",
+     "session-protocol.md",
+     "state-handoff.md",
+     "terse-output.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:perf-profile",
+   "type": "skill",
+   "path": "skills/perf-profile/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch",
+    "disallowed_tools": null,
+    "argument_hint": "\"<mode> -- bundle (size analysis vs baseline, large-dep detection) | runtime (V8 heap + framework hot paths) | lighthouse (Core Web Vitals on built site) | full (all three with cross-correlation)\"",
+    "name_matches_dir": true,
+    "desc_len": 310,
+    "body_lines": 404,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:quality-metrics",
+   "type": "skill",
+   "path": "skills/quality-metrics/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Bash, Glob, Grep, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"<mode> -- collect (snapshot to .cc-sessions/quality-metrics.jsonl) | dashboard (HTML over time) | trend (delta vs last sprint) | compare <date1> <date2> (diff between two snapshots)\"",
+    "name_matches_dir": true,
+    "desc_len": 372,
+    "body_lines": 392,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:quick",
+   "type": "skill",
+   "path": "skills/quick/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"<describe what you want to change>\"",
+    "name_matches_dir": true,
+    "desc_len": 370,
+    "body_lines": 68,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "package-install-policy.md",
+     "terse-output.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:refactor",
+   "type": "skill",
+   "path": "skills/refactor/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"<target-file-or-module> <refactoring-goal>\"",
+    "name_matches_dir": true,
+    "desc_len": 373,
+    "body_lines": 417,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:release",
+   "type": "skill",
+   "path": "skills/release/SKILL.md",
+   "status": "reviewed",
+   "score": 88,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "true",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"<mode> [version] -- prepare (bump version + draft CHANGELOG) | verify (validate tag, working tree, registry consistency) | publish (git tag + GitHub release + npm publish if configured) | rollback (revert + delete tag)\"",
+    "name_matches_dir": true,
+    "desc_len": 375,
+    "body_lines": 424,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:research",
+   "type": "skill",
+   "path": "skills/research/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 353,
+    "body_lines": 440,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "context-management.md",
+     "definition-of-done.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "terse-output.md",
+     "threat-model.md",
+     "token-budget.md",
+     "verbose-progress.md",
+     "workflow-dispatch.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:retrospective",
+   "type": "skill",
+   "path": "skills/retrospective/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"(no arguments \u2014 runs analysis automatically)\"",
+    "name_matches_dir": true,
+    "desc_len": 397,
+    "body_lines": 417,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:review",
+   "type": "skill",
+   "path": "skills/review/SKILL.md",
+   "status": "reviewed",
+   "score": 88,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"[--sprint NNN] [--auto-fix] [--only completeness|wiring|framework|design|full] [--min-confidence high|low] [--dual] -- full run = sprint-review 8-invariant gate (parallel reviewers + critic); --only runs one folded concern; --dual adds cross-model critic for semantic findings\"",
+    "name_matches_dir": true,
+    "desc_len": 609,
+    "body_lines": 59,
+    "has_fm": true,
+    "shared_refs": [
+     "check-registry.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:roadmap",
+   "type": "skill",
+   "path": "skills/roadmap/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"[mode] -- modes: full (default \u2014 generate from scratch) | refresh (re-read research, regenerate phases, preserve completed work) | extend (ingest new research docs, append capabilities) | status (report progress + blockers, no generation)\"",
+    "name_matches_dir": true,
+    "desc_len": 304,
+    "body_lines": 428,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "definition-of-done.md",
+     "session-protocol.md",
+     "state-handoff.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:setup",
+   "type": "skill",
+   "path": "skills/setup/SKILL.md",
+   "status": "reviewed",
+   "score": 96,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Bash, Glob, Grep",
+    "disallowed_tools": "Edit, Write, NotebookEdit",
+    "argument_hint": "\"[--fix | --check] [--scope global|project|all] -- detects conflicts between CLAUDE.md files and blitz behaviors; --check audits read-only, --fix applies safe migrations; --scope chooses global config (~/.claude) / current project / both\"",
+    "name_matches_dir": true,
+    "desc_len": 351,
+    "body_lines": 193,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:ship",
+   "type": "skill",
+   "path": "skills/ship/SKILL.md",
+   "status": "reviewed",
+   "score": 88,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "true",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"[version] -- full release chain: review \u2192 review --only completeness \u2192 quality-metrics \u2192 release \u2192 notify; pass explicit version (e.g. 1.2.0) or omit to auto-bump from CHANGELOG\"",
+    "name_matches_dir": true,
+    "desc_len": 270,
+    "body_lines": 264,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "state-handoff.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:sprint-dev",
+   "type": "skill",
+   "path": "skills/sprint-dev/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, TaskCreate, TaskUpdate, TaskList",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 446,
+    "body_lines": 442,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "checkpoint-protocol.md",
+     "context-management.md",
+     "deviation-protocol.md",
+     "knowledge-protocol.md",
+     "package-install-policy.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "state-handoff.md",
+     "story-frontmatter.md",
+     "terse-output.md",
+     "verbose-progress.md",
+     "worktree-lifecycle.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:sprint-plan",
+   "type": "skill",
+   "path": "skills/sprint-plan/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 357,
+    "body_lines": 437,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "checkpoint-protocol.md",
+     "context-management.md",
+     "definition-of-done.md",
+     "session-protocol.md",
+     "spawn-protocol.md",
+     "state-handoff.md",
+     "story-frontmatter.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:sprint-review",
+   "type": "skill",
+   "path": "skills/sprint-review/SKILL.md",
+   "status": "reviewed",
+   "score": 90,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 443,
+    "body_lines": 434,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "checkpoint-protocol.md",
+     "context-management.md",
+     "definition-of-done.md",
+     "deviation-protocol.md",
+     "ratchet-protocol.md",
+     "session-protocol.md",
+     "shortcut-taxonomy.md",
+     "spawn-protocol.md",
+     "state-handoff.md",
+     "story-frontmatter.md",
+     "terse-output.md",
+     "threat-model.md",
+     "verbose-progress.md",
+     "worktree-lifecycle.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:sprint",
+   "type": "skill",
+   "path": "skills/sprint/SKILL.md",
+   "status": "reviewed",
+   "score": 96,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": "false",
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent",
+    "disallowed_tools": null,
+    "argument_hint": "\"[--epics EP-001,EP-002] [--plan-only] [--skip-review] [--loop] -- full cycle (plan \u2192 implement \u2192 review); --epics scopes to specific epics; --plan-only stops after sprint-plan; --skip-review skips quality gate; --loop alias-routes to /blitz:next --loop (since v1.13.0)\"",
+    "name_matches_dir": true,
+    "desc_len": 319,
+    "body_lines": 110,
+    "has_fm": true,
+    "shared_refs": [
+     "carry-forward-registry.md",
+     "checkpoint-protocol.md",
+     "definition-of-done.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:test-gen",
+   "type": "skill",
+   "path": "skills/test-gen/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "medium",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"<file-path>\"",
+    "name_matches_dir": true,
+    "desc_len": 432,
+    "body_lines": 421,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "deterministic-test-recipe.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:todo",
+   "type": "skill",
+   "path": "skills/todo/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "argument_hint": "\"<add <description> | list | check | resolve <id>>\"",
+    "name_matches_dir": true,
+    "desc_len": 388,
+    "body_lines": 121,
+    "has_fm": true,
+    "shared_refs": [
+     "terse-output.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:ui-audit",
+   "type": "skill",
+   "path": "skills/ui-audit/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Bash, Glob, Grep, ToolSearch",
+    "disallowed_tools": null,
+    "argument_hint": "\"[mode] -- modes: full | smoke | data | buttons | events | consistency | heuristics | role <name> | --loop\"",
+    "name_matches_dir": true,
+    "desc_len": 369,
+    "body_lines": 170,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "terse-output.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:ui-build",
+   "type": "skill",
+   "path": "skills/ui-build/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "opus",
+    "effort": "high",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Write, Edit, Glob, Grep, Bash, ToolSearch, AskUserQuestion",
+    "disallowed_tools": null,
+    "argument_hint": null,
+    "name_matches_dir": true,
+    "desc_len": 397,
+    "body_lines": 412,
+    "has_fm": true,
+    "shared_refs": [
+     "definition-of-done.md",
+     "design-criteria.md",
+     "session-protocol.md",
+     "terse-output.md",
+     "token-budget.md",
+     "verbose-progress.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "skill:worktree-prune",
+   "type": "skill",
+   "path": "skills/worktree-prune/SKILL.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": "low",
+    "compatibility": "\">=2.1.71\"",
+    "disable_model_invocation": null,
+    "allowed_tools": "Read, Bash, Glob, Grep",
+    "disallowed_tools": "Edit, Write, NotebookEdit",
+    "argument_hint": "\"[--dry-run|--apply] [--merged-only|--all-older-than <duration>] [--force]\"",
+    "name_matches_dir": true,
+    "desc_len": 369,
+    "body_lines": 172,
+    "has_fm": true,
+    "shared_refs": [
+     "session-protocol.md",
+     "terse-output.md",
+     "worktree-lifecycle.md"
+    ]
+   },
+   "findings": []
+  },
+  {
+   "id": "agent:architect",
+   "type": "agent",
+   "path": "agents/architect.md",
+   "status": "reviewed",
+   "score": 91,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Glob, Grep, Bash",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "15",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 140,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "med",
+     "dim": "cohesiveness",
+     "loc": "agents/architect.md",
+     "issue": "Defined and documented in spawn-protocol/token-budget/quality-matrix prose, but spawned by NO skill via subagent_type (doc-gen spawns general-purpose dimension agents; codebase-map's map-architecture is general-purpose, not the architect agent). Reachable only via orchestrator freeform delegation \u2014 unreachable if BLITZ_DISABLE_ORCHESTRATOR=1.",
+     "fix": "Either wire the natural caller to the real agent (doc-gen -> subagent_type doc-writer; a structural-analysis skill -> architect) or document explicitly that these are orchestrator-only freeform targets, not skill-invoked.",
+     "status": "resolved",
+     "resolution": "Documented as orchestrator-only freeform target via body Invocation note (not skill-wired by design)."
+    }
+   ]
+  },
+  {
+   "id": "agent:backend-dev",
+   "type": "agent",
+   "path": "agents/backend-dev.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "50",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 195,
+    "has_example": true
+   },
+   "findings": []
+  },
+  {
+   "id": "agent:critic",
+   "type": "agent",
+   "path": "agents/critic.md",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Grep, Glob, Bash",
+    "disallowed_tools": null,
+    "color": "red",
+    "initialPrompt": false,
+    "maxTurns": "30",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 238,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "agents/critic.md:frontmatter (color)",
+     "issue": "Uses `color` \u2014 cosmetic field not on the documented agent allowlist; tolerated/ignored by runtime (not flagged by --strict, which is manifest-only).",
+     "fix": "Harmless; optionally drop `color` to stay strictly within the documented allowlist.",
+     "status": "resolved",
+     "resolution": "Removed color frontmatter from all 4 agents (strict allowlist conformance)."
+    }
+   ]
+  },
+  {
+   "id": "agent:design-critic",
+   "type": "agent",
+   "path": "agents/design-critic.md",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Grep, Glob, Bash, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_hover, mcp__plugin_playwright_playwright__browser_press_key, mcp__plugin_playwright_playwright__browser_type, mcp__plugin_playwright_playwright__browser_resize, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_wait_for, mcp__plugin_playwright_playwright__browser_console_messages",
+    "disallowed_tools": null,
+    "color": "purple",
+    "initialPrompt": false,
+    "maxTurns": "30",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 144,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "agents/design-critic.md:frontmatter (color)",
+     "issue": "Uses `color` \u2014 cosmetic field not on the documented agent allowlist; tolerated/ignored by runtime (not flagged by --strict, which is manifest-only).",
+     "fix": "Harmless; optionally drop `color` to stay strictly within the documented allowlist.",
+     "status": "resolved",
+     "resolution": "Removed color frontmatter from all 4 agents (strict allowlist conformance)."
+    }
+   ]
+  },
+  {
+   "id": "agent:doc-writer",
+   "type": "agent",
+   "path": "agents/doc-writer.md",
+   "status": "reviewed",
+   "score": 91,
+   "facts": {
+    "model": "haiku",
+    "effort": null,
+    "tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "30",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 155,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "med",
+     "dim": "cohesiveness",
+     "loc": "agents/doc-writer.md",
+     "issue": "Defined and documented in spawn-protocol/token-budget/quality-matrix prose, but spawned by NO skill via subagent_type (doc-gen spawns general-purpose dimension agents; codebase-map's map-architecture is general-purpose, not the architect agent). Reachable only via orchestrator freeform delegation \u2014 unreachable if BLITZ_DISABLE_ORCHESTRATOR=1.",
+     "fix": "Either wire the natural caller to the real agent (doc-gen -> subagent_type doc-writer; a structural-analysis skill -> architect) or document explicitly that these are orchestrator-only freeform targets, not skill-invoked.",
+     "status": "resolved",
+     "resolution": "Documented as orchestrator-only freeform target via body Invocation note (not skill-wired by design)."
+    }
+   ]
+  },
+  {
+   "id": "agent:frontend-dev",
+   "type": "agent",
+   "path": "agents/frontend-dev.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "50",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 267,
+    "has_example": true
+   },
+   "findings": []
+  },
+  {
+   "id": "agent:orchestrator",
+   "type": "agent",
+   "path": "agents/orchestrator.md",
+   "status": "reviewed",
+   "score": 79,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor",
+    "disallowed_tools": null,
+    "color": "cyan",
+    "initialPrompt": false,
+    "maxTurns": "30",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 175,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "high",
+     "dim": "best-practice",
+     "loc": "agents/orchestrator.md:frontmatter (initialPrompt)",
+     "issue": "Uses `initialPrompt` (boot state-summary: read HANDOFF.json + activity-feed, surface one-line state). `initialPrompt` is NOT on the documented plugin-agent field allowlist (name,description,model,effort,maxTurns,tools,disallowedTools,skills,memory,background,isolation). `claude plugin validate --strict` validates the manifest only and does not check agent .md frontmatter, so it neither flags nor confirms it. If the installed runtime ignores the field, the relied-on boot state-summary silently no-ops.",
+     "fix": "Confirm against current Claude Code agent docs whether `initialPrompt` is supported on plugin agents. If unsupported, move the boot-summary behavior into the orchestrator system prompt body (it already documents the same logic) so it does not depend on an unrecognized frontmatter key.",
+     "status": "resolved",
+     "resolution": "Removed initialPrompt frontmatter; folded boot state-summary into system-prompt body \u00a70. Confirmed unsupported via docs (agent field allowlist)."
+    },
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "agents/orchestrator.md:frontmatter (color)",
+     "issue": "Uses `color` \u2014 cosmetic field not on the documented agent allowlist; tolerated/ignored by runtime (not flagged by --strict, which is manifest-only).",
+     "fix": "Harmless; optionally drop `color` to stay strictly within the documented allowlist.",
+     "status": "resolved",
+     "resolution": "Removed color frontmatter from all 4 agents (strict allowlist conformance)."
+    }
+   ]
+  },
+  {
+   "id": "agent:research-critic",
+   "type": "agent",
+   "path": "agents/research-critic.md",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Grep, Glob, Bash, WebFetch",
+    "disallowed_tools": null,
+    "color": "orange",
+    "initialPrompt": false,
+    "maxTurns": "30",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 266,
+    "has_example": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "agents/research-critic.md:frontmatter (color)",
+     "issue": "Uses `color` \u2014 cosmetic field not on the documented agent allowlist; tolerated/ignored by runtime (not flagged by --strict, which is manifest-only).",
+     "fix": "Harmless; optionally drop `color` to stay strictly within the documented allowlist.",
+     "status": "resolved",
+     "resolution": "Removed color frontmatter from all 4 agents (strict allowlist conformance)."
+    }
+   ]
+  },
+  {
+   "id": "agent:reviewer",
+   "type": "agent",
+   "path": "agents/reviewer.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Write, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "20",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 169,
+    "has_example": true
+   },
+   "findings": []
+  },
+  {
+   "id": "agent:test-writer",
+   "type": "agent",
+   "path": "agents/test-writer.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "model": "sonnet",
+    "effort": null,
+    "tools": "Read, Write, Edit, Bash, Glob, Grep",
+    "disallowed_tools": null,
+    "color": null,
+    "initialPrompt": false,
+    "maxTurns": "35",
+    "isolation": null,
+    "skills": null,
+    "name_matches": true,
+    "desc_len": 1,
+    "body_lines": 315,
+    "has_example": true
+   },
+   "findings": []
+  },
+  {
+   "id": "hook:agent-frontmatter-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/agent-frontmatter-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:analysis-paralysis-guard.sh",
+   "type": "hook",
+   "path": "hooks/scripts/analysis-paralysis-guard.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:blitz-prompt-expansion.sh",
+   "type": "hook",
+   "path": "hooks/scripts/blitz-prompt-expansion.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-as-any-insertion.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-as-any-insertion.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-destructive-git.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-destructive-git.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-destructive-sql.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-destructive-sql.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-no-verify.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-no-verify.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-test-deletion.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-test-deletion.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:block-test-disabling.sh",
+   "type": "hook",
+   "path": "hooks/scripts/block-test-disabling.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:check-registry-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/check-registry-validate.sh",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "wired": false
+   },
+   "findings": []
+  },
+  {
+   "id": "hook:context-monitor.sh",
+   "type": "hook",
+   "path": "hooks/scripts/context-monitor.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:critic-gemini.sh",
+   "type": "hook",
+   "path": "hooks/scripts/critic-gemini.sh",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "wired": false
+   },
+   "findings": []
+  },
+  {
+   "id": "hook:markdown-link-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/markdown-link-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:permission-request.sh",
+   "type": "hook",
+   "path": "hooks/scripts/permission-request.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-compact-log.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-compact-log.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-edit-activity-log.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-edit-activity-log.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-edit-format.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-edit-format.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-edit-lint.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-edit-lint.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-edit-test.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-edit-test.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-edit-typecheck-block.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-edit-typecheck-block.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-tool-batch.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-tool-batch.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:post-tool-failure.sh",
+   "type": "hook",
+   "path": "hooks/scripts/post-tool-failure.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:pre-commit-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/pre-commit-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:pre-compact-snapshot.sh",
+   "type": "hook",
+   "path": "hooks/scripts/pre-compact-snapshot.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:pre-edit-backup.sh",
+   "type": "hook",
+   "path": "hooks/scripts/pre-edit-backup.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:pre-edit-guard.sh",
+   "type": "hook",
+   "path": "hooks/scripts/pre-edit-guard.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:reference-compression-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/reference-compression-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:session-start.sh",
+   "type": "hook",
+   "path": "hooks/scripts/session-start.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:skill-frontmatter-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/skill-frontmatter-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:startup-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/startup-validate.sh",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {
+    "wired": false
+   },
+   "findings": []
+  },
+  {
+   "id": "hook:stop-failure.sh",
+   "type": "hook",
+   "path": "hooks/scripts/stop-failure.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:subagent-start.sh",
+   "type": "hook",
+   "path": "hooks/scripts/subagent-start.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:subagent-stop.sh",
+   "type": "hook",
+   "path": "hooks/scripts/subagent-stop.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:task-completed-validate.sh",
+   "type": "hook",
+   "path": "hooks/scripts/task-completed-validate.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:teammate-idle.sh",
+   "type": "hook",
+   "path": "hooks/scripts/teammate-idle.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:workflow-guard.sh",
+   "type": "hook",
+   "path": "hooks/scripts/workflow-guard.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:worktree-create.sh",
+   "type": "hook",
+   "path": "hooks/scripts/worktree-create.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "hook:worktree-remove.sh",
+   "type": "hook",
+   "path": "hooks/scripts/worktree-remove.sh",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {
+    "wired": true
+   },
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "best-practice",
+     "loc": "hooks/hooks.json",
+     "issue": "Command uses unquoted ${CLAUDE_PLUGIN_ROOT}; breaks if install path contains spaces (docs example quotes it).",
+     "fix": "Quote as \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/<name>.sh in hooks.json.",
+     "status": "resolved",
+     "resolution": "Resolved by med batch \u2014 all 38 command values quoted in hooks.json."
+    }
+   ]
+  },
+  {
+   "id": "shared:agent-prompt-boilerplate.md",
+   "type": "shared",
+   "path": "skills/_shared/agent-prompt-boilerplate.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:agent-routing.md",
+   "type": "shared",
+   "path": "skills/_shared/agent-routing.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:agent-view-dispatch.md",
+   "type": "shared",
+   "path": "skills/_shared/agent-view-dispatch.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:carry-forward-registry.md",
+   "type": "shared",
+   "path": "skills/_shared/carry-forward-registry.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:check-registry.md",
+   "type": "shared",
+   "path": "skills/_shared/check-registry.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:checkpoint-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/checkpoint-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:context-management.md",
+   "type": "shared",
+   "path": "skills/_shared/context-management.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:definition-of-done.md",
+   "type": "shared",
+   "path": "skills/_shared/definition-of-done.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:design-criteria.md",
+   "type": "shared",
+   "path": "skills/_shared/design-criteria.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:deterministic-test-recipe.md",
+   "type": "shared",
+   "path": "skills/_shared/deterministic-test-recipe.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:deviation-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/deviation-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:hook-trust.md",
+   "type": "shared",
+   "path": "skills/_shared/hook-trust.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:knowledge-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/knowledge-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:package-install-policy.md",
+   "type": "shared",
+   "path": "skills/_shared/package-install-policy.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:project-context.md",
+   "type": "shared",
+   "path": "skills/_shared/project-context.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:quality-matrix.md",
+   "type": "shared",
+   "path": "skills/_shared/quality-matrix.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:ratchet-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/ratchet-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:scheduling.md",
+   "type": "shared",
+   "path": "skills/_shared/scheduling.md",
+   "status": "reviewed",
+   "score": 97,
+   "facts": {},
+   "findings": [
+    {
+     "sev": "low",
+     "dim": "cohesiveness",
+     "loc": "skills/_shared/scheduling.md",
+     "issue": "Orphan: documents /loop and /schedule but no SKILL.md links to /_shared/scheduling.md, though 7 loop-capable skills (next, sprint, code-sweep, browse, ui-audit, sprint-plan, sprint-dev) reference loop/scheduling concepts. Cited only by CHANGELOG + a docs/validation snapshot.",
+     "fix": "Link /_shared/scheduling.md from the loop-capable skills (esp. next, code-sweep) as the canonical scheduling backing, or fold into an existing referenced protocol.",
+     "status": "resolved",
+     "resolution": "Linked from skills/next and skills/code-sweep (loop-capable); no longer orphan."
+    }
+   ]
+  },
+  {
+   "id": "shared:scope-limit-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/scope-limit-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:session-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/session-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:session-report-template.md",
+   "type": "shared",
+   "path": "skills/_shared/session-report-template.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:shortcut-taxonomy.md",
+   "type": "shared",
+   "path": "skills/_shared/shortcut-taxonomy.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:skill-cross-references.md",
+   "type": "shared",
+   "path": "skills/_shared/skill-cross-references.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:spawn-protocol.md",
+   "type": "shared",
+   "path": "skills/_shared/spawn-protocol.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:state-handoff.md",
+   "type": "shared",
+   "path": "skills/_shared/state-handoff.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:story-frontmatter.md",
+   "type": "shared",
+   "path": "skills/_shared/story-frontmatter.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:terse-output.md",
+   "type": "shared",
+   "path": "skills/_shared/terse-output.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:threat-model.md",
+   "type": "shared",
+   "path": "skills/_shared/threat-model.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:token-budget.md",
+   "type": "shared",
+   "path": "skills/_shared/token-budget.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:verbose-progress.md",
+   "type": "shared",
+   "path": "skills/_shared/verbose-progress.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:workflow-dispatch.md",
+   "type": "shared",
+   "path": "skills/_shared/workflow-dispatch.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "shared:worktree-lifecycle.md",
+   "type": "shared",
+   "path": "skills/_shared/worktree-lifecycle.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "output-style:terse-technical",
+   "type": "output-style",
+   "path": "output-styles/terse-technical.md",
+   "status": "reviewed",
+   "score": 100,
+   "facts": {},
+   "findings": []
+  },
+  {
+   "id": "manifest:plugin.json",
+   "type": "manifest",
+   "path": ".claude-plugin/plugin.json",
+   "status": "reviewed",
+   "score": 91,
+   "facts": {},
+   "findings": [
+    {
+     "sev": "med",
+     "dim": "version-gating",
+     "loc": ".claude-plugin/plugin.json",
+     "issue": "No authoritative engine minimum declared. Effective floor is implicit/inconsistent: lowest skill floor advertises >=2.1.71 but orchestrator main-thread activation needs >=2.1.117 and 9 wired hook events postdate 2.1.71. Consumers on 2.1.71-2.1.116 silently lose orchestrator routing + recent-event hooks.",
+     "fix": "Declare one authoritative minimum (>=2.1.117) so the advertised floor matches what the plugin actually delivers.",
+     "status": "resolved",
+     "resolution": "Effective minimum (>=2.1.117) surfaced in plugin.json description; no engines field exists to declare it formally."
+    }
+   ]
+  }
+ ],
+ "cross_cutting": [
+  {
+   "sev": "high",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:review",
+    "skill:sprint-review"
+   ],
+   "issue": "Verbatim trigger overlap: 'review sprint N','run review','check quality' (sprint-review even claims 'audit sprint'). Hand-off ('review delegates to sprint-review') is one-directional and buried; neither carries a reciprocal use-X-when boundary.",
+   "fix": "review: 'per-change/pre-commit precision review of a diff; for the full end-of-sprint 8-invariant gate use sprint-review.' sprint-review: 'full end-of-sprint gate; for lightweight per-change review use /blitz:review.'",
+   "status": "resolved",
+   "resolution": "review desc \u2192 per-change front door + 'use sprint-review for full gate'; sprint-review desc dropped 'check quality'/'run review', added 'use review for per-change'."
+  },
+  {
+   "sev": "high",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:ship",
+    "skill:release"
+   ],
+   "issue": "ship and release list the exact same triggers 'cut a release','release v1.X'. release notes it is 'composed by ship' (weak); ship has no clause for when to prefer release alone.",
+   "fix": "Keep 'cut a release'/'release vX' on ship (full gated chain); release owns 'publish/tag/rollback' in isolation. Add reciprocal boundaries.",
+   "status": "resolved",
+   "resolution": "ship keeps 'cut a release'/'release vX' + boundary to release; release dropped those verbatim triggers, added 'use ship for full chain'."
+  },
+  {
+   "sev": "high",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:audit",
+    "skill:dep-health",
+    "skill:code-doctor",
+    "skill:ui-audit",
+    "skill:sprint-review"
+   ],
+   "issue": "Bare 'audit'/'security audit' overloaded across 5 components with no shared object-noun key. Object nouns mostly disambiguate (deps->dep-health, firestore->code-doctor, consistency->ui-audit, sprint->sprint-review, codebase->audit) but bare 'audit' and 'security audit' genuinely collide between audit (5-pillar incl Security) and dep-health (CVE scan).",
+   "fix": "audit: narrow security claim to 'source-code security'; route dependency CVE to dep-health. Add object-noun routing note; bare 'audit' with no object -> /blitz:ask.",
+   "status": "resolved",
+   "resolution": "audit 'security audit'\u2192'source-code security audit'; added object-noun routing (deps\u2192dep-health, firestore\u2192code-doctor, UI\u2192ui-audit, sprint\u2192sprint-review, bare\u2192ask)."
+  },
+  {
+   "sev": "med",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:sprint",
+    "skill:implement",
+    "skill:sprint-dev"
+   ],
+   "issue": "'implement sprint'/'resume sprint' match all three. implement/sprint-dev is a benign alias; sprint vs the pair is a real fork (bare 'implement' should not trigger the full plan->implement->review cycle).",
+   "fix": "sprint: 'only for full plan->implement->review cycle; for implementation-only use /blitz:implement.' implement: mark as thin alias of sprint-dev.",
+   "status": "resolved",
+   "resolution": "sprint desc: 'only full plan\u2192implement\u2192review cycle; for impl-only use /blitz:implement or /blitz:sprint-dev'. implement marked thin router."
+  },
+  {
+   "sev": "med",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:research",
+    "skill:codebase-map",
+    "agent:architect",
+    "skill:audit"
+   ],
+   "issue": "'analyze this project/codebase' has no single owner across codebase-map (onboarding map), architect (coupling/dep-graph), audit (quality findings); research shares the verb 'analyze'.",
+   "fix": "Add inverse one-liners: codebase-map=onboarding map, architect=structural/dep-graph, audit=quality/tech-debt.",
+   "status": "resolved",
+   "resolution": "codebase-map desc: added 'structural\u2192architect agent, quality\u2192/blitz:audit' boundary."
+  },
+  {
+   "sev": "med",
+   "dim": "cohesiveness",
+   "scope": [
+    "skill:browse",
+    "skill:ui-audit"
+   ],
+   "issue": "'visual audit' triggers both browse (functional smoke: console/network/screenshots) and ui-audit (semantic data consistency/role-leak).",
+   "fix": "Remove/qualify 'visual audit' on browse to 'visual smoke test'; ui-audit owns cross-page data consistency.",
+   "status": "resolved",
+   "resolution": "browse desc: 'visual audit'\u2192'visual smoke test' + 'cross-page data\u2192/blitz:ui-audit' boundary."
+  },
+  {
+   "sev": "low",
+   "dim": "naming",
+   "scope": [
+    "agent:reviewer",
+    "agent:critic",
+    "skill:review",
+    "agent:research-critic",
+    "agent:design-critic"
+   ],
+   "issue": "Name-adjacency cluster. Verified disambiguators are accurate (critic vs reviewer; research-critic vs critic). All resolve to distinct ids. Gap: reviewer has no 'Different from...' clause; test-gen/test-writer & doc-gen/doc-writer skill/agent pairs lack 'I am the worker agent' markers.",
+   "fix": "Add worker-agent markers to reviewer/test-writer/doc-writer; no id clash exists.",
+   "status": "resolved",
+   "resolution": "Added worker-agent markers to reviewer/test-writer/doc-writer descriptions; reviewer now carries Different-from critic/review clause."
+  },
+  {
+   "sev": "med",
+   "dim": "version-gating",
+   "scope": [
+    "manifest:plugin.json",
+    ".claude-plugin/settings.json",
+    "hooks/hooks.json"
+   ],
+   "issue": "No single engine minimum. Orchestrator activation needs >=2.1.117; 9 wired events postdate 2.1.71 (TeammateIdle, PostToolBatch, PostToolUseFailure, StopFailure, WorktreeCreate, WorktreeRemove, SubagentStart, UserPromptExpansion, PostCompact). Consumers on 2.1.71-2.1.116 silently lose orchestrator routing + those hooks while plugin advertises 2.1.71.",
+   "fix": "Declare authoritative >=2.1.117 minimum in plugin.json; keep per-skill higher floors (design-extract 2.1.117, health 2.1.152).",
+   "status": "resolved",
+   "resolution": "No plugin.json engines field exists (would fail --strict); surfaced effective min >=2.1.117 in plugin.json description instead of falsifying per-skill floors."
+  },
+  {
+   "sev": "med",
+   "dim": "best-practice",
+   "scope": [
+    "hooks/hooks.json"
+   ],
+   "issue": "All 38 ${CLAUDE_PLUGIN_ROOT} references in hooks.json are unquoted (0 quoted). Docs example quotes it; unquoted breaks on install paths containing spaces.",
+   "fix": "Quote every \"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/*.sh in hooks.json (single mechanical pass).",
+   "status": "resolved",
+   "resolution": "Quoted all 38 \"${CLAUDE_PLUGIN_ROOT}\" command values; updated validate-plugin-structure.sh to strip quotes when resolving."
+  },
+  {
+   "sev": "low",
+   "dim": "coverage",
+   "scope": [
+    "hooks/hooks.json"
+   ],
+   "issue": "Plain `Stop` event not wired (StopFailure + SubagentStop are, as logging stubs). Omission is undocumented; turn-end persistence handled out-of-band via PreCompact + model-written activity-feed. Plausibly intentional but unconfirmed.",
+   "fix": "Add a one-line rationale note (or a Stop logging stub) to remove ambiguity.",
+   "status": "resolved",
+   "resolution": "Added \"Stop \u2014 intentionally not wired\" rationale section to hooks/scripts/README.md."
+  },
+  {
+   "sev": "info",
+   "dim": "documentation",
+   "scope": [
+    "manifest:plugin.json"
+   ],
+   "issue": "Undeclared external deps: Playwright MCP (browse, ui-build, ui-audit, design-critic) and Gemini CLI (critic-gemini.sh, opt-in via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC). plugin.json.dependencies is empty.",
+   "fix": "Document the optional external deps in plugin.json or a prerequisites note; both are genuinely external/unbundled (Gemini path is correctly opt-in via env var).",
+   "status": "resolved",
+   "resolution": "Documented Playwright MCP + Gemini CLI external deps in plugin.json description (dependencies field is plugin-only)."
+  },
+  {
+   "sev": "info",
+   "dim": "count-sync",
+   "scope": [
+    "all"
+   ],
+   "issue": "counts.json (37/10/32/38/16) matches disk exactly; validate-plugin-structure (284 checks), check-count-sync, check-version-sync all PASS; plugin manifest strict-validates clean. No drift.",
+   "fix": "None \u2014 count/version integrity is clean and CI-enforced.",
+   "status": "acknowledged",
+   "resolution": "No action \u2014 integrity clean and CI-enforced."
+  }
+ ]
+}
