@@ -20,7 +20,7 @@ All 10 checks passed: `name`, `description`, `model: sonnet`, `tools`, `maxTurns
 
 ### Reply contract divergences
 
-The canonical JSON from token-budget.md §3 (line 529) and spawn-protocol.md §8 (line 529) specifies:
+The canonical JSON from agent-orchestration.md §3 (line 529) and agent-orchestration.md §8 (line 529) specifies:
 
 ```json
 {"status", "summary≤50w", "files_changed", "issues", "next_blocked_by", "metrics"}
@@ -34,7 +34,7 @@ design-critic's §3 reply (lines 70–92) returns:
 
 Two deviations:
 
-1. **`metrics` absent** — token-budget.md line 94 states "`metrics` keys are optional but encouraged for any agent that touches code." design-critic is screenshot-only (no code touched), so `metrics` omission is acceptable by spec.
+1. **`metrics` absent** — agent-orchestration.md line 94 states "`metrics` keys are optional but encouraged for any agent that touches code." design-critic is screenshot-only (no code touched), so `metrics` omission is acceptable by spec.
 
 2. **`scores{}` is a domain extension** — not in the canonical schema. The "Return ONLY this JSON" language (agent line 68) advertises scores{} as mandatory output, but it is absent from the canonical contract. ui-build's `jq` parse of the reply will see an unknown key, which is benign (jq ignores extra keys), but the orchestrator cannot rely on `scores{}` existing without explicit contract documentation.
 
@@ -90,7 +90,7 @@ design-critic is a visual scoring agent, not the shortcut-taxonomy critic (`agen
 
 design-critic is spawned only from `skills/ui-build/SKILL.md` Phase 5.4.2 (lines 320–328). The spawn uses `Agent()` with `subagent_type: "blitz:design-critic"`.
 
-**Workflow adoption status:** `ui-build` does NOT appear in the `workflow-dispatch.md` adoption table (lines 80–84 list only `codebase-audit` [WIRED] and `research` [WIRED]). ui-build uses the legacy `Agent()` path exclusively. No `Workflow` dispatch exists at the ui-build gate.
+**Workflow adoption status:** `ui-build` does NOT appear in the `agent-orchestration.md` adoption table (lines 80–84 list only `codebase-audit` [WIRED] and `research` [WIRED]). ui-build uses the legacy `Agent()` path exclusively. No `Workflow` dispatch exists at the ui-build gate.
 
 ### Prompt parity check (Agent() path)
 
@@ -100,9 +100,9 @@ The spawn prompt in ui-build Phase 5.4.2 (line 326):
 "Critique screenshots at /tmp/ui-build-screenshots/*.png against DESIGN.md (or frontend-design heuristics if no DESIGN.md). Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass threshold ≥7 on all five. Return canonical JSON."
 ```
 
-**Missing: OUTPUT STYLE snippet** — token-budget.md §3 line 98 requires every `Agent()` prompt to include the terse-output snippet near the end. The spawn prompt does not embed it. Since design-critic is a named agent (`subagent_type: "blitz:design-critic"`), its system prompt IS the agent body (which does include OUTPUT STYLE on line 33), so the snippet is present in the agent's own context. However, for `Agent()` spawns of named agents, the additional `prompt:` field is prepended to (or overlaid with) the agent body — the agent's own OUTPUT STYLE line covers this case.
+**Missing: OUTPUT STYLE snippet** — agent-orchestration.md §3 line 98 requires every `Agent()` prompt to include the terse-output snippet near the end. The spawn prompt does not embed it. Since design-critic is a named agent (`subagent_type: "blitz:design-critic"`), its system prompt IS the agent body (which does include OUTPUT STYLE on line 33), so the snippet is present in the agent's own context. However, for `Agent()` spawns of named agents, the additional `prompt:` field is prepended to (or overlaid with) the agent body — the agent's own OUTPUT STYLE line covers this case.
 
-**Missing: "Return ONLY this JSON" boilerplate** — token-budget.md §3 line 100 requires this verbatim near the end of every `Agent()` prompt. The spawn prompt says "Return canonical JSON" (loose), not the required boilerplate. This is a gap in the spawn-side prompt, though the agent body itself has "Return ONLY this JSON, nothing else:" on line 68.
+**Missing: "Return ONLY this JSON" boilerplate** — agent-orchestration.md §3 line 100 requires this verbatim near the end of every `Agent()` prompt. The spawn prompt says "Return canonical JSON" (loose), not the required boilerplate. This is a gap in the spawn-side prompt, though the agent body itself has "Return ONLY this JSON, nothing else:" on line 68.
 
 **Workflow parity conclusion:** ui-build has NOT adopted Workflow for design-critic dispatch. A6 asks whether prompts dispatched through `Workflow`'s `agent()` carry identical contract. Since this dispatch path does not exist yet, there is no parity gap to measure — but the spawn prompt already omits required boilerplate (OUTPUT STYLE embedding per token-budget, "Return ONLY" verbatim) even on the Agent() path.
 

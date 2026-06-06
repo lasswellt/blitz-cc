@@ -42,7 +42,7 @@ No drift. Verbatim one-line directive present in body.
 
 **Evidence:**
 - `hooks/scripts/markdown-link-validate.sh skills/perf-profile/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
-- Internal links verified: `/_shared/session-protocol.md` (line 57), `/_shared/verbose-progress.md` (line 57), `/_shared/terse-output.md` (line 24), `references/main.md` (line 21) — all resolve to real files.
+- Internal links verified: `/_shared/session-lifecycle.md` (line 57), `/_shared/terse-output.md` (line 57), `/_shared/terse-output.md` (line 24), `references/main.md` (line 21) — all resolve to real files.
 
 All links pass.
 
@@ -64,7 +64,7 @@ All links pass.
 **Verdict:** N/A
 
 **Evidence:**
-- `skills/_shared/state-handoff.md` does not list perf-profile in its pipeline table; the skill is standalone (not part of the sprint cycle: bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship).
+- `skills/_shared/session-lifecycle.md` does not list perf-profile in its pipeline table; the skill is standalone (not part of the sprint cycle: bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship).
 - No upstream producer artifact required; no downstream consumer of its output declared in any handoff contract.
 - Skill produces reports exclusively to `${SESSION_TMP_DIR}` (ephemeral, cleaned on session end). No persistent cross-skill artifact produced.
 
@@ -77,7 +77,7 @@ Pipeline I/O composition check: N/A (standalone skill).
 **Verdict:** N/A
 
 **Evidence:**
-- Dynamic-Workflows dispatch (BLITZ_DISPATCH gate, Workflow + Agent() dual paths) applies only to `codebase-audit` and `research` per `/_shared/workflow-dispatch.md` (pilot scope: Phase 1.0/1.1-W).
+- Dynamic-Workflows dispatch (BLITZ_DISPATCH gate, Workflow + Agent() dual paths) applies only to `codebase-audit` and `research` per `/_shared/agent-orchestration.md` (pilot scope: Phase 1.0/1.1-W).
 - perf-profile is not a DW-wired skill. No `BLITZ_DISPATCH` gate, no Workflow block, no dual-path assertion needed.
 
 ---

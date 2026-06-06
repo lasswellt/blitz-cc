@@ -54,7 +54,7 @@ The `/_shared/terse-output.md` reference appears at line 20 (inside the OUTPUT S
 
 **Verdict: N/A**
 
-`health` is not an O1-O5 owner and does not delegate to one. `agent-routing.md` line 26 classifies it as a "single-spawn orchestrator" / standalone diagnostic. No O# ownership chain exists for this skill. Bidirectional check not applicable.
+`health` is not an O1-O5 owner and does not delegate to one. `agent-orchestration.md` line 26 classifies it as a "single-spawn orchestrator" / standalone diagnostic. No O# ownership chain exists for this skill. Bidirectional check not applicable.
 
 ---
 
@@ -62,7 +62,7 @@ The `/_shared/terse-output.md` reference appears at line 20 (inside the OUTPUT S
 
 **Verdict: N/A**
 
-`state-handoff.md` contains zero occurrences of "health" — the skill is not in any producer/consumer chain. `scheduling.md` line 37 confirms: `health | Daily | default | Plugin integrity check` (standalone). The skill reads live filesystem state (hooks.json, .cc-sessions, skills/*/SKILL.md) and emits a terminal report; it produces no artifacts consumed downstream. No pipeline I/O contract to verify.
+`session-lifecycle.md` contains zero occurrences of "health" — the skill is not in any producer/consumer chain. `session-lifecycle.md` line 37 confirms: `health | Daily | default | Plugin integrity check` (standalone). The skill reads live filesystem state (hooks.json, .cc-sessions, skills/*/SKILL.md) and emits a terminal report; it produces no artifacts consumed downstream. No pipeline I/O contract to verify.
 
 ---
 
@@ -94,7 +94,7 @@ Total file lines: 186. Frontmatter ends at line 10 (second `---` fence). Body = 
 
 **Verdict: N/A**
 
-`allowed-tools: Read, Bash, Glob, Grep` — neither `TeamCreate` nor `SendMessage` is declared. The skill does not spawn agents. No idiom drift possible. `agent-routing.md` classifies `health` as a "single-spawn orchestrator" candidate for future promotion, but current implementation is a pure slash-invoked skill with no spawning.
+`allowed-tools: Read, Bash, Glob, Grep` — neither `TeamCreate` nor `SendMessage` is declared. The skill does not spawn agents. No idiom drift possible. `agent-orchestration.md` classifies `health` as a "single-spawn orchestrator" candidate for future promotion, but current implementation is a pure slash-invoked skill with no spawning.
 
 ---
 
@@ -106,7 +106,7 @@ Total file lines: 186. Frontmatter ends at line 10 (second `---` fence). Body = 
 | V2 OUTPUT STYLE | PASS | Shell diff → `MATCH: OUTPUT STYLE snippet is verbatim` |
 | V3 Link resolution | PASS | `markdown-link-validate.sh` → `OK (397 link(s) checked)` |
 | V4 Canonical-owner | N/A | Standalone diagnostic; no O# chain |
-| V5 Pipeline I/O | N/A | `state-handoff.md` has 0 "health" occurrences; skill produces no pipeline artifacts |
+| V5 Pipeline I/O | N/A | `session-lifecycle.md` has 0 "health" occurrences; skill produces no pipeline artifacts |
 | V6 DW wiring | N/A | Not `codebase-audit` or `research` |
 | V7 Disallowed-tools | PASS | `disallowed-tools: Edit, Write, NotebookEdit` at line 6 — structural enforcement confirmed |
 | V8 Body-line budget | PASS | 176 body lines (≤450 target, ≤500 hard cap) |
@@ -122,4 +122,4 @@ All applicable checks pass. The skill is a clean, self-contained read-only diagn
 
 ## Highest-Leverage Fix
 
-None required. The skill is fully compliant. If a future improvement were warranted, adding `health` to `session-protocol.md`'s skill-matrix table (currently only `dep-health` appears there) would complete the cross-reference picture, but this is documentation polish, not a contract violation.
+None required. The skill is fully compliant. If a future improvement were warranted, adding `health` to `session-lifecycle.md`'s skill-matrix table (currently only `dep-health` appears there) would complete the cross-reference picture, but this is documentation polish, not a contract violation.

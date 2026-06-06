@@ -16,7 +16,7 @@ argument-hint: "<collect|dashboard|trend|compare <date1> <date2>>"
 - For metric snapshot schema, dashboard templates, trend thresholds, and score calculation details, see:
 !cat skills/quality-metrics/references/main.md
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -34,7 +34,7 @@ Collect code quality signals, store snapshots over time, and produce dashboards 
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -75,7 +75,7 @@ For each collector, call the `Agent` tool with:
 - `prompt`: the collector prompt template from `references/main.md`
 - `run_in_background: false`
 
-**Weight class**: Light (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Each collector prompt declares: max 1 bash command, max 5 file reads (for parsing output), max 8 tool calls, 3-min wall-clock (typescript/tests/build may be slow on large projects — bump to 5 min for those specifically), output-file existence check.
+**Weight class**: Light (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Each collector prompt declares: max 1 bash command, max 5 file reads (for parsing output), max 8 tool calls, 3-min wall-clock (typescript/tests/build may be slow on large projects — bump to 5 min for those specifically), output-file existence check.
 
 ### 1.3 Inputs Each Collector Receives
 

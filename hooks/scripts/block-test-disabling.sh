@@ -3,13 +3,13 @@
 # `xdescribe`, `xtest`, or `test.todo(` in test files.
 #
 # Why: disabling tests is a canonical autonomous-coder shortcut for "making CI
-# pass." shortcut-taxonomy.md row 13 documents this. Test deletion is already
+# pass." quality-engine.md row 13 documents this. Test deletion is already
 # blocked by block-test-deletion.sh; this hook closes the rename-equivalent
 # escape (leave the test file in place, but neuter every test inside).
 #
 # Escape hatch: inline same-line comment `// blitz:skip-pinned: #<issue-or-url>`
 # justifies the .skip with a tracked reason.
-# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/threat-model.md §2 (env-first).
+# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/security.md §2 (env-first).
 #
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail
@@ -86,7 +86,7 @@ the escape hatch:
 
   it.skip('foo', () => { ... })  // blitz:skip-pinned: #1234
 
-The escape hatch is documented in skills/_shared/shortcut-taxonomy.md §4. Without
+The escape hatch is documented in skills/_shared/quality-engine.md §4. Without
 the marker the edit is blocked.
 
 \`.only\` in a committed test file is almost always a debugging mistake; remove it

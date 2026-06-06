@@ -14,7 +14,7 @@
 | `skills/ui-audit/SKILL.md` | 176 | **KEEP** (clarify boundary §4) | runtime cross-page/cross-role — distinct tempo+mechanism from the static design pillar |
 | `skills/design-extract/SKILL.md` | 189 | **RECONCILE** (adapter-aware §5) | already detects CSS framework; emit adapter-resolved tokens; redirect heuristics refs |
 | `agents/design-critic.md` | 108 | **KEEP + rewire** (§6) | the semantic/vision lane; redirect heuristic source #2; stack-aware scoring |
-| `skills/_shared/quality-matrix.md` | 91 | **UPDATE** (§8) | add the `design` pillar surface |
+| `skills/_shared/quality-engine.md` | 91 | **UPDATE** (§8) | add the `design` pillar surface |
 | `agents/orchestrator.md` §2 | — | **UPDATE** (§7) | route design-pillar commands |
 | `skills/_shared/check-registry.json` | — | **EXTEND** (detector-rebuild §3) | new `design` pillar + `layer`/`adapter`/`reconciliation` fields |
 
@@ -106,7 +106,7 @@ Add to `agents/orchestrator.md` §2 routing table:
 
 ---
 
-## 8. Update `quality-matrix.md`
+## 8. Update `quality-engine.md`
 
 - **TL;DR symptom table:** add `"AI-aesthetic tells / design slop"` → `/blitz:review --only design`; `"design-system conformance / full design audit"` → `/blitz:audit --pillar design`.
 - **Two consolidated entry points:** note both gained a `design` pillar (deterministic Layer 0/1/2 + semantic `design-critic`).

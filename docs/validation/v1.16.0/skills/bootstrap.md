@@ -50,12 +50,12 @@ Manual check of all `/_shared/` markdown links in SKILL.md:
 
 | Link | Resolves to | Status |
 |------|-------------|--------|
-| `/_shared/definition-of-done.md` | `skills/_shared/definition-of-done.md` | OK |
-| `/_shared/package-install-policy.md` | `skills/_shared/package-install-policy.md` | OK |
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` | OK |
-| `/_shared/state-handoff.md` | `skills/_shared/state-handoff.md` | OK |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | OK |
+| `/_shared/security.md` | `skills/_shared/security.md` | OK |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | OK |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | OK |
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
-| `/_shared/verbose-progress.md` | `skills/_shared/verbose-progress.md` | OK |
+| `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
 
 All 6 `/_shared/` links resolve. Validator ran 397 links total with no failures.
 
@@ -75,7 +75,7 @@ Unit notes state: "No special owner/DW/spawn role. V4 is N/A unless own read fin
 
 Chain: `bootstrap → research → roadmap → sprint-plan`
 
-Per `skills/_shared/state-handoff.md` lines 25–35, the contract states:
+Per `skills/_shared/session-lifecycle.md` lines 25–35, the contract states:
 
 > "bootstrap Phase 5 must: initialize `docs/roadmap/roadmap-registry.json` and `docs/roadmap/epic-registry.json` as empty stubs even on greenfield, OR explicitly print 'Roadmap not initialized — run /blitz:roadmap before /blitz:sprint-plan'. Silent absence is the failure mode."
 
@@ -134,7 +134,7 @@ Body: `294 - 9 = 285 lines` (confirmed via `awk 'NR>9' | wc -l`).
 | V2 OUTPUT STYLE | PASS | Byte-identical match with canonical at SKILL.md:21 |
 | V3 Link resolution | PASS | `markdown-link-validate.sh` OK (397 links); all 6 `/_shared/` refs resolve |
 | V4 Owner compliance | N/A | No owner delegation |
-| V5 Pipeline I/O | FAIL | Phase 5 omits required roadmap stub init / fallback print per state-handoff.md:35 |
+| V5 Pipeline I/O | FAIL | Phase 5 omits required roadmap stub init / fallback print per session-lifecycle.md:35 |
 | V6 DW wiring | N/A | Not codebase-audit/research |
 | V7 Disallowed-tools | N/A | Write-heavy skill, not read-only-by-construction |
 | V8 Body lines | PASS | 285 lines (target ≤450, hard cap ≤500) |
@@ -150,4 +150,4 @@ Body: `294 - 9 = 285 lines` (confirmed via `awk 'NR>9' | wc -l`).
 
 ## Highest-Leverage Fix
 
-Add a Phase 5.0 step to `skills/bootstrap/SKILL.md` that either (a) creates `docs/roadmap/roadmap-registry.json` and `docs/roadmap/epic-registry.json` as empty JSON stubs (`{}`) on greenfield runs, or (b) emits the exact required message `"Roadmap not initialized — run /blitz:roadmap before /blitz:sprint-plan"` on non-greenfield runs — satisfying the `state-handoff.md:35` mandatory contract so `sprint-plan` Phase 0 does not hard-fail silently.
+Add a Phase 5.0 step to `skills/bootstrap/SKILL.md` that either (a) creates `docs/roadmap/roadmap-registry.json` and `docs/roadmap/epic-registry.json` as empty JSON stubs (`{}`) on greenfield runs, or (b) emits the exact required message `"Roadmap not initialized — run /blitz:roadmap before /blitz:sprint-plan"` on non-greenfield runs — satisfying the `session-lifecycle.md:35` mandatory contract so `sprint-plan` Phase 0 does not hard-fail silently.

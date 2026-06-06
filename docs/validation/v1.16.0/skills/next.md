@@ -60,10 +60,10 @@ All `/_shared/` links verified by file existence:
 
 | Link | File | Exists |
 |---|---|---|
-| `/_shared/state-handoff.md` | `skills/_shared/state-handoff.md` | yes |
-| `/_shared/carry-forward-registry.md` | `skills/_shared/carry-forward-registry.md` | yes |
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` | yes |
-| `/_shared/scope-limit-protocol.md` | `skills/_shared/scope-limit-protocol.md` | yes |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | yes |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | yes |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | yes |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | yes |
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | yes |
 
 ---
@@ -75,9 +75,9 @@ All `/_shared/` links verified by file existence:
 `next` is not an O1–O5 canonical owner; it is a read-and-dispatch consumer. It correctly cites the owned logic rather than restating it:
 
 - Loop reconciliation decision tree: owned here, consumed by `sprint` (alias-routes to `/blitz:next --loop` — `skills/sprint/SKILL.md` line 38–45 explicitly cites next as canonical owner).
-- Carry-forward reads: delegates to `/_shared/carry-forward-registry.md` (line 18).
-- State-handoff contracts: delegates to `/_shared/state-handoff.md` (line 17).
-- Scope-limit protocol: delegates to `/_shared/scope-limit-protocol.md` (line 189).
+- Carry-forward reads: delegates to `/_shared/sprint-contracts.md` (line 18).
+- State-handoff contracts: delegates to `/_shared/session-lifecycle.md` (line 17).
+- Scope-limit protocol: delegates to `/_shared/sprint-contracts.md` (line 189).
 
 Bidirectional check: `skills/sprint/SKILL.md` line 40 cites `next` as canonical loop engine. `skills/sprint-dev/SKILL.md` line 261 and `references/main.md` lines 342–348 cite `/blitz:next` row 1a as the HARD_SPEC escalation consumer. The relationship is bidirectional. No owned logic restated in body.
 
@@ -89,7 +89,7 @@ Bidirectional check: `skills/sprint/SKILL.md` line 40 cites `next` as canonical 
 
 Traced chain: sprint-plan → sprint-dev → sprint-review → **next**.
 
-| Artifact | Producer (per `state-handoff.md`) | `next` consumes at |
+| Artifact | Producer (per `session-lifecycle.md`) | `next` consumes at |
 |---|---|---|
 | `sprint-registry.json` entry | sprint-plan Phase 4.5 (line 59) | Phase 0.1 |
 | `STATE.md` | sprint-dev Phase 3.2 step 1b (line 68) | Phase 0.2 |
@@ -97,7 +97,7 @@ Traced chain: sprint-plan → sprint-dev → sprint-review → **next**.
 | `sprints/sprint-${N}-planning-inputs.json` | sprint-review Phase 3.6 Invariant 4 (line 79) | Phase 0.7 |
 | `roadmap-registry.json` | roadmap (implicit) | Phase 0.5 |
 
-Every artifact `next` reads is listed as a required output of its declared producer in `state-handoff.md`. Composition is valid.
+Every artifact `next` reads is listed as a required output of its declared producer in `session-lifecycle.md`. Composition is valid.
 
 ---
 

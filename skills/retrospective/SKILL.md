@@ -43,7 +43,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 6. **NEVER modify session data.** Session files are read-only input. Never edit, delete, or rewrite session JSONs or operation logs.
 
-7. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/definition-of-done.md).
+7. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
 
 ---
 
@@ -51,7 +51,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Check Minimum Sessions
 

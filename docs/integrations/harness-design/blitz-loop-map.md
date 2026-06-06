@@ -10,7 +10,7 @@
 
 | Article agent | Blitz equivalent | Alignment |
 |---|---|---|
-| **Planner** (expand prompt → spec, high-level, deliberately under-specified) | `sprint-plan` (selects unblocked epics, spawns research agents, emits story files per `story-frontmatter.md`) + the planner persona | **Strong.** Blitz expands roadmap epics → stories. See Gap 3 for whether `sprint-plan` under-specifies like the article's planner or over-specifies. |
+| **Planner** (expand prompt → spec, high-level, deliberately under-specified) | `sprint-plan` (selects unblocked epics, spawns research agents, emits story files per `sprint-contracts.md`) + the planner persona | **Strong.** Blitz expands roadmap epics → stories. See Gap 3 for whether `sprint-plan` under-specifies like the article's planner or over-specifies. |
 | **Generator** (build one feature/sprint at a time) | `sprint-dev` (waves of backend/frontend/test agents in worktrees) and `ui-build` (5-phase Discover→Analyze→Design→Implement→Refine) for UI | **Strong.** `ui-build` is one-page-at-a-time; `sprint-dev` is story-at-a-time within dependency waves. |
 | **Evaluator — design** (live-nav, 4 weighted criteria) | `agents/design-critic.md` (5 dims, vision, sonnet) | **Strong rubric, but static-screenshot and capped at 3 iters.** → Gap 1, Gap 2. |
 | **Evaluator — code/QA** | `agents/critic.md` (adversarial, read-only, must emit LGTM) + `/blitz:audit` (10-agent Multi-Review) + `/blitz:review` (deterministic + semantic lanes) | **Strong.** Multi-Review aggregation already present; critic gates PASS (sprint-review Inv 7). |

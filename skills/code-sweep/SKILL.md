@@ -17,7 +17,7 @@ All grep patterns, auto-fix strategies, severity rules, state schemas, and conve
 
 ## Additional Resources
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-- For `/loop` vs `/schedule` mechanics behind `--loop`, see [/_shared/scheduling.md](/_shared/scheduling.md)
+- For `/loop` vs `/schedule` mechanics behind `--loop`, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
 
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
@@ -51,7 +51,7 @@ Iterative code improvement using **Observe-Diff-Act-Report**. 30 static checks +
 ## Phase 0: SETUP
 
 ### 0.0 Register Session
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start`.
 
 ### 0.1 Parse Arguments
 
@@ -107,7 +107,7 @@ Scanning is delegated to worker agents so the skill itself stays lightweight and
 
 ### Check Summary Table
 
-The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from `/_shared/check-registry.json` (o2-*). code-sweep applies them under its ratchet (distinct from the gate per [quality-matrix.md](/_shared/quality-matrix.md)); keep the patterns in sync.
+The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from `/_shared/check-registry.json` (o2-*). code-sweep applies them under its ratchet (distinct from the gate per [quality-engine.md](/_shared/quality-engine.md)); keep the patterns in sync.
 
 | Tier | ID | Category | Fixable |
 |------|----|----------|---------|

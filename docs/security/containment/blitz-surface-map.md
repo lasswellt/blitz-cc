@@ -15,9 +15,9 @@ Rows = risk type (who originates harm). Columns = defense layer. `★` = a confi
 | Environment (deterministic) | Model (probabilistic) | External content |
 |---|---|---|
 | `block-destructive-git.sh` — blocks `reset --hard`, `clean -fd`, `checkout -- .`, `push --force` to main on dirty tree (head comment + :11+) | skill SAFETY-RULES prose (15+ skills, per cohesion SYNTHESIS:55) | n/a |
-| `block-destructive-sql.sh` (det-18) | completion/DoD gates (`definition-of-done.md`) | |
+| `block-destructive-sql.sh` (det-18) | completion/DoD gates (`sprint-contracts.md`) | |
 | `block-no-verify.sh` (det-02) — blocks `--no-verify` commit bypass | clarification gate (CLAUDE.md) | |
-| `pre-edit-guard.sh` — blocks `.env`, lock files, `*.pem/*.key`, `credentials.json`, `.git/`, `node_modules/` (pre-edit-guard.sh:26-66) | autonomy levels (session-protocol.md:91-102) | |
+| `pre-edit-guard.sh` — blocks `.env`, lock files, `*.pem/*.key`, `credentials.json`, `.git/`, `node_modules/` (pre-edit-guard.sh:26-66) | autonomy levels (session-lifecycle.md:91-102) | |
 | Platform auto-mode hard-deny (~20 rules) — inherited, not reimplemented | | |
 
 ### Model misbehavior
@@ -27,7 +27,7 @@ Rows = risk type (who originates harm). Columns = defense layer. `★` = a confi
 | `block-test-deletion.sh` (det-01) | `agents/critic.md` — 20-detector shortcut taxonomy | n/a |
 | `block-test-disabling.sh` | reviewer agents (`review:security-reviewer`, audit sec-a/sec-b) | |
 | `block-as-any-insertion.sh` | output-style enforcement (Invariant 5) | |
-| `post-edit-typecheck-block.sh` | ratchet auto-revert on regression (`ratchet-protocol.md`) | |
+| `post-edit-typecheck-block.sh` | ratchet auto-revert on regression (`quality-engine.md`) | |
 | `disallowed-tools` — **declared by `health/SKILL.md` only** (v1.16.0 VERDICT:116) ★ | | |
 | ratchet 8 monotonic metrics (sprint-review Inv 6) | | |
 
@@ -79,8 +79,8 @@ The article repeatedly names mitigations Blitz **already implements** — the in
 | pre-edit protections | `hooks/scripts/pre-edit-guard.sh:26-66` | env | secrets/locks/git/node_modules |
 | session-start hook | `hooks/scripts/session-start.sh:18-55` | env (★ Gap 5) | reads/echoes project-local state at `SessionStart` (hooks.json:37-42) |
 | orchestrator injection caps | `agents/orchestrator.md:146-149` | env | external-attacker `[0:200]` |
-| session startup state read | `skills/_shared/session-protocol.md:42,72,76,82` | — (★ Gap 1) | reads ALL `.cc-sessions/*.json` + feed + profiles unvalidated |
-| sub-agent reply contract | `skills/_shared/spawn-protocol.md:441-554` | (★ Gap 2) | structured JSON; no trust label |
+| session startup state read | `skills/_shared/session-lifecycle.md:42,72,76,82` | — (★ Gap 1) | reads ALL `.cc-sessions/*.json` + feed + profiles unvalidated |
+| sub-agent reply contract | `skills/_shared/agent-orchestration.md:441-554` | (★ Gap 2) | structured JSON; no trust label |
 | URL-health check | `agents/research-critic.md:76-103` | ext-content (★ Gap 3 boundary) | liveness, not payload safety |
 | check registry | `skills/_shared/check-registry.json` | all | security pillar exists |
 | registry validator | `hooks/scripts/check-registry-validate.sh` | — | the validator pattern Gap 1 reuses |

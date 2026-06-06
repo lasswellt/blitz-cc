@@ -16,21 +16,21 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 The per-change quality gate. **Precision-biased**: it runs constantly, so a false alarm is expensive — low-confidence advisory findings are suppressed by default. Selects checks from the shared registry [`/_shared/check-registry.json`](/_shared/check-registry.json) and runs both detection lanes; delegates the full 8-invariant run to the **sprint-review** engine. Companion: [`/blitz:audit`](../audit/SKILL.md) is the recall-biased pre-release deep audit that re-surfaces what review suppresses.
 
-**Session registration**: follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration before any other work.
+**Session registration**: follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration before any other work.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md). Print `[review]` status at every phase + dispatch. Log `skill_start`/`skill_complete` to the activity feed.
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md). Print `[review]` status at every phase + dispatch. Log `skill_start`/`skill_complete` to the activity feed.
 
 ## Flag Parsing
 
 - `--sprint NNN` — review the specified sprint (defaults to current / uncommitted changes).
 - `--auto-fix` — apply safe fixes (types, lint, imports) automatically.
 - `--only {completeness|wiring|framework|design|full}` — run one folded concern instead of the full gate (default `full`).
-- `--min-confidence {high|low}` — advisory-finding gate band (default `high` ≥0.8). `reject`-authority findings always surface (bypass the gate). See [check-registry.md](/_shared/check-registry.md).
+- `--min-confidence {high|low}` — advisory-finding gate band (default `high` ≥0.8). `reject`-authority findings always surface (bypass the gate). See [quality-engine.md](/_shared/quality-engine.md).
 - `--dual` — set `BLITZ_DUAL_CRITIC=1` (cross-model critic for semantic/security findings).
 
 ## Two detection lanes (both run; registry-driven)
 
-Per [check-registry.md](/_shared/check-registry.md), select `consolidated_target ∈ {review, both}`:
+Per [quality-engine.md](/_shared/quality-engine.md), select `consolidated_target ∈ {review, both}`:
 
 1. **Deterministic lane** (run first, fast, zero-FP): `lane == deterministic` checks — tsc/lint/test/build (det-11/12), shortcut detectors (det-01..20), anti-mock O2 (o2-*, was completeness-gate), wiring O3 (o3-*, was integration-check, conditional on new modules), framework rules (fw-*, conditional on Vue/Firestore/Pinia). `reject`-authority findings may flip the verdict and bypass the confidence gate.
 2. **Semantic lane** (single-pass — diff is small, bias is precision): the 4 parallel reviewer agents (security/backend/frontend/patterns). Single-pass findings start at base_confidence ≈0.5 and MUST pass FP-verification to survive; un-reproduced findings are dropped. FP-verification cannot *raise* confidence (only aggregation does, and review is single-pass) — so a default-review semantic finding stays a sub-threshold advisory, never a blocker. Aggregation is opt-in (`--aggregate`); audit is where it re-surfaces.

@@ -21,8 +21,8 @@ paths:
 ## Additional Resources
 - For rule tables, severity matrix, fix recipes, JSON schema, and ratchet protocol, see [references/main.md](references/main.md) — load on-demand, only the sections you need
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-- For session registration and activity feed, see [/_shared/session-protocol.md](/_shared/session-protocol.md)
-- For verbose progress format, see [/_shared/verbose-progress.md](/_shared/verbose-progress.md)
+- For session registration and activity feed, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For verbose progress format, see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
@@ -54,7 +54,7 @@ Detect framework-API anti-patterns, misuse, dead exports, and duplication candid
 
 ### 0.1 Session Registration
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md):
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md):
 - Generate `SESSION_ID = "code-doctor-<8-char-hex>"`
 - Create `SESSION_TMP_DIR = ".cc-sessions/${SESSION_ID}/tmp/"`
 - Check for conflicting sessions on overlapping scopes

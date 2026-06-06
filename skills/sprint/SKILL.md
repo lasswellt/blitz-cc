@@ -15,9 +15,9 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 You orchestrate a full sprint cycle: **plan → implement → review**.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[sprint]` prefixed status lines at every phase transition, decision point, and when dispatching to sub-skills. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md) throughout. Print `[sprint]` prefixed status lines at every phase transition, decision point, and when dispatching to sub-skills. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
-**Carry-forward awareness is mandatory in `--loop` mode.** Now lives in `/blitz:next --loop` (see `skills/next/SKILL.md` §Loop Mode rows 6a-6d). The reconciliation engine reads `.cc-sessions/carry-forward.jsonl` every tick and treats active/partial entries as load-bearing state — silent scope drops are prevented by the decision-tree split. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full protocol.
+**Carry-forward awareness is mandatory in `--loop` mode.** Now lives in `/blitz:next --loop` (see `skills/next/SKILL.md` §Loop Mode rows 6a-6d). The reconciliation engine reads `.cc-sessions/carry-forward.jsonl` every tick and treats active/partial entries as load-bearing state — silent scope drops are prevented by the decision-tree split. See [sprint-contracts.md](/_shared/sprint-contracts.md) for the full protocol.
 
 ## Flag Parsing
 
@@ -26,7 +26,7 @@ Parse the following flags from the user's arguments:
 - `--plan-only`: Run only the planning phase, then stop.
 - `--skip-review`: Run planning and implementation, but skip the review phase.
 - `--epics EP-001,EP-002`: Limit the sprint scope to the specified epic IDs.
-- `--resume`: Resume an interrupted sprint. Skips planning, goes directly to sprint-dev which will detect STATE.md and resume from the last checkpoint. See [checkpoint-protocol.md](/_shared/checkpoint-protocol.md).
+- `--resume`: Resume an interrupted sprint. Skips planning, goes directly to sprint-dev which will detect STATE.md and resume from the last checkpoint. See [session-lifecycle.md](/_shared/session-lifecycle.md).
 - `--gaps`: Gap closure mode. Chains: sprint-review → sprint-plan --gaps → sprint-dev. Finds quality gaps and generates fix stories automatically.
 - `--mode <autonomous|checkpoint|interactive>`: Execution mode passed through to sprint-dev. `autonomous` (default) runs everything; `checkpoint` pauses after each wave for user review; `interactive` confirms each story before starting.
 - `--loop`: **Backwards-compat alias since v1.13.0** — routes to `/blitz:next --loop`. The canonical autonomous reconciliation engine moved to the `next` skill because it handles the full project lifecycle (bootstrap, roadmap creation, ship) in addition to the sprint cycle. Behavior unchanged from the user's perspective: each tick reads state, executes one phase, commits/pushes, exits. See `skills/next/SKILL.md` §Loop Mode for the full reconciliation spec including scheduling tiers, self-scheduling via `ScheduleWakeup`, the 8-row decision tree, and stop signals. `/loop /blitz:sprint --loop` continues to work — each tick alias-routes to `/blitz:next --loop` which executes one phase.
@@ -74,7 +74,7 @@ Before starting any phase (in both normal and loop mode), verify:
 3. **No conflicting sessions**: Check `.cc-sessions/*.json` for active sprint-plan, sprint-dev, or sprint-review sessions. If a conflict exists, warn the user and stop. *(In loop mode, defer gracefully instead of stopping — see above.)*
 4. **Clean working tree**: Run `git status --porcelain`. If there are uncommitted changes, warn the user. *(In loop mode, warn but do not stop.)*
 
-All phases enforce the [Definition of Done](/_shared/definition-of-done.md). No phase is complete if delivered code contains placeholder implementations.
+All phases enforce the [Definition of Done](/_shared/sprint-contracts.md). No phase is complete if delivered code contains placeholder implementations.
 
 ## Phase 1: Sprint Planning
 

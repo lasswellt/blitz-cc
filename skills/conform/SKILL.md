@@ -16,7 +16,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 You are the conformance auditor + migration runner. You bring an existing **project's** blitz runtime artifacts (or a plugin **fork's** structure) into spec with the current canonical schemas defined in `skills/_shared/`.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md). Print `[conform]` prefixed status lines at every phase transition, finding, and dispatch. Log `skill_start`, `audit_complete`, `migration_applied`, and `skill_complete` events to `.cc-sessions/activity-feed.jsonl`.
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md). Print `[conform]` prefixed status lines at every phase transition, finding, and dispatch. Log `skill_start`, `audit_complete`, `migration_applied`, and `skill_complete` events to `.cc-sessions/activity-feed.jsonl`.
 
 **Read-only by default.** Never write to the target without an explicit `--fix` argument. If `--fix` is omitted, end at Phase 6 (REPORT) — no migration ever runs.
 
@@ -33,18 +33,18 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 ## Additional Resources
 
 - For per-artifact schema versioning rules + migration tables (story frontmatter `registry_entries` additive migration, STATE.md formats, roadmap canonical-vs-extension table, session model variants), see [references/main.md](references/main.md)
-- For the carry-forward registry schema, see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
-- For the activity-feed JSONL schema, see [verbose-progress.md](/_shared/verbose-progress.md)
-- For the canonical story frontmatter, see [story-frontmatter.md](/_shared/story-frontmatter.md)
-- For pipeline state handoff + STATE.md required fields, see [state-handoff.md](/_shared/state-handoff.md)
-- For autonomy field schema, see [session-protocol.md](/_shared/session-protocol.md) §Autonomy Levels
+- For the carry-forward registry schema, see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For the activity-feed JSONL schema, see [terse-output.md](/_shared/terse-output.md)
+- For the canonical story frontmatter, see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For pipeline state handoff + STATE.md required fields, see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For autonomy field schema, see [session-lifecycle.md](/_shared/session-lifecycle.md) §Autonomy Levels
 - For plugin-mode migration scripts, see [scripts/maint/v1.9.0/README.md](../../scripts/maint/v1.9.0/README.md)
 
 ---
 
 ## Phase 0: PARSE — Determine Target, Mode, Scope
 
-1. **Register session.** Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+1. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 2. **Resolve target directory.** Default to `pwd`. If first positional arg is a directory path, use it. Reject paths outside `${HOME}` unless explicit `--allow-system-paths` flag passed.
 
@@ -102,11 +102,11 @@ Findings classified as:
 
 | Check | Validator | Optional treatment |
 |---|---|---|
-| `activity-feed.jsonl` schema | line JSON parse + required-fields probe per verbose-progress.md | always run if file exists |
-| `carry-forward.jsonl` Reader Algorithm | per carry-forward-registry.md §Reader Algorithm `MODE=audit` | **skip** if file absent and no consumer found |
+| `activity-feed.jsonl` schema | line JSON parse + required-fields probe per terse-output.md | always run if file exists |
+| `carry-forward.jsonl` Reader Algorithm | per sprint-contracts.md §Reader Algorithm `MODE=audit` | **skip** if file absent and no consumer found |
 | `developer-profile.json` autonomy | `jq '.autonomy'` in `{low, medium, high, full}` | **skip** if file absent and no skill/hook references it |
-| Story frontmatter | shape per story-frontmatter.md | field-presence check on canonical `epic`+`verify`; if `registry_entries` absent AND carry-forward in use → MIGRATE (add `[]`); else conformant |
-| STATE.md required fields | per state-handoff.md, with table-form fallback parser | **try both formats** before flagging MANUAL |
+| Story frontmatter | shape per sprint-contracts.md | field-presence check on canonical `epic`+`verify`; if `registry_entries` absent AND carry-forward in use → MIGRATE (add `[]`); else conformant |
+| STATE.md required fields | per session-lifecycle.md, with table-form fallback parser | **try both formats** before flagging MANUAL |
 | Active sessions older than 4h | compare `started`/dir mtime to now | works for both file + dir model |
 | Orphan locks | set diff `*.lock` minus active sessions | works for both models |
 | Roadmap canonical files schema | `jq -e .` + per-file required-fields | only the 6 canonical files; extensions get INFO line |
@@ -142,7 +142,7 @@ Print plan as verbose-progress table. If `--report-only`, skip to Phase 6.
 
 ### Story-frontmatter `registry_entries` migration
 
-**Canonical field names are `epic` + `verify`** ([/_shared/story-frontmatter.md](/_shared/story-frontmatter.md)) — NOT `epic_id`/`acceptance_criteria`. Never rename them; the only additive field is `registry_entries`. A story with `epic` + `verify` + `registry_entries` is conformant.
+**Canonical field names are `epic` + `verify`** ([/_shared/sprint-contracts.md](/_shared/sprint-contracts.md)) — NOT `epic_id`/`acceptance_criteria`. Never rename them; the only additive field is `registry_entries`. A story with `epic` + `verify` + `registry_entries` is conformant.
 
 For each story flagged MIGRATE (lacks `registry_entries` AND project uses carry-forward registry):
 
@@ -177,7 +177,7 @@ Create with safe defaults:
   "autonomy": "medium",
   "_created_by": "/blitz:conform",
   "_created_at": "<ISO-now>",
-  "_note": "review and adjust autonomy based on developer preference per session-protocol.md §Autonomy Levels"
+  "_note": "review and adjust autonomy based on developer preference per session-lifecycle.md §Autonomy Levels"
 }
 ```
 

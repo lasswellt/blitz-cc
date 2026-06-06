@@ -14,7 +14,7 @@ argument-hint: "<file-path>"
 
 ## Additional Resources
 - For Vitest/Jest patterns, Vue component testing, and Firestore rules testing, see [references/main.md](references/main.md)
-- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`), see [/_shared/deterministic-test-recipe.md](/_shared/deterministic-test-recipe.md)
+- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`), see [/_shared/quality-engine.md](/_shared/quality-engine.md)
 - For Spec Fix Mode (HARD_SPEC classifier, verification-first oracle template, per-spec turn cap) when fixing failing specs, see [`agents/test-writer.md`](/agents/test-writer.md) §Spec Fix Mode
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
@@ -33,7 +33,7 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Arguments
 
@@ -243,7 +243,7 @@ Generate the test file following project conventions. Use the AAA pattern for ev
 
 ### 3.4 Test Integrity Gate
 
-Every generated test must verify real behavior. See [Definition of Done](/_shared/definition-of-done.md).
+Every generated test must verify real behavior. See [Definition of Done](/_shared/sprint-contracts.md).
 
 **BANNED in generated tests:**
 - `expect(true).toBe(true)` or equivalent no-op assertions

@@ -81,7 +81,7 @@
 
 | Script | Purpose |
 |---|---|
-| `subagent-stop.sh` | Logs subagent completion to activity feed. Stub — logging only; future: enforce Agent Output Contract (spawn-protocol.md §9). |
+| `subagent-stop.sh` | Logs subagent completion to activity feed. Stub — logging only; future: enforce Agent Output Contract (agent-orchestration.md §9). |
 
 ### `PostToolBatch` — fires after a parallel tool batch resolves, before next model call
 
@@ -134,7 +134,7 @@ No plain `Stop` hook is registered. Turn-end state persistence is handled out-of
 - **Stdin contract** — `PreToolUse` / `PostToolUse` / `UserPromptExpansion` hooks receive a JSON blob on stdin (`{"tool_name": ..., "tool_input": {...}}`). Other events pass minimal context.
 - **Repo root discovery** — every script walks up from `pwd` to the nearest `.claude-plugin/` directory; falls back to `pwd`. Never hardcodes a path.
 - **Non-blocking default** — all scripts `exit 0` on success. Only `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, and `skill-frontmatter-validate.sh` can return exit 2 to block the originating action.
-- **Activity-feed appends** — when a hook needs to record an event, it writes a single JSONL line to `.cc-sessions/activity-feed.jsonl` per the format in `skills/_shared/verbose-progress.md`. Use `jq -nc` to build the JSON (never `printf` — escaping bugs).
+- **Activity-feed appends** — when a hook needs to record an event, it writes a single JSONL line to `.cc-sessions/activity-feed.jsonl` per the format in `skills/_shared/terse-output.md`. Use `jq -nc` to build the JSON (never `printf` — escaping bugs).
 - **Quiet by default** — hook scripts only emit output when there is something the user must see. Otherwise stay silent.
 
 ## Adding a new hook

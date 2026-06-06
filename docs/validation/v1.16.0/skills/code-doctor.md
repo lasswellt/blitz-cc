@@ -43,9 +43,9 @@ Command run: `bash hooks/scripts/markdown-link-validate.sh skills/code-doctor/SK
 Output: `markdown-link-validate: OK (397 link(s) checked)`
 
 SKILL.md cites:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` — resolves
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` — resolves
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — resolves
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` — resolves
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — resolves
 - `references/main.md` → `skills/code-doctor/references/main.md` — resolves (file confirmed present)
 
 All links validated by the script.
@@ -66,11 +66,11 @@ Own read confirms: no O1–O5 owner references, no delegation pattern, no consum
 
 **Verdict: PASS**
 
-`quality-matrix.md` line 24 defines code-doctor's position: "invokes other skills: none; invoked by: manual". This is a terminal skill — no upstream producer that must emit inputs, no downstream consumer that must receive outputs. The skill's own I/O:
+`quality-engine.md` line 24 defines code-doctor's position: "invokes other skills: none; invoked by: manual". This is a terminal skill — no upstream producer that must emit inputs, no downstream consumer that must receive outputs. The skill's own I/O:
 - Consumes: source files matching `paths:` globs (Vue/Firestore/Pinia files), optional `.code-doctor.json` config
 - Produces: `docs/_audits/YYYY-MM-DD_code-doctor.md` (Phase 3.2), `.cc-sessions/code-doctor-ledger.jsonl` (Phase 3.4)
 
-`state-handoff.md` has no code-doctor entry (confirmed: no output from `grep -n "code-doctor" skills/_shared/state-handoff.md`), consistent with its manual/standalone invocation mode — it is not in a pipeline chain that state-handoff tracks.
+`session-lifecycle.md` has no code-doctor entry (confirmed: no output from `grep -n "code-doctor" skills/_shared/session-lifecycle.md`), consistent with its manual/standalone invocation mode — it is not in a pipeline chain that state-handoff tracks.
 
 ---
 

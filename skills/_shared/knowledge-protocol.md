@@ -136,8 +136,8 @@ grep -q '^\.cc-sessions/KNOWLEDGE\.md$' .gitignore 2>/dev/null \
 
 ## Related
 
-- [`spawn-protocol.md`](./spawn-protocol.md) §3 — autonomous-loop subagent prompts
-- [`session-protocol.md`](./session-protocol.md) — session lifecycle
-- [`carry-forward-registry.md`](./carry-forward-registry.md) — durable per-deliverable state (different concern: registry tracks scope; KNOWLEDGE tracks lessons)
+- [`agent-orchestration.md`](./agent-orchestration.md) §3 — autonomous-loop subagent prompts
+- [`session-lifecycle.md`](./session-lifecycle.md) — session lifecycle
+- [`sprint-contracts.md`](./sprint-contracts.md) — durable per-deliverable state (different concern: registry tracks scope; KNOWLEDGE tracks lessons)
 - `skills/retrospective/SKILL.md` — primary writer
 - `docs/_research/2026-05-01_autonomous-blitz-quality-efficiency.md` §3.2 — research basis

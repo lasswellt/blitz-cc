@@ -39,10 +39,10 @@ Python byte-compare of `skills/implement/SKILL.md` line 13 against the canonical
 `hooks/scripts/markdown-link-validate.sh skills/implement/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 All four `/_shared/` links in the file resolve to real files on disk:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` EXISTS
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` EXISTS
-- `/_shared/checkpoint-protocol.md` → `skills/_shared/checkpoint-protocol.md` EXISTS
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` EXISTS
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` EXISTS
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` EXISTS
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` EXISTS
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` EXISTS
 
 ---
 
@@ -50,7 +50,7 @@ All four `/_shared/` links in the file resolve to real files on disk:
 
 **Verdict:** N/A
 
-Unit notes declare V4 N/A unless own read finds otherwise. `implement` is classified in `skills/_shared/agent-routing.md:26` as a "single-spawn orchestrator" skill — it delegates to sprint-dev but is not an O1-O5 owner and does not restate sprint-dev logic. The skill body (50 lines) contains only flag parsing, pre-flight validation, and a thin invocation directive. No owned logic restated.
+Unit notes declare V4 N/A unless own read finds otherwise. `implement` is classified in `skills/_shared/agent-orchestration.md:26` as a "single-spawn orchestrator" skill — it delegates to sprint-dev but is not an O1-O5 owner and does not restate sprint-dev logic. The skill body (50 lines) contains only flag parsing, pre-flight validation, and a thin invocation directive. No owned logic restated.
 
 ---
 
@@ -60,12 +60,12 @@ Unit notes declare V4 N/A unless own read finds otherwise. `implement` is classi
 
 Chain traced: `sprint-plan → implement → sprint-dev`
 
-Per `skills/_shared/state-handoff.md`:
+Per `skills/_shared/session-lifecycle.md`:
 - sprint-plan (Phase 1.4) produces `sprint-registry.json` (entry added, line 59) — implement Pre-Flight step 1 reads and validates `status: planned|in-progress` (SKILL.md line 38). Match confirmed.
 - sprint-plan (Phase 3.2) produces `sprints/sprint-${N}/stories/S${N}-*.md` (line 57) — implement Pre-Flight step 2 verifies story files exist in `sprints/sprint-${N}/stories/` (SKILL.md line 39). Match confirmed.
-- implement then invokes sprint-dev, passing sprint number or story IDs — sprint-dev's Phase 0.0 consumes the same manifest and story files (state-handoff.md line 56). The handoff is a skill invocation (not a file artifact), so there is no intermediate file contract to break.
+- implement then invokes sprint-dev, passing sprint number or story IDs — sprint-dev's Phase 0.0 consumes the same manifest and story files (session-lifecycle.md line 56). The handoff is a skill invocation (not a file artifact), so there is no intermediate file contract to break.
 
-All upstream artifacts implement consumes are exactly what sprint-plan produces per state-handoff.md. Composition is sound.
+All upstream artifacts implement consumes are exactly what sprint-plan produces per session-lifecycle.md. Composition is sound.
 
 ---
 

@@ -37,11 +37,11 @@ Evidence:
 Evidence:
 - `hooks/scripts/markdown-link-validate.sh skills/integration-check/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 - Spot-checked key links directly:
-  - `skills/_shared/session-protocol.md` → exists ✓
-  - `skills/_shared/verbose-progress.md` → exists ✓
-  - `skills/_shared/spawn-protocol.md` → exists ✓
+  - `skills/_shared/session-lifecycle.md` → exists ✓
   - `skills/_shared/terse-output.md` → exists ✓
-  - `skills/_shared/definition-of-done.md` → exists ✓
+  - `skills/_shared/agent-orchestration.md` → exists ✓
+  - `skills/_shared/terse-output.md` → exists ✓
+  - `skills/_shared/sprint-contracts.md` → exists ✓
 
 ---
 
@@ -63,12 +63,12 @@ Evidence:
 **Verdict: PASS**
 
 Evidence:
-- `skills/_shared/state-handoff.md` does not list integration-check as a pipeline artifact producer/consumer — this is correct because integration-check is a transverse analysis skill invoked in-sprint (not a pipeline handoff artifact producer)
+- `skills/_shared/session-lifecycle.md` does not list integration-check as a pipeline artifact producer/consumer — this is correct because integration-check is a transverse analysis skill invoked in-sprint (not a pipeline handoff artifact producer)
 - Chain traced: `sprint-dev Phase 3.5.0 → /blitz:integration-check → completeness-gate`
   - sprint-dev invokes integration-check against the live working-tree source files (no artifact handoff required; source files ARE the input)
   - integration-check emits a findings report to stdout and writes `${SESSION_TMP_DIR}/check-*.json` (ephemeral, cleaned up at Phase 4 end per SKILL.md line 181)
   - completeness-gate delegates wiring checks to integration-check rather than consuming its JSON output — the delegation model means no artifact handoff is needed
-- `state-handoff.md` anti-pattern check: integration-check correctly does NOT consume sprint-plan artifacts (manifest, stories) — its input is source files, consistent with its design as a read-only source analyzer
+- `session-lifecycle.md` anti-pattern check: integration-check correctly does NOT consume sprint-plan artifacts (manifest, stories) — its input is source files, consistent with its design as a read-only source analyzer
 
 ---
 
@@ -92,7 +92,7 @@ Evidence:
 - Analysis: `Edit` and `NotebookEdit` are absent from `allowed-tools` (correctly excluded), but this is enforcement by omission — not explicit declaration. The rubric states "prose 'read-only' is not enforcement."
 - `Write` is legitimately in `allowed-tools`: the orchestrator writes to `.cc-sessions/` (activity feed, `SESSION_TMP_DIR` setup via Bash `mkdir`). `Write` cannot be added to `disallowed-tools` without breaking session logging.
 - Gap: `disallowed-tools: Edit, NotebookEdit` is absent. These two tools are not in `allowed-tools` but are not formally blocked. Adding them makes source-file protection explicit and auditable.
-- `TeamCreate` and `SendMessage` are also absent from `allowed-tools` (canonical — skill uses `Agent` idiom per spawn-protocol.md line 79 guidance) but not in `disallowed-tools`; lower priority than Edit/NotebookEdit.
+- `TeamCreate` and `SendMessage` are also absent from `allowed-tools` (canonical — skill uses `Agent` idiom per agent-orchestration.md line 79 guidance) but not in `disallowed-tools`; lower priority than Edit/NotebookEdit.
 
 ---
 
@@ -114,7 +114,7 @@ Evidence:
 Evidence:
 - `allowed-tools` does NOT include `TeamCreate` or `SendMessage` (SKILL.md line 4)
 - Spawn idiom: `Agent` tool, confirmed by SKILL.md lines 82–88 ("call the `Agent` tool with: subagent_type: general-purpose, model: sonnet…")
-- This matches spawn-protocol.md line 79: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — the SDK picks by heuristic. Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)."
+- This matches agent-orchestration.md line 79: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — the SDK picks by heuristic. Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)."
 - Explicit `model: sonnet` on each Agent spawn (SKILL.md line 84) prevents `[1m]` inheritance from Opus orchestrator — compliant with MEMORY.md note
 
 ---

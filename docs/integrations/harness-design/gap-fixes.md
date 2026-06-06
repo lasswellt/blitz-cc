@@ -45,7 +45,7 @@ Reconcile with the read-screenshots-not-source rule (`:108`): **the rule stands.
 Low cap + refine-only forecloses exactly the late-emerging creative leaps the article documents (a pivot at iteration 10 is impossible when the loop ends at 3).
 
 **Fix design.**
-1. **Raise the ceiling for `design_quality: high`** toward the article's 5–15 range, gated by a **budget/turn bound** (per `token-budget.md`), not a flat 3. Keep escalate-to-user as the exit, but at the bound, not at 3.
+1. **Raise the ceiling for `design_quality: high`** toward the article's 5–15 range, gated by a **budget/turn bound** (per `agent-orchestration.md`), not a flat 3. Keep escalate-to-user as the exit, but at the bound, not at 3.
 2. **Add the refine-vs-pivot decision** after each evaluation: scores trending up → refine current direction; scores flat/stuck after N iters → **pivot** to a different tone from the 13-tone menu (the pivot space). Make pivot explicit in the loop, not "one more revision."
 3. `standard`/`skip` tiers unchanged (cost discipline). Full spec in [`loop-upgrade.md`](loop-upgrade.md).
 
@@ -53,7 +53,7 @@ Low cap + refine-only forecloses exactly the late-emerging creative leaps the ar
 
 **Quality lift.** High for customer-facing pages — unlocks the late creative leap that is the article's most striking result. The pivot is what separates "polished version of the first idea" from "a genuinely better different idea."
 
-**Cost impact.** Direct multiplier on the most expensive tier. Article's full harness was 6 hr / $200 at ~15 iterations. The bound must come from `token-budget.md` (`:201–212` advisory per-skill caps; `:36` ultracode sequential-workflow budgeting; 1h cache amortization `:61` makes longer loops cheaper per-iteration if the prefix is cached). High tier justifies it; `standard` must never silently incur it.
+**Cost impact.** Direct multiplier on the most expensive tier. Article's full harness was 6 hr / $200 at ~15 iterations. The bound must come from `agent-orchestration.md` (`:201–212` advisory per-skill caps; `:36` ultracode sequential-workflow budgeting; 1h cache amortization `:61` makes longer loops cheaper per-iteration if the prefix is cached). High tier justifies it; `standard` must never silently incur it.
 
 ---
 
@@ -65,15 +65,15 @@ Low cap + refine-only forecloses exactly the late-emerging creative leaps the ar
 - `skills/sprint-dev/SKILL.md:271` — *"Read story — Parse frontmatter... Note `verify` and `done` fields."*
 - `skills/sprint-dev/SKILL.md:273` — *"Run the story's `verify` commands if defined."*
 - `skills/sprint-dev/SKILL.md:280` — *"Check done criteria — Verify the story's `done` field is satisfied."*
-- Stories come from sprint-plan and are consumed read-only: `skills/_shared/state-handoff.md:57`.
+- Stories come from sprint-plan and are consumed read-only: `skills/_shared/session-lifecycle.md:57`.
 - Acceptance enforced downstream by the critic from planner-authored `acceptance_checks:` (`agents/critic.md:106–161`).
 - No contract-negotiation step exists at sprint start (confirmed); inter-agent comms are status prefixes only (`sprint-dev/SKILL.md:288–314`).
 
-**Fix design.** Add a **contract-negotiation step** at sprint start: generator (`sprint-dev`) proposes what it will build + how the evaluator will verify it (the testable behaviors); evaluator (`critic` / `design-critic`) reviews and amends; converge before code. The negotiated criteria **become** the sprint's `scope.acceptance` — co-owned, not handed down. Use Blitz's file-based handoff (`state-handoff.md`; the article used files too). Most valuable where the spec is intentionally high-level.
+**Fix design.** Add a **contract-negotiation step** at sprint start: generator (`sprint-dev`) proposes what it will build + how the evaluator will verify it (the testable behaviors); evaluator (`critic` / `design-critic`) reviews and amends; converge before code. The negotiated criteria **become** the sprint's `scope.acceptance` — co-owned, not handed down. Use Blitz's file-based handoff (`session-lifecycle.md`; the article used files too). Most valuable where the spec is intentionally high-level.
 
-**Note on whether Blitz's planner under-specifies (article's deliberate choice) or over-specifies.** The article's planner stays *"focused on product context and high level technical design rather than detailed technical implementation."* Blitz's `sprint-plan` emits structured stories with `verify`/`done`/`acceptance_criteria` fields (`story-frontmatter.md`). If those fields already pin testable detail, the planner is *more* specified than the article's — in which case the negotiation is lighter (the evaluator amends/co-signs existing criteria rather than co-authoring from scratch). **Recommendation:** scope the negotiation to the gap between high-level acceptance and testable behaviors; do not duplicate what `sprint-plan` already pins. This keeps the fix additive and avoids re-litigating planner output.
+**Note on whether Blitz's planner under-specifies (article's deliberate choice) or over-specifies.** The article's planner stays *"focused on product context and high level technical design rather than detailed technical implementation."* Blitz's `sprint-plan` emits structured stories with `verify`/`done`/`acceptance_criteria` fields (`sprint-contracts.md`). If those fields already pin testable detail, the planner is *more* specified than the article's — in which case the negotiation is lighter (the evaluator amends/co-signs existing criteria rather than co-authoring from scratch). **Recommendation:** scope the negotiation to the gap between high-level acceptance and testable behaviors; do not duplicate what `sprint-plan` already pins. This keeps the fix additive and avoids re-litigating planner output.
 
-**Artifact extended.** `skills/sprint-dev/SKILL.md` (new pre-wave Phase ~0.5 contract step); `skills/_shared/state-handoff.md` (new negotiated-contract artifact in the handoff table).
+**Artifact extended.** `skills/sprint-dev/SKILL.md` (new pre-wave Phase ~0.5 contract step); `skills/_shared/session-lifecycle.md` (new negotiated-contract artifact in the handoff table).
 
 **Quality lift.** Medium — bridges the user-story↔testable-implementation gap, gives the evaluator co-ownership of "done" (catches mis-scoped stories before code, not after review). Highest value where stories are deliberately high-level.
 
@@ -124,7 +124,7 @@ So the precedent the brief wants **exists and is exactly the right model** — i
 
 **Quality lift.** High leverage for near-zero effort. The article got measurable first-iteration lift from this **before any loop runs** — every iteration starts from a better baseline, which also shortens the Gap 2 loop (fewer iterations to reach PASS). Cheapest gap, sequenced first.
 
-**Cost impact.** Negligible — a few hundred tokens of additional generation-prompt context, cached on the static prefix (`token-budget.md:46–50`). Likely **net negative cost** by reducing iterations needed downstream.
+**Cost impact.** Negligible — a few hundred tokens of additional generation-prompt context, cached on the static prefix (`agent-orchestration.md:46–50`). Likely **net negative cost** by reducing iterations needed downstream.
 
 ---
 

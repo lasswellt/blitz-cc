@@ -15,11 +15,11 @@ argument-hint: "[full|refresh|extend|status]"
 
 ## Additional Resources
 - For capability schema, document classification, and Phases 5-8 procedures, see [references/main.md](references/main.md)
-- For the carry-forward registry (written in Phase 1 from research doc scope: blocks; re-scanned in refresh mode), see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
-- For pipeline artifact contracts (`docs/roadmap/`, `capability-index.json` consumed by sprint-plan), see [/_shared/state-handoff.md](/_shared/state-handoff.md)
+- For the carry-forward registry (written in Phase 1 from research doc scope: blocks; re-scanned in refresh mode), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For pipeline artifact contracts (`docs/roadmap/`, `capability-index.json` consumed by sprint-plan), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
-All generated epics and roadmap artifacts must satisfy the [Definition of Done](/_shared/definition-of-done.md). No placeholder descriptions.
+All generated epics and roadmap artifacts must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder descriptions.
 
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
@@ -47,7 +47,7 @@ If no argument is provided, default to `full`.
 
 **For `status` mode**: Skip to Phase 0 context loading, then print a status report and STOP. Do not generate anything.
 
-**For `refresh` mode**: Run Phases 0-4, then selectively re-run Phases 5-8 only for changed domains. Phase 1 also re-scans the carry-forward registry against existing research docs — see Phase 1.1.6 and the refresh-specific backfill path documented in `skills/_shared/carry-forward-registry.md`.
+**For `refresh` mode**: Run Phases 0-4, then selectively re-run Phases 5-8 only for changed domains. Phase 1 also re-scans the carry-forward registry against existing research docs — see Phase 1.1.6 and the refresh-specific backfill path documented in `skills/_shared/sprint-contracts.md`.
 
 **For `extend` mode**: Run Phase 0, then Phase 1 for new documents only (including Phase 1.1.5 scope-block ingestion — hard-fails on duplicate registry ids), skip to Phase 4 for dependency re-resolution, then Phases 5-8 for new domains only.
 
@@ -57,7 +57,7 @@ If no argument is provided, default to `full`.
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Locate Registry Files
 
@@ -126,7 +126,7 @@ Read every file found in Phase 0.2. For each document:
 
 ### 1.1.5 Parse `scope:` YAML Frontmatter (Carry-Forward Registry Ingestion)
 
-Before extracting capabilities, check the research doc for a **`scope:` YAML frontmatter block**. This is the structured-scope contract emitted by `skills/research` Phase 3.1.1. Each entry in the block becomes both a capability `scope_metric` (see `references/main.md`) **and** an append-only line in `.cc-sessions/carry-forward.jsonl`. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the full registry protocol.
+Before extracting capabilities, check the research doc for a **`scope:` YAML frontmatter block**. This is the structured-scope contract emitted by `skills/research` Phase 3.1.1. Each entry in the block becomes both a capability `scope_metric` (see `references/main.md`) **and** an append-only line in `.cc-sessions/carry-forward.jsonl`. See [sprint-contracts.md](/_shared/sprint-contracts.md) for the full registry protocol.
 
 **Parse step (all modes):**
 

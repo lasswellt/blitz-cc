@@ -27,14 +27,14 @@ One or more file paths. Supported extensions: `.md`, `.txt`, `.rst`, or extensio
 
 ## Phase 0 — Register and validate
 
-0.1 Register session per [session-protocol.md](/_shared/session-protocol.md) and [verbose-progress.md](/_shared/verbose-progress.md). Generate SESSION_ID, log `skill_start` to `.cc-sessions/activity-feed.jsonl`.
+0.1 Register session per [session-lifecycle.md](/_shared/session-lifecycle.md) and [terse-output.md](/_shared/terse-output.md). Generate SESSION_ID, log `skill_start` to `.cc-sessions/activity-feed.jsonl`.
 
 0.2 Validate inputs. For each target:
   - File exists and is readable.
   - Extension is allowed (reject code/config files with a clear message).
   - No existing `<file>.original` sibling (if present, it means the file was already compressed — skip with a notice, do not re-compress).
   - File size ≤ 500KB (soft safety limit).
-  - **Classify by size for Phase 2 mode selection** (see [spawn-protocol.md §2 Output Size](/_shared/spawn-protocol.md#output-size-and-single-write-budget)):
+  - **Classify by size for Phase 2 mode selection** (see [agent-orchestration.md §2 Output Size](/_shared/agent-orchestration.md#output-size-and-single-write-budget)):
     - `≤ 40 KB`: single-Write mode (Phase 2.4 below)
     - `> 40 KB`: sectioned-Edit mode (Phase 2.5 below) — single Write exceeds sonnet per-call budget, will time out at ~7 min with zero output
 

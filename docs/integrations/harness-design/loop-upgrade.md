@@ -30,7 +30,7 @@ The best designs are museum quality. Build to that bar from the first pass.
 - The "museum quality" phrasing is the article's tested convergence lever (§6) — keep it; A/B against Blitz's 13-tone vocabulary to confirm it helps rather than homogenizes (the article warns convergence is a real effect; for a *toy-like* or *lo-fi/zine* tone "museum quality" may pull the wrong way — consider tone-conditional phrasing).
 - Emphasize the two dimensions the model is weakest on (Creative Distinction ≈ Originality, Aesthetic Fit ⊂ Design quality), per [`blitz-loop-map.md`](blitz-loop-map.md) §3.
 
-**Why first:** measurable first-iteration lift before any evaluator cycle, and it shortens the Gap 2 loop (fewer iterations to PASS). Near-zero cost (cached prefix, `token-budget.md:46–50`).
+**Why first:** measurable first-iteration lift before any evaluator cycle, and it shortens the Gap 2 loop (fewer iterations to PASS). Near-zero cost (cached prefix, `agent-orchestration.md:46–50`).
 
 ---
 
@@ -43,7 +43,7 @@ The best designs are museum quality. Build to that bar from the first pass.
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)
   MAX_DESIGN_ITERS_HIGH default 10 (article ran 5–15; 10 is a cost-aware midpoint)
-  budget_remaining_iters derived from token-budget.md (per-skill advisory cap :201–212,
+  budget_remaining_iters derived from agent-orchestration.md (per-skill advisory cap :201–212,
     1h-cache amortization :61 — a cached static prefix makes later iterations cheaper)
 exit on: all 5 dims ≥7 (PASS) OR ceiling reached OR user escalation.
 ```

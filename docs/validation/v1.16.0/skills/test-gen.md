@@ -49,12 +49,12 @@ Own link audit for all 7 links in SKILL.md:
 | Link | Resolved path | Status |
 |---|---|---|
 | `references/main.md` | `skills/test-gen/references/main.md` | OK |
-| `/_shared/deterministic-test-recipe.md` | `skills/_shared/deterministic-test-recipe.md` | OK |
+| `/_shared/quality-engine.md` | `skills/_shared/quality-engine.md` | OK |
 | `/agents/test-writer.md` | `agents/test-writer.md` (repo root, leading-/ convention) | OK |
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` | OK |
-| `/_shared/verbose-progress.md` | `skills/_shared/verbose-progress.md` | OK |
-| `/_shared/definition-of-done.md` | `skills/_shared/definition-of-done.md` | OK |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | OK |
+| `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | OK |
 
 Note: `markdown-link-validate.sh` resolves `/agents/test-writer.md` to `./agents/test-writer.md` (leading-/ → repo root), and `agents/test-writer.md` exists. The validator confirmed OK.
 
@@ -72,11 +72,11 @@ Unit notes: no special owner/DW/spawn role. `test-gen` is not in the O1–O5 own
 
 **Verdict: PASS**
 
-`test-gen` is a standalone user-invoked skill, not in the core `bootstrap → sprint-plan → sprint-dev → sprint-review → ship` pipeline. No entry in `skills/_shared/state-handoff.md` (grep returned empty). The real chain it participates in is:
+`test-gen` is a standalone user-invoked skill, not in the core `bootstrap → sprint-plan → sprint-dev → sprint-review → ship` pipeline. No entry in `skills/_shared/session-lifecycle.md` (grep returned empty). The real chain it participates in is:
 
 **sprint-dev** (produces source files) → **test-gen** (consumes: user-provided `<file-path>` pointing at sprint-dev output; produces: `*.test.ts` co-located or in `tests/`) → **sprint-review** (consumes test pass/fail status)
 
-Per `state-handoff.md`, `test-gen` has no artifact-level pipeline contract (it's invoked ad-hoc). The skill correctly validates its own input at Phase 0.1 (`[ -f "<target-file>" ] && echo "FOUND" || echo "NOT FOUND"`). No upstream producer emits a formal artifact that `test-gen` structurally depends on — the input is always a user-supplied path. Composition is self-consistent.
+Per `session-lifecycle.md`, `test-gen` has no artifact-level pipeline contract (it's invoked ad-hoc). The skill correctly validates its own input at Phase 0.1 (`[ -f "<target-file>" ] && echo "FOUND" || echo "NOT FOUND"`). No upstream producer emits a formal artifact that `test-gen` structurally depends on — the input is always a user-supplied path. Composition is self-consistent.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: sprint-plan
-description: "Plans the next sprint from roadmap epics. Selects unblocked epics via dependency graph, spawns parallel research agents, generates story files with /_shared/story-frontmatter.md schema, creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', or 'sprint planning'. --gaps generates gap-closure stories from the prior review report."
+description: "Plans the next sprint from roadmap epics. Selects unblocked epics via dependency graph, spawns parallel research agents, generates story files with /_shared/sprint-contracts.md schema, creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', or 'sprint planning'. --gaps generates gap-closure stories from the prior review report."
 argument-hint: "[--sprint N] [--gaps]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 disable-model-invocation: false
@@ -14,18 +14,18 @@ compatibility: ">=2.1.71"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [story-frontmatter.md](/_shared/story-frontmatter.md)
-- For pipeline state contracts (which artifacts this skill produces and requires), see [state-handoff.md](/_shared/state-handoff.md)
+- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/session-lifecycle.md)
 - For agent assignment rules and partition logic, see [references/main.md](references/main.md)
-- For context window hygiene (research agents), see [context-management.md](/_shared/context-management.md)
-- For checkpoint awareness, see [checkpoint-protocol.md](/_shared/checkpoint-protocol.md)
-- For the carry-forward registry (Reader Algorithm in Phase 0, writer contract in Phase 4.1), see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
-- For subagent spawning, agent output contract (success/failure/partial thresholds), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For context window hygiene (research agents), see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For checkpoint awareness, see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For the carry-forward registry (Reader Algorithm in Phase 0, writer contract in Phase 4.1), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
 
-All generated stories must satisfy the [Definition of Done](/_shared/definition-of-done.md). No placeholder acceptance criteria.
+All generated stories must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder acceptance criteria.
 
 ---
 
@@ -57,7 +57,7 @@ Execute all phases below in order.
 
 ## Phase 0.0: INPUT GATE — Validate Pipeline Inputs
 
-Before any other work, hard-fail if required upstream artifacts are missing. Per [state-handoff.md](/_shared/state-handoff.md):
+Before any other work, hard-fail if required upstream artifacts are missing. Per [session-lifecycle.md](/_shared/session-lifecycle.md):
 
 ```bash
 PIPELINE_MISSING=()
@@ -67,7 +67,7 @@ for input in \
   [ -s "$input" ] || PIPELINE_MISSING+=("$input")
 done
 if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
-  echo "BLOCK: missing pipeline inputs (see /_shared/state-handoff.md §sprint-plan):" >&2
+  echo "BLOCK: missing pipeline inputs (see /_shared/session-lifecycle.md §sprint-plan):" >&2
   printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
   echo "Greenfield order: bootstrap → research → roadmap → sprint-plan." >&2
   exit 1
@@ -78,7 +78,7 @@ The carry-forward registry (`.cc-sessions/carry-forward.jsonl`) is OPTIONAL at t
 
 ## Phase 0: CONTEXT — Load Project State
 
-0. **Register session.** Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per verbose-progress.md.
+0. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
 1. **Locate registry files.** Search the repo for sprint/roadmap registry files:
    ```
    Glob: **/sprint-registry.json, **/roadmap-registry.json, **/epic-registry.json, **/epics/**/*.md
@@ -92,7 +92,7 @@ The carry-forward registry (`.cc-sessions/carry-forward.jsonl`) is OPTIONAL at t
    Read the root `package.json` (if it exists) and any workspace config (`pnpm-workspace.yaml`, `nx.json`, `turbo.json`) to understand project structure.
 5. **Load sprint history.** Read `sprint-registry.json` (or equivalent) to determine the last completed sprint number. If no registry exists, this is Sprint 1.
 6. **Check for incomplete stories.** Search for story files from previous sprints that have `status: incomplete` or `status: in-progress`. These carry forward.
-7. **Check for STATE.md.** If a previous sprint has a `STATE.md` checkpoint file, read it for context on completed/blocked stories. Note blocked stories and their reasons — they may carry forward or inform planning. See [checkpoint-protocol.md](/_shared/checkpoint-protocol.md).
+7. **Check for STATE.md.** If a previous sprint has a `STATE.md` checkpoint file, read it for context on completed/blocked stories. Note blocked stories and their reasons — they may carry forward or inform planning. See [session-lifecycle.md](/_shared/session-lifecycle.md).
 8. **Read the carry-forward registry** (`.cc-sessions/carry-forward.jsonl`). Reduce to latest-wins by `id`:
    ```bash
    jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.status == "active" or .status == "partial"))' \
@@ -102,7 +102,7 @@ The carry-forward registry (`.cc-sessions/carry-forward.jsonl`) is OPTIONAL at t
 
    Also read `sprints/sprint-${SPRINT_NUMBER}-planning-inputs.json` if it exists — the previous sprint's review may have auto-injected entries into this sprint via Invariant 4. If present, every entry in that file MUST be addressed in the story set generated below.
 
-   **Why this matters:** carry-forward state lives in the registry, not in `epic-registry.json`'s `status` field. A parent epic can read `status: done` while its child registry entries are still `active` or `partial`. This step is what catches the silent drop described in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for the reader protocol.
+   **Why this matters:** carry-forward state lives in the registry, not in `epic-registry.json`'s `status` field. A parent epic can read `status: done` while its child registry entries are still `active` or `partial`. This step is what catches the silent drop described in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. See [sprint-contracts.md](/_shared/sprint-contracts.md) for the reader protocol.
 
    **Rollover escalation:** any registry entry with `rollover_count >= 3` must NOT be auto-injected. It escalates to mandatory human review — log a blocker to the activity feed and prompt the operator (or, in `autonomy=full`, log the escalation and exit cleanly so `/loop` does not bounce indefinitely). See Error Recovery below for the full escalation path.
 
@@ -141,7 +141,7 @@ mkdir -p "${SPRINT_DIR}/research"
 
 ### 1.4 Write Sprint Manifest
 
-Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol. Write `${SPRINT_DIR}/manifest.json` with: `sprint`, `status: planning`, `created`, `epics[]`, `carry_forward[]`, `story_count`.
+Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-lifecycle.md](/_shared/session-lifecycle.md) §File-Based Locking Protocol. Write `${SPRINT_DIR}/manifest.json` with: `sprint`, `status: planning`, `created`, `epics[]`, `carry_forward[]`, `story_count`.
 
 ### 1.5 Sync with GitHub Issues (if available)
 
@@ -162,9 +162,9 @@ Per-spawn parameters:
 - `prompt`: the template from references/main.md "Agent Prompt Templates" filled with epic list, stack profile, and output path
 - `run_in_background: true` (orchestrator polls output files in Phase 2.4)
 
-Cross-cutting findings synthesized by orchestrator in Phase 2.4 from output files (not peer-to-peer, per [spawn-protocol.md](/_shared/spawn-protocol.md)).
+Cross-cutting findings synthesized by orchestrator in Phase 2.4 from output files (not peer-to-peer, per [agent-orchestration.md](/_shared/agent-orchestration.md)).
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Each agent prompt MUST include: max 15 file reads, max 8 web searches (0 for codebase-analyst), max 250-line output, 5-minute wall-clock budget, write-as-you-go instruction.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Each agent prompt MUST include: max 15 file reads, max 8 web searches (0 for codebase-analyst), max 250-line output, 5-minute wall-clock budget, write-as-you-go instruction.
 
 **Required agents:**
 
@@ -190,7 +190,7 @@ Each agent prompt (filled from the template in references/main.md) contains:
 
 ### 2.4 Collect Research
 
-Wait for all agents to complete. **Run the canonical Agent Output Contract validator** from [spawn-protocol.md](/_shared/spawn-protocol.md) §8. The validator classifies each output as SUCCESS / PARTIAL / MALFORMED / EMPTY / MISSING / TIMEOUT and applies the standard gate threshold (N=3 → ABORT at MISSING_COUNT ≥ 2; N=4 → ABORT at MISSING_COUNT ≥ 2). Do NOT redefine thresholds inline.
+Wait for all agents to complete. **Run the canonical Agent Output Contract validator** from [agent-orchestration.md](/_shared/agent-orchestration.md) §8. The validator classifies each output as SUCCESS / PARTIAL / MALFORMED / EMPTY / MISSING / TIMEOUT and applies the standard gate threshold (N=3 → ABORT at MISSING_COUNT ≥ 2; N=4 → ABORT at MISSING_COUNT ≥ 2). Do NOT redefine thresholds inline.
 
 ```bash
 EXPECTED_OUTPUTS=(
@@ -200,7 +200,7 @@ EXPECTED_OUTPUTS=(
 )
 # Add infra-analyst.md if it was spawned.
 
-# Run /_shared/spawn-protocol.md §8 validator (classify_output + standard gate).
+# Run /_shared/agent-orchestration.md §8 validator (classify_output + standard gate).
 # On ABORT: stop Phase 2 and report.
 # On survivor singleton: retry the failed agent once with narrower scope (one most-critical epic only).
 # On PARTIAL: per §8, queue narrow retries for items in MISSING list.
@@ -342,7 +342,7 @@ If after 3 attempts any AC remains uncovered, report uncovered ACs and offer: (1
 **Auto-waiver procedure (autonomy ∈ {high, full}):** Four writes are required — see `references/main.md` §Auto-Waiver Procedure for the full jsonl schemas.
 
 1. Add uncovered ACs to `carry_forward` in sprint manifest + `waived_ac_count`/`reason_waivers` fields.
-2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl` for each parent registry entry. Precompute `coverage = actual / target`. Schema: [carry-forward-registry.md](/_shared/carry-forward-registry.md).
+2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl` for each parent registry entry. Precompute `coverage = actual / target`. Schema: [sprint-contracts.md](/_shared/sprint-contracts.md).
 3. Record touched ids in manifest `registry_entries_touched` (sprint-review Invariant 2 cross-checks this).
 4. Log `decision` event to activity feed.
 5. Proceed to Phase 4.2.
@@ -389,7 +389,7 @@ Record issue numbers back into story frontmatter as `github_issue: <number>`.
 
 ### 4.5 Update Sprint Registry
 
-**Registry Lock — `sprint-registry.json`**: Before writing, acquire a file-based lock per [session-protocol.md](/_shared/session-protocol.md):
+**Registry Lock — `sprint-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
 1. CHECK if `sprint-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `sprint-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.

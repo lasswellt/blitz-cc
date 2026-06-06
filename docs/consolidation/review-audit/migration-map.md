@@ -39,12 +39,12 @@ How each current skill/file moves into the two consolidated entry points + share
 
 | File | Edit |
 |---|---|
-| `skills/_shared/shortcut-taxonomy.md` | title "19"→"20 Failure Modes (13 reject, 7 advisory)"; §1 table becomes a *view* of `check-provenance.json`; §3 greps move into registry `detection.command` (the canonical executable source) |
+| `skills/_shared/quality-engine.md` | title "19"→"20 Failure Modes (13 reject, 7 advisory)"; §1 table becomes a *view* of `check-provenance.json`; §3 greps move into registry `detection.command` (the canonical executable source) |
 | `skills/review/SKILL.md` | **fix pre-existing bug**: arg-hint line 4 says "7 invariants"; sprint-review enforces **8**. Correct to 8 when promoting the alias to the canonical entry point. |
-| `skills/_shared/quality-matrix.md` | rewrite for the new 2-entry-point world; the "7 quality skills" framing → "2 review/audit + 5 orthogonal + 2 standalone-tools (code-sweep, code-doctor)" |
-| `skills/_shared/workflow-dispatch.md` | `codebase-audit` row → `/blitz:audit`; add aggregation + FP-panel as the named net-new patterns |
+| `skills/_shared/quality-engine.md` | rewrite for the new 2-entry-point world; the "7 quality skills" framing → "2 review/audit + 5 orthogonal + 2 standalone-tools (code-sweep, code-doctor)" |
+| `skills/_shared/agent-orchestration.md` | `codebase-audit` row → `/blitz:audit`; add aggregation + FP-panel as the named net-new patterns |
 | new: `skills/_shared/check-registry.json` | the registry (this pass's `check-provenance.json` becomes the shipped artifact) |
-| new: `skills/_shared/check-registry.md` | = `registry-design.md` |
+| new: `skills/_shared/quality-engine.md` | = `registry-design.md` |
 
 ## Backward-compat guarantees
 
@@ -55,11 +55,11 @@ How each current skill/file moves into the two consolidated entry points + share
 
 ## Sequenced implementation (the follow-up sprint, behind the suite's own gates)
 
-1. **Epic 1 — registry.** Ship `check-registry.json` + design doc; make `shortcut-taxonomy.md` a view. No behavior change yet (acceptance: registry parses; every legacy grep has a registry row).
+1. **Epic 1 — registry.** Ship `check-registry.json` + design doc; make `quality-engine.md` a view. No behavior change yet (acceptance: registry parses; every legacy grep has a registry row).
 2. **Epic 2 — critic redesign.** Apply `critic-redesign.md` to `agents/critic.md`; registry-drive §2.1; add verdict-flip asymmetry + FP-verify substep. Acceptance: critic loads `reject_only` from registry; advisory finding cannot flip verdict (test).
 3. **Epic 3 — research-critic redesign.** Apply `research-critic-redesign.md`. Acceptance: ungrounded `scope:` claim → CITATIONS_MISSING; inaccessible source → UNVERIFIED not PASS.
 4. **Epic 4 — /blitz:review.** Fold completeness-gate + integration-check + code-doctor(fw) + code-sweep(T1) as phases; add `--only`; two-lane + FP-verify + confidence gate. Acceptance: `--only completeness` reproduces old completeness-gate output.
 5. **Epic 5 — /blitz:audit.** Add aggregation + FP-panel + deterministic lane + recall instrumentation to codebase-audit; rename to `/blitz:audit`. Acceptance: ≥2-agreer finding → confidence:high; coverage_boundary emitted.
-6. **Epic 6 — cleanup.** Delete folded SKILL.md files; add deprecation shims; rewrite quality-matrix.md; update ship + sprint-dev call-sites.
+6. **Epic 6 — cleanup.** Delete folded SKILL.md files; add deprecation shims; rewrite quality-engine.md; update ship + sprint-dev call-sites.
 
 Each epic's sprint-review runs the **redesigned critic on itself** — Epic 2's output is gated by Epic 2's own critic. The recursion is the point: the consolidation proves out by surviving its own gates.

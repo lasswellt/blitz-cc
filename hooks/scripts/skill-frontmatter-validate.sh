@@ -154,7 +154,7 @@ validate_one() {
   [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500); push overflow to references/"
 
   # 9. OUTPUT STYLE snippet — presence check
-  printf '%s\n' "$body" | grep -qE "$SNIPPET_RE" || fail "$rel" "missing canonical OUTPUT STYLE snippet (see /_shared/terse-output.md and /_shared/spawn-protocol.md §7)"
+  printf '%s\n' "$body" | grep -qE "$SNIPPET_RE" || fail "$rel" "missing canonical OUTPUT STYLE snippet (see /_shared/terse-output.md and /_shared/agent-orchestration.md §7)"
 
   # 9b. OUTPUT STYLE drift check — byte-identical to canonical source.
   # Skipped when canonical hash unavailable (older terse-output.md without

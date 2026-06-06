@@ -6,8 +6,8 @@ Supporting templates, coordination patterns, and distribution rules for the spri
 
 ## Agent Prompt Templates
 
-<!-- import: /_shared/agent-prompt-boilerplate.md -->
-Canonical recurring sections (Heavy BUDGET, HEARTBEAT story-completion variant, PARTIAL sprint-dev variant) are documented in [/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md). The four role-specific templates below remain the byte-stable spawn source — agents execute the WORKFLOW lists byte-for-byte and OUTPUT STYLE is required inline per sprint-review Invariant 5.
+<!-- import: /_shared/agent-orchestration.md -->
+Canonical recurring sections (Heavy BUDGET, HEARTBEAT story-completion variant, PARTIAL sprint-dev variant) are documented in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The four role-specific templates below remain the byte-stable spawn source — agents execute the WORKFLOW lists byte-for-byte and OUTPUT STYLE is required inline per sprint-review Invariant 5.
 
 ### Backend Dev Agent
 
@@ -45,13 +45,13 @@ ${REUSABLE_ASSETS}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/deviation-protocol.md):
+DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
 - Auto-fix: bugs in existing code blocking you, missing imports, clear type mismatches
 - Report via DEVIATION: utility functions you had to create, error handling you added
 - Escalate via ESCALATE: architectural changes, public API changes, >3 files outside scope
 - Never auto-fix: security rules, DB migrations, new package dependencies
 
-CONTEXT MANAGEMENT (follow /_shared/context-management.md):
+CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
 - Self-contained DONE summaries: include files, exports, verify result — don't reference earlier stories
 - Reference files by path, not "the file I created earlier"
 - Compact verification output: "type-check PASS" not full log dump
@@ -115,13 +115,13 @@ ${REUSABLE_ASSETS}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/deviation-protocol.md):
+DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
 - Auto-fix: bugs in existing code blocking you, missing imports, clear type mismatches
 - Report via DEVIATION: utility functions you had to create, error handling you added
 - Escalate via ESCALATE: architectural changes, public API changes, >3 files outside scope
 - Never auto-fix: security rules, DB migrations, new package dependencies
 
-CONTEXT MANAGEMENT (follow /_shared/context-management.md):
+CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
 - Self-contained DONE summaries: include files, exports, verify result — don't reference earlier stories
 - Reference files by path, not "the file I created earlier"
 - Compact verification output: "type-check PASS" not full log dump
@@ -185,13 +185,13 @@ ${CONVENTIONS_GUIDE}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/deviation-protocol.md):
+DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
 - Auto-fix: test utility issues, missing test helpers
 - Report via DEVIATION: test factories you had to create for missing fixtures
 - Escalate via ESCALATE: implementation bugs that need code changes beyond test scope
 - Never auto-fix: security rules, breaking changes to shared test utilities
 
-CONTEXT MANAGEMENT (follow /_shared/context-management.md):
+CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
 - Self-contained DONE summaries: include test file paths, test counts, verify result
 - Reference implementation files by path, not "the file that was created earlier"
 - Compact verification output: "12/12 tests passed" not full test runner output
@@ -249,13 +249,13 @@ ${CONVENTIONS_GUIDE}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/deviation-protocol.md):
+DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
 - Auto-fix: missing config keys that have obvious defaults, broken CI syntax
 - Report via DEVIATION: new environment variables needed, security rule changes
 - Escalate via ESCALATE: changes to production deployment, IAM/permission changes, new cloud services
 - Never auto-fix: security rules, secrets management, production environment configs
 
-CONTEXT MANAGEMENT (follow /_shared/context-management.md):
+CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
 - Self-contained DONE summaries: include config file paths, what was configured, verify result
 - Reference files by path, not "the config I edited earlier"
 - Compact verification output: "deploy dry-run PASS" not full deployment logs
@@ -563,7 +563,7 @@ Sprint ${SPRINT_NUMBER} implementation complete.
 
 Used in Phase 3.5.1.
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)).
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)).
 
 **Spawn parameters**:
 - `subagent_type: blitz:frontend-dev` (has Write + Edit — required for integration edits)
@@ -664,10 +664,10 @@ Every dev agent prompt (Phase 2.3) must include all 14 items:
 5. Commit message format: `feat(sprint-${N}/<role>): S${N}-XXX <description>`.
 6. Project conventions guide from Phase 0.5 (full text, not a file reference).
 7. Reusable assets list — composables, utilities, and shared components agents must use.
-8. Anti-mock rules — Every function must be fully implemented, no placeholders. See [Definition of Done](/_shared/definition-of-done.md).
-9. Deviation handling rules — Follow the [Deviation Handling Protocol](/_shared/deviation-protocol.md). Auto-fix small issues, report deviations, escalate architectural changes.
+8. Anti-mock rules — Every function must be fully implemented, no placeholders. See [Definition of Done](/_shared/sprint-contracts.md).
+9. Deviation handling rules — Follow the [Deviation Handling Protocol](/_shared/sprint-contracts.md). Auto-fix small issues, report deviations, escalate architectural changes.
 10. Wave assignment — Tell each agent which wave their stories belong to, so they understand the execution order context.
-11. Context management rules — Follow the [Context Management Protocol](/_shared/context-management.md). Self-contained DONE summaries, reference files by path not memory, compact verification output, prune context between stories.
+11. Context management rules — Follow the [Context Management Protocol](/_shared/session-lifecycle.md). Self-contained DONE summaries, reference files by path not memory, compact verification output, prune context between stories.
 12. **HEARTBEAT + PARTIAL protocol** (add verbatim to prompt):
     ```
     HEARTBEAT: After each story DONE, write a file ${SESSION_TMP_DIR}/agent-<role>-progress.md
@@ -682,7 +682,7 @@ Every dev agent prompt (Phase 2.3) must include all 14 items:
     Send PARTIAL: <N> done, <M> remaining to orchestrator via the DONE/BLOCKED
     protocol and end.
     ```
-13. **Package install policy** — for any new dependency, follow [/_shared/package-install-policy.md](/_shared/package-install-policy.md). Inject this verbatim block:
+13. **Package install policy** — for any new dependency, follow [/_shared/security.md](/_shared/security.md). Inject this verbatim block:
     ```
     PACKAGE INSTALLS: never invent a version number from memory. Use bare
     `pnpm add <pkg>` (or the project's package manager) so it resolves to
@@ -711,7 +711,7 @@ Used by dev agents and orchestrator in Phase 3.3.
 |---|---|---|
 | `DONE:` | Agent -> Orchestrator | Story completed, requesting next |
 | `BLOCKED:` | Agent -> Orchestrator | Cannot proceed, needs help |
-| `DEVIATION:` | Agent -> Orchestrator | Auto-added code outside story scope (see [deviation-protocol.md](/_shared/deviation-protocol.md)) |
+| `DEVIATION:` | Agent -> Orchestrator | Auto-added code outside story scope (see [sprint-contracts.md](/_shared/sprint-contracts.md)) |
 | `ESCALATE:` | Agent -> Orchestrator | Needs decision on architectural/scope change |
 | `UNBLOCK:` | Orchestrator -> Agent | Dependency resolved, new story available |
 | `ASSIST:` | Orchestrator -> Agent | Help with current issue |
@@ -792,7 +792,7 @@ fi
 Each agent follows this loop for each assigned story:
 
 1. **Read story** — Parse frontmatter and body. Note `verify` and `done` fields if present.
-2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/deviation-protocol.md) for unexpected issues.
+2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/sprint-contracts.md) for unexpected issues.
 3. **Verify** — Run the story's `verify` commands if defined. If no `verify` field, fall back to type-check:
    ```bash
    # If story has verify commands, run each one:

@@ -3,13 +3,13 @@
 # `@ts-nocheck` in non-test TypeScript/Vue source files.
 #
 # Why: type-system escape hatches accumulate silently, hide real type errors, and
-# undermine the type_errors=0 absolute floor in the ratchet. shortcut-taxonomy.md
+# undermine the type_errors=0 absolute floor in the ratchet. quality-engine.md
 # row 4 documents this as a P1/P2 signal.
 #
-# Escape hatch (per skills/_shared/shortcut-taxonomy.md §4): inline same-line
+# Escape hatch (per skills/_shared/quality-engine.md §4): inline same-line
 # comment `// blitz:any-allowed: <reason>` justifies the use. Without justification
 # the edit is blocked.
-# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/threat-model.md §2 (env-first).
+# Containment: environment-layer guard (model-misbehavior). Canonical posture: /_shared/security.md §2 (env-first).
 #
 # Exit 0 = allow, Exit 2 = block.
 set -euo pipefail
@@ -99,7 +99,7 @@ limitations), add an inline justification on the same line:
 
   const x = thing as any  // blitz:any-allowed: <reason>
 
-The escape hatch is documented in skills/_shared/shortcut-taxonomy.md §4.
+The escape hatch is documented in skills/_shared/quality-engine.md §4.
 sprint-review Phase 3.6 spot-checks 3 random escape-hatch comments per sprint;
 the rationale must survive scrutiny.
 

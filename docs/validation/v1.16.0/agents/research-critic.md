@@ -23,10 +23,10 @@ Checks confirmed:
 - `background: true` — `agents/research-critic.md:31`
 - Forbidden fields absent: no `hooks:`, `mcpServers:`, or `permissionMode:` in frontmatter
 
-**Reply contract (token-budget.md §3)**:  
+**Reply contract (agent-orchestration.md §3)**:  
 Section `## 3. Output Format` (`agents/research-critic.md:194`) declares canonical JSON with `"summary": "<verdict + headline reject reason in ≤50 words>"` — satisfies the ≤50-word summary cap. Extended fields (`verdict`, `citation_health`) are domain-specific additions; the base schema fields (`status`, `summary`, `files_changed`, `issues`, `next_blocked_by`) are all present.
 
-**Agent Output Contract (spawn-protocol.md §8)**:  
+**Agent Output Contract (agent-orchestration.md §8)**:  
 Agent is read-only; consumed by the research skill orchestrator at `skills/research/SKILL.md:412-419`. The orchestrator reads `verdict` field and `citation_health` per §3 contract. Output classification (PASS / CITATIONS_MISSING) is a structured verdict, not a file-write, which is consistent with the read-only role.
 
 ---
@@ -75,13 +75,13 @@ Two findings:
 
 ### Finding 1: research-critic is NOT dispatched via Workflow (N/A for DW parity)
 
-The research skill's Workflow adoption (`workflow-dispatch.md:81`, status "WIRED") covers only the §1.3-W research agent pool (`parallel([library-docs, web-researcher, codebase-analyst, infra-analyst])`) and the conditional gap second-wave agent. The DW research doc confirms: "wrapper synthesizes doc + runs research-critic **as today**" (`docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md:102`).
+The research skill's Workflow adoption (`agent-orchestration.md:81`, status "WIRED") covers only the §1.3-W research agent pool (`parallel([library-docs, web-researcher, codebase-analyst, infra-analyst])`) and the conditional gap second-wave agent. The DW research doc confirms: "wrapper synthesizes doc + runs research-critic **as today**" (`docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md:102`).
 
 research-critic is spawned at `skills/research/SKILL.md:412-419` via `Agent()` outside the Workflow script, in Phase 3 (post-synthesis). The Workflow script operates only in Phase 1 (research agents). Therefore the Workflow prompt-parity check is **N/A for the DW dispatch path**.
 
 ### Finding 2: Agent() spawn prompt at §3.2.5 lacks OUTPUT STYLE snippet (FAIL)
 
-spawn-protocol.md §7 (line 417) states: "Every agent spawn MUST inject the terse-output directive ... append to every Agent() prompt template."
+agent-orchestration.md §7 (line 417) states: "Every agent spawn MUST inject the terse-output directive ... append to every Agent() prompt template."
 
 The §3.2.5 spawn prompt (`skills/research/SKILL.md:416-418`) is:
 ```
@@ -92,7 +92,7 @@ The §3.2.5 spawn prompt (`skills/research/SKILL.md:416-418`) is:
 
 No OUTPUT STYLE snippet embedded. The snippet does appear in research-critic's own body (`agents/research-critic.md:47-51`), which serves as the agent's system prompt. But spawn-protocol §7 requires it in the user-prompt argument to `Agent()`, ensuring the directive reaches agents even if the agent's system prompt is absent, overridden, or inherited differently.
 
-**workflow-dispatch.md §Mandatory prompt invariants** repeats this requirement: "every `agent()` prompt MUST embed the terse-output snippet ... Centralize prompt assembly so the snippet is structurally unavoidable."
+**agent-orchestration.md §Mandatory prompt invariants** repeats this requirement: "every `agent()` prompt MUST embed the terse-output snippet ... Centralize prompt assembly so the snippet is structurally unavoidable."
 
 Since the snippet is only in the agent body (system prompt) and not in the spawn-prompt parameter, the Invariant 5 contract is not structurally unavoidable at the spawn site.
 

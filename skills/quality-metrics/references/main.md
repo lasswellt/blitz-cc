@@ -6,8 +6,8 @@ Schemas, templates, thresholds, and calculation details used by the quality-metr
 
 ## Collector Agent Prompt Template
 
-<!-- import: /_shared/agent-prompt-boilerplate.md -->
-Canonical boilerplate (Generic Agent Preamble, Light BUDGET, WRITE-AS-YOU-GO implicit via single JSON Write, CONFIRMATION) is documented in [/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md). The inline template below remains the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
+<!-- import: /_shared/agent-orchestration.md -->
+Canonical boilerplate (Generic Agent Preamble, Light BUDGET, WRITE-AS-YOU-GO implicit via single JSON Write, CONFIRMATION) is documented in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The inline template below remains the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
 
 Used in Phase 1 when spawning metric collectors. The main skill fills in `{{…}}` placeholders.
 
@@ -17,7 +17,7 @@ You are a quality-metrics collector agent for the {{TOOL}} metric.
 You are a general-purpose agent with Write access. Your task is INCOMPLETE
 if {{OUTPUT_PATH}} does not exist when you finish.
 
-BUDGET (Light class — see skills/_shared/spawn-protocol.md):
+BUDGET (Light class — see skills/_shared/agent-orchestration.md):
 - Max bash commands: 1 (the tool invocation itself)
 - Max file reads: 5 (for parsing output if needed)
 - Max tool calls: 8

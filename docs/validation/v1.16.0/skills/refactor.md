@@ -44,9 +44,9 @@ All `/_shared/` links in SKILL.md resolve to real files under `skills/_shared/`:
 | Link target | Resolves to |
 |---|---|
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` — EXISTS |
-| `/_shared/definition-of-done.md` | `skills/_shared/definition-of-done.md` — EXISTS |
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` — EXISTS |
-| `/_shared/verbose-progress.md` | `skills/_shared/verbose-progress.md` — EXISTS |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` — EXISTS |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` — EXISTS |
+| `/_shared/terse-output.md` | `skills/_shared/terse-output.md` — EXISTS |
 
 Evidence: `hooks/scripts/markdown-link-validate.sh skills/refactor/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`.
 
@@ -64,7 +64,7 @@ Evidence: `hooks/scripts/markdown-link-validate.sh skills/refactor/SKILL.md` →
 
 **Verdict: N/A**
 
-`refactor` is a standalone user-invoked skill with no pipeline producer/consumer role. It does not appear in `skills/_shared/state-handoff.md` (confirmed by grep returning no output). It does not consume sprint story artifacts or emit pipeline artifacts consumed by downstream skills. Follow-up suggestions in Phase 6.2 are advisory, not pipeline I/O contracts.
+`refactor` is a standalone user-invoked skill with no pipeline producer/consumer role. It does not appear in `skills/_shared/session-lifecycle.md` (confirmed by grep returning no output). It does not consume sprint story artifacts or emit pipeline artifacts consumed by downstream skills. Follow-up suggestions in Phase 6.2 are advisory, not pipeline I/O contracts.
 
 ---
 

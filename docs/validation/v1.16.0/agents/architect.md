@@ -29,7 +29,7 @@ OUTPUT STYLE snippet: present verbatim at line 24.
 
 ### JSON reply contract
 
-The ≤50-word JSON reply contract (`{status, summary≤50w, files_changed, issues, next_blocked_by}`) is **not embedded in the agent body**. Per `skills/_shared/token-budget.md` §3, the contract belongs in every `Agent()` spawn prompt, not the agent body itself — so this is correct by the "embedding in spawn prompts" convention. However, unlike `agents/critic.md` (which embeds the contract at line 203 as belt-and-suspenders self-reference), architect omits it entirely from its body.
+The ≤50-word JSON reply contract (`{status, summary≤50w, files_changed, issues, next_blocked_by}`) is **not embedded in the agent body**. Per `skills/_shared/agent-orchestration.md` §3, the contract belongs in every `Agent()` spawn prompt, not the agent body itself — so this is correct by the "embedding in spawn prompts" convention. However, unlike `agents/critic.md` (which embeds the contract at line 203 as belt-and-suspenders self-reference), architect omits it entirely from its body.
 
 No explicit "Agent Output Contract honored/declared" language appears in the body. The agent does not return JSON; it returns structured Markdown findings. When spawned, callers must inject the reply-contract snippet per spawn-protocol §9.
 
@@ -56,8 +56,8 @@ The `Bash` tool permits arbitrary shell commands including file writes (`echo ..
 
 This directly contradicts:
 - Line 29/155: the read-only constraint
-- `skills/_shared/spawn-protocol.md:54`: "If a spawn site expects architect to write findings files, the orchestrator must write them from the agent's text return"
-- `skills/_shared/spawn-protocol.md:76`: "blitz:architect is strictly read-only — use general-purpose if analysis must produce a file"
+- `skills/_shared/agent-orchestration.md:54`: "If a spawn site expects architect to write findings files, the orchestrator must write them from the agent's text return"
+- `skills/_shared/agent-orchestration.md:76`: "blitz:architect is strictly read-only — use general-purpose if analysis must produce a file"
 
 The Collaboration Hints section invites the agent to use Bash to write a findings file, which is both internally contradictory and at odds with the authoritative cross-reference in spawn-protocol.
 
@@ -73,7 +73,7 @@ The Collaboration Hints section invites the agent to use Bash to write a finding
 
 All read-only agents share the same Bash exposure. None use `disallowed-tools` to enforce the constraint structurally.
 
-**Verdict: FAIL** — read-only is prose-asserted only; Bash enables writes. Line 148 actively invites a write, contradicting spawn-protocol.md:54 and the agent's own constraint block (line 155). This is the highest-leverage fix.
+**Verdict: FAIL** — read-only is prose-asserted only; Bash enables writes. Line 148 actively invites a write, contradicting agent-orchestration.md:54 and the agent's own constraint block (line 155). This is the highest-leverage fix.
 
 ---
 
@@ -105,8 +105,8 @@ All read-only agents share the same Bash exposure. None use `disallowed-tools` t
 
 **needs-hardening**
 
-The agent passes frontmatter validation and correctly scopes its tools to analysis primitives. However, read-only enforcement is prose-only (Bash remains a write-capable escape hatch), and Collaboration Hints line 148 actively contradicts both the in-body constraint and `spawn-protocol.md:54`. The JSON reply contract is absent from the body, which is technically acceptable per the spawn-prompt convention but creates ambiguity for callers.
+The agent passes frontmatter validation and correctly scopes its tools to analysis primitives. However, read-only enforcement is prose-only (Bash remains a write-capable escape hatch), and Collaboration Hints line 148 actively contradicts both the in-body constraint and `agent-orchestration.md:54`. The JSON reply contract is absent from the body, which is technically acceptable per the spawn-prompt convention but creates ambiguity for callers.
 
 ## Highest-Leverage Fix
 
-Remove line 148 (`Write findings to ${SESSION_TMP_DIR}/architect-findings.md…`) from the Collaboration Hints section — it directly contradicts spawn-protocol.md:54 and the agent's own read-only constraint. Add a clarifying note that orchestrators must extract findings from the agent's text return. Optionally add `disallowed-tools: Write, Edit` if the Claude Code plugin API supports it, to structurally enforce the read-only guarantee.
+Remove line 148 (`Write findings to ${SESSION_TMP_DIR}/architect-findings.md…`) from the Collaboration Hints section — it directly contradicts agent-orchestration.md:54 and the agent's own read-only constraint. Add a clarifying note that orchestrators must extract findings from the agent's text return. Optionally add `disallowed-tools: Write, Edit` if the Claude Code plugin API supports it, to structurally enforce the read-only guarantee.

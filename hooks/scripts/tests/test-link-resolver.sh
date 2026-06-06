@@ -19,7 +19,7 @@ bash "$V" </dev/null >/dev/null 2>&1 || fail "baseline suite has broken links"
 mkdir -p "$FIX"
 
 # 2. Positive control: a valid /_shared/ link must NOT be flagged dead.
-printf '%s\n' '[ok](/_shared/spawn-protocol.md)' > "$FIX/good.md"
+printf '%s\n' '[ok](/_shared/agent-orchestration.md)' > "$FIX/good.md"
 bash "$V" </dev/null >/dev/null 2>&1 || fail "/_shared/ convention link wrongly flagged dead"
 
 # 3. Positive control: runtime-output path must be skipped (not flagged).

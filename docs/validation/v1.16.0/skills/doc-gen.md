@@ -52,11 +52,11 @@ Shell diff: `MATCH`
 `hooks/scripts/markdown-link-validate.sh skills/doc-gen/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 All `/_shared/` links in SKILL.md verified to exist under `skills/_shared/`:
-- `/_shared/spawn-protocol.md` → `skills/_shared/spawn-protocol.md` ✓
+- `/_shared/agent-orchestration.md` → `skills/_shared/agent-orchestration.md` ✓
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` ✓
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` ✓
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` ✓
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
 
 Relative link `../release/SKILL.md` (in Phase 2.4) also resolves.
 
@@ -92,7 +92,7 @@ SKILL.md Phase 2.4 acknowledges O1 ownership ("the summary below is for quick re
 
 **N/A**
 
-`doc-gen` is not listed in `skills/_shared/state-handoff.md` pipeline table (confirmed: grep finds no matches). It is a standalone/on-demand skill invoked directly by the user, not a sprint-pipeline consumer. No upstream producer / downstream consumer chain to trace.
+`doc-gen` is not listed in `skills/_shared/session-lifecycle.md` pipeline table (confirmed: grep finds no matches). It is a standalone/on-demand skill invoked directly by the user, not a sprint-pipeline consumer. No upstream producer / downstream consumer chain to trace.
 
 ---
 
@@ -127,7 +127,7 @@ Body measured from line 10 (after second `---` fence) to EOF: **366 lines**.
 
 **PASS**
 
-`allowed-tools` does not declare `TeamCreate` or `SendMessage`. Spawning uses `Agent(subagent_type: "general-purpose", ...)` as required by `spawn-protocol.md` §5 (v1.4.0 migration). Consistent with canonical Agent() pattern.
+`allowed-tools` does not declare `TeamCreate` or `SendMessage`. Spawning uses `Agent(subagent_type: "general-purpose", ...)` as required by `agent-orchestration.md` §5 (v1.4.0 migration). Consistent with canonical Agent() pattern.
 
 ---
 
@@ -139,7 +139,7 @@ Body measured from line 10 (after second `---` fence) to EOF: **366 lines**.
 | V2 | PASS | Shell diff: MATCH against canonical terse-output.md snippet |
 | V3 | PASS | `markdown-link-validate.sh` → OK (397 links); all /_shared/ links resolve |
 | V4 | FAIL | `references/main.md` restates O1-owned map without delegation; 3-row drift in both copies (docs/style/test sections) |
-| V5 | N/A | doc-gen not in sprint pipeline (state-handoff.md) |
+| V5 | N/A | doc-gen not in sprint pipeline (session-lifecycle.md) |
 | V6 | N/A | Not codebase-audit/research |
 | V7 | N/A | Not read-only-by-construction |
 | V8 | PASS | Body: 366 lines (hard 500, target 450) |

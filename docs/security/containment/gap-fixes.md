@@ -11,7 +11,7 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 **Anti-pattern:** AP-4. > "Product memory, CLAUDE.md files… reloaded each time the agent starts. Good classifiers on session startup will need to become more commonplace."
 
 **Confirmed surface:**
-- `skills/_shared/session-protocol.md:42` — "Read ALL `.cc-sessions/*.json` files." No integrity/injection check.
+- `skills/_shared/session-lifecycle.md:42` — "Read ALL `.cc-sessions/*.json` files." No integrity/injection check.
 - `:72` reads `activity-feed.jsonl`; `:76` reads `model-profiles.json`; `:82` reads `developer-profile.json` — all unvalidated.
 - The **carry-forward registry** (`.cc-sessions/carry-forward.jsonl`) is read unvalidated AND **auto-injects into the next sprint** — `sprint-plan` consumes it as mandatory input. Highest blast radius: a poisoned entry *drives real work*.
 - Existing seed: `rollover_count >= 3` → human-review escalation is a primitive startup classifier.
@@ -20,7 +20,7 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 1. Before persistent state enters context, **schema-validate** each `.cc-sessions/*.json` and the carry-forward entries against their registry/session schemas (reuse the `check-registry-validate.sh` validator pattern — same shape, new schema set).
 2. **Injection-marker scan** (deterministic regex, zero-LLM first pass): flag instruction-like strings, role-play directives ("ignore previous", "you are now"), tool-invocation strings, and URLs in fields that should hold *data* (e.g. a URL in `working_on`). Reuse the orchestrator `[0:200]` cap rationale (orchestrator.md:146) — cap every free-text field at load.
 3. Flagged/malformed entries are **quarantined** (moved aside + surfaced to the user), not silently loaded. Generalize the existing `rollover_count >= 3` escalation into this path.
-4. Optional Haiku-class second pass (per `token-budget.md`) only on entries the regex flags — "the classifier can be a small, fast model."
+4. Optional Haiku-class second pass (per `agent-orchestration.md`) only on entries the regex flags — "the classifier can be a small, fast model."
 
 **Reuses:** `check-registry-validate.sh` pattern (validator); orchestrator `[0:200]` cap (field capping); `rollover_count` escalation (quarantine surfacing). New check-registry rows: `sec-startup-schema`, `sec-startup-injection` (pillar `security`, lane `deterministic`).
 
@@ -35,7 +35,7 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 **Anti-pattern:** AP-6. > "If a sub-agent's output is treated as higher-trust than raw tool results, because such output came from 'us,' a new vector for prompt injection is introduced."
 
 **Confirmed surface:**
-- `skills/_shared/spawn-protocol.md:441-554` (§8 Output Contract, §9 Reply Contract) — defines the structured-JSON reply (`{status, summary≤50w, files_changed, issues, …}`). This **is** the article's "structured facts not raw text" mitigation — already in place. **Credit it.**
+- `skills/_shared/agent-orchestration.md:441-554` (§8 Output Contract, §9 Reply Contract) — defines the structured-JSON reply (`{status, summary≤50w, files_changed, issues, …}`). This **is** the article's "structured facts not raw text" mitigation — already in place. **Credit it.**
 - But the protocol never states the trust *boundary*. Agents that ingest external content — `research-critic` (WebFetch, agents/research-critic.md:21), `reviewer` (diffs), `backend/frontend-dev` (files) — feed results up to the orchestrator with no trust label.
 - Orchestrator caps activity-feed/HANDOFF at `[0:200]` (orchestrator.md:146-149) but **not** sub-agent replies.
 
@@ -49,7 +49,7 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 
 **Blast-radius reduction:** A poisoned README that steers research-critic can no longer escalate by laundering through "trusted" sub-agent output — the orchestrator caps + scans it identically to raw tool output (TB-3).
 
-**Best-practice grounding (S-2, `best-practices.md`):** Blitz's architecture already **is** the dual-LLM / Spotlighting information-flow-control pattern (Willison 2023; arXiv 2506.08837) — the orchestrator is the privileged planner (it *cannot* call `Agent()`, spawn-protocol.md:392), and sub-agents are quarantined readers returning structured JSON only (§9) = "a schema-validated channel carrying only structured extractions, never raw untrusted content." The missing piece is the **provenance tag**: `source_trust: "untrusted"` is exactly the CaMeL "source of data" capability label (arXiv 2503.18813), and NIST names "multi-agent trust boundaries" as a forthcoming SP 800-53 overlay. **Amendment:** document the orchestrator+sub-agent split in `spawn-protocol.md` as a dual-LLM boundary; cite CaMeL + Willison.
+**Best-practice grounding (S-2, `best-practices.md`):** Blitz's architecture already **is** the dual-LLM / Spotlighting information-flow-control pattern (Willison 2023; arXiv 2506.08837) — the orchestrator is the privileged planner (it *cannot* call `Agent()`, agent-orchestration.md:392), and sub-agents are quarantined readers returning structured JSON only (§9) = "a schema-validated channel carrying only structured extractions, never raw untrusted content." The missing piece is the **provenance tag**: `source_trust: "untrusted"` is exactly the CaMeL "source of data" capability label (arXiv 2503.18813), and NIST names "multi-agent trust boundaries" as a forthcoming SP 800-53 overlay. **Amendment:** document the orchestrator+sub-agent split in `agent-orchestration.md` as a dual-LLM boundary; cite CaMeL + Willison.
 
 ---
 
@@ -63,12 +63,12 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 - This is the **empty cell** in `blitz-surface-map.md` §1 (external-attacker × external-content).
 
 **Fix design — content-inspection step for network-enabled returns (Haiku classifier):**
-1. A small-fast-model (Haiku per `token-budget.md`) inspection pass on WebFetch returns, MCP tool returns, and fetched READMEs/docs **before** they enter the reasoning context.
+1. A small-fast-model (Haiku per `agent-orchestration.md`) inspection pass on WebFetch returns, MCP tool returns, and fetched READMEs/docs **before** they enter the reasoning context.
 2. Flag: embedded instructions ("ignore the above", "now run…"), tool-invocation strings, credential-shaped patterns (regex for keys/tokens), suspicious URL patterns (data-exfil endpoints, raw-paste hosts).
 3. Flagged content is wrapped/quarantined with a `[UNTRUSTED-CONTENT]` delimiter and surfaced, not silently consumed. The reasoning model sees the flag.
 4. Wire into research/research-critic (add an inspection sub-step parallel to §2.1 liveness) and any skill that ingests fetched content. Accept the latency tradeoff the article names — post-hoc logs show only "a successful authorized call," so inspection must be *live*.
 
-**Reuses:** Haiku-class classifier pattern (`token-budget.md` 60/35/5 routing); research-critic's existing per-URL fetch loop (add inspection alongside liveness); Gap 1/2 injection regex (shared detector). New check-registry row: `sec-content-inspection` (pillar `security`, lane `semantic` for the classifier judgment + `deterministic` for the regex pre-pass).
+**Reuses:** Haiku-class classifier pattern (`agent-orchestration.md` 60/35/5 routing); research-critic's existing per-URL fetch loop (add inspection alongside liveness); Gap 1/2 injection regex (shared detector). New check-registry row: `sec-content-inspection` (pillar `security`, lane `semantic` for the classifier judgment + `deterministic` for the regex pre-pass).
 
 **Blast-radius reduction:** Closes the only empty matrix cell. A poisoned page can no longer steer the agent silently into an authorized-looking exfiltration (TB-4).
 
@@ -114,7 +114,7 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 **Fix design — cap + defer at the startup hook:**
 1. Apply the orchestrator `[0:200]` cap to every field `session-start.sh` echoes — bring the startup path to parity with the §4 state-injection path.
 2. Injection-marker scan (shared Gap 1 regex) on echoed fields; replace flagged content with `[quarantined: suspicious field]`.
-3. Document the boundary in a new `skills/_shared/hook-trust.md` note: hooks that read project-local files at `SessionStart` treat them as untrusted inbound data; any *execution-bearing* parsing (none today — assert this) must defer until after the platform trust prompt.
+3. Document the boundary in a new `skills/_shared/security.md` note: hooks that read project-local files at `SessionStart` treat them as untrusted inbound data; any *execution-bearing* parsing (none today — assert this) must defer until after the platform trust prompt.
 4. Self-audit assertion to keep true: **no Blitz hook executes project-controlled content pre-trust.** (Confirmed today — `gap-fixes` Gap 5 + `self-audit.md` §3.)
 
 **Reuses:** orchestrator `[0:200]` cap (apply verbatim); Gap 1 injection regex; existing hook-header-comment convention.
@@ -127,8 +127,8 @@ Order = blast-radius descending (the sequence `SYNTHESIS.md` executes).
 
 | Gap | Article AP | Blitz surface (file:line) | Primitive reused | Trust boundary |
 |---|---|---|---|---|
-| 1 | AP-4 | session-protocol.md:42,72,76,82 + carry-forward | check-registry-validate + `[0:200]` + rollover escalation | TB-1, TB-2 |
-| 2 | AP-6 | spawn-protocol.md:441-554 | spawn §9 JSON contract + `[0:200]` | TB-3 |
+| 1 | AP-4 | session-lifecycle.md:42,72,76,82 + carry-forward | check-registry-validate + `[0:200]` + rollover escalation | TB-1, TB-2 |
+| 2 | AP-6 | agent-orchestration.md:441-554 | spawn §9 JSON contract + `[0:200]` | TB-3 |
 | 3 | AP-5 | research-critic.md:76-103; skills/research | Haiku classifier + research-critic fetch loop | TB-4 |
 | 4 | AP-3 | agents/*.md `tools:` (architect/critic/design-critic Bash) | `/blitz:audit` security pillar + exclusion-comment pattern | — (capability) |
 | 5 | AP-1 | session-start.sh:22-52 (hooks.json:37-42) | orchestrator `[0:200]` cap | TB-1 |

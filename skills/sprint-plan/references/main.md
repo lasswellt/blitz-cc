@@ -3,13 +3,13 @@
 Supporting schemas, templates, and logic for the sprint-plan skill.
 
 **Companion protocols:**
-- [carry-forward-registry.md](/_shared/carry-forward-registry.md) — The append-only JSONL registry. Sprint-plan reads it in Phase 0 for mandatory planning inputs and writes to it in Phase 4.1 when auto-waiving acceptance criteria.
+- [sprint-contracts.md](/_shared/sprint-contracts.md) — The append-only JSONL registry. Sprint-plan reads it in Phase 0 for mandatory planning inputs and writes to it in Phase 4.1 when auto-waiving acceptance criteria.
 
 ---
 
 ## Story File Format
 
-The story-frontmatter contract — schema, producer/consumer matrix, validation algorithm, body sections, and gap-closure template — lives in **[/_shared/story-frontmatter.md](/_shared/story-frontmatter.md)**. Sprint-plan, sprint-dev, and sprint-review all link to that single source.
+The story-frontmatter contract — schema, producer/consumer matrix, validation algorithm, body sections, and gap-closure template — lives in **[/_shared/sprint-contracts.md](/_shared/sprint-contracts.md)**. Sprint-plan, sprint-dev, and sprint-review all link to that single source.
 
 This section previously duplicated the schema; the duplication caused producer/consumer drift (CAP-133 carry-forward incident traced partly to that duplication). Schema changes go into the shared doc only.
 
@@ -87,7 +87,7 @@ The per-sprint manifest lives at `sprints/sprint-${N}/manifest.json` and capture
 
     "waived_ac_count": {
       "type": "integer",
-      "description": "Number of acceptance criteria auto-waived during Phase 4.1 under autonomy=high|full. Every waiver MUST also append a corresponding line to .cc-sessions/carry-forward.jsonl with event: 'auto_waived' — see skills/_shared/carry-forward-registry.md."
+      "description": "Number of acceptance criteria auto-waived during Phase 4.1 under autonomy=high|full. Every waiver MUST also append a corresponding line to .cc-sessions/carry-forward.jsonl with event: 'auto_waived' — see skills/_shared/sprint-contracts.md."
     },
     "reason_waivers": {
       "type": "string",
@@ -178,10 +178,10 @@ The per-sprint manifest lives at `sprints/sprint-${N}/manifest.json` and capture
 
 ## Agent Prompt Templates
 
-<!-- import: /_shared/agent-prompt-boilerplate.md -->
-Canonical boilerplate (Generic Agent Preamble, Medium BUDGET, WRITE-AS-YOU-GO) is documented in [/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md). The inline opening block + per-researcher templates below remain the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
+<!-- import: /_shared/agent-orchestration.md -->
+Canonical boilerplate (Generic Agent Preamble, Medium BUDGET, WRITE-AS-YOU-GO) is documented in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The inline opening block + per-researcher templates below remain the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
 
-**Workload class for all sprint-plan research agents**: Medium (per `skills/_shared/spawn-protocol.md`). Every agent prompt below must open with:
+**Workload class for all sprint-plan research agents**: Medium (per `skills/_shared/agent-orchestration.md`). Every agent prompt below must open with:
 
 ```
 You are a general-purpose agent with Write access. Your task is INCOMPLETE

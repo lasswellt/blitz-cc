@@ -76,4 +76,4 @@ Phase 3.6 Invariant 7 spawns `agents/critic.md` (redesigned). Per the CMC routin
 
 ## Recall note (honest boundary)
 
-Review is precision-biased BY DESIGN — it deliberately suppresses low-confidence semantic findings to avoid noise. The recall safety net is `/blitz:audit` (run pre-release): findings review suppressed as low-confidence are exactly what audit's aggregation lane re-surfaces. The two are complementary, not redundant (`quality-matrix.md` four-question test: distinct tempo + bias + downstream).
+Review is precision-biased BY DESIGN — it deliberately suppresses low-confidence semantic findings to avoid noise. The recall safety net is `/blitz:audit` (run pre-release): findings review suppressed as low-confidence are exactly what audit's aggregation lane re-surfaces. The two are complementary, not redundant (`quality-engine.md` four-question test: distinct tempo + bias + downstream).

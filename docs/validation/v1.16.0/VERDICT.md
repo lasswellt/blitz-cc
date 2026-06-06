@@ -94,7 +94,7 @@ Each re-verified by direct read/command. Blast radius + one-line fix.
 
 ### D4 — sprint-dev TeamCreate spawn-idiom drift (sprint-dev V9) — **FAIL** ✔ re-verified
 - **Where:** `skills/sprint-dev/SKILL.md:4` declares `TeamCreate` + `SendMessage`; `:190` "Use
-  TeamCreate to create a team". spawn-protocol.md:79 (foot-gun 5) deprecates TeamCreate with **no
+  TeamCreate to create a team". agent-orchestration.md:79 (foot-gun 5) deprecates TeamCreate with **no
   exception** for sprint-dev; Phase 2.3 already groups via `Agent(team_name:…)`.
 - **Blast radius:** Redundant pre-v1.4.0 residual. TeamCreate does not accept `subagent_type`;
   team grouping already works via `Agent(team_name)`. SendMessage for UNBLOCK/HALT IS acceptable
@@ -134,22 +134,22 @@ Each re-verified by direct read/command. Blast radius + one-line fix.
 ### D8 — agent read-only/reply-contract gaps (architect A2, reviewer A2, backend-dev A1, design-critic A1+A6, research-critic A6) — **FAIL ×6**
 - **architect A2:** `agents/architect.md:148` instructs writing
   `${SESSION_TMP_DIR}/architect-findings.md` while claiming read-only (`:155`); contradicts
-  spawn-protocol.md:54/76 (orchestrator must extract from text return). Fix: delete `:148`.
+  agent-orchestration.md:54/76 (orchestrator must extract from text return). Fix: delete `:148`.
 - **reviewer A2:** `agents/reviewer.md:13` holds `Write` with prose-only source exclusion; plugin
   agents cannot use disallowed-tools → fix is prose note + caller-side path validation.
 - **backend-dev A1 / design-critic A1+A6 / research-critic A6:** reply-contract / OUTPUT-STYLE
   injection lives at the *spawn site*, not the agent body. backend-dev's DONE:/BLOCKED: prefix
-  protocol needs a documented exception in token-budget.md §3; research-critic's spawn prompt
+  protocol needs a documented exception in agent-orchestration.md §3; research-critic's spawn prompt
   (`skills/research/SKILL.md:416-418`) and design-critic's ui-build spawn
   (`skills/ui-build/SKILL.md:326`) omit the mandatory verbatim OUTPUT STYLE / "Return ONLY this
   JSON" boilerplate. **Blast radius:** prompt-assembly, not runtime defect today; carry-forward.
 
 ### D9 — bootstrap + migrate pipeline-contract gaps (bootstrap V5, migrate V5) — **FAIL ×2**
 - **bootstrap V5:** Phase 5 neither creates roadmap/epic-registry stubs nor prints the fallback
-  message required by `state-handoff.md:35` → sprint-plan Phase 0 can hard-fail silently on
+  message required by `session-lifecycle.md:35` → sprint-plan Phase 0 can hard-fail silently on
   greenfield. **migrate V5:** body writes only `${SESSION_TMP_DIR}` artifacts, never the
   `docs/migrations/<from>-<to>/{plan,STATE,report}.md` + `--resume` contract declared in
-  `state-handoff.md §migrate` → canonical I/O contract is a dead letter for consumers.
+  `session-lifecycle.md §migrate` → canonical I/O contract is a dead letter for consumers.
 
 ### D10 — validate-plugin-structure.sh: 3 FALSE POSITIVES (Table 5) — **confirmed**
 - **Re-run output:** `FAIL: 3 errors, 0 warnings (out of 282 checks)` with **EXIT=0** (✔ verified —
@@ -172,10 +172,10 @@ Each re-verified by direct read/command. Blast radius + one-line fix.
 
 | Claimed change | Status | Evidence |
 |----------------|--------|----------|
-| **DW adoption** (workflow-dispatch.md, codebase-audit + research pilots) | **PARTIAL** | codebase-audit dual-path EQUIVALENT (V6 PASS — same roster, `args.findingsSchema`, Phase 2 collection path-agnostic, `SKILL.md:106-127`). research dispatch gate + fallback land, but Workflow `args` interface mis-declared (D3, research V6 FAIL) — Workflow path latently broken. |
+| **DW adoption** (agent-orchestration.md, codebase-audit + research pilots) | **PARTIAL** | codebase-audit dual-path EQUIVALENT (V6 PASS — same roster, `args.findingsSchema`, Phase 2 collection path-agnostic, `SKILL.md:106-127`). research dispatch gate + fallback land, but Workflow `args` interface mis-declared (D3, research V6 FAIL) — Workflow path latently broken. |
 | **O1–O5 ownership model** | **PARTIAL** | Model is sound and bidirectional where clean: O3 BIDIRECTIONAL (integration-check:29 ↔ completeness-gate:200-223). But O1/O5 restated ×2 (D1) and O2 forked ×2 (D2) in mirror/reference copies; O4 ask mirror stale (8 routes, 0 hits). 4 of 7 owner edges carry a restate/drift defect — sync discipline lapsed, ownership intent intact. |
 | **Injection guards** (orchestrator HANDOFF/feed truncation, Opus 4.8 ASR mitigation) | **PARTIAL** | `.message` and `.phase` capped at `[0:200]` (orchestrator.md:144,147 ✔), but `.sprint` left uncapped (D7, A3 FAIL) — one field defeats the guard. Landed for 2 of 3 free-text fields. |
-| **Model-string update** (token-budget §1 routing → haiku for mechanical workers) | **PARTIAL** | `agents/doc-writer.md:19 model: haiku` matches token-budget.md §1 ✔, but `spawn-protocol.md:49` still lists doc-writer's default as **sonnet** (stale reference table — doc-writer A1 advisory). The live agent declaration is correct; the cross-ref doc lags. |
+| **Model-string update** (token-budget §1 routing → haiku for mechanical workers) | **PARTIAL** | `agents/doc-writer.md:19 model: haiku` matches agent-orchestration.md §1 ✔, but `agent-orchestration.md:49` still lists doc-writer's default as **sonnet** (stale reference table — doc-writer A1 advisory). The live agent declaration is correct; the cross-ref doc lags. |
 | **disallowed-tools hardening** (read-only enforcement) | **PARTIAL** | `health/SKILL.md:6` enforces ✔. But 3 identical read-only-by-construction skills (completeness-gate, setup, worktree-prune) ship prose-only, no declaration (D6). S14-009 audit's "only health qualified" missed them. Landed for 1 of 4 clean candidates. |
 
 No change REGRESSED. All five landed at least partially; none fully clean. Net: the v1.16.0
@@ -255,14 +255,14 @@ bash scripts/validate-plugin-structure.sh 2>&1 | grep -E "^.FAIL.: [0-9]+ errors
 **Action:** bootstrap Phase 5 roadmap stub/fallback (D9); migrate `docs/migrations/` + `--resume`
 contract (D9); architect.md:148 delete write-instruction (D8); add OUTPUT-STYLE/JSON boilerplate to
 research-critic + design-critic spawn prompts and document backend-dev DONE: exception (D8); update
-stale `spawn-protocol.md:49` doc-writer model to haiku; trim migrate/refactor/retrospective/roadmap
+stale `agent-orchestration.md:49` doc-writer model to haiku; trim migrate/refactor/retrospective/roadmap
 bodies under 450.
 **Acceptance (grep/command):**
 ```bash
 grep -qE "roadmap-registry.json|Roadmap not initialized" skills/bootstrap/SKILL.md   # expect hit
 grep -qE "docs/migrations/.*plan\.md|--resume" skills/migrate/SKILL.md   # expect hit
 grep -q "architect-findings.md" agents/architect.md && echo "architect STILL writes"  # expect no output
-grep -nE "doc-writer.*sonnet" skills/_shared/spawn-protocol.md   # expect 0
+grep -nE "doc-writer.*sonnet" skills/_shared/agent-orchestration.md   # expect 0
 for s in migrate refactor retrospective roadmap; do
   n=$(awk 'f{c++} /^---$/{f++} f==2{exit} END{print c}' skills/$s/SKILL.md 2>/dev/null);
   [ "$(tail -n +10 skills/$s/SKILL.md | wc -l)" -le 450 ] || echo "$s OVER 450";

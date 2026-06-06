@@ -74,15 +74,15 @@ The memory-poisoning literature adds two things the article only gestures at:
 
 ### S-2 → Gap 2 (sub-agent trust): name the dual-LLM pattern Blitz already half-implements
 Blitz's architecture **is** the dual-LLM/Spotlighting pattern, mostly by accident:
-- Orchestrator = privileged model; it cannot use `Agent()` (subagents-cannot-spawn-subagents, spawn-protocol.md:392) — so it is structurally the planner.
+- Orchestrator = privileged model; it cannot use `Agent()` (subagents-cannot-spawn-subagents, agent-orchestration.md:392) — so it is structurally the planner.
 - Sub-agents = the quarantined readers of untrusted content; they return **structured JSON only** (spawn-protocol §9) — that is the "schema-validated channel carrying only structured extractions."
 
-The one missing piece vs. the canonical pattern: the quarantined reader should hold **no plan-altering capability**, and its output should carry a **provenance tag**. Gap 2's `source_trust: "untrusted"` is exactly the CaMeL "source of data" capability tag. **Amendment:** document in `spawn-protocol.md` that Blitz's orchestrator+sub-agent split is a dual-LLM information-flow-control boundary; the `source_trust` tag is its capability label. Cite CaMeL + Willison.
+The one missing piece vs. the canonical pattern: the quarantined reader should hold **no plan-altering capability**, and its output should carry a **provenance tag**. Gap 2's `source_trust: "untrusted"` is exactly the CaMeL "source of data" capability tag. **Amendment:** document in `agent-orchestration.md` that Blitz's orchestrator+sub-agent split is a dual-LLM information-flow-control boundary; the `source_trust` tag is its capability label. Cite CaMeL + Willison.
 
 ### S-3 → Gap 3 (content inspection): use data-marking, and inspect tool *descriptions* not just *returns*
 Two additions from OWASP-MCP + Spotlighting:
 1. **Data marking** (Spotlighting) is the validated mechanism for the `[UNTRUSTED-CONTENT]` delimiter — adopt the technique by name (transform untrusted spans to carry a continuous provenance signal), with the cited "negligible task impact" reassurance.
-2. **Tool poisoning** means the attack surface includes the MCP tool **description/metadata read at registration**, not only the tool's return value. Gap 3 should inspect **both**: (a) tool returns (already designed), (b) tool descriptions/metadata when an MCP server is loaded (new). Blitz lazy-loads MCP via ToolSearch (token-budget.md) — the inspection hooks there. **Rug-pull** defense: hash tool descriptions on first approval; re-inspect on change.
+2. **Tool poisoning** means the attack surface includes the MCP tool **description/metadata read at registration**, not only the tool's return value. Gap 3 should inspect **both**: (a) tool returns (already designed), (b) tool descriptions/metadata when an MCP server is loaded (new). Blitz lazy-loads MCP via ToolSearch (agent-orchestration.md) — the inspection hooks there. **Rug-pull** defense: hash tool descriptions on first approval; re-inspect on change.
 
 **Amendment:** Gap 3 adds (a) Spotlighting data-marking as the delimiter technique, (b) MCP tool-description inspection at ToolSearch-load + a description-hash rug-pull check.
 

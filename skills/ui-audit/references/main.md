@@ -1123,7 +1123,7 @@ else:
   wait for each worker's output file, then merge
 ```
 
-**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` is LOAD-BEARING — omitting re-introduces `[1m]` context crash (see `feedback_skill_model_1m_inheritance.md`). See `spawn-protocol.md` §7 for OUTPUT STYLE snippet.
+**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` is LOAD-BEARING — omitting re-introduces `[1m]` context crash (see `feedback_skill_model_1m_inheritance.md`). See `agent-orchestration.md` §7 for OUTPUT STYLE snippet.
 
 ```
 Agent(
@@ -1531,7 +1531,7 @@ Passed verbatim to `browser_evaluate`. Built per-page from `.ui-audit.json[pages
 
 ### JSONL append (single-session safe)
 
-`>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/session-protocol.md`).
+`>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/session-lifecycle.md`).
 
 ### Latest-wins reducer
 
@@ -1552,7 +1552,7 @@ Null-guards on `.ts` + `.label` protect against partial-write rows from a crash 
 
 ### Activity-feed event format
 
-See `/_shared/verbose-progress.md`. Every ui-audit event uses the `ui-audit` skill field:
+See `/_shared/terse-output.md`. Every ui-audit event uses the `ui-audit` skill field:
 
 ```jsonl
 {"ts":"<ISO-8601>","session":"<SESSION_ID>","skill":"ui-audit","event":"<event-type>","message":"<short>","detail":{<phase-specific>}}

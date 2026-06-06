@@ -126,7 +126,7 @@ grep -q "references-regrounded" agents/design-critic.md            # heuristic s
 ```bash
 grep -q "review --only design" agents/orchestrator.md
 grep -q "audit --pillar design" agents/orchestrator.md
-grep -qi "design" skills/_shared/quality-matrix.md                 # design pillar in the matrix
+grep -qi "design" skills/_shared/quality-engine.md                 # design pillar in the matrix
 # retire gate: zero references before deletion
 test -z "$(grep -rl frontend-design-heuristics skills/ agents/ 2>/dev/null)" && git rm skills/_shared/frontend-design-heuristics.md
 ! test -f skills/_shared/frontend-design-heuristics.md             # gone

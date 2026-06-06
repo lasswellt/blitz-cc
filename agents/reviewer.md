@@ -13,7 +13,7 @@ description: |
 tools: Read, Write, Bash, Glob, Grep
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 20
-# Sonnet per /_shared/token-budget.md — review needs reasoning, not depth.
+# Sonnet per /_shared/agent-orchestration.md — review needs reasoning, not depth.
 model: sonnet
 background: true
 memory: project

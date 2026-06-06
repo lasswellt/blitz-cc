@@ -15,7 +15,7 @@ disable-model-invocation: true
 
 ## Additional Resources
 - For codemod registry, risk assessment matrix, and rollback procedures, see [references/main.md](references/main.md)
-- For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/package-install-policy.md](/_shared/package-install-policy.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.
+- For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -49,7 +49,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **NEVER combine multiple breaking changes into one step.** Each breaking change gets its own atomic step with its own verification.
 
-8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [Definition of Done](/_shared/definition-of-done.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [Definition of Done](/_shared/sprint-contracts.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
@@ -57,7 +57,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Target
 
@@ -319,7 +319,7 @@ Migration Progress: <current> → <target>
   [ ] Step 6: Clean up deprecations — PENDING
 ```
 
-### 4.2.1 Output Artifacts (canonical, per [/_shared/state-handoff.md](/_shared/state-handoff.md) §migrate)
+### 4.2.1 Output Artifacts (canonical, per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §migrate)
 
 Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
 - `plan.md` — incremental step plan + per-step verification commands.

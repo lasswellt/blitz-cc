@@ -49,9 +49,9 @@ CANONICAL == SKILL → MATCH
 `hooks/scripts/markdown-link-validate.sh skills/ship/SKILL.md` → `OK (397 link(s) checked)`
 
 Links verified:
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` ✓
-- `/_shared/state-handoff.md` → `skills/_shared/state-handoff.md` ✓
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` ✓ (file exists)
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` ✓ (file exists)
 - `../release/SKILL.md` → `skills/release/SKILL.md` ✓
 
 No broken links.
@@ -89,9 +89,9 @@ Bidirectional citation: `skills/release/SKILL.md` line 3 (description) explicitl
 
 **PASS**
 
-Chain traced: `sprint-review → ship` (canonical final hop per `skills/_shared/state-handoff.md` line 6).
+Chain traced: `sprint-review → ship` (canonical final hop per `skills/_shared/session-lifecycle.md` line 6).
 
-`state-handoff.md` §sprint-review producer table (lines 76–83): sprint-review produces `sprints/sprint-${N}/review-report.md` (Required by ship).
+`session-lifecycle.md` §sprint-review producer table (lines 76–83): sprint-review produces `sprints/sprint-${N}/review-report.md` (Required by ship).
 
 `skills/ship/SKILL.md` Phase 0.1 (lines 64–73) consumes exactly this artifact:
 
@@ -104,7 +104,7 @@ Chain traced: `sprint-review → ship` (canonical final hop per `skills/_shared/
 
 `sprint-registry.json` status `done` is also validated (lines 65–67 read `current_sprint` from registry). Both required inputs per the handoff contract are guarded at Phase 0. The ship producer outputs (`CHANGELOG.md`, tag `v<X.Y.Z>`, `.cc-sessions/release-state.json`) are delegated to release sub-invocations — consistent with O5 ownership.
 
-One gap: `state-handoff.md` line 89 requires ship to produce `.cc-sessions/release-state.json` for rollback recovery, but `skills/ship/SKILL.md` never references this artifact. Release (`release publish` → Phase 5) may write it, but ship does not verify its production. Not a V5 violation since release is the writer, but worth noting.
+One gap: `session-lifecycle.md` line 89 requires ship to produce `.cc-sessions/release-state.json` for rollback recovery, but `skills/ship/SKILL.md` never references this artifact. Release (`release publish` → Phase 5) may write it, but ship does not verify its production. Not a V5 violation since release is the writer, but worth noting.
 
 ---
 
@@ -138,7 +138,7 @@ Total lines in file: 276. Frontmatter occupies lines 1–10 (closing `---` fence
 
 **PASS**
 
-`allowed-tools` does NOT declare `TeamCreate` or `SendMessage`. Ship uses skill-invocation syntax (`Invoke: /blitz:sprint-review`, `Invoke: /blitz:release prepare`) rather than `TeamCreate`/`Agent()` spawning. This is consistent with `skills/_shared/spawn-protocol.md` line 79: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — … Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)."
+`allowed-tools` does NOT declare `TeamCreate` or `SendMessage`. Ship uses skill-invocation syntax (`Invoke: /blitz:sprint-review`, `Invoke: /blitz:release prepare`) rather than `TeamCreate`/`Agent()` spawning. This is consistent with `skills/_shared/agent-orchestration.md` line 79: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — … Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)."
 
 Ship's invocation model is slash-command chaining (not agent spawning), so no TeamCreate exception is needed and no drift exists.
 
@@ -152,7 +152,7 @@ Ship's invocation model is slash-command chaining (not agent spawning), so no Te
 | V2 | PASS | Byte-exact match against `terse-output.md` canonical snippet |
 | V3 | PASS | `markdown-link-validate.sh` → OK (397 links checked) |
 | V4 | FAIL | `ship/SKILL.md:163-168` restates changelog formatting rules owned by `release` (O5), contradicting the delegation stated at line 159 |
-| V5 | PASS | Phase 0.1 guards `review-report.md`; sprint-registry `current_sprint` read matches state-handoff.md §sprint-review producer table |
+| V5 | PASS | Phase 0.1 guards `review-report.md`; sprint-registry `current_sprint` read matches session-lifecycle.md §sprint-review producer table |
 | V6 | N/A | Not codebase-audit or research |
 | V7 | N/A | Ship is write-capable by design; disallowed-tools pattern not applicable |
 | V8 | PASS | 266 body lines (≤450 target, ≤500 hard limit) |

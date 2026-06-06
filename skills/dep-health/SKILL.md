@@ -15,7 +15,7 @@ argument-hint: "<audit|upgrade|report>"
 
 ## Additional Resources
 - For package manager commands, license tables, and report templates, see [references/main.md](references/main.md)
-- For package install policy (canonical rule for `upgrade` mode resolution), see [/_shared/package-install-policy.md](/_shared/package-install-policy.md). dep-health is the periodic enforcer — every flagged outdated dep gets a recommended bump using the latest-resolution rule.
+- For package install policy (canonical rule for `upgrade` mode resolution), see [/_shared/security.md](/_shared/security.md). dep-health is the periodic enforcer — every flagged outdated dep gets a recommended bump using the latest-resolution rule.
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -29,7 +29,7 @@ Analyze npm packages for security vulnerabilities, outdated versions, license co
 
 ---
 
-All code produced must satisfy the [Definition of Done](/_shared/definition-of-done.md). No placeholder implementations.
+All code produced must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder implementations.
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
@@ -48,7 +48,7 @@ All code produced must satisfy the [Definition of Done](/_shared/definition-of-d
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 

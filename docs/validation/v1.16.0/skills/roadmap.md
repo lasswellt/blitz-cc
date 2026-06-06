@@ -14,8 +14,8 @@ highest_leverage_fix: "Body at 480 lines exceeds the 450-line target by 30; Phas
 - `skills/roadmap/SKILL.md` (490 total lines; frontmatter lines 1–10; body lines 11–490 = 480)
 - `skills/roadmap/references/main.md` (exists; referenced for Phases 5–8)
 - `skills/_shared/terse-output.md` (canonical OUTPUT STYLE source)
-- `skills/_shared/state-handoff.md` (pipeline contract)
-- `skills/_shared/carry-forward-registry.md` (canonical carry-forward owner)
+- `skills/_shared/session-lifecycle.md` (pipeline contract)
+- `skills/_shared/sprint-contracts.md` (canonical carry-forward owner)
 - `skills/sprint-plan/SKILL.md` (downstream consumer)
 
 ---
@@ -63,12 +63,12 @@ All `/_shared/X` links verified:
 
 | Link | Resolves to | Status |
 |---|---|---|
-| `/_shared/carry-forward-registry.md` | `skills/_shared/carry-forward-registry.md` | EXISTS |
-| `/_shared/state-handoff.md` | `skills/_shared/state-handoff.md` | EXISTS |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | EXISTS |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | EXISTS |
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | EXISTS |
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` | EXISTS |
-| `/_shared/verbose-progress.md` | `skills/_shared/verbose-progress.md` | EXISTS |
-| `/_shared/definition-of-done.md` | `skills/_shared/definition-of-done.md` | EXISTS |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | EXISTS |
+| `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | EXISTS |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | EXISTS |
 | `references/main.md` | `skills/roadmap/references/main.md` | EXISTS |
 
 ---
@@ -77,11 +77,11 @@ All `/_shared/X` links verified:
 
 **Verdict: PASS**
 
-Roadmap is a **pipeline owner** (not a delegator to an O1–O5 owner): it owns `docs/roadmap/roadmap-registry.json`, `docs/roadmap/epic-registry.json`, and `.cc-sessions/carry-forward.jsonl` `created` lines per `state-handoff.md` lines 48–50.
+Roadmap is a **pipeline owner** (not a delegator to an O1–O5 owner): it owns `docs/roadmap/roadmap-registry.json`, `docs/roadmap/epic-registry.json`, and `.cc-sessions/carry-forward.jsonl` `created` lines per `session-lifecycle.md` lines 48–50.
 
-Carry-forward protocol is owned by `skills/_shared/carry-forward-registry.md`. Roadmap correctly cites it in four places (SKILL.md lines 18, 50, 129, 360) and does NOT restate the Reader Algorithm — it delegates via "See `skills/_shared/carry-forward-registry.md` for the full protocol" (line 360).
+Carry-forward protocol is owned by `skills/_shared/sprint-contracts.md`. Roadmap correctly cites it in four places (SKILL.md lines 18, 50, 129, 360) and does NOT restate the Reader Algorithm — it delegates via "See `skills/_shared/sprint-contracts.md` for the full protocol" (line 360).
 
-Bidirectional check: `skills/_shared/carry-forward-registry.md` line 125 documents "When `/blitz:roadmap extend` reads a research doc…" — back-reference confirmed. `state-handoff.md` line 44 has a `### roadmap` section listing roadmap as the producer — confirmed.
+Bidirectional check: `skills/_shared/sprint-contracts.md` line 125 documents "When `/blitz:roadmap extend` reads a research doc…" — back-reference confirmed. `session-lifecycle.md` line 44 has a `### roadmap` section listing roadmap as the producer — confirmed.
 
 ---
 
@@ -92,12 +92,12 @@ Bidirectional check: `skills/_shared/carry-forward-registry.md` line 125 documen
 Chain traced: **research → roadmap → sprint-plan**
 
 **Upstream (research → roadmap):**
-- `state-handoff.md` line 41: research produces `docs/_research/<YYYY-MM-DD>_<slug>.md` and `scope:` YAML frontmatter → consumed by roadmap.
+- `session-lifecycle.md` line 41: research produces `docs/_research/<YYYY-MM-DD>_<slug>.md` and `scope:` YAML frontmatter → consumed by roadmap.
 - SKILL.md Phase 0.2 (lines 71–73) globs `**/docs/_research/**/*.md` — exact match to research's output path.
-- SKILL.md Phase 1.1.5 (lines 127–158) parses `scope:` YAML frontmatter — exact match to research Phase 3 writer contract per `state-handoff.md` line 42.
+- SKILL.md Phase 1.1.5 (lines 127–158) parses `scope:` YAML frontmatter — exact match to research Phase 3 writer contract per `session-lifecycle.md` line 42.
 
 **Downstream (roadmap → sprint-plan):**
-- `state-handoff.md` lines 48–50: roadmap produces `roadmap-registry.json`, `epic-registry.json`, and `carry-forward.jsonl` `created` lines.
+- `session-lifecycle.md` lines 48–50: roadmap produces `roadmap-registry.json`, `epic-registry.json`, and `carry-forward.jsonl` `created` lines.
 - `skills/sprint-plan/SKILL.md` Phase 0 (lines 64–65) hard-fails if `docs/roadmap/roadmap-registry.json` or `docs/roadmap/epic-registry.json` are absent — exact match to roadmap's output artifacts.
 - sprint-plan Phase 0 step 8 reads `.cc-sessions/carry-forward.jsonl` — confirmed at sprint-plan line 95–104.
 
@@ -142,7 +142,7 @@ Primary offender: Phase 2.4 (lines 303–360) is 58 lines of detailed refresh-mo
 
 **Verdict: PASS**
 
-`allowed-tools` declares `Agent` but NOT `TeamCreate` or `SendMessage`. This is the canonical single-agent `Agent()` pattern per `spawn-protocol.md`. No TeamCreate drift. No exception lookup required.
+`allowed-tools` declares `Agent` but NOT `TeamCreate` or `SendMessage`. This is the canonical single-agent `Agent()` pattern per `agent-orchestration.md`. No TeamCreate drift. No exception lookup required.
 
 SKILL.md text references spawning agents in Phases 5 and 7 ("Spawn agents per domain…", "Spawn agents per phase…") — consistent with single `Agent` tool declaration.
 

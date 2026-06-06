@@ -13,7 +13,7 @@
 | Input: pre-captured `/tmp/ui-build-screenshots/*.png` (`design-critic.md:44`) | Input: a **live URL** to the running dev server + viewport list; static PNGs become the fallback |
 | `tools: Read, Grep, Glob, Bash` (`design-critic.md:16`) — no Playwright | `tools: Read, Grep, Glob, Bash` **+ Playwright MCP** (browser navigation subset) |
 | Scores 3 static shots | Navigates (click/hover/keypress/resize), screenshots *itself*, then scores |
-| `maxTurns: 15` (`:20`) | Raised (navigation consumes turns) — bound per `token-budget.md` |
+| `maxTurns: 15` (`:20`) | Raised (navigation consumes turns) — bound per `agent-orchestration.md` |
 
 The five scoring dimensions (`design-critic.md:54–67`), the JSON reply contract (`:71–97`), and the PASS/ITERATE/REWORK thresholds (`:99–104`) are **unchanged**. Only the *input surface* and the *evidence-gathering step before scoring* change.
 

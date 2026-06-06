@@ -21,11 +21,11 @@ Script exits clean — all required fields present, OUTPUT STYLE regex passes.
 
 **OUTPUT STYLE snippet:** Present at line 24, extends the canonical with "Auto-pause for security/irreversible/root-cause sections." This extension is explicitly permitted by terse-output.md line 15: "Agents may extend the canonical snippet with a trailing addendum... Extensions are out of scope for the hash check." The canonical prefix matches verbatim.
 
-**Reply contract (token-budget.md §3):** The ≤50-word JSON reply contract is NOT embedded in the agent file. However, per token-budget.md §3: "Every `Agent()` prompt MUST instruct the subagent to return ONLY the canonical JSON." This is a **spawn-site obligation** placed on the orchestrator/skill that invokes doc-writer, not on doc-writer itself. doc-writer is a terminal writer agent — it writes docs to disk and signals completion implicitly. The spawn-protocol Agent Output Contract (spawn-protocol.md §8) similarly governs how the caller interprets outcomes. No self-declaration required of the agent; this is architecturally correct.
+**Reply contract (agent-orchestration.md §3):** The ≤50-word JSON reply contract is NOT embedded in the agent file. However, per agent-orchestration.md §3: "Every `Agent()` prompt MUST instruct the subagent to return ONLY the canonical JSON." This is a **spawn-site obligation** placed on the orchestrator/skill that invokes doc-writer, not on doc-writer itself. doc-writer is a terminal writer agent — it writes docs to disk and signals completion implicitly. The spawn-protocol Agent Output Contract (agent-orchestration.md §8) similarly governs how the caller interprets outcomes. No self-declaration required of the agent; this is architecturally correct.
 
-**Model routing:** doc-writer.md declares `model: haiku` (line 19). token-budget.md §1 routing matrix line 15 classifies "doc-gen" as a Mechanical worker → `claude-haiku-4-5`. This is consistent.
+**Model routing:** doc-writer.md declares `model: haiku` (line 19). agent-orchestration.md §1 routing matrix line 15 classifies "doc-gen" as a Mechanical worker → `claude-haiku-4-5`. This is consistent.
 
-**Cross-doc discrepancy (WARN, not blocking):** spawn-protocol.md line 49 lists doc-writer's default model as `sonnet`, which contradicts both doc-writer.md (`haiku`) and token-budget.md (Haiku for doc-gen). The agent's own frontmatter follows the authoritative token-budget.md routing matrix. The spawn-protocol table is stale. No runtime impact since the explicit `model:` in frontmatter overrides any default.
+**Cross-doc discrepancy (WARN, not blocking):** agent-orchestration.md line 49 lists doc-writer's default model as `sonnet`, which contradicts both doc-writer.md (`haiku`) and agent-orchestration.md (Haiku for doc-gen). The agent's own frontmatter follows the authoritative agent-orchestration.md routing matrix. The spawn-protocol table is stale. No runtime impact since the explicit `model:` in frontmatter overrides any default.
 
 ---
 
@@ -75,7 +75,7 @@ doc-writer is not critic/research-critic/design-critic. It is not dispatched via
 
 | Check | Verdict | Key Evidence |
 |-------|---------|--------------|
-| A1 — Frontmatter + Reply Contract | PASS | `agent-frontmatter-validate.sh` exits clean; model=haiku matches token-budget.md §1; reply contract is spawn-site obligation not agent-level; silently-stripped fields absent |
+| A1 — Frontmatter + Reply Contract | PASS | `agent-frontmatter-validate.sh` exits clean; model=haiku matches agent-orchestration.md §1; reply contract is spawn-site obligation not agent-level; silently-stripped fields absent |
 | A2 — Read-Only Enforcement | N/A | Writer agent; Write/Edit in tools is correct |
 | A3 — Orchestrator Injection Guard | N/A | Not orchestrator |
 | A4 — Orchestrator Routing Completeness | N/A | Not orchestrator |
@@ -84,4 +84,4 @@ doc-writer is not critic/research-critic/design-critic. It is not dispatched via
 
 **Agent verdict:** cohesive
 
-**Highest-leverage fix:** Update spawn-protocol.md line 49 to change doc-writer's default model from `sonnet` to `haiku` — the table is stale relative to both doc-writer.md and token-budget.md §1, creating a misleading reference that could cause callers to override the correct `haiku` declaration with a `sonnet` spawn when consulting only spawn-protocol.md.
+**Highest-leverage fix:** Update agent-orchestration.md line 49 to change doc-writer's default model from `sonnet` to `haiku` — the table is stale relative to both doc-writer.md and agent-orchestration.md §1, creating a misleading reference that could cause callers to override the correct `haiku` declaration with a `sonnet` spawn when consulting only agent-orchestration.md.

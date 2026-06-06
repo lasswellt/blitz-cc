@@ -48,10 +48,10 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 Script run: `hooks/scripts/markdown-link-validate.sh skills/release/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 Links checked manually:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` EXISTS
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` EXISTS
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` EXISTS
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` EXISTS
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` EXISTS
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` EXISTS
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` EXISTS
 - `references/main.md` → `skills/release/references/main.md` EXISTS
 
 Script verdict: all 397 links valid. **PASS.**
@@ -80,7 +80,7 @@ Bidirectional link verified: release names both consumers; both consumers cite b
 
 Chain traced: `sprint-review → ship → release`
 
-Per `skills/_shared/state-handoff.md §ship` (lines 88-90):
+Per `skills/_shared/session-lifecycle.md §ship` (lines 88-90):
 - Producer: `ship Phase 2 (release)` → artifact: `CHANGELOG.md entry` → consumer: Public release notes
 - Producer: `ship Phase 4` → artifact: `Tag v<X.Y.Z>` → consumer: npm/marketplace publish
 - Producer: `ship` → artifact: `.cc-sessions/release-state.json` → consumer: rollback recovery
@@ -89,7 +89,7 @@ Per `skills/_shared/state-handoff.md §ship` (lines 88-90):
 
 `release Phase 1` reads: `package.json` (version), `git describe --tags`, `lerna.json/plugin.json/marketplace.json`, commit history — all standard project artifacts, not pipeline artifacts requiring prior skill output.
 
-Release produces: `CHANGELOG.md` entry (Phase 3.3), release branch (Phase 3.1), git tag (Phase 5.3). These match state-handoff.md §ship declarations. No mismatch between emitted and declared artifacts. **PASS.**
+Release produces: `CHANGELOG.md` entry (Phase 3.3), release branch (Phase 3.1), git tag (Phase 5.3). These match session-lifecycle.md §ship declarations. No mismatch between emitted and declared artifacts. **PASS.**
 
 ---
 
@@ -137,7 +137,7 @@ Hard limit: 500. Target: 450. Body is at 477 — within hard limit but 27 lines 
 | V2 | OUTPUT STYLE snippet | PASS | Shell byte-compare → EXACT MATCH; SKILL.md:21 vs terse-output.md canonical |
 | V3 | Shared-protocol citations resolve | PASS | `markdown-link-validate.sh` → OK (397 links); all `/_shared/` refs resolve |
 | V4 | Canonical-owner compliance (bidirectional) | PASS | release SKILL.md:119 declares O1/O5; doc-gen:178 + ship:159 cite back with O-number |
-| V5 | Pipeline I/O composition | PASS | state-handoff.md:88-90 §ship; ship:177 passes `[version]`; release Phase 0.1 consumes it |
+| V5 | Pipeline I/O composition | PASS | session-lifecycle.md:88-90 §ship; ship:177 passes `[version]`; release Phase 0.1 consumes it |
 | V6 | Dynamic-Workflows wiring | N/A | Not codebase-audit or research |
 | V7 | Disallowed-tools gap | N/A | Not read-only-by-construction; Write/Edit legitimately required |
 | V8 | Body-line budget | PASS | 477 lines (hard 500 OK; target 450 breached by 27) |

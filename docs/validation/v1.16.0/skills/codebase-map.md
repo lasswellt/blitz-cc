@@ -59,7 +59,7 @@ Output: `markdown-link-validate: OK (397 link(s) checked)`
 Link validator run: `hooks/scripts/markdown-link-validate.sh skills/codebase-map/references/main.md`
 Output: `markdown-link-validate: OK (397 link(s) checked)`
 
-All `/_shared/X` citations in SKILL.md resolve: `session-protocol.md`, `verbose-progress.md`, `spawn-protocol.md`, `terse-output.md`. Cross-references in the Additional Resources block resolve correctly.
+All `/_shared/X` citations in SKILL.md resolve: `session-lifecycle.md`, `terse-output.md`, `agent-orchestration.md`, `terse-output.md`. Cross-references in the Additional Resources block resolve correctly.
 
 ---
 
@@ -69,13 +69,13 @@ All `/_shared/X` citations in SKILL.md resolve: `session-protocol.md`, `verbose-
 
 `codebase-map` is not an O1–O5 canonical logic owner — it is a standalone brownfield analysis skill. It correctly delegates to shared protocols:
 
-- Subagent spawning → `spawn-protocol.md` (cited at SKILL.md:17 and SKILL.md:86)
+- Subagent spawning → `agent-orchestration.md` (cited at SKILL.md:17 and SKILL.md:86)
 - Output style → `terse-output.md` (cited at SKILL.md:18 and in Additional Resources)
-- Session registration → `session-protocol.md` (cited at SKILL.md:37)
-- Activity feed → `verbose-progress.md` (cited at SKILL.md:37)
-- Agent boilerplate → `agent-prompt-boilerplate.md` (cited at `references/main.md:9`)
+- Session registration → `session-lifecycle.md` (cited at SKILL.md:37)
+- Activity feed → `terse-output.md` (cited at SKILL.md:37)
+- Agent boilerplate → `agent-orchestration.md` (cited at `references/main.md:9`)
 
-Shared protocols confirm the relationship bidirectionally: `skills/_shared/agent-prompt-boilerplate.md` lists `codebase-map` as a consumer; `skills/_shared/spawn-protocol.md` cites `codebase-map` as a flat-pool parallel spawn example. `skills/_shared/agent-routing.md` categorizes it as a "single-spawn orchestrator." No restated owned logic detected.
+Shared protocols confirm the relationship bidirectionally: `skills/_shared/agent-orchestration.md` lists `codebase-map` as a consumer; `skills/_shared/agent-orchestration.md` cites `codebase-map` as a flat-pool parallel spawn example. `skills/_shared/agent-orchestration.md` categorizes it as a "single-spawn orchestrator." No restated owned logic detected.
 
 ---
 
@@ -83,11 +83,11 @@ Shared protocols confirm the relationship bidirectionally: `skills/_shared/agent
 
 **Verdict: PASS (standalone — no upstream producer required)**
 
-`codebase-map` is **not in the sprint pipeline** (`state-handoff.md` pipeline table covers `bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship`; `codebase-map` appears in none of those rows).
+`codebase-map` is **not in the sprint pipeline** (`session-lifecycle.md` pipeline table covers `bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship`; `codebase-map` appears in none of those rows).
 
 It is a standalone analysis tool. Its declared chain (from `skills/ask/SKILL.md`): `codebase-map → roadmap` (informational, not an artifact handoff). The skill produces `CODEBASE-MAP.md` at the project root, which downstream skills may read as context but no consumer declares it as a required pipeline input.
 
-The skill has no upstream producer dependency — Phase 0.1 builds its own inventory via Bash. No `state-handoff.md` contract to violate. Pipeline I/O composition check is vacuously satisfied.
+The skill has no upstream producer dependency — Phase 0.1 builds its own inventory via Bash. No `session-lifecycle.md` contract to violate. Pipeline I/O composition check is vacuously satisfied.
 
 ---
 
@@ -95,7 +95,7 @@ The skill has no upstream producer dependency — Phase 0.1 builds its own inven
 
 **Verdict: N/A**
 
-`codebase-map` is not `codebase-audit` or `research` (the two DW pilot skills per `workflow-dispatch.md` v1.16+). No `BLITZ_DISPATCH` gate, no `Workflow` dispatch code, no DW references in SKILL.md or references/main.md. Not applicable.
+`codebase-map` is not `codebase-audit` or `research` (the two DW pilot skills per `agent-orchestration.md` v1.16+). No `BLITZ_DISPATCH` gate, no `Workflow` dispatch code, no DW references in SKILL.md or references/main.md. Not applicable.
 
 ---
 
@@ -136,7 +136,7 @@ Body lines: **167** (target ≤450, hard cap ≤500). Well within budget.
 
 `allowed-tools: Read, Write, Bash, Glob, Grep, Agent`
 
-`TeamCreate` and `SendMessage` are **not** in `allowed-tools`. The skill uses the canonical `Agent` tool for spawning (per `spawn-protocol.md` §5: "v1.4.0 migrated all spawning skills to this"). SKILL.md:78 and SKILL.md:82 explicitly instruct `Agent` tool calls with `subagent_type: general-purpose` and `model: sonnet`. Spawn idiom is correct and consistent with protocol.
+`TeamCreate` and `SendMessage` are **not** in `allowed-tools`. The skill uses the canonical `Agent` tool for spawning (per `agent-orchestration.md` §5: "v1.4.0 migrated all spawning skills to this"). SKILL.md:78 and SKILL.md:82 explicitly instruct `Agent` tool calls with `subagent_type: general-purpose` and `model: sonnet`. Spawn idiom is correct and consistent with protocol.
 
 ---
 

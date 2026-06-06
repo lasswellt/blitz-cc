@@ -17,7 +17,7 @@ mkdir -p "$SESSIONS_DIR"
 # so every echoed free-text field is capped at 200 chars (parity with orchestrator.md:146)
 # and injection-scanned — replaced with a quarantine marker on a hit. This hook NEVER
 # eval/sources project-controlled content; it only parses (jq) and echoes sanitized text.
-# Canonical posture: /_shared/threat-model.md §3 TB-1 + /_shared/hook-trust.md.
+# Canonical posture: /_shared/security.md §3 TB-1 + /_shared/security.md.
 INJ_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|</?(system|tool|assistant)>|tool_call|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE)|exfiltrat)'
 sanitize() {
   local s; s=$(cut -c1-200)

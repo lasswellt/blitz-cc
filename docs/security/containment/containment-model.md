@@ -98,7 +98,7 @@ Each is named, quoted, and reduced to a one-line **anti-pattern check** Blitz ca
 > Trade-off: "There is a tradeoff between allocating differing trust levels and becoming liable to trust escalation."
 > Mitigation named: sub-agents "can isolate untrusted content, returning structured facts rather than raw text."
 
-**Anti-pattern check:** *Is sub-agent output trusted more than the external content it processed?* → Blitz **Gap 2** (`spawn-protocol.md` reply contract).
+**Anti-pattern check:** *Is sub-agent output trusted more than the external content it processed?* → Blitz **Gap 2** (`agent-orchestration.md` reply contract).
 
 ---
 

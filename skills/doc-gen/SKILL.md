@@ -16,7 +16,7 @@ argument-hint: "<api|components|architecture|changelog|full>"
 - For documentation templates, Vue SFC parsing patterns, and Mermaid diagram examples, see:
 !cat skills/doc-gen/references/main.md
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -28,7 +28,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 Analyze source code and produce comprehensive, accurate documentation. In `full` mode, spawn 4 parallel agents (api, components, architecture, changelog) for concurrent documentation generation. Execute every phase in order. Do NOT skip phases.
 
-All generated documentation must satisfy the [Definition of Done](/_shared/definition-of-done.md). No placeholder sections, no TODO stubs.
+All generated documentation must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder sections, no TODO stubs.
 
 ---
 
@@ -36,7 +36,7 @@ All generated documentation must satisfy the [Definition of Done](/_shared/defin
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -198,7 +198,7 @@ If mode is `full`, create a team and spawn agents for parallel documentation gen
 
 Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: <agent-name>, prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`, `doc-changelog`).
 
-> **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [spawn-protocol.md](/_shared/spawn-protocol.md).
+> **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [agent-orchestration.md](/_shared/agent-orchestration.md).
 
 | Agent | Mode | Output File | Description |
 |-------|------|-------------|-------------|
@@ -207,7 +207,7 @@ Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", r
 | `doc-architecture` | architecture | `docs/generated/architecture.md` | Architecture overview |
 | `doc-changelog` | changelog | `docs/generated/changelog.md` | Changelog |
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Each agent prompt MUST declare:
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Each agent prompt MUST declare:
 - Max 20 file reads (of source files to document)
 - Max 25 tool calls
 - Max 400-line output (doc-api, doc-components, doc-architecture) / 100-line (doc-changelog)

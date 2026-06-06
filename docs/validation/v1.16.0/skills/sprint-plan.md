@@ -51,16 +51,16 @@ Manual cross-check of all `/_shared/` targets:
 
 | File | Exists |
 |---|---|
-| `skills/_shared/story-frontmatter.md` | ✓ |
-| `skills/_shared/state-handoff.md` | ✓ |
-| `skills/_shared/context-management.md` | ✓ |
-| `skills/_shared/checkpoint-protocol.md` | ✓ |
-| `skills/_shared/carry-forward-registry.md` | ✓ |
-| `skills/_shared/spawn-protocol.md` | ✓ |
+| `skills/_shared/sprint-contracts.md` | ✓ |
+| `skills/_shared/session-lifecycle.md` | ✓ |
+| `skills/_shared/session-lifecycle.md` | ✓ |
+| `skills/_shared/session-lifecycle.md` | ✓ |
+| `skills/_shared/sprint-contracts.md` | ✓ |
+| `skills/_shared/agent-orchestration.md` | ✓ |
 | `skills/_shared/terse-output.md` | ✓ |
-| `skills/_shared/definition-of-done.md` | ✓ |
-| `skills/_shared/session-protocol.md` | ✓ |
-| `skills/_shared/verbose-progress.md` | ✓ |
+| `skills/_shared/sprint-contracts.md` | ✓ |
+| `skills/_shared/session-lifecycle.md` | ✓ |
+| `skills/_shared/terse-output.md` | ✓ |
 
 ---
 
@@ -78,17 +78,17 @@ Unit notes: sprint-plan has no special O1–O5 owner/consumer role. No owner del
 
 Chain: `roadmap → sprint-plan → sprint-dev`
 
-Per `skills/_shared/state-handoff.md` §roadmap (lines 48–50):
+Per `skills/_shared/session-lifecycle.md` §roadmap (lines 48–50):
 - `docs/roadmap/roadmap-registry.json` — producer: `roadmap`; consumer: `sprint-plan Phase 0 step 2` (Required)
 - `docs/roadmap/epic-registry.json` — producer: `roadmap`; consumer: `sprint-plan Phase 0 step 2` (Required)
 - `.cc-sessions/carry-forward.jsonl` (`event: "created"`) — producer: `roadmap extend Phase 1.1.5`; consumer: `sprint-plan Phase 0 step 8`
 
-Per `skills/_shared/state-handoff.md` §sprint-plan (lines 56–61), sprint-plan produces:
+Per `skills/_shared/session-lifecycle.md` §sprint-plan (lines 56–61), sprint-plan produces:
 - `sprints/sprint-${N}/manifest.json` → consumed by `sprint-dev Phase 0.0` (Required)
 - `sprints/sprint-${N}/stories/S${N}-*.md` → consumed by `sprint-dev` (Required ≥ 1)
 - `sprint-registry.json` (entry added) → consumed by `sprint-dev`, `sprint-review`, `ship` (Required)
 
-SKILL.md Phase 0.0 hard-fails on missing `roadmap-registry.json` and `epic-registry.json` (lines 63–74), citing `state-handoff.md §sprint-plan`. SKILL.md Phase 1.4 writes `manifest.json`, Phase 3.2 writes stories, Phase 4.5 writes `sprint-registry.json`. All match exactly.
+SKILL.md Phase 0.0 hard-fails on missing `roadmap-registry.json` and `epic-registry.json` (lines 63–74), citing `session-lifecycle.md §sprint-plan`. SKILL.md Phase 1.4 writes `manifest.json`, Phase 3.2 writes stories, Phase 4.5 writes `sprint-registry.json`. All match exactly.
 
 Carry-forward optionality is correctly declared: OPTIONAL at Phase 0.0 gate (SKILL.md line 76), processed in Phase 0 step 8 (SKILL.md lines 95–106).
 

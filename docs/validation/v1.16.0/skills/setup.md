@@ -39,7 +39,7 @@ Canonical line extracted from `skills/_shared/terse-output.md` (between `canonic
 
 `hooks/scripts/markdown-link-validate.sh skills/setup/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
-All `/_shared/` links (`session-protocol.md`, `verbose-progress.md`, `terse-output.md`) and `references/main.md` resolve to real files. `references/main.md` confirmed at `skills/setup/references/main.md`.
+All `/_shared/` links (`session-lifecycle.md`, `terse-output.md`, `terse-output.md`) and `references/main.md` resolve to real files. `references/main.md` confirmed at `skills/setup/references/main.md`.
 
 **Minor observation (non-blocking):** Phase 2 inline bash references `${CLAUDE_PLUGIN_ROOT}/skills/setup/conflict-catalog.json` (missing `/assets/` subdirectory), while Error Recovery prose says `assets/conflict-catalog.json` (missing root path). Actual file is at `skills/setup/assets/conflict-catalog.json`. Neither path as written is fully correct. This is a runtime correctness issue, not a link-validation failure.
 
@@ -49,7 +49,7 @@ All `/_shared/` links (`session-protocol.md`, `verbose-progress.md`, `terse-outp
 
 **N/A**
 
-`setup` is a standalone diagnostic skill. It is not an O1–O5 pipeline owner and does not delegate to one. No bidirectional citation required. Confirmed: `skills/_shared/state-handoff.md` contains no pipeline chain referencing `setup` as producer or consumer.
+`setup` is a standalone diagnostic skill. It is not an O1–O5 pipeline owner and does not delegate to one. No bidirectional citation required. Confirmed: `skills/_shared/session-lifecycle.md` contains no pipeline chain referencing `setup` as producer or consumer.
 
 ---
 
@@ -57,7 +57,7 @@ All `/_shared/` links (`session-protocol.md`, `verbose-progress.md`, `terse-outp
 
 **N/A**
 
-`setup` has no upstream producer and no downstream consumer in the sprint pipeline (`state-handoff.md` contains zero pipeline entries for `setup`). It is an advisory, read-only diagnostic invoked ad hoc. No I/O composition contract to validate.
+`setup` has no upstream producer and no downstream consumer in the sprint pipeline (`session-lifecycle.md` contains zero pipeline entries for `setup`). It is an advisory, read-only diagnostic invoked ad hoc. No I/O composition contract to validate.
 
 ---
 

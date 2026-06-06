@@ -6,8 +6,8 @@ Dimension-agent prompt template, quality scoring rubric, dimension checklists, a
 
 ## Dimension Agent Prompt Template
 
-<!-- import: /_shared/agent-prompt-boilerplate.md -->
-Canonical boilerplate sections (Generic Agent Preamble, Medium BUDGET, WRITE-AS-YOU-GO, HEARTBEAT file-append form, CONFIRMATION) are documented in [/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md). The inline template below remains the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
+<!-- import: /_shared/agent-orchestration.md -->
+Canonical boilerplate sections (Generic Agent Preamble, Medium BUDGET, WRITE-AS-YOU-GO, HEARTBEAT file-append form, CONFIRMATION) are documented in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The inline template below remains the byte-stable spawn source — OUTPUT STYLE inline preservation is required by sprint-review Invariant 5.
 
 Used by the main skill in Phase 1 when spawning the 4 parallel dimension agents. Variables: `{{DIMENSION}}`, `{{OUTPUT_PATH}}`, `{{INVENTORY_DIR}}`, `{{FILE_CAP}}`, `{{STACK_PROFILE}}`, `{{CHECKLIST}}`.
 
@@ -17,7 +17,7 @@ You are a codebase-map {{DIMENSION}} dimension analyst.
 You are a general-purpose agent with Write access. Your task is INCOMPLETE
 if {{OUTPUT_PATH}} does not exist when you finish.
 
-BUDGET (Medium class — see skills/_shared/spawn-protocol.md):
+BUDGET (Medium class — see skills/_shared/agent-orchestration.md):
 - Max file reads: {{FILE_CAP}}
 - Max web searches: 0 (pure codebase analysis)
 - Max tool calls: 25

@@ -1,6 +1,6 @@
 # Blitz Threat Model — Containment Posture (design record)
 
-> **Status: PROMOTED.** The canonical, live version now lives at [`skills/_shared/threat-model.md`](../../../skills/_shared/threat-model.md) (Epic 0 complete). That file is the O-style canonical owner cited by the `block-*.sh` guards, `spawn-protocol.md`, `session-protocol.md`, `orchestrator.md`, and `/blitz:audit`. This document is retained as the **design record** from the research pass — the reasoning that produced the posture. Edit the `_shared` version for live behavior; keep this for provenance.
+> **Status: PROMOTED.** The canonical, live version now lives at [`skills/_shared/security.md`](../../../skills/_shared/security.md) (Epic 0 complete). That file is the O-style canonical owner cited by the `block-*.sh` guards, `agent-orchestration.md`, `session-lifecycle.md`, `orchestrator.md`, and `/blitz:audit`. This document is retained as the **design record** from the research pass — the reasoning that produced the posture. Edit the `_shared` version for live behavior; keep this for provenance.
 
 > Grounded in `containment-model.md` (Anthropic, "How we contain Claude across products", 2026-05-25). Right-sized for a Claude Code-class HITL developer tool — **not** claude.ai or Cowork (see §6 Scope).
 
@@ -21,7 +21,7 @@ Blitz is itself an agent system: 37 skills, 10 agents, worktree/sub-agent spawni
 **Why this rule, stated plainly (not terse — reasoning chain must survive):** Blitz now runs on a highly aligned model (Opus 4.8 honesty gains), and it is tempting to treat "the model will notice" as sufficient. The article's two most instructive incidents — the employee phish and the allowlist disclosure — were both egress events where *the model layer had nothing anomalous to catch*, because the instruction came from the legitimate user (AP-2) or through an approved channel (AP-3). Only the environment boundary held. Therefore:
 
 - A new control is **valid** only if it has a deterministic component (a hook, a schema check, a tool grant, a cap). A control that is *only* "the agent is instructed to be careful" does not count as containment.
-- Persistent-state validation (Gap 1) and fetched-content inspection (Gap 3) are designed as **deterministic schema/scan steps plus a small-fast-model classifier**, not as "the reasoning model will spot the injection." The classifier is Haiku-class per `token-budget.md` — it "doesn't need to be the one doing the reasoning."
+- Persistent-state validation (Gap 1) and fetched-content inspection (Gap 3) are designed as **deterministic schema/scan steps plus a small-fast-model classifier**, not as "the reasoning model will spot the injection." The classifier is Haiku-class per `agent-orchestration.md` — it "doesn't need to be the one doing the reasoning."
 
 ---
 
@@ -65,9 +65,9 @@ Authoritative cross-reference: `blitz-surface-map.md` §1. Summary:
 
 ## 5. Canonical-owner declaration
 
-Once moved to `skills/_shared/threat-model.md`, this file is the **canonical owner** of Blitz's security posture:
+Once moved to `skills/_shared/security.md`, this file is the **canonical owner** of Blitz's security posture:
 
-- **Cited by (bidirectional):** the `block-*.sh` guards (header comment → `threat-model.md §<TB>`); `spawn-protocol.md` §8/§9 (TB-3); `session-protocol.md` startup (TB-1/TB-2); `agents/orchestrator.md` §4 (TB-3 sub-agent handling, TB-4 untrusted-content tags); `/blitz:audit` security pillar.
+- **Cited by (bidirectional):** the `block-*.sh` guards (header comment → `threat-model.md §<TB>`); `agent-orchestration.md` §8/§9 (TB-3); `session-lifecycle.md` startup (TB-1/TB-2); `agents/orchestrator.md` §4 (TB-3 sub-agent handling, TB-4 untrusted-content tags); `/blitz:audit` security pillar.
 - **Registration contract:** a new deterministic security guard MUST (1) cite the TB it enforces, (2) add a row to `check-registry.json` under `pillar: security`, (3) be reachable via `/blitz:audit --pillar security`.
 - **O-style:** scattered guards stop being self-describing point fixes; they become enforcement points of one declared posture. This is the article's "defenses should overlap and complement" made auditable.
 

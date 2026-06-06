@@ -45,7 +45,7 @@ All required fields present and valid.
 
 **Verdict**: PASS
 
-**Evidence**: No O1-O5 owner scheme exists in this codebase (`grep -rn 'O1\|O2\|O3\|O4\|O5' skills/_shared/` → empty). Research is classified as a **super-orchestrator** per `skills/_shared/agent-routing.md` line 25. It is a primary pipeline producer (not a delegate): `state-handoff.md` lines 38–42 document research as canonical producer of `docs/_research/<date>_<slug>.md` and `scope:` YAML. Consumer (`roadmap extend`) cites research as upstream via `roadmap/SKILL.md` line 3 description + Phase 1.1 glob. Bidirectional: research cites `carry-forward-registry.md` (§3.1.1) and `roadmap` references research docs in Phase 0.1. No owned logic is restated — research delegates synthesis to agents, registry protocol to `carry-forward-registry.md`.
+**Evidence**: No O1-O5 owner scheme exists in this codebase (`grep -rn 'O1\|O2\|O3\|O4\|O5' skills/_shared/` → empty). Research is classified as a **super-orchestrator** per `skills/_shared/agent-orchestration.md` line 25. It is a primary pipeline producer (not a delegate): `session-lifecycle.md` lines 38–42 document research as canonical producer of `docs/_research/<date>_<slug>.md` and `scope:` YAML. Consumer (`roadmap extend`) cites research as upstream via `roadmap/SKILL.md` line 3 description + Phase 1.1 glob. Bidirectional: research cites `sprint-contracts.md` (§3.1.1) and `roadmap` references research docs in Phase 0.1. No owned logic is restated — research delegates synthesis to agents, registry protocol to `sprint-contracts.md`.
 
 ---
 
@@ -55,7 +55,7 @@ All required fields present and valid.
 
 **Evidence**: Chain: bootstrap (optional) → **research** → roadmap extend → sprint-plan.
 
-Per `skills/_shared/state-handoff.md` lines 38–42:
+Per `skills/_shared/session-lifecycle.md` lines 38–42:
 - **research produces**: `docs/_research/YYYY-MM-DD_<slug>.md` + optional `scope:` YAML frontmatter block.
 - **roadmap extend consumes**: same files via glob `**/docs/_research/**/*.md` (roadmap/SKILL.md line 71–73).
 
@@ -68,13 +68,13 @@ Research has no required upstream inputs (it is the pipeline head for research-i
 **Verdict**: FAIL (needs-tightening — args comment inconsistency)
 
 ### Gate §1.2.6 (dispatch mode selection)
-PASS. The bash dispatch gate at SKILL.md lines 121–128 correctly implements the `workflow-dispatch.md` spec:
+PASS. The bash dispatch gate at SKILL.md lines 121–128 correctly implements the `agent-orchestration.md` spec:
 - `agent` → `USE_WORKFLOW=false`
 - `workflow` → `USE_WORKFLOW=true` (comment: "force; error if Workflow tool absent" — matches spec §Capability gate §49)
-- `auto` → `USE_WORKFLOW=maybe` (truthy; attempt call, fall back on tool-unavailable error per `workflow-dispatch.md` line 48)
+- `auto` → `USE_WORKFLOW=maybe` (truthy; attempt call, fall back on tool-unavailable error per `agent-orchestration.md` line 48)
 
 ### Fallback contract
-PASS. Prose bullet at line 131: "else, or on ANY Workflow failure → fall back to §1.3 (Agent() path). Never hard-fail." Consistent with `workflow-dispatch.md` line 50.
+PASS. Prose bullet at line 131: "else, or on ANY Workflow failure → fall back to §1.3 (Agent() path). Never hard-fail." Consistent with `agent-orchestration.md` line 50.
 
 ### Activity-feed logging
 PASS. Line 132: "Log the chosen path to the activity-feed: `detail.dispatch: 'workflow'|'agent'`." Matches spec.
@@ -83,7 +83,7 @@ PASS. Line 132: "Log the chosen path to the activity-feed: `detail.dispatch: 'wo
 PASS. Line 133 explicitly states: "The Workflow script touches NO filesystem: working-dir creation (§1.1), SESSION_TMP_DIR polling, summarization (§2.2), classify (§2.1), synthesis (Phase 3), and activity-feed writes all stay in this skill's main-thread Bash." The §1.3-W JS block (lines 139–151) contains no `Date.now()`, `Math.random()`, `new Date()`, filesystem calls, `.cc-sessions` writes, or Node API calls — only `parallel()`, `agent()`, and `filter(Boolean)` primitives.
 
 ### §1.3-W Script body (gap agent inside Workflow)
-PASS. The gap detection agent `await agent(args.gapPrompt, {phase:'GapFill', model:'haiku', schema:args.gapSchema})` inside the Workflow script is valid dispatch-only logic per `workflow-dispatch.md` §Pattern mapping (line 73): "gap second-wave (research Phase 2.4) → `if (gaps.length) await agent(...)`". The result `.filter()` is computation on returned data — allowed.
+PASS. The gap detection agent `await agent(args.gapPrompt, {phase:'GapFill', model:'haiku', schema:args.gapSchema})` inside the Workflow script is valid dispatch-only logic per `agent-orchestration.md` §Pattern mapping (line 73): "gap second-wave (research Phase 2.4) → `if (gaps.length) await agent(...)`". The result `.filter()` is computation on returned data — allowed.
 
 ### **DEFECT: args comment vs script usage mismatch**
 FAIL. The Workflow args comment at line 141 declares:
@@ -126,7 +126,7 @@ PASS. Line 155: "Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) +
 
 **Verdict**: PASS
 
-**Evidence**: `allowed-tools` at SKILL.md line 4: `Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent`. Neither `TeamCreate` nor `SendMessage` is present. Skill uses the canonical `Agent` tool for spawning (`general-purpose` subagent_type per §1.3 line 163). No TeamCreate/SendMessage drift from `spawn-protocol.md` §1 footnote 5 ("v1.4.0 migrated all spawning skills to Agent tool"). Consistent.
+**Evidence**: `allowed-tools` at SKILL.md line 4: `Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent`. Neither `TeamCreate` nor `SendMessage` is present. Skill uses the canonical `Agent` tool for spawning (`general-purpose` subagent_type per §1.3 line 163). No TeamCreate/SendMessage drift from `agent-orchestration.md` §1 footnote 5 ("v1.4.0 migrated all spawning skills to Agent tool"). Consistent.
 
 ---
 

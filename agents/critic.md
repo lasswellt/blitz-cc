@@ -17,7 +17,7 @@ description: |
 tools: Read, Grep, Glob, Bash
 # capability rationale (TB-4 / sec-capability-grant): Bash runs deterministic detectors (git diff,
 # grep, tsc/lint readouts) — read-subset only. Strictly read-only review role; no Write/Edit/Agent.
-# Bash is exec+egress — keep read-only; do NOT add network/MCP egress. Posture: /_shared/threat-model.md §5.
+# Bash is exec+egress — keep read-only; do NOT add network/MCP egress. Posture: /_shared/security.md §5.
 maxTurns: 30
 model: sonnet
 memory: project
@@ -52,7 +52,7 @@ Halt on first REJECT. Do NOT report a kitchen sink of issues — find ONE reason
 
 ### 2.1 Shortcut taxonomy (20 detectors; 13 reject, 7 advisory)
 
-**Canonical source: [`/_shared/check-registry.json`](../skills/_shared/check-registry.json).** Load the `reject`-authority `det-*` rows (`verdict_authority == "reject"`) and run each row's `detection.command` — these are the checks that may flip the verdict. The 7 advisory `det-*` rows (det-05/08/09/10/16/17/20) append to `issues[]` only and never set REJECT. Severity ≠ verdict authority (see [`/_shared/check-registry.md`](../skills/_shared/check-registry.md)). The bash block below mirrors the high-yield reject detectors verbatim ([`shortcut-taxonomy.md`](../skills/_shared/shortcut-taxonomy.md) is the human-readable view):
+**Canonical source: [`/_shared/check-registry.json`](../skills/_shared/check-registry.json).** Load the `reject`-authority `det-*` rows (`verdict_authority == "reject"`) and run each row's `detection.command` — these are the checks that may flip the verdict. The 7 advisory `det-*` rows (det-05/08/09/10/16/17/20) append to `issues[]` only and never set REJECT. Severity ≠ verdict authority (see [`/_shared/quality-engine.md`](../skills/_shared/quality-engine.md)). The bash block below mirrors the high-yield reject detectors verbatim ([`quality-engine.md`](../skills/_shared/quality-engine.md) is the human-readable view):
 
 ```bash
 # Test deletion
@@ -104,7 +104,7 @@ Compare to `ratchet.json -> metrics.test_count.min_allowed`. If lower: REJECT (t
 
 ### 2.5 Story acceptance_checks (if present)
 
-Schema reference: [`/_shared/story-frontmatter.md`](../skills/_shared/story-frontmatter.md) §Acceptance check types.
+Schema reference: [`/_shared/sprint-contracts.md`](../skills/_shared/sprint-contracts.md) §Acceptance check types.
 
 For each story under `sprints/sprint-${N}/stories/*.md`, parse `acceptance_checks:` from YAML frontmatter and execute each entry. ANY failed check → REJECT (cite the entry's `message:` field as the reject reason).
 
@@ -185,7 +185,7 @@ If a test file was renamed to a non-test suffix: REJECT.
 
 ### 2.9 Audit-finding integrity (detector #20, advisory)
 
-When any sprint deliverable is an audit findings file (audit pillar outputs, code-sweep tier outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per `_shared/shortcut-taxonomy.md` §3 detector #20:
+When any sprint deliverable is an audit findings file (audit pillar outputs, code-sweep tier outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per `_shared/quality-engine.md` §3 detector #20:
 
 ```bash
 for f in $(git diff --name-only ${SPRINT_BASE}..HEAD | grep -E 'findings.*\.md|review-.*\.md|_research/.*audit.*\.md'); do
@@ -199,7 +199,7 @@ for f in $(git diff --name-only ${SPRINT_BASE}..HEAD | grep -E 'findings.*\.md|r
 done
 ```
 
-Advisory (P3) — does NOT block PASS by itself, but findings that fire detector #20 are added to the critic's `issues[]` array as `severity: advisory`, signaling the audit agent should re-run with Self-Falsification rule per `_shared/agent-prompt-boilerplate.md` §Self-Falsification. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+Advisory (P3) — does NOT block PASS by itself, but findings that fire detector #20 are added to the critic's `issues[]` array as `severity: advisory`, signaling the audit agent should re-run with Self-Falsification rule per `_shared/agent-orchestration.md` §Self-Falsification. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
 
 ---
 

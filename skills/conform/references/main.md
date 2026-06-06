@@ -21,7 +21,7 @@ For each artifact category that supports multiple schema versions, conform must 
 
 | Artifact | Version probe | Versions |
 |---|---|---|
-| Story frontmatter | YAML keys present | pre-registry: `epic` + `verify`, no `registry_entries`. current: `epic` + `verify` + `registry_entries` (canonical field names per `/_shared/story-frontmatter.md`). The only additive field is `registry_entries`; `epic`/`verify` are canonical — NOT renamed. |
+| Story frontmatter | YAML keys present | pre-registry: `epic` + `verify`, no `registry_entries`. current: `epic` + `verify` + `registry_entries` (canonical field names per `/_shared/sprint-contracts.md`). The only additive field is `registry_entries`; `epic`/`verify` are canonical — NOT renamed. |
 | STATE.md | first heading after `# Sprint N — STATE` | field-form (one bullet per field) vs table-form (markdown table with one row per field) |
 | Sprint manifest | `version` field if present, else infer from key set | `manifest.json` v1+ has `points_total`, `story_count_required`. Older manifests may lack these. |
 | Activity feed line | required-field probe | v1: `ts`, `session`, `skill`, `event`, `message`, `detail` (current). Older lines may lack `detail`. |
@@ -30,7 +30,7 @@ For each artifact category that supports multiple schema versions, conform must 
 
 ## Story Schema Versions
 
-**Canonical field names are `epic` and `verify`** (per [`/_shared/story-frontmatter.md`](/_shared/story-frontmatter.md) — `epic` required, `verify` required, `registry_entries` optional). There is **no** `epic_id`/`acceptance_criteria` rename — earlier drafts of this skill described one, but the canonical schema never adopted it. The only real schema evolution is the **additive `registry_entries`** field (added in the carry-forward-registry era). Do NOT rename `epic`→`epic_id` or `verify`→`acceptance_criteria`; doing so de-conforms an already-conformant story and breaks `sprint-review` Invariant 3 (which reads `epic`) and the `done` gate (which reads `verify`).
+**Canonical field names are `epic` and `verify`** (per [`/_shared/sprint-contracts.md`](/_shared/sprint-contracts.md) — `epic` required, `verify` required, `registry_entries` optional). There is **no** `epic_id`/`acceptance_criteria` rename — earlier drafts of this skill described one, but the canonical schema never adopted it. The only real schema evolution is the **additive `registry_entries`** field (added in the carry-forward-registry era). Do NOT rename `epic`→`epic_id` or `verify`→`acceptance_criteria`; doing so de-conforms an already-conformant story and breaks `sprint-review` Invariant 3 (which reads `epic`) and the `done` gate (which reads `verify`).
 
 ### pre-registry (older stories, before carry-forward integration)
 
@@ -53,7 +53,7 @@ commit: 'feat(sprint-200/backend): ...'
 # ← lacks `registry_entries` (the one additive field)
 ```
 
-### current canonical (per `/_shared/story-frontmatter.md`)
+### current canonical (per `/_shared/sprint-contracts.md`)
 
 ```yaml
 ---
@@ -90,7 +90,7 @@ A story is flagged MIGRATE **only** if it lacks `registry_entries` AND the proje
 
 ## STATE.md Format Variants
 
-### Field-form (canonical per state-handoff.md)
+### Field-form (canonical per session-lifecycle.md)
 
 ```markdown
 # Sprint N — STATE
@@ -202,7 +202,7 @@ Walk `.cc-sessions/`:
 - Track both populations independently
 - Both models support staleness check via different probes
 
-`--fix` mode does NOT normalize one model to the other. Both are valid; the canonical writer (session-protocol.md) uses file-style, but reader skills accept both.
+`--fix` mode does NOT normalize one model to the other. Both are valid; the canonical writer (session-lifecycle.md) uses file-style, but reader skills accept both.
 
 ---
 
@@ -237,7 +237,7 @@ If file absent BUT signals exist → **MANUAL** (the project has carry_forward r
 
 ### `developer-profile.json`
 
-Consumers: `sprint-dev` (Execution Mode reads autonomy), `sprint-review` (autonomy reads), `code-sweep` (Phase 0.5 reads), `bootstrap` (Phase 1 may write), per session-protocol.md §Autonomy Levels.
+Consumers: `sprint-dev` (Execution Mode reads autonomy), `sprint-review` (autonomy reads), `code-sweep` (Phase 0.5 reads), `bootstrap` (Phase 1 may write), per session-lifecycle.md §Autonomy Levels.
 
 A project consumes developer-profile if ANY of:
 - File exists at `.cc-sessions/developer-profile.json`

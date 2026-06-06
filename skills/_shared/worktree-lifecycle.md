@@ -1,6 +1,6 @@
 # Worktree + Branch Lifecycle Contract
 
-Canonical contract for `Agent({isolation: "worktree"})` and harness-auto worktrees in the blitz plugin. Source of truth for all branch hygiene. Referenced from [sprint-dev/SKILL.md](../sprint-dev/SKILL.md), [spawn-protocol.md](spawn-protocol.md), and [state-handoff.md](state-handoff.md).
+Canonical contract for `Agent({isolation: "worktree"})` and harness-auto worktrees in the blitz plugin. Source of truth for all branch hygiene. Referenced from [sprint-dev/SKILL.md](../sprint-dev/SKILL.md), [agent-orchestration.md](agent-orchestration.md), and [session-lifecycle.md](session-lifecycle.md).
 
 ## Why this exists
 
@@ -25,7 +25,7 @@ Without enforced cleanup, every sprint leaks 4-5 `sprint-${N}/{backend,frontend,
 
 3. **Opportunistic remove-hook cleanup** (`hooks/scripts/worktree-remove.sh`). On every WorktreeRemove event, if the removed worktree's branch matches `^(worktree-agent-|worktree-sprint-)` AND is an ancestor of `origin/HEAD`, delete the branch. Best-effort; never blocks.
 
-4. **Resume divergence gate** (`sprint-dev/SKILL.md` Phase 0.1, [checkpoint-protocol.md](checkpoint-protocol.md)). Before re-spawning on an existing `sprint-${N}/${role}` branch, check `git rev-list --count <merge-base>..<branch>`. If non-zero, stop and prompt: `rebase` / `abandon` / `inspect`. In `autonomy=full` loops, behavior governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
+4. **Resume divergence gate** (`sprint-dev/SKILL.md` Phase 0.1, [session-lifecycle.md](session-lifecycle.md)). Before re-spawning on an existing `sprint-${N}/${role}` branch, check `git rev-list --count <merge-base>..<branch>`. If non-zero, stop and prompt: `rebase` / `abandon` / `inspect`. In `autonomy=full` loops, behavior governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
 
 5. **Manual prune skill** ([../worktree-prune/SKILL.md](../worktree-prune/SKILL.md)). `/blitz:worktree-prune --dry-run` lists every `worktree-*` and `sprint-*/{role}` branch with age, merge-status, divergence, disk usage. `--apply --merged-only` deletes ancestors of `origin/HEAD`. `--apply --all-older-than 30d --force` includes unmerged stale branches.
 
@@ -33,7 +33,7 @@ Without enforced cleanup, every sprint leaks 4-5 `sprint-${N}/{backend,frontend,
 
 ## Interop with native agent view (background sessions)
 
-Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs **background sessions** dispatched via `claude --bg` / `/bg`. Before editing files, the platform **auto-isolates each background session into its own `.claude/worktrees/<id>` worktree** — the same directory blitz `Agent({isolation:"worktree"})` worktrees live in. Two systems now create worktrees under `.claude/worktrees/`; this section reconciles them. Dispatch + alert details: [agent-view-dispatch.md](agent-view-dispatch.md). Provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`.
+Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs **background sessions** dispatched via `claude --bg` / `/bg`. Before editing files, the platform **auto-isolates each background session into its own `.claude/worktrees/<id>` worktree** — the same directory blitz `Agent({isolation:"worktree"})` worktrees live in. Two systems now create worktrees under `.claude/worktrees/`; this section reconciles them. Dispatch + alert details: [agent-orchestration.md](agent-orchestration.md). Provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`.
 
 **Branch-naming distinction:**
 - blitz-controlled: `worktree-agent-<8hex>`, `worktree-sprint-*`, `sprint-${N}/{role}` (taxonomy above).
@@ -41,7 +41,7 @@ Claude Code's agent view (`claude agents`, CC >=2.1.139, research preview) runs 
 
 **Live-session data-loss guard (invariant 6, below):** a background session's `.claude/worktrees/<id>` holds **uncommitted work**. `/blitz:worktree-prune` and any cleanup MUST query `claude agents --json` and skip any worktree path it returns — classified `live-bg`, never removed, even under `--force`. Helper: `blitz_live_worktree_paths` (`hooks/scripts/_lib/common.sh`); best-effort, no-op when the CLI/`--json` is absent (older CC, Bedrock/Vertex, agent view disabled). Prune detail: [worktree-prune/SKILL.md](../worktree-prune/SKILL.md) Phase 1.5.
 
-**Ratchet interop:** `stale_worktree_branch_count` ([ratchet-protocol.md](ratchet-protocol.md) §1) counts blitz-controlled branch refs only. A transient live background-session worktree may briefly inflate the count; this is a measurement-timing artifact, not a leak — do not auto-prune to "fix" it (the live-session guard forbids removal anyway).
+**Ratchet interop:** `stale_worktree_branch_count` ([quality-engine.md](quality-engine.md) §1) counts blitz-controlled branch refs only. A transient live background-session worktree may briefly inflate the count; this is a measurement-timing artifact, not a leak — do not auto-prune to "fix" it (the live-session guard forbids removal anyway).
 
 **Owning isolation end-to-end:** when a skill (e.g. sprint-dev) needs to control isolation itself with explicit `sprint-${N}/{role}` branches and is being run as a background session, set `worktree.bgIsolation: "none"` in `.claude/settings.json` (CC >=2.1.143) so the platform does not double-isolate. Whether sprint-dev should adopt this by default vs. lean on platform isolation is an open design question — see the research doc §7.
 
@@ -68,7 +68,7 @@ The WorktreeCreate hook **cannot** override the branch name — Claude Code dete
 Two interlocking checks fire in sprint-review Phase 3.6:
 
 - **Invariant 8 — per-sprint branch hygiene**: asserts every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch was deleted by sprint-dev Phase 4.4. Any survivor → FAIL. Detector + escape hatch in [`sprint-review/references/main.md`](../sprint-review/references/main.md) §Invariant 8 — Branch Hygiene.
-- **Invariant 6 metric `stale_worktree_branch_count`** — cross-sprint cumulative count of `worktree-agent-*`, `worktree-sprint-*`, and `sprint-*/{role}` branches. Ratchet-tightened (only goes down). Detector + baseline procedure in [`ratchet-protocol.md`](ratchet-protocol.md) §1.
+- **Invariant 6 metric `stale_worktree_branch_count`** — cross-sprint cumulative count of `worktree-agent-*`, `worktree-sprint-*`, and `sprint-*/{role}` branches. Ratchet-tightened (only goes down). Detector + baseline procedure in [`quality-engine.md`](quality-engine.md) §1.
 
 Existing projects must run `code-sweep --baseline stale_worktree_branch_count` once before the first post-upgrade sprint-review, otherwise N pre-existing stale branches will fail Invariant 6 immediately. After baselining, every subsequent sprint must monotonically reduce or hold the count — `/blitz:worktree-prune --apply --merged-only` is the canonical reduction path.
 
@@ -76,8 +76,8 @@ Existing projects must run `code-sweep --baseline stale_worktree_branch_count` o
 
 - Research provenance: `docs/_research/2026-05-17_worktree-lifecycle.md`
 - Upstream bugs: GH#26725 (open), GH#55435 (open), GH#51596 (closed), GH#27749 (closed-stale), GH#31969 (open)
-- Spawn protocol: [spawn-protocol.md](spawn-protocol.md) §Agent isolation
-- State handoff contract: [state-handoff.md](state-handoff.md) §Worktree artifacts
-- Checkpoint protocol: [checkpoint-protocol.md](checkpoint-protocol.md) §Resume validation
+- Spawn protocol: [agent-orchestration.md](agent-orchestration.md) §Agent isolation
+- State handoff contract: [session-lifecycle.md](session-lifecycle.md) §Worktree artifacts
+- Checkpoint protocol: [session-lifecycle.md](session-lifecycle.md) §Resume validation
 - Sprint-review invariants: [sprint-review/SKILL.md](../sprint-review/SKILL.md) Phase 3.6 (Invariants 6 + 8)
-- Ratchet protocol: [ratchet-protocol.md](ratchet-protocol.md) (8 monotonic metrics)
+- Ratchet protocol: [quality-engine.md](quality-engine.md) (8 monotonic metrics)

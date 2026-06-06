@@ -3,7 +3,7 @@
 Schemas, templates, classification tables, detailed procedures for Phases 5-8 used by roadmap skill.
 
 **Companion protocols:**
-- [carry-forward-registry.md](/_shared/carry-forward-registry.md) — Append-only JSONL registry linking research-doc scope claims to delivered artifacts. Capability and Epic schemas below include fields that roll up to and from this registry.
+- [sprint-contracts.md](/_shared/sprint-contracts.md) — Append-only JSONL registry linking research-doc scope claims to delivered artifacts. Capability and Epic schemas below include fields that roll up to and from this registry.
 
 ---
 
@@ -30,14 +30,14 @@ scope_metric:          # Optional quantified scope — required if source doc ha
   unit: ""             # files | components | routes | tests | endpoints | ...
   target: 0            # Integer count of units promised by the research doc
   description: ""      # Human-readable scope description
-  acceptance:          # Executable DoD checks — see carry-forward-registry.md
+  acceptance:          # Executable DoD checks — see sprint-contracts.md
     - grep_absent: ""
     - grep_present: { pattern: "", min: 0 }
 registry_entry_id: ""  # Populated when roadmap-extend writes a carry-forward registry line
 tags: []               # Freeform tags for cross-referencing
 ```
 
-**Scope metric extraction:** When source research doc contains `scope:` YAML frontmatter block (see `skills/research/SKILL.md` Phase 3), every entry in that block becomes capability's `scope_metric` and must also be written to `.cc-sessions/carry-forward.jsonl` as registry entry with `status: active`. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) for full schema and writer responsibilities.
+**Scope metric extraction:** When source research doc contains `scope:` YAML frontmatter block (see `skills/research/SKILL.md` Phase 3), every entry in that block becomes capability's `scope_metric` and must also be written to `.cc-sessions/carry-forward.jsonl` as registry entry with `status: active`. See [sprint-contracts.md](/_shared/sprint-contracts.md) for full schema and writer responsibilities.
 
 If research doc contains quantified language (regex: `\d+\s+(files|components|modals|routes|tests|endpoints)`) but no `scope:` block, roadmap-extend step must warn user and either (a) prompt to add block or (b) write explicit `<!-- no-registry: <reason> -->` waiver. Enforced by `sprint-review` Invariant 1.
 
@@ -212,7 +212,7 @@ For each domain, spawn agent using `Agent` tool (all in single assistant message
 - `prompt`: spec-generation template with domain overview, capabilities, stack profile
 - `run_in_background: true`
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)) — max 15 file reads, 5-min wall-clock, stub-then-append write pattern. Previous `TeamCreate`+`SendMessage` spawn removed in v1.4.0.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)) — max 15 file reads, 5-min wall-clock, stub-then-append write pattern. Previous `TeamCreate`+`SendMessage` spawn removed in v1.4.0.
 
 Each agent receives:
 - Domain overview document
@@ -332,7 +332,7 @@ For each implementation phase (from Phase 4), spawn agent using `Agent` tool (al
 - `prompt`: epic-generation template with phase plan, domain specs, cross-cutting specs, codebase state
 - `run_in_background: true`
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)) — max 15 file reads, 5-min wall-clock, stub-then-append write pattern. Previous `TeamCreate`+`SendMessage` spawn removed in v1.4.0.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)) — max 15 file reads, 5-min wall-clock, stub-then-append write pattern. Previous `TeamCreate`+`SendMessage` spawn removed in v1.4.0.
 
 After spawning, validate each expected phase's epic directory was created and contains at least one epic file before proceeding to Phase 8.
 
@@ -404,7 +404,7 @@ After all agents complete:
 
 #### 7.6 Write Epic Registry
 
-**Registry Lock — `docs/roadmap/epic-registry.json`**: Before writing, acquire a file-based lock per [session-protocol.md](/_shared/session-protocol.md):
+**Registry Lock — `docs/roadmap/epic-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
 1. CHECK if `docs/roadmap/epic-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `docs/roadmap/epic-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
@@ -456,7 +456,7 @@ Write `docs/roadmap/SUMMARY.md`:
 
 #### 8.2 Update Indexes
 
-**Registry Lock — `docs/roadmap/roadmap-registry.json`**: Before writing, acquire a file-based lock per [session-protocol.md](/_shared/session-protocol.md):
+**Registry Lock — `docs/roadmap/roadmap-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
 1. CHECK if `docs/roadmap/roadmap-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `docs/roadmap/roadmap-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
@@ -619,7 +619,7 @@ Tracker: docs/roadmap/tracker.md
 
 ### Carry-Forward Integration Fields
 
-The following epic fields link roadmap to carry-forward registry described in [carry-forward-registry.md](/_shared/carry-forward-registry.md). They are rollup view of registry from epic's perspective — authoritative per-entry state lives in `.cc-sessions/carry-forward.jsonl`, not here.
+The following epic fields link roadmap to carry-forward registry described in [sprint-contracts.md](/_shared/sprint-contracts.md). They are rollup view of registry from epic's perspective — authoritative per-entry state lives in `.cc-sessions/carry-forward.jsonl`, not here.
 
 | Field | Purpose | Written by |
 |---|---|---|
@@ -719,4 +719,4 @@ The following epic fields link roadmap to carry-forward registry described in [c
 
 If the actual coverage is already 1.0 at backfill time (legacy work was already fully shipped), the recompute will mark the entry `complete` on the first pass, and the epic-registry rollup will mark the parent epic ready to close. No silent drops possible: the registry state and the code state are reconciled.
 
-See `skills/_shared/carry-forward-registry.md` for the full protocol.
+See `skills/_shared/sprint-contracts.md` for the full protocol.

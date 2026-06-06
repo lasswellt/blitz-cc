@@ -48,13 +48,13 @@ All `/_shared/` citations verified to exist on disk:
 
 | Citation | File | Status |
 |---|---|---|
-| `/_shared/session-protocol.md` | `skills/_shared/session-protocol.md` | OK |
-| `/_shared/verbose-progress.md` | `skills/_shared/verbose-progress.md` | OK |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | OK |
 | `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
-| `/_shared/spawn-protocol.md` | `skills/_shared/spawn-protocol.md` | OK |
-| `/_shared/workflow-dispatch.md` | `skills/_shared/workflow-dispatch.md` | OK |
-| `/_shared/carry-forward-registry.md` | `skills/_shared/carry-forward-registry.md` | OK |
-| `/_shared/context-management.md` | `skills/_shared/context-management.md` | OK |
+| `/_shared/terse-output.md` | `skills/_shared/terse-output.md` | OK |
+| `/_shared/agent-orchestration.md` | `skills/_shared/agent-orchestration.md` | OK |
+| `/_shared/agent-orchestration.md` | `skills/_shared/agent-orchestration.md` | OK |
+| `/_shared/sprint-contracts.md` | `skills/_shared/sprint-contracts.md` | OK |
+| `/_shared/session-lifecycle.md` | `skills/_shared/session-lifecycle.md` | OK |
 
 `references/main.md` links also confirmed clean by the same link-validator run.
 
@@ -81,7 +81,7 @@ Traced chain: `codebase-audit` → `docs/audits/audit-YYYYMMDD-epics.md` → `ro
 
 - **Producer output** (SKILL.md Phase 3.3a): writes `audit-YYYYMMDD-epics.md` with `scope:` YAML frontmatter block; schema per Phase 3.3 template (id, unit, target, description, acceptance fields). Also writes `audit-YYYYMMDD-index.json` (not consumed by roadmap) and `audit-YYYYMMDD.md` (not consumed by roadmap).
 - **Consumer input** (roadmap SKILL.md:73-76): globs `**/docs/audits/*-epics.md`, reads `scope:` block per same protocol as research docs, and ingests via Phase 1.1.5. Explicitly rejects the full report and index — only `-epics.md` files are consumed. Confirmed at `skills/roadmap/SKILL.md:76`.
-- **Composition gap**: `skills/_shared/state-handoff.md` has no `codebase-audit` section — the pipeline hand-off (codebase-audit → roadmap) is undocumented in the canonical table. The chain is real and functional (documented bidirectionally in the two SKILL.md files), but state-handoff.md §Pipeline Handoff Table is incomplete. This is a **protocol doc gap**, not a functional defect.
+- **Composition gap**: `skills/_shared/session-lifecycle.md` has no `codebase-audit` section — the pipeline hand-off (codebase-audit → roadmap) is undocumented in the canonical table. The chain is real and functional (documented bidirectionally in the two SKILL.md files), but session-lifecycle.md §Pipeline Handoff Table is incomplete. This is a **protocol doc gap**, not a functional defect.
 
 ---
 
@@ -101,7 +101,7 @@ case "${BLITZ_DISPATCH:-auto}" in
 esac
 ```
 
-Three-way gate matches `workflow-dispatch.md` contract: `auto` → capability-test, `workflow` → force+error-if-absent, `agent` → legacy path. `USE_WORKFLOW=maybe` as the "auto" sentinel is intentional — the narrative (SKILL.md:114) resolves it: "`USE_WORKFLOW` truthy AND `Workflow` tool available → §1.1-W". In bash, `maybe` is non-empty (truthy) and the secondary tool-presence check gates actual dispatch. Correct.
+Three-way gate matches `agent-orchestration.md` contract: `auto` → capability-test, `workflow` → force+error-if-absent, `agent` → legacy path. `USE_WORKFLOW=maybe` as the "auto" sentinel is intentional — the narrative (SKILL.md:114) resolves it: "`USE_WORKFLOW` truthy AND `Workflow` tool available → §1.1-W". In bash, `maybe` is non-empty (truthy) and the secondary tool-presence check gates actual dispatch. Correct.
 
 **2. Workflow + Agent() paths produce identical findings files** — SKILL.md:103 states "Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`". Both paths use the same roster table (SKILL.md:163-172) with identical output paths. PASS.
 
@@ -141,7 +141,7 @@ Command used: `awk '/^---$/{count++; if(count==2){start=NR; next}} start && NR>s
 
 **Verdict: N/A** (TeamCreate/SendMessage not declared)
 
-`allowed-tools` (SKILL.md:4) does not include `TeamCreate` or `SendMessage`. Skill uses the canonical `Agent` tool for subagent spawning per spawn-protocol.md. No blessed-exception check required. PASS/N/A.
+`allowed-tools` (SKILL.md:4) does not include `TeamCreate` or `SendMessage`. Skill uses the canonical `Agent` tool for subagent spawning per agent-orchestration.md. No blessed-exception check required. PASS/N/A.
 
 ---
 
@@ -149,10 +149,10 @@ Command used: `awk '/^---$/{count++; if(count==2){start=NR; next}} start && NR>s
 
 **cohesive**
 
-All 9 checks pass (V7 and V9 are N/A by construction). No contract violations, no delegation breaks, no DW wiring defects. One advisory (state-handoff.md protocol doc gap for the codebase-audit → roadmap chain) and one stylistic note (OUTPUT STYLE word-wrapped in references/main.md agent template).
+All 9 checks pass (V7 and V9 are N/A by construction). No contract violations, no delegation breaks, no DW wiring defects. One advisory (session-lifecycle.md protocol doc gap for the codebase-audit → roadmap chain) and one stylistic note (OUTPUT STYLE word-wrapped in references/main.md agent template).
 
 ---
 
 ## Highest-Leverage Fix
 
-Add a `codebase-audit` section to `skills/_shared/state-handoff.md` §Pipeline Handoff Table documenting the producer/consumer chain (`codebase-audit` → `docs/audits/audit-YYYYMMDD-epics.md` → `roadmap extend`) so the pipeline contract is canonical and verifiable by the integration-check hook alongside the sprint pipeline entries.
+Add a `codebase-audit` section to `skills/_shared/session-lifecycle.md` §Pipeline Handoff Table documenting the producer/consumer chain (`codebase-audit` → `docs/audits/audit-YYYYMMDD-epics.md` → `roadmap extend`) so the pipeline contract is canonical and verifiable by the integration-check hook alongside the sprint pipeline entries.

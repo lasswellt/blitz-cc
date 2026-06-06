@@ -45,7 +45,7 @@ Line at `skills/ask/SKILL.md:12` is verbatim against `skills/_shared/terse-outpu
 `hooks/scripts/markdown-link-validate.sh skills/ask/SKILL.md` → `OK (397 link(s) checked)`
 
 Links in SKILL.md:
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` — real file
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — real file
 - `../../agents/orchestrator.md` (relative) → `agents/orchestrator.md` — real file
 
 Script verdict: no broken links.
@@ -83,7 +83,7 @@ These divergences are non-blocking (owner-first note is present; the sync obliga
 
 **N/A**
 
-`ask` is not a pipeline consumer or producer in the sprint artifact chain (`state-handoff.md` has no entry for ask). It is a meta-skill (classifier/router) with no artifact I/O contracts. No upstream producer, no downstream consumer per `skills/_shared/state-handoff.md`.
+`ask` is not a pipeline consumer or producer in the sprint artifact chain (`session-lifecycle.md` has no entry for ask). It is a meta-skill (classifier/router) with no artifact I/O contracts. No upstream producer, no downstream consumer per `skills/_shared/session-lifecycle.md`.
 
 ---
 
@@ -123,7 +123,7 @@ awk result: 113 body lines
 
 **N/A / PASS**
 
-`allowed-tools` does not declare `TeamCreate` or `SendMessage`. No spawn-idiom drift. `ask` dispatches to skills via the Skill tool (a meta invocation, not a subagent spawn), which is the correct pattern. `spawn-protocol.md` line 79 confirms `TeamCreate`+`SendMessage` was deprecated (v1.4.0 migrated to `Agent` tool); `ask` correctly avoids both.
+`allowed-tools` does not declare `TeamCreate` or `SendMessage`. No spawn-idiom drift. `ask` dispatches to skills via the Skill tool (a meta invocation, not a subagent spawn), which is the correct pattern. `agent-orchestration.md` line 79 confirms `TeamCreate`+`SendMessage` was deprecated (v1.4.0 migrated to `Agent` tool); `ask` correctly avoids both.
 
 ---
 
@@ -135,7 +135,7 @@ awk result: 113 body lines
 | V2 | PASS | Shell byte-compare → `MATCH: identical` against canonical in terse-output.md |
 | V3 | PASS | `markdown-link-validate.sh` → `OK (397 link(s) checked)` |
 | V4 | PASS | Owner-first note present at SKILL.md:25; mirror is stale (8 missing routes) but obligation is on editor |
-| V5 | N/A | ask has no pipeline artifact I/O; not in state-handoff.md |
+| V5 | N/A | ask has no pipeline artifact I/O; not in session-lifecycle.md |
 | V6 | N/A | Not codebase-audit or research |
 | V7 | PASS | Not read-only-by-construction (activity-feed writes via Bash required); disallowed-tools would be wrong |
 | V8 | PASS | 113 body lines (limit: 500) |

@@ -44,7 +44,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **ABORT on regression.** If a step introduces test failures that you cannot resolve by reverting the step, stop and report the issue to the user.
 
-8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [Definition of Done](/_shared/definition-of-done.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [Definition of Done](/_shared/sprint-contracts.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
@@ -52,7 +52,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Invocation
 

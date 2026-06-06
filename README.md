@@ -11,7 +11,7 @@
 
 **⚡ A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase ⚡**
 
-**37 skills** · **10 agents** · **38 hook scripts across 16 events** · **32 shared protocol files**
+**37 skills** · **10 agents** · **38 hook scripts across 16 events** · **12 shared protocol files**
 
 Orchestrator main-thread router · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -58,7 +58,7 @@ Four properties make it a *machine* rather than a pile of prompts:
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
 | **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-32) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-12) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -160,7 +160,7 @@ Four layers turn a skill collection into a partly-autonomous environment. Slash 
 
 ### 1. Orchestrator (freeform-input router)
 
-`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agent-routing.md`](skills/_shared/agent-routing.md).
+`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
 
 ```bash
 export BLITZ_DISABLE_ORCHESTRATOR=1   # opt out per session
@@ -370,13 +370,13 @@ Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude C
 - **Conflict overlay** — blitz's semantic conflict matrix extends to background sessions (the platform manages processes, not semantic conflicts).
 - **Remote alerts** — `PushNotification` fires off-screen on stuck-loop / Tier-3 escalation (gated on developer-profile `notify`); `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell.
 
-Full contract: [`skills/_shared/agent-view-dispatch.md`](skills/_shared/agent-view-dispatch.md).
+Full contract: [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
 
 ---
 
 ## Token Budget
 
-Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work (docs) on Haiku, the bulk of builder/reviewer work on Sonnet, orchestration reasoning on Opus. Prompt caching (1-hr TTL) and lazy MCP/skill loading keep cost down; agents reply with a structured JSON contract rather than echoing findings. See [`skills/_shared/token-budget.md`](skills/_shared/token-budget.md).
+Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work (docs) on Haiku, the bulk of builder/reviewer work on Sonnet, orchestration reasoning on Opus. Prompt caching (1-hr TTL) and lazy MCP/skill loading keep cost down; agents reply with a structured JSON contract rather than echoing findings. See [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
 
 ---
 
@@ -393,7 +393,7 @@ blitz-cc/
 ├── agents/                      # 10 agents (6 builder · 3 critic · 1 orchestrator)
 ├── skills/
 │   ├── <name>/SKILL.md          # 37 skills (Anthropic-canonical, auto-discovered)
-│   └── _shared/                 # 32 shared protocol files + check-registry.json
+│   └── _shared/                 # 12 shared protocol files + check-registry.json
 ├── hooks/
 │   ├── hooks.json               # 16 events
 │   └── scripts/                 # 38 scripts: 35 event-wired + 2 sub-invoked + 1 critic-spawned
@@ -419,7 +419,7 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Of the 38 scripts, 35 are event-wired; the rest are sub-invoked (`check-registry-validate.sh`, `startup-validate.sh`) or critic-spawned (`critic-gemini.sh`). Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
 
-> Hook commands reference scripts via `"${CLAUDE_PLUGIN_ROOT}"` (quoted, shell-form) so install paths with spaces resolve correctly. No blitz hook executes project-controlled content pre-trust — see [`skills/_shared/hook-trust.md`](skills/_shared/hook-trust.md).
+> Hook commands reference scripts via `"${CLAUDE_PLUGIN_ROOT}"` (quoted, shell-form) so install paths with spaces resolve correctly. No blitz hook executes project-controlled content pre-trust — see [`skills/_shared/security.md`](skills/_shared/security.md).
 
 ### Environment overrides
 
@@ -427,18 +427,17 @@ Hooks are *the* enforcement layer — they fire on tool calls the model can't ta
 
 ---
 
-## Shared Protocols (32)
+## Shared Protocols (12)
 
-All skills share 32 protocol files in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. The load-bearing ones:
+All skills share 12 protocol files (+ `check-registry.json`) in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. As of the 2026-06-06 consolidation each file owns one concern (former fragments absorbed; see each file's top-of-file map):
 
-- **session-protocol.md** — multi-session safety (locks, conflict matrix, autonomy levels)
-- **check-registry.json / check-registry.md** — the single source of truth for every review/audit check (lane, verdict authority, confidence, detection)
-- **shortcut-taxonomy.md** — human-readable view of the 20-detector catalog (13 reject, 7 advisory)
-- **carry-forward-registry.md** — the scope-ledger Reader Algorithm + writer contract
-- **spawn-protocol.md** / **workflow-dispatch.md** — agent fan-out + the opt-in `Workflow` dispatch path
-- **ratchet-protocol.md** — 8 monotonic metrics + auto-revert
-- **scheduling.md** — `/loop` (session-scoped) vs `/schedule` (persistent) mechanics
-- **terse-output.md** — the output style + canonical exemptions
+- **terse-output.md** — output style + canonical exemptions + console verbosity / activity-feed logging
+- **session-lifecycle.md** — multi-session safety (locks, autonomy), checkpoints, context/compaction handoff, state-handoff resume contract, `/loop` vs `/schedule` mechanics
+- **sprint-contracts.md** — scope-ledger (carry-forward) Reader Algorithm + writer contract, story frontmatter, Definition of Done, deviation + scope-limit
+- **agent-orchestration.md** — agent fan-out (spawn/weight/HEARTBEAT, routing, token-budget) + the opt-in `Workflow` dispatch path
+- **quality-engine.md** (+ **check-registry.json**) — single source of truth for every review/audit check, the 20-detector catalog (13 reject, 7 advisory), the 8-metric ratchet, the deterministic verification recipe
+- **security.md** — containment posture / threat model (TB-1…TB-4), hook-trust boundary, package-install policy
+- Plus: **project-context.md**, **skill-cross-references.md**, **design-criteria.md**, **knowledge-protocol.md**, **session-report-template.md**, **worktree-lifecycle.md**
 
 ---
 

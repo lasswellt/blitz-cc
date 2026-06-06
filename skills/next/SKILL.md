@@ -14,9 +14,9 @@ compatibility: ">=2.1.71"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For pipeline artifact contracts (which files indicate which next-action: `STATE.md`, `roadmap/`, `carry-forward.jsonl`, `review-report.md`), see [/_shared/state-handoff.md](/_shared/state-handoff.md)
-- For carry-forward registry reads (`CF_ACTIVE`, `CF_ESCALATED`, `UNINGESTED_COUNT`), see [/_shared/carry-forward-registry.md](/_shared/carry-forward-registry.md)
-- For `/loop` (session-scoped) vs `/schedule` (persistent ScheduleWakeup/CronCreate) mechanics, see [/_shared/scheduling.md](/_shared/scheduling.md)
+- For pipeline artifact contracts (which files indicate which next-action: `STATE.md`, `roadmap/`, `carry-forward.jsonl`, `review-report.md`), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For carry-forward registry reads (`CF_ACTIVE`, `CF_ESCALATED`, `UNINGESTED_COUNT`), see [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md)
+- For `/loop` (session-scoped) vs `/schedule` (persistent ScheduleWakeup/CronCreate) mechanics, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
 
 ---
 
@@ -30,7 +30,7 @@ Two modes:
 1. **Default (read-only suggest)** — `/blitz:next` reads state and prints the recommended next blitz command. No dispatch, no writes. Lightweight survey.
 2. **`--loop` (auto-dispatch reconciliation)** — `/blitz:next --loop` reads state, executes **one phase**, commits + pushes, and exits cleanly so `/loop` or `ScheduleWakeup` can re-tick. Sets autonomy to `full`. Canonical autonomous-loop entry point for blitz (supersedes `/blitz:sprint --loop` since v1.13.0).
 
-**Session protocol**: skipped in default mode (read-only). In `--loop` mode, follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration before dispatching.
+**Session protocol**: skipped in default mode (read-only). In `--loop` mode, follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration before dispatching.
 
 **Verbose progress**: skipped in default mode. `--loop` mode prints a concise per-tick reconciliation report (Observe → Diff → Act → Report).
 
@@ -187,7 +187,7 @@ done
 
 ### 0.9c Check Scope Limit
 
-Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md) for the full schema and behavior contract.
+Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) for the full schema and behavior contract.
 
 Phase 0.9c only sets `SCOPE_LIMIT_ACTIVE`. When row 6f fires (Phase 3.4 dispatch), the banner emitter reads the additional fields (`declared_at`, `declared_by`, `scope`, `reason`) directly from `SCOPE-LIMIT.md` via the Phase 4 banner template — no need to pre-extract here.
 
@@ -256,7 +256,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
 7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
 8. HARD_SPEC escalation (row 1a) short-circuits resume (row 1) — auto-resuming a sprint with a HARD_SPEC-blocked story burns tokens on the same failing attempt; the loop must escalate to operator instead.
-9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/scope-limit-protocol.md](/_shared/scope-limit-protocol.md).
+9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md).
 10. Plan audit-derived sprint (row 6e) sits after carry-forward gap closure (6d) and before idle (7) — registry-tracked work always beats audit-suggested work. Audit findings are surfaced via `roadmap extend` ingestion (row 0 + Phase 0.8 path includes `docs/audits/*-epics.md`).
 
 **Why rows 6a-6f exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split (6a-6d) makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation. **Rows 6e and 6f** were added per `docs/_research/2026-05-18_audit-deferred-work-detection.md`: row 6e closes a separate silent-drop mode where `audit` produced `docs/audits/*-epics.md` with proposed epics that were invisible to every other row (no scope-block ingestion path existed), and row 6f gives operators a single canonical signal (`SCOPE-LIMIT.md`) to suspend new-work auto-detection without manually transitioning every registry entry to `deferred`.

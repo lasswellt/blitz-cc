@@ -64,23 +64,23 @@ but **the Workflow args interface is mis-declared** (correctness risk on the Wor
 ## Table 3 — Spawn-Idiom Census
 
 Every unit that spawns, mapped to its idiom, checked against the joint
-`spawn-protocol.md` + `workflow-dispatch.md` contract. spawn-protocol.md:79 (foot-gun 5):
+`agent-orchestration.md` + `agent-orchestration.md` contract. agent-orchestration.md:79 (foot-gun 5):
 "`TeamCreate`+`SendMessage` does not accept `subagent_type`. Use the `Agent` tool instead
 (v1.4.0 migrated all spawning skills to this)."
 
 | Unit | Idiom in frontmatter / body | Canonical? | Notes |
 |------|-----------------------------|------------|-------|
-| codebase-audit | `Agent()` + `Workflow` (opt-in) | YES | DW pilot; `workflow-dispatch.md:80` WIRED |
-| research | `Agent()` + `Workflow` (opt-in) | YES | DW pilot; `workflow-dispatch.md` WIRED |
-| code-sweep, code-doctor, codebase-map, doc-gen, quality-metrics, roadmap, sprint-plan, sprint-review, ui-build, health, implement | `Agent()` only | YES | canonical per spawn-protocol.md:79 |
-| **sprint-dev** | `TeamCreate` (`SKILL.md:190`) + `SendMessage` (`:298`) + `Agent(team_name)` | **DRIFT** | TeamCreate is redundant — Phase 2.3 already groups via `Agent(team_name:…)`; spawn-protocol.md:79 deprecates TeamCreate with **no exception** for sprint-dev. SendMessage for UNBLOCK/HALT coordination IS acceptable (spawn-protocol §3/§4). |
+| codebase-audit | `Agent()` + `Workflow` (opt-in) | YES | DW pilot; `agent-orchestration.md:80` WIRED |
+| research | `Agent()` + `Workflow` (opt-in) | YES | DW pilot; `agent-orchestration.md` WIRED |
+| code-sweep, code-doctor, codebase-map, doc-gen, quality-metrics, roadmap, sprint-plan, sprint-review, ui-build, health, implement | `Agent()` only | YES | canonical per agent-orchestration.md:79 |
+| **sprint-dev** | `TeamCreate` (`SKILL.md:190`) + `SendMessage` (`:298`) + `Agent(team_name)` | **DRIFT** | TeamCreate is redundant — Phase 2.3 already groups via `Agent(team_name:…)`; agent-orchestration.md:79 deprecates TeamCreate with **no exception** for sprint-dev. SendMessage for UNBLOCK/HALT coordination IS acceptable (spawn-protocol §3/§4). |
 | **fix-issue** | `SendMessage` declared (`SKILL.md:4`) | **DRIFT** | 0 body uses of SendMessage; body `:148` says "spawn subagent with subagent_type: general-purpose" which **requires `Agent`** (SendMessage rejects subagent_type). `Agent` absent from allowed-tools. |
 | orchestrator | none (no `Agent`/`TeamCreate`/`SendMessage` in tools) | YES | main-thread router; subagents-cannot-spawn-subagents constraint honored |
 
 **Joint coverage check:** The three idioms (`Agent()`, `Workflow`, `TeamCreate`+`SendMessage`)
-are jointly accounted for without contradiction — spawn-protocol.md owns the `Agent()` canonical
+are jointly accounted for without contradiction — agent-orchestration.md owns the `Agent()` canonical
 pattern and the TeamCreate/SendMessage *prohibition* (§1.3 foot-gun 5, line 79);
-workflow-dispatch.md owns the `Workflow` opt-in path (capability-gated + `Agent()` fallback).
+agent-orchestration.md owns the `Workflow` opt-in path (capability-gated + `Agent()` fallback).
 **No contradiction between the two protocol docs.** The two legacy idioms (sprint-dev TeamCreate,
 fix-issue SendMessage) are **unblessed residual drift** — neither protocol grants an exception, so
 both are correctly flagged FAIL by their units (sprint-dev V9, fix-issue V9). The protocols are
@@ -113,7 +113,7 @@ no Write/Edit needed). Verified allowed-tools by direct read:
 
 **Agent-side (read-only-asserted but Write-capable via Bash):** `agents/architect.md:148` instructs
 writing `${SESSION_TMP_DIR}/architect-findings.md` while claiming read-only (`:155`) and holding
-`Bash` (`:12`) — contradicts spawn-protocol.md:54/76. `agents/reviewer.md:13` holds `Write` with
+`Bash` (`:12`) — contradicts agent-orchestration.md:54/76. `agents/reviewer.md:13` holds `Write` with
 prose-only source exclusion (no structural scoping). Plugin agents cannot use `disallowed-tools`;
 fix is prose + caller-side path validation.
 

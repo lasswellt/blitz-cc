@@ -14,7 +14,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 30
 # Haiku: doc generation is pattern-following / mechanical work; per
-# /_shared/token-budget.md routing matrix, this is a Haiku-class task.
+# /_shared/agent-orchestration.md routing matrix, this is a Haiku-class task.
 # Sonnet was 5× cheaper than Opus, Haiku is another 3× cheaper than Sonnet.
 model: haiku
 background: true

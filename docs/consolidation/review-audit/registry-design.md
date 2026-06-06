@@ -7,7 +7,7 @@ pillars: A (two-lane + confidence), B (verdict authority), C (provenance for cit
 
 # Shared Check Registry
 
-One data file (`check-provenance.json`) is the single source of truth for every check both consolidated skills run. It replaces the prose detector table in `shortcut-taxonomy.md §1` and the grep patterns scattered across 7 quality skills. Both `/blitz:review` and `/blitz:audit` *select rows* from it; `agents/critic.md` and `agents/research-critic.md` *enforce rows* from it. Confidence math is defined once, here.
+One data file (`check-provenance.json`) is the single source of truth for every check both consolidated skills run. It replaces the prose detector table in `quality-engine.md §1` and the grep patterns scattered across 7 quality skills. Both `/blitz:review` and `/blitz:audit` *select rows* from it; `agents/critic.md` and `agents/research-critic.md` *enforce rows* from it. Confidence math is defined once, here.
 
 ## Why a registry (not inline patterns)
 
@@ -62,11 +62,11 @@ Gate defaults split by skill bias (advisory findings only):
 
 The taxonomy title says "19"; the registry holds 20 detector rows (`det-01`…`det-20`). **Canonical phrasing going forward: "20 catalogued detectors (det-01…20; det-20 — audit-FP — appended 2026-05-16). Among them, 13 carry reject authority and 7 are advisory (det-05, det-08, det-09, det-10, det-16, det-17, det-20)."**
 
-The earlier "19 blocking + 1 advisory" phrasing was **wrong** and is retired: it conflated "det-20 appended late" with "only one advisory detector," but 6 of det-01…19 are also advisory (det-05/08/09/10/16/17). Do not call det-01…19 "blocking-class." `critic.md`'s description ("19 documented failure modes"), `shortcut-taxonomy.md`'s title, and the critic's LGTM summary ("8 critic checks" = the 8 reject-checklist *classes* §2.1–2.8, distinct from the 20 detectors) are reconciled to this phrasing in `critic-redesign.md`.
+The earlier "19 blocking + 1 advisory" phrasing was **wrong** and is retired: it conflated "det-20 appended late" with "only one advisory detector," but 6 of det-01…19 are also advisory (det-05/08/09/10/16/17). Do not call det-01…19 "blocking-class." `critic.md`'s description ("19 documented failure modes"), `quality-engine.md`'s title, and the critic's LGTM summary ("8 critic checks" = the 8 reject-checklist *classes* §2.1–2.8, distinct from the 20 detectors) are reconciled to this phrasing in `critic-redesign.md`.
 
 ## What the registry does NOT cover
 
-Orthogonal-domain checks stay out: `dep-health` (npm-audit/CVE governance), `perf-profile` (Lighthouse/bundle), `ui-audit` (cross-page visual/data), `browse` (E2E smoke), `quality-metrics` (observability trend). They have distinct scope/tempo/downstream (per `_shared/quality-matrix.md` four-question test) and are invoked alongside, not inside, review/audit. The registry is the review/audit shared core only.
+Orthogonal-domain checks stay out: `dep-health` (npm-audit/CVE governance), `perf-profile` (Lighthouse/bundle), `ui-audit` (cross-page visual/data), `browse` (E2E smoke), `quality-metrics` (observability trend). They have distinct scope/tempo/downstream (per `_shared/quality-engine.md` four-question test) and are invoked alongside, not inside, review/audit. The registry is the review/audit shared core only.
 
 ## Selection contract (how skills read it)
 

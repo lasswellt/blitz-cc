@@ -55,10 +55,10 @@ Command run: `hooks/scripts/markdown-link-validate.sh skills/sprint/SKILL.md`
 Output: `markdown-link-validate: OK (397 link(s) checked)`
 
 Manual spot-check of `/_shared/` links cited in the file:
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` ✓
-- `/_shared/carry-forward-registry.md` → `skills/_shared/carry-forward-registry.md` ✓
-- `/_shared/checkpoint-protocol.md` → `skills/_shared/checkpoint-protocol.md` ✓
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` ✓
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` ✓
 - `skills/next/SKILL.md` referenced inline (not as a link) — not a broken link concern
 
 All links resolve.
@@ -79,7 +79,7 @@ Per unit notes: N/A unless own read finds an O1–O5 owner relationship. `sprint
 
 Chain traced: `roadmap → sprint-plan → sprint-dev → sprint-review`
 
-`sprint` (orchestrator) sits atop this chain. Per `skills/_shared/state-handoff.md`:
+`sprint` (orchestrator) sits atop this chain. Per `skills/_shared/session-lifecycle.md`:
 
 1. **Upstream producer → sprint pre-flight**: `roadmap` produces `docs/roadmap/roadmap-registry.json` and `docs/roadmap/epic-registry.json`. Sprint's Pre-Flight Validation (lines 63–64) checks for exactly these artifacts. Match confirmed.
 

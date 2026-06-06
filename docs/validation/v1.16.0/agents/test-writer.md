@@ -31,7 +31,7 @@ No `hooks:`, `mcpServers:`, or `permissionMode:` keys in frontmatter. Line 14 ha
 Present verbatim at `agents/test-writer.md:23`:
 > `OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles…`
 
-### ≤50-word JSON reply contract (token-budget.md §3 / spawn-protocol §9)
+### ≤50-word JSON reply contract (agent-orchestration.md §3 / spawn-protocol §9)
 **MISSING — caveat.** The agent body contains no `Return ONLY this JSON` boilerplate. spawn-protocol §9 states: "Every Agent() prompt MUST include this snippet near the end." However, this obligation falls on the *orchestrator's spawn prompt*, not the agent body itself — the agent is a worker, not a spawner. The agent body defines worker behavior; the reply contract is injected by the caller at spawn time. Since test-writer does not spawn sub-agents, it has no obligation to embed the boilerplate in its own body. The body correctly omits it.
 
 **Body line count**: 314 lines (body only, excluding frontmatter) — `awk '/^---$/{c++; next} c>=2{print}' agents/test-writer.md | wc -l` → 314. Cap is 500. ✓
@@ -80,10 +80,10 @@ test-writer is not critic/research-critic/design-critic. Check applies only to t
 
 ## Model Routing Note
 
-`token-budget.md` line 15 classifies `test-gen` under "Mechanical workers" at `claude-haiku-4-5`. The agent uses `model: sonnet` with an explicit inline rationale at frontmatter lines 16-18:
+`agent-orchestration.md` line 15 classifies `test-gen` under "Mechanical workers" at `claude-haiku-4-5`. The agent uses `model: sonnet` with an explicit inline rationale at frontmatter lines 16-18:
 
 ```yaml
-# Sonnet per /_shared/token-budget.md — test generation needs to follow patterns
+# Sonnet per /_shared/agent-orchestration.md — test generation needs to follow patterns
 # AND reason about edge cases. Haiku is too coarse for the latter.
 model: sonnet
 ```

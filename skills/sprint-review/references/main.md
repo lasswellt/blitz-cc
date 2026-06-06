@@ -6,7 +6,7 @@ Templates, checklists, rules for sprint-review skill.
 
 ## Phase 0.0 Input Gate
 
-Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [state-handoff.md](/_shared/state-handoff.md) contract.
+Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [session-lifecycle.md](/_shared/session-lifecycle.md) contract.
 
 ```bash
 PIPELINE_MISSING=()
@@ -16,7 +16,7 @@ SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
 [ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
 ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
 if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
-  echo "BLOCK: missing pipeline inputs (see /_shared/state-handoff.md §sprint-review):" >&2
+  echo "BLOCK: missing pipeline inputs (see /_shared/session-lifecycle.md §sprint-review):" >&2
   printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
   echo "Producer: /blitz:sprint-plan + /blitz:sprint-dev." >&2
   echo "Override (not recommended): BLITZ_REVIEW_NO_MANIFEST=1" >&2
@@ -445,7 +445,7 @@ L30: ❓ q: why `Map` over `Record<string, X>` here? Hot path?
 
 ## Registry Invariants — Phase 3.6 Detailed Procedures
 
-**Hard gate**: any invariant failure fails sprint close. Audits carry-forward registry against current sprint state to prevent silent scope drops. See [carry-forward-registry.md](/_shared/carry-forward-registry.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
+**Hard gate**: any invariant failure fails sprint close. Audits carry-forward registry against current sprint state to prevent silent scope drops. See [sprint-contracts.md](/_shared/sprint-contracts.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
 
 ### 3.6.1 Load the Registry
 
@@ -524,7 +524,7 @@ Write entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.json`
 }
 ```
 
-Next `sprint-plan` reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator explicitly `defer`/`drop` before planning. **Linear cycle semantics**: nothing silently falls out of view. See [carry-forward-registry.md](/_shared/carry-forward-registry.md).
+Next `sprint-plan` reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator explicitly `defer`/`drop` before planning. **Linear cycle semantics**: nothing silently falls out of view. See [sprint-contracts.md](/_shared/sprint-contracts.md).
 
 `status == partial` entries not auto-injected — carried via normal reader path (sprint-plan Phase 0 step 8 reads both active and partial). Only `active` with `coverage < 1.0` needs explicit file marker.
 
@@ -591,7 +591,7 @@ Next: ${RECOMMENDED_ACTION}
 
 ## Invariant 6 — Ratchet Procedures
 
-Authoritative protocol: [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md).
+Authoritative protocol: [`/_shared/quality-engine.md`](/_shared/quality-engine.md).
 
 ### Compute current values
 
@@ -627,7 +627,7 @@ Append to `docs/sweeps/ratchet.json -> history[]`. Never rewrite prior entries:
 
 ### Multi-agent worktree merge
 
-When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allowed)` for ↓ metrics and `max(min_allowed)` for ↑ metrics. See [`/_shared/ratchet-protocol.md`](/_shared/ratchet-protocol.md) §4 for the canonical jq merge.
+When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allowed)` for ↓ metrics and `max(min_allowed)` for ↑ metrics. See [`/_shared/quality-engine.md`](/_shared/quality-engine.md) §4 for the canonical jq merge.
 
 ---
 
@@ -710,7 +710,7 @@ esac
 Agent({
   subagent_type: "blitz:critic",
   description: "Adversarial pre-PASS review",
-  prompt: "Review sprint-${SPRINT_NUMBER}. Run the 8-checklist from agents/critic.md against the changes since ${SPRINT_BASE_SHA}. Reject if ANY of the 19 shortcut signals (skills/_shared/shortcut-taxonomy.md), ratchet regressions, type-error regressions, test deletions, or hallucinated-symbol findings are present. Return canonical JSON reply with verdict (LGTM | REJECT). Output style: terse-technical per /_shared/terse-output.md."
+  prompt: "Review sprint-${SPRINT_NUMBER}. Run the 8-checklist from agents/critic.md against the changes since ${SPRINT_BASE_SHA}. Reject if ANY of the 19 shortcut signals (skills/_shared/quality-engine.md), ratchet regressions, type-error regressions, test deletions, or hallucinated-symbol findings are present. Return canonical JSON reply with verdict (LGTM | REJECT). Output style: terse-technical per /_shared/terse-output.md."
 })
 ```
 

@@ -34,7 +34,7 @@ Duration parses as `30d`, `7d`, `12h`. Default threshold: `7d`.
 
 ## Phase 0 — Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration. Log start:
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration. Log start:
 ```
 {"ts":"<ISO>","session":"<id>","skill":"worktree-prune","event":"session_start","message":"mode=<dry-run|apply>"}
 ```

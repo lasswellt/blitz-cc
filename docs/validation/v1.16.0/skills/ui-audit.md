@@ -36,7 +36,7 @@ Canonical source (`skills/_shared/terse-output.md` lines 12–13) compared byte-
 
 Script run: `hooks/scripts/markdown-link-validate.sh skills/ui-audit/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
-Links verified: `/_shared/session-protocol.md` (lines 26, 52), `/_shared/verbose-progress.md` (lines 27, 52), `/_shared/terse-output.md` (line 28), `references/main.md` (line 23), `references/checks.md` (line 24), `references/patterns.md` (line 25). All resolve.
+Links verified: `/_shared/session-lifecycle.md` (lines 26, 52), `/_shared/terse-output.md` (lines 27, 52), `/_shared/terse-output.md` (line 28), `references/main.md` (line 23), `references/checks.md` (line 24), `references/patterns.md` (line 25). All resolve.
 
 ---
 
@@ -44,7 +44,7 @@ Links verified: `/_shared/session-protocol.md` (lines 26, 52), `/_shared/verbose
 
 **Verdict: PASS**
 
-`agent-routing.md` lists `ui-audit` as a **super-orchestrator** (slash-only). The skill correctly delegates phase-level procedures to `references/main.md` rather than restating owned logic inline (e.g., line 108: "See `references/main.md` § **'Phase 1 — LOAD STATE'**"; line 117: "See `references/main.md` § **'Phase 2 — DATA EXTRACTION'**"). The skill is not an O1-O5 owner; it cites `session-protocol.md` and `verbose-progress.md` as its owners for session registration and output format. No logic restatement of owned protocols found.
+`agent-orchestration.md` lists `ui-audit` as a **super-orchestrator** (slash-only). The skill correctly delegates phase-level procedures to `references/main.md` rather than restating owned logic inline (e.g., line 108: "See `references/main.md` § **'Phase 1 — LOAD STATE'**"; line 117: "See `references/main.md` § **'Phase 2 — DATA EXTRACTION'**"). The skill is not an O1-O5 owner; it cites `session-lifecycle.md` and `terse-output.md` as its owners for session registration and output format. No logic restatement of owned protocols found.
 
 ---
 
@@ -58,9 +58,9 @@ Evidence:
 - `browse/references/main.md` lines 406, 443 document production of `docs/crawls/crawl-visited.json` and `docs/crawls/hierarchy.json`.
 - `ui-audit/SKILL.md` Phase 1 (lines 109–110) consumes exactly those artifacts: "Attempt to read `docs/crawls/crawl-visited.json` + `docs/crawls/hierarchy.json`."
 - Fallback path documented (line 111–112): lightweight internal crawl if browse artifacts absent.
-- Conflict-matrix entry in `session-protocol.md` line 252 confirms the `ui-audit / browse(loop)` relationship: WARN (shared `docs/crawls/` writer).
+- Conflict-matrix entry in `session-lifecycle.md` line 252 confirms the `ui-audit / browse(loop)` relationship: WARN (shared `docs/crawls/` writer).
 
-Note: `state-handoff.md` covers only the sprint pipeline (bootstrap→ship); `ui-audit` is an orthogonal observability skill not in that chain, so its handoff is governed by session-protocol conflict matrix — which it correctly cites.
+Note: `session-lifecycle.md` covers only the sprint pipeline (bootstrap→ship); `ui-audit` is an orthogonal observability skill not in that chain, so its handoff is governed by session-protocol conflict matrix — which it correctly cites.
 
 ---
 
@@ -113,4 +113,4 @@ All 9 checks: V1 PASS, V2 PASS, V3 PASS, V4 PASS, V5 PASS, V6 N/A, V7 PASS, V8 P
 
 ## Highest-Leverage Fix
 
-None required. The skill is cohesive. The only observation worth noting for future sprints: `state-handoff.md` does not document the `browse → ui-audit` artifact chain — adding a `### browse` + `### ui-audit` section there would close the documentation gap for new contributors. This is a doc enhancement, not a contract violation.
+None required. The skill is cohesive. The only observation worth noting for future sprints: `session-lifecycle.md` does not document the `browse → ui-audit` artifact chain — adding a `### browse` + `### ui-audit` section there would close the documentation gap for new contributors. This is a doc enhancement, not a contract violation.

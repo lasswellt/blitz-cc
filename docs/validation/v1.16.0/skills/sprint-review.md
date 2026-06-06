@@ -40,7 +40,7 @@ Manual read confirms all required fields present:
 
 `hooks/scripts/markdown-link-validate.sh skills/sprint-review/references/main.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
-All `/_shared/X` links resolve: `story-frontmatter.md`, `state-handoff.md`, `context-management.md`, `checkpoint-protocol.md`, `deviation-protocol.md`, `carry-forward-registry.md`, `spawn-protocol.md`, `terse-output.md`, `definition-of-done.md`, `session-protocol.md`, `verbose-progress.md`, `ratchet-protocol.md`, `shortcut-taxonomy.md`, `worktree-lifecycle.md` — all confirmed present in `skills/_shared/`.
+All `/_shared/X` links resolve: `sprint-contracts.md`, `session-lifecycle.md`, `session-lifecycle.md`, `session-lifecycle.md`, `sprint-contracts.md`, `sprint-contracts.md`, `agent-orchestration.md`, `terse-output.md`, `sprint-contracts.md`, `session-lifecycle.md`, `terse-output.md`, `quality-engine.md`, `quality-engine.md`, `worktree-lifecycle.md` — all confirmed present in `skills/_shared/`.
 
 **Minor defect (prose reference, not Markdown link — markdown-link-validate does not catch this):** SKILL.md line 201 cites `references/main.md` section `"Reviewer Prompt Templates"`, but no such section exists in `references/main.md`. Nearest extant section is `## Reviewer Spawn Strategy` (line 764). The prose reference is broken; actual spawn strategy content exists but under a different heading. Not caught by the link validator because it is a quoted string, not a `[text](url)` anchor. Does not affect runtime (skill reads the file directly), but makes the SKILL.md instruction ambiguous for a human following it.
 
@@ -72,13 +72,13 @@ Compounding the issue, the inline pattern set **diverges** from the canonical 13
 
 Chain traced: `sprint-plan → sprint-dev → sprint-review`.
 
-Per `skills/_shared/state-handoff.md` §sprint-plan: produces `sprints/sprint-${N}/manifest.json` (Required by sprint-dev Phase 0.0, sprint-review Phase 0) and `sprints/sprint-${N}/stories/S${N}-*.md` (Required ≥ 1 story). Per §sprint-dev: produces `STATE.md`, story `status` transitions, commits.
+Per `skills/_shared/session-lifecycle.md` §sprint-plan: produces `sprints/sprint-${N}/manifest.json` (Required by sprint-dev Phase 0.0, sprint-review Phase 0) and `sprints/sprint-${N}/stories/S${N}-*.md` (Required ≥ 1 story). Per §sprint-dev: produces `STATE.md`, story `status` transitions, commits.
 
-`sprint-review` Phase 0.0 input gate (SKILL.md line 40, bash block in `references/main.md` lines 13-24) checks exactly: `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, `${SPRINT_DIR}/stories/S*.md` — matches state-handoff.md producer declarations ✓.
+`sprint-review` Phase 0.0 input gate (SKILL.md line 40, bash block in `references/main.md` lines 13-24) checks exactly: `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, `${SPRINT_DIR}/stories/S*.md` — matches session-lifecycle.md producer declarations ✓.
 
-Story fields consumed by sprint-review (`status`, `epic`, `files`, `done`, `carry_forward`, `research_refs`, `github_issue`, `points`) are all declared in `skills/_shared/story-frontmatter.md` producer/consumer matrix (lines 103-117) with `Consumer` column listing `sprint-review` ✓.
+Story fields consumed by sprint-review (`status`, `epic`, `files`, `done`, `carry_forward`, `research_refs`, `github_issue`, `points`) are all declared in `skills/_shared/sprint-contracts.md` producer/consumer matrix (lines 103-117) with `Consumer` column listing `sprint-review` ✓.
 
-Sprint-review produces: `sprints/sprint-${N}/review-report.md`, `sprints/sprint-${N}-planning-inputs.json`, carry-forward entries, registry status update — all declared in state-handoff.md §sprint-review ✓.
+Sprint-review produces: `sprints/sprint-${N}/review-report.md`, `sprints/sprint-${N}-planning-inputs.json`, carry-forward entries, registry status update — all declared in session-lifecycle.md §sprint-review ✓.
 
 ---
 
@@ -117,7 +117,7 @@ Dynamic-Workflows dispatch applies only to `codebase-audit` (pilot) and `researc
 
 **Verdict: PASS**
 
-`grep "TeamCreate\|SendMessage" skills/sprint-review/SKILL.md` → no output. Allowed-tools declares `Agent` only (no `TeamCreate`, no `SendMessage`). SKILL.md Phase 2.2.1 uses `Agent()` with `subagent_type: general-purpose`, `model: sonnet`, `run_in_background: true` — consistent with canonical Agent() pattern per `spawn-protocol.md` line 79 ("Use the `Agent` tool instead; v1.4.0 migrated all spawning skills to this"). No drift.
+`grep "TeamCreate\|SendMessage" skills/sprint-review/SKILL.md` → no output. Allowed-tools declares `Agent` only (no `TeamCreate`, no `SendMessage`). SKILL.md Phase 2.2.1 uses `Agent()` with `subagent_type: general-purpose`, `model: sonnet`, `run_in_background: true` — consistent with canonical Agent() pattern per `agent-orchestration.md` line 79 ("Use the `Agent` tool instead; v1.4.0 migrated all spawning skills to this"). No drift.
 
 ---
 
@@ -129,7 +129,7 @@ Dynamic-Workflows dispatch applies only to `codebase-audit` (pilot) and `researc
 | V2 | PASS | Line 26 byte-matches canonical snippet; references/main.md carries snippet at line 848 |
 | V3 | PASS | `markdown-link-validate.sh` OK (397 links); all `/_shared/` files confirmed present; broken prose reference `"Reviewer Prompt Templates"` not caught by validator (minor) |
 | V4 | FAIL | §1.5.1 restates O2 grep patterns inline (7 vs 13 canonical, diverging); O3 bidirectional citation missing (integration-check SKILL.md doesn't list sprint-review as caller) |
-| V5 | PASS | Phase 0.0 gate checks all three state-handoff.md §sprint-plan + §sprint-dev required inputs; story-frontmatter.md consumer matrix confirms all consumed fields |
+| V5 | PASS | Phase 0.0 gate checks all three session-lifecycle.md §sprint-plan + §sprint-dev required inputs; sprint-contracts.md consumer matrix confirms all consumed fields |
 | V6 | N/A | DW dispatch only for codebase-audit/research |
 | V7 | N/A | Not read-only; auto-fix writes are intentional |
 | V8 | PASS | 442 body lines (≤450 target, ≤500 hard limit) |

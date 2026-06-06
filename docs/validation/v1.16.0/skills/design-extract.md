@@ -51,9 +51,9 @@ Evidence: `hooks/scripts/markdown-link-validate.sh skills/design-extract/SKILL.m
 
 Links checked include:
 - `/_shared/frontend-design-heuristics.md` (lines 23, 97)
-- `/_shared/token-budget.md` (line 24)
-- `/_shared/definition-of-done.md` (line 25)
-- `/_shared/session-protocol.md` (line 37)
+- `/_shared/agent-orchestration.md` (line 24)
+- `/_shared/sprint-contracts.md` (line 25)
+- `/_shared/session-lifecycle.md` (line 37)
 
 ---
 
@@ -78,7 +78,7 @@ Consumer evidence:
 - `agents/design-critic.md:6` — "the project's DESIGN.md (or frontend-design heuristics if no DESIGN.md)"
 - `agents/design-critic.md:41` — reads `Project's DESIGN.md if present in the repo root`
 
-Note: `DESIGN.md` is NOT listed in `skills/_shared/state-handoff.md` (confirmed by grep — zero matches). This is a gap in state-handoff documentation but not a functional defect in the skill itself; the artifact and its consumers are internally consistent.
+Note: `DESIGN.md` is NOT listed in `skills/_shared/session-lifecycle.md` (confirmed by grep — zero matches). This is a gap in state-handoff documentation but not a functional defect in the skill itself; the artifact and its consumers are internally consistent.
 
 ---
 

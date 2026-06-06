@@ -54,7 +54,7 @@ Output: `markdown-link-validate: OK (397 link(s) checked)`
 
 Manual spot-check on `/_shared/` citations in SKILL.md:
 - `/_shared/worktree-lifecycle.md` → `skills/_shared/worktree-lifecycle.md` — file exists ✓ (line 17, 160)
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` — file exists ✓ (line 36)
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` — file exists ✓ (line 36)
 
 Validator OK + both files confirmed present on disk.
 
@@ -78,12 +78,12 @@ SKILL.md does not restate the lifecycle ownership logic; it delegates Phase 2 cl
 
 **N/A**
 
-`worktree-prune` is not in the `bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship` pipeline defined in `/_shared/state-handoff.md`. It is a standalone utility skill:
+`worktree-prune` is not in the `bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship` pipeline defined in `/_shared/session-lifecycle.md`. It is a standalone utility skill:
 
 - Consumes: live git state (`git worktree list`, `git for-each-ref`, `git merge-base`) — no upstream skill artifact
 - Produces: terminal output (table + summary) in `--dry-run`; git branch/worktree deletions in `--apply` — no artifact consumed by a downstream skill
 
-`state-handoff.md` grep for "worktree-prune" returns zero hits (confirmed). Sprint-review Invariant 8 (`sprint-review/SKILL.md` line 311) cites `worktree-prune` as a *resolution command*, not a formal pipeline dependency — there is no artifact handoff contract to trace.
+`session-lifecycle.md` grep for "worktree-prune" returns zero hits (confirmed). Sprint-review Invariant 8 (`sprint-review/SKILL.md` line 311) cites `worktree-prune` as a *resolution command*, not a formal pipeline dependency — there is no artifact handoff contract to trace.
 
 Pipeline I/O composition check is not applicable for standalone utility skills.
 
@@ -138,7 +138,7 @@ Evidence: `python3` body-counter script output: `Body line count: 152 / Total fi
 | V2 OUTPUT STYLE snippet | PASS | Shell byte-comparison returned MATCH against `terse-output.md` canonical |
 | V3 Shared-protocol citations | PASS | `markdown-link-validate.sh` OK (397 links); spot-checked 2 `/_shared/` links — both files on disk |
 | V4 Canonical-owner compliance | PASS | Bidirectional citation with `worktree-lifecycle.md` confirmed; no owned-logic restatement |
-| V5 Pipeline I/O | N/A | Standalone utility; not in `state-handoff.md` pipeline; no artifact handoff contract |
+| V5 Pipeline I/O | N/A | Standalone utility; not in `session-lifecycle.md` pipeline; no artifact handoff contract |
 | V6 Dynamic-Workflows wiring | N/A | Not `codebase-audit` or `research`; no DW references in SKILL.md |
 | V7 Disallowed-tools gap | **FAIL** | Missing `disallowed-tools: Edit, Write, NotebookEdit`; health skill has it under same conditions |
 | V8 Body-line budget | PASS | 152 body lines (target ≤450, hard ≤500) |

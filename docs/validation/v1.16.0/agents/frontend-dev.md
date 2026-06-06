@@ -19,16 +19,16 @@
 Field evidence (re-derived from frontmatter):
 - `name: frontend-dev` — lowercase+hyphens, ≤64 chars, no reserved words. (`agents/frontend-dev.md:2`)
 - `description:` — 419 chars (well under 1024 cap). (`agents/frontend-dev.md:3–11`, verified via Python YAML parse)
-- `model: sonnet` — matches token-budget.md §1 "Standard workers: backend-dev, frontend-dev" → `claude-sonnet-4-6`. (`agents/frontend-dev.md:16`)
+- `model: sonnet` — matches agent-orchestration.md §1 "Standard workers: backend-dev, frontend-dev" → `claude-sonnet-4-6`. (`agents/frontend-dev.md:16`)
 - `tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch` — non-empty. (`agents/frontend-dev.md:12`)
 - `maxTurns: 50` — positive integer. (`agents/frontend-dev.md:14`)
 - Forbidden fields (`hooks`, `mcpServers`, `permissionMode`) — ABSENT as active fields. Line 13 carries only a prose comment explaining the restriction; no YAML key is set. (`agents/frontend-dev.md:13`)
 
 **Silently-stripped fields:** None present as YAML keys. The comment at line 13 is correct documentation. No silent-strip risk.
 
-**JSON reply contract (token-budget.md §3):** The reply contract belongs in the SPAWNING skill's `Agent()` prompt, not in the agent definition. `sprint-dev/references/main.md` carries the HEARTBEAT/PARTIAL/BUDGET blocks (confirmed at line 9: `<!-- import: /_shared/agent-prompt-boilerplate.md -->`). The agent-prompt-boilerplate.md explicitly states that the reply contract snippet is injected by orchestrators, not the agent file itself. `frontend-dev.md` is the receiver, not the injector — no gap.
+**JSON reply contract (agent-orchestration.md §3):** The reply contract belongs in the SPAWNING skill's `Agent()` prompt, not in the agent definition. `sprint-dev/references/main.md` carries the HEARTBEAT/PARTIAL/BUDGET blocks (confirmed at line 9: `<!-- import: /_shared/agent-orchestration.md -->`). The agent-orchestration.md explicitly states that the reply contract snippet is injected by orchestrators, not the agent file itself. `frontend-dev.md` is the receiver, not the injector — no gap.
 
-**Agent Output Contract (spawn-protocol.md §8):** Same reasoning — the classify_output validator and standard gate thresholds live in the orchestrator (sprint-dev). The subagent definition does not need to redeclare them.
+**Agent Output Contract (agent-orchestration.md §8):** Same reasoning — the classify_output validator and standard gate thresholds live in the orchestrator (sprint-dev). The subagent definition does not need to redeclare them.
 
 **OUTPUT STYLE snippet:** Present verbatim at `agents/frontend-dev.md:21`.
 

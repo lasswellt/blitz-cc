@@ -28,7 +28,7 @@ The FP-panel adds N refuter agents per surviving finding. On a large audit this 
 ## R4 — Workflow preview dependency (MEDIUM)
 
 Audit's aggregation/FP-panel are described as `Workflow` `parallel()`. `Workflow` is a research preview, Enterprise-disabled.
-- **Mitigation**: `workflow-dispatch.md` capability gate + `Agent()` fallback is mandatory (already specified). The aggregation/panel logic must work under both dispatch paths — same findings files, different orchestration.
+- **Mitigation**: `agent-orchestration.md` capability gate + `Agent()` fallback is mandatory (already specified). The aggregation/panel logic must work under both dispatch paths — same findings files, different orchestration.
 - **Residual**: API churn before GA. Confine all `Workflow` calls behind the gate.
 
 ## R5 — Verdict-flip asymmetry mis-classifies a check (MEDIUM)
@@ -58,5 +58,5 @@ The prompt cited "MisCiteBench" (a miscitation — wrong rendering of the unrela
 ## R9 — Scope creep: orthogonal skills pulled in (LOW)
 
 Pressure to fold quality-metrics/dep-health/ui-audit/perf-profile/browse into audit "since they're quality too."
-- **Mitigation**: `quality-matrix.md` four-question test — they have distinct scope/tempo/downstream/domain. Audit *calls* quality-metrics for a snapshot but does not absorb it. Hold the line.
+- **Mitigation**: `quality-engine.md` four-question test — they have distinct scope/tempo/downstream/domain. Audit *calls* quality-metrics for a snapshot but does not absorb it. Hold the line.
 - **Residual**: none if the matrix is enforced at authoring time.

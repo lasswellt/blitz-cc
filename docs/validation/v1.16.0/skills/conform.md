@@ -40,7 +40,7 @@ Canonical snippet (between `canonical-output-style-start` / `canonical-output-st
 
 `hooks/scripts/markdown-link-validate.sh skills/conform/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
-Links in SKILL.md (sample): `/_shared/verbose-progress.md`, `/_shared/session-protocol.md`, `/_shared/carry-forward-registry.md`, `/_shared/story-frontmatter.md`, `/_shared/state-handoff.md`, `references/main.md` — all resolve per validator.
+Links in SKILL.md (sample): `/_shared/terse-output.md`, `/_shared/session-lifecycle.md`, `/_shared/sprint-contracts.md`, `/_shared/sprint-contracts.md`, `/_shared/session-lifecycle.md`, `references/main.md` — all resolve per validator.
 
 ---
 
@@ -48,7 +48,7 @@ Links in SKILL.md (sample): `/_shared/verbose-progress.md`, `/_shared/session-pr
 
 **N/A**
 
-`conform` is classified as "Router / chainer" in `skills/_shared/agent-routing.md:27`. It does not delegate to any O1–O5 canonical owner and is not itself a canonical owner in the quality-matrix sense. It is a standalone maintenance skill invoked out-of-band (referenced from `sprint-review` only as a recovery suggestion at `skills/sprint-review/SKILL.md:450`). No bidirectional owner contract applies.
+`conform` is classified as "Router / chainer" in `skills/_shared/agent-orchestration.md:27`. It does not delegate to any O1–O5 canonical owner and is not itself a canonical owner in the quality-matrix sense. It is a standalone maintenance skill invoked out-of-band (referenced from `sprint-review` only as a recovery suggestion at `skills/sprint-review/SKILL.md:450`). No bidirectional owner contract applies.
 
 ---
 
@@ -56,7 +56,7 @@ Links in SKILL.md (sample): `/_shared/verbose-progress.md`, `/_shared/session-pr
 
 **N/A**
 
-`conform` is not a node in the canonical sprint pipeline (`bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship`). It is invoked ad-hoc as a recovery/maintenance tool. It consumes pre-existing artifacts (`.cc-sessions/`, `sprints/`, `docs/roadmap/`, `STATE.md`) produced by the normal pipeline but is not a declared producer/consumer in `skills/_shared/state-handoff.md` (grep confirms: no "conform" entry). No I/O composition tracing required.
+`conform` is not a node in the canonical sprint pipeline (`bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship`). It is invoked ad-hoc as a recovery/maintenance tool. It consumes pre-existing artifacts (`.cc-sessions/`, `sprints/`, `docs/roadmap/`, `STATE.md`) produced by the normal pipeline but is not a declared producer/consumer in `skills/_shared/session-lifecycle.md` (grep confirms: no "conform" entry). No I/O composition tracing required.
 
 ---
 

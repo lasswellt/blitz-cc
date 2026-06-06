@@ -1334,7 +1334,7 @@ Print full site map tree. Skill will no-op on subsequent ticks (check `latest-ti
 #### 7.6 Session Cleanup
 - Log to activity feed: `skill_complete` or `phase_complete` (per tick)
 - Update session JSON: status and last_activity
-- On COMPLETE: full session cleanup per session-protocol.md
+- On COMPLETE: full session cleanup per session-lifecycle.md
 
 ---
 

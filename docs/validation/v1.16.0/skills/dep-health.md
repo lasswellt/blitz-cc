@@ -48,11 +48,11 @@ The line is verbatim-identical, not a near-copy.
 `hooks/scripts/markdown-link-validate.sh skills/dep-health/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 All `/_shared/` links verified to exist on disk:
-- `skills/_shared/definition-of-done.md` — OK
-- `skills/_shared/session-protocol.md` — OK
+- `skills/_shared/sprint-contracts.md` — OK
+- `skills/_shared/session-lifecycle.md` — OK
 - `skills/_shared/terse-output.md` — OK
-- `skills/_shared/verbose-progress.md` — OK
-- `skills/_shared/package-install-policy.md` — OK
+- `skills/_shared/terse-output.md` — OK
+- `skills/_shared/security.md` — OK
 
 `references/main.md` also exists (308 lines, confirmed at `skills/dep-health/references/main.md`).
 
@@ -62,9 +62,9 @@ All `/_shared/` links verified to exist on disk:
 
 **PASS**
 
-dep-health is classified as a **pure worker** (no spawning, no chaining) per `skills/_shared/agent-routing.md:28`. It is not an O1–O5 owner skill.
+dep-health is classified as a **pure worker** (no spawning, no chaining) per `skills/_shared/agent-orchestration.md:28`. It is not an O1–O5 owner skill.
 
-The skill cites `/_shared/package-install-policy.md` as the canonical rule owner for upgrade-mode resolution (SKILL.md:18: "canonical rule for `upgrade` mode resolution"). `package-install-policy.md:82` back-references dep-health as "periodic enforcer." Bidirectional citation confirmed. The skill does not restate the owned logic — it delegates to the reference file.
+The skill cites `/_shared/security.md` as the canonical rule owner for upgrade-mode resolution (SKILL.md:18: "canonical rule for `upgrade` mode resolution"). `security.md:82` back-references dep-health as "periodic enforcer." Bidirectional citation confirmed. The skill does not restate the owned logic — it delegates to the reference file.
 
 ---
 
@@ -72,13 +72,13 @@ The skill cites `/_shared/package-install-policy.md` as the canonical rule owner
 
 **PASS**
 
-dep-health is a standalone invocation skill, not part of the sprint pipeline. It has no upstream producer and no required story-frontmatter inputs. Its I/O contract is defined in `skills/_shared/session-protocol.md:146`:
+dep-health is a standalone invocation skill, not part of the sprint pipeline. It has no upstream producer and no required story-frontmatter inputs. Its I/O contract is defined in `skills/_shared/session-lifecycle.md:146`:
 
 ```
 | dep-health | — | ${SESSION_TMP_DIR}/dep-health-report.md |
 ```
 
-Consumer side: no other skill declares dep-health's report as a required input in state-handoff.md — the report is a user-facing artifact. The SKILL.md body correctly produces this artifact at Phase 5.2. No pipeline mismatch.
+Consumer side: no other skill declares dep-health's report as a required input in session-lifecycle.md — the report is a user-facing artifact. The SKILL.md body correctly produces this artifact at Phase 5.2. No pipeline mismatch.
 
 ---
 
@@ -86,7 +86,7 @@ Consumer side: no other skill declares dep-health's report as a required input i
 
 **N/A**
 
-dep-health is not `codebase-audit` or `research`. The DW dispatch gate applies only to those two pilot skills per `skills/_shared/workflow-dispatch.md`.
+dep-health is not `codebase-audit` or `research`. The DW dispatch gate applies only to those two pilot skills per `skills/_shared/agent-orchestration.md`.
 
 ---
 
@@ -124,7 +124,7 @@ Body lines (line 10 through EOF = total 391 lines − 9 frontmatter lines): **38
 
 **N/A**
 
-`allowed-tools` does not include `TeamCreate` or `SendMessage`. dep-health is a pure worker slash-invoked skill per `agent-routing.md` — it does not spawn subagents. No drift from canonical Agent() pattern.
+`allowed-tools` does not include `TeamCreate` or `SendMessage`. dep-health is a pure worker slash-invoked skill per `agent-orchestration.md` — it does not spawn subagents. No drift from canonical Agent() pattern.
 
 ---
 
@@ -132,7 +132,7 @@ Body lines (line 10 through EOF = total 391 lines − 9 frontmatter lines): **38
 
 **cohesive**
 
-All applicable checks pass. The skill is well-structured: frontmatter valid, OUTPUT STYLE verbatim-matched, all shared-protocol links resolve, canonical-owner citations are bidirectional, pipeline I/O contract matches session-protocol.md, disallowed-tools omission is intentionally documented with a traceable audit reference, body at 382 lines is within budget, and no spawn-idiom drift.
+All applicable checks pass. The skill is well-structured: frontmatter valid, OUTPUT STYLE verbatim-matched, all shared-protocol links resolve, canonical-owner citations are bidirectional, pipeline I/O contract matches session-lifecycle.md, disallowed-tools omission is intentionally documented with a traceable audit reference, body at 382 lines is within budget, and no spawn-idiom drift.
 
 ## Highest-Leverage Fix
 

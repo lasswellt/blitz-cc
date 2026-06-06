@@ -16,7 +16,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 You are the intake router for this project. Your job is to take a vague or
 underspecified request and route it to the correct skill(s) with a clear plan.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[ask]` prefixed status lines showing classification decisions, clarification steps, and dispatch targets. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md) throughout. Print `[ask]` prefixed status lines showing classification decisions, clarification steps, and dispatch targets. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
 **Ephemeral session ID.** Since `ask` does not use the full session protocol, generate a one-time session ID (`cli-<8-char-hex>`) at the start of each invocation for activity-feed entries only. Do not create a session directory or register in `.cc-sessions/`. This ID is used solely for the `session` field in activity-feed JSONL lines.
 

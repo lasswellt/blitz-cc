@@ -23,8 +23,8 @@ You are a cross-page UI/UX auditor. On each run you extract labeled values from 
 - For phase procedures (extraction JS, registry schema, reducer, invariant evaluator, tick-diff taxonomy, reporter), see [references/main.md](references/main.md)
 - For data-quality flag catalog (NULL_VALUE, PLACEHOLDER, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL, NEGATIVE_COUNT), see [references/checks.md](references/checks.md)
 - For UI/UX heuristic rule set (Vercel guidelines + severity tiers + a11y), see [references/patterns.md](references/patterns.md)
-- For session registration + conflict matrix, see [/_shared/session-protocol.md](/_shared/session-protocol.md)
-- For verbose progress + activity-feed events, see [/_shared/verbose-progress.md](/_shared/verbose-progress.md)
+- For session registration + conflict matrix, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For verbose progress + activity-feed events, see [/_shared/terse-output.md](/_shared/terse-output.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -49,7 +49,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-**Register session.** Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per verbose-progress.md.
+**Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
 ### 0.1 Parse Arguments
 
 | Mode | Argument | Behavior |

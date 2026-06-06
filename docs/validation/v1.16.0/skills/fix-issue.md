@@ -40,11 +40,11 @@ Manual field audit:
 **Evidence**: `hooks/scripts/markdown-link-validate.sh skills/fix-issue/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 Links in body verified by script:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` ✓
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` ✓
-- `/_shared/spawn-protocol.md` → `skills/_shared/spawn-protocol.md` ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` ✓
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` ✓
+- `/_shared/agent-orchestration.md` → `skills/_shared/agent-orchestration.md` ✓
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` ✓
 
 ---
 
@@ -60,7 +60,7 @@ fix-issue is a standalone skill, not a delegating skill and not an O1–O5 canon
 
 **Verdict**: PASS
 
-**Evidence**: `grep -n 'fix-issue' skills/_shared/state-handoff.md` → line 161: `Consumer: operator (reviews report), sprint-plan (if migration is tracked as a story), fix-issue (if a step fails and needs targeted repair)`. fix-issue is downstream of no mandatory producer — it is explicitly documented as standalone. It consumes a GitHub issue number (user-supplied argument), not a pipeline artifact. `state-handoff.md` anti-pattern table at lines 167-171 confirms standalone skills may accept user-supplied inputs. No upstream artifact contract to verify.
+**Evidence**: `grep -n 'fix-issue' skills/_shared/session-lifecycle.md` → line 161: `Consumer: operator (reviews report), sprint-plan (if migration is tracked as a story), fix-issue (if a step fails and needs targeted repair)`. fix-issue is downstream of no mandatory producer — it is explicitly documented as standalone. It consumes a GitHub issue number (user-supplied argument), not a pipeline artifact. `session-lifecycle.md` anti-pattern table at lines 167-171 confirms standalone skills may accept user-supplied inputs. No upstream artifact contract to verify.
 
 ---
 
@@ -68,7 +68,7 @@ fix-issue is a standalone skill, not a delegating skill and not an O1–O5 canon
 
 **Verdict**: N/A
 
-fix-issue is not `codebase-audit` or `research`. Dynamic-Workflows dispatch is a pilot limited to those two skills per `skills/_shared/workflow-dispatch.md`. No DW wiring required or expected.
+fix-issue is not `codebase-audit` or `research`. Dynamic-Workflows dispatch is a pilot limited to those two skills per `skills/_shared/agent-orchestration.md`. No DW wiring required or expected.
 
 ---
 
@@ -98,11 +98,11 @@ fix-issue is not read-only-by-construction. It actively edits project files (Edi
 
 2. `grep -c 'SendMessage' skills/fix-issue/SKILL.md` → **1** (only the frontmatter declaration; zero body usages).
 
-3. `skills/_shared/spawn-protocol.md` line 79: `TeamCreate+SendMessage does not accept subagent_type — the SDK picks by heuristic. Use the Agent tool instead (v1.4.0 migrated all spawning skills to this).`
+3. `skills/_shared/agent-orchestration.md` line 79: `TeamCreate+SendMessage does not accept subagent_type — the SDK picks by heuristic. Use the Agent tool instead (v1.4.0 migrated all spawning skills to this).`
 
 4. fix-issue body (line 148) says: `spawn a research subagent with subagent_type: general-purpose` — specifying `subagent_type` requires the `Agent` tool, not SendMessage. But `Agent` is not in allowed-tools.
 
-5. No documented exception in `spawn-protocol.md` for fix-issue to use SendMessage instead of Agent. The three skills using SendMessage (`sprint-dev`, `setup`, `fix-issue`) — sprint-dev and setup coordinate multi-agent teams; fix-issue coordinates no team.
+5. No documented exception in `agent-orchestration.md` for fix-issue to use SendMessage instead of Agent. The three skills using SendMessage (`sprint-dev`, `setup`, `fix-issue`) — sprint-dev and setup coordinate multi-agent teams; fix-issue coordinates no team.
 
 **Root defect**: SendMessage was carried over from an earlier multi-agent design (or from template drift). The canonical single-subagent pattern requires `Agent` in allowed-tools, not SendMessage. SendMessage is for cross-agent coordination (resume, WRAP_UP nudge), not for spawning — and fix-issue spawns exactly one agent with no inter-agent coordination.
 

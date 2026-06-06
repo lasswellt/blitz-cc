@@ -12,11 +12,11 @@ Three questions, taken directly from the article's incidents:
 
 ## 1. Persistent state read unvalidated — **FINDING (confirmed)**
 
-**Yes.** `skills/_shared/session-protocol.md:42` instructs every skill to "Read ALL `.cc-sessions/*.json` files" with no integrity or injection check. Lines :72/:76/:82 add the activity feed and the developer/model profiles, also unvalidated.
+**Yes.** `skills/_shared/session-lifecycle.md:42` instructs every skill to "Read ALL `.cc-sessions/*.json` files" with no integrity or injection check. Lines :72/:76/:82 add the activity feed and the developer/model profiles, also unvalidated.
 
 **Worst instance:** the carry-forward registry is not only read unvalidated — it is **auto-injected into the next sprint** (`sprint-plan` consumes it as mandatory input). An injection landing there is reloaded every session *and* converted into planned work. This is exactly AP-4's "agent state that survives the session," with the aggravating factor that it *drives work*, not just context.
 
-**Mitigating fact (honest):** Blitz already has a partial defense — orchestrator.md:146-152 caps and `jq`-extracts these fields with an explicit "injection-surface guard; Opus 4.8 ASR regression" comment, and the `rollover_count >= 3` escalation is a primitive startup classifier. So the orchestrator's *read path* is partially hardened; the **skill-startup read path (session-protocol.md) is not.** The gap is the inconsistency, not total absence.
+**Mitigating fact (honest):** Blitz already has a partial defense — orchestrator.md:146-152 caps and `jq`-extracts these fields with an explicit "injection-surface guard; Opus 4.8 ASR regression" comment, and the `rollover_count >= 3` escalation is a primitive startup classifier. So the orchestrator's *read path* is partially hardened; the **skill-startup read path (session-lifecycle.md) is not.** The gap is the inconsistency, not total absence.
 
 **Severity:** HIGH. → Gap 1.
 
@@ -28,7 +28,7 @@ Three questions, taken directly from the article's incidents:
 
 | Agent | `tools:` | Role | Capability concern |
 |---|---|---|---|
-| `architect` | Read, Glob, Grep, **Bash** | "strictly read-only" structural analysis (spawn-protocol.md:47) | Bash = arbitrary command exec on an agent documented as read-only. |
+| `architect` | Read, Glob, Grep, **Bash** | "strictly read-only" structural analysis (agent-orchestration.md:47) | Bash = arbitrary command exec on an agent documented as read-only. |
 | `critic` | Read, Grep, Glob, **Bash** | adversarial reviewer, read-only | same. |
 | `design-critic` | Read, Grep, Glob, **Bash** | reads screenshots, read-only | same. |
 | `research-critic` | + **WebFetch** | citation prober | network egress — **justified** by its job, but undocumented as a deliberate grant. |
@@ -47,7 +47,7 @@ Three questions, taken directly from the article's incidents:
 
 **Crucial honest distinction from the article's incident:** the article's AP-1 was *code execution* — a committed `.claude/settings.json` hook ran attacker code before the trust prompt. Blitz's `session-start.sh` **does not execute project-controlled code**; it `jq`-parses and echoes text. So Blitz is exposed to the *context-injection* form of AP-1, not the *code-execution* form. Blitz also delegates the trust prompt itself to the Claude Code platform — it does not (and should not) reimplement it.
 
-**Assertion to preserve (audited true today):** no Blitz hook executes project-controlled content pre-trust. `pre-edit-guard.sh` and the `block-*.sh` hooks read `tool_input` (the agent's own action), not committed project config; `session-start.sh` parses but does not `eval`/source any project file. Gap 5's `hook-trust.md` note exists to keep this assertion true as hooks evolve.
+**Assertion to preserve (audited true today):** no Blitz hook executes project-controlled content pre-trust. `pre-edit-guard.sh` and the `block-*.sh` hooks read `tool_input` (the agent's own action), not committed project config; `session-start.sh` parses but does not `eval`/source any project file. Gap 5's `security.md` note exists to keep this assertion true as hooks evolve.
 
 **Severity:** MEDIUM. → Gap 5.
 

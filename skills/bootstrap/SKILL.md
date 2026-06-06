@@ -13,8 +13,8 @@ argument-hint: "<type: project|feature|package> <name>"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For pipeline artifact contracts (what bootstrap produces for sprint-plan/sprint-dev), see [/_shared/state-handoff.md](/_shared/state-handoff.md)
-- For package install policy (always resolve to registry latest, never invent versions from training memory), see [/_shared/package-install-policy.md](/_shared/package-install-policy.md). Applies to every `pnpm add` / `npm install` issued during scaffold.
+- For pipeline artifact contracts (what bootstrap produces for sprint-plan/sprint-dev), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For package install policy (always resolve to registry latest, never invent versions from training memory), see [/_shared/security.md](/_shared/security.md). Applies to every `pnpm add` / `npm install` issued during scaffold.
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -36,7 +36,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 1. **NEVER overwrite existing files without explicit user confirmation.** If a file already exists at a planned path, ask the user whether to skip or overwrite.
 
-2. **NEVER generate placeholder/stub code.** All generated code must be functional. No `TODO`, `FIXME`, empty function bodies, or `throw new Error('not implemented')`. See [Definition of Done](/_shared/definition-of-done.md).
+2. **NEVER generate placeholder/stub code.** All generated code must be functional. No `TODO`, `FIXME`, empty function bodies, or `throw new Error('not implemented')`. See [Definition of Done](/_shared/sprint-contracts.md).
 
 3. **NEVER install packages without user confirmation for major additions.** Minor dev dependencies (types, test utils) are acceptable; new frameworks or large libraries require explicit consent.
 
@@ -52,7 +52,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Bootstrap Type
 
@@ -112,7 +112,7 @@ Project Setup:
   Confirm choices? [y/n]
 ```
 
-When `UI != None`, add `impeccable@2.3.2` to the scaffolded project's `devDependencies` so the design pillar's semantic lane (`/blitz:review --only design`, `/blitz:audit --pillar design`) is available in **this** project. It is a target-project dependency, never a Blitz plugin dependency; without it the deterministic regex rows still run but the semantic lane reports `DESIGN_LANE_UNAVAILABLE`. (Resolve to registry latest per [/_shared/package-install-policy.md](/_shared/package-install-policy.md) if `2.3.2` is superseded.)
+When `UI != None`, add `impeccable@2.3.2` to the scaffolded project's `devDependencies` so the design pillar's semantic lane (`/blitz:review --only design`, `/blitz:audit --pillar design`) is available in **this** project. It is a target-project dependency, never a Blitz plugin dependency; without it the deterministic regex rows still run but the semantic lane reports `DESIGN_LANE_UNAVAILABLE`. (Resolve to registry latest per [/_shared/security.md](/_shared/security.md) if `2.3.2` is superseded.)
 
 ---
 
@@ -279,7 +279,7 @@ Bootstrap Complete: <type> "<name>"
 
 ### 5.2 Roadmap Pipeline Handoff
 
-Per [/_shared/state-handoff.md](/_shared/state-handoff.md) §bootstrap, `sprint-plan` Phase 0 hard-fails without `docs/roadmap/roadmap-registry.json` + `docs/roadmap/epic-registry.json`. Silent absence is the failure mode — so for greenfield (`project` mode) initialize empty stubs:
+Per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §bootstrap, `sprint-plan` Phase 0 hard-fails without `docs/roadmap/roadmap-registry.json` + `docs/roadmap/epic-registry.json`. Silent absence is the failure mode — so for greenfield (`project` mode) initialize empty stubs:
 
 ```bash
 mkdir -p docs/roadmap

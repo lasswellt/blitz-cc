@@ -2,7 +2,7 @@
 
 Source of truth for cross-protocol reference blocks that appear in multiple SKILL.md files.
 
-**Why this file exists**: 6 SKILL.md files (audit, codebase-map, doc-gen, fix-issue, quality-metrics, research) carry an identical 2-line "Additional Resources" block pointing to `spawn-protocol.md` + `terse-output.md`. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own resources for context discovery. This file is the **author-time dedup target** (Pattern A from `agent-prompt-boilerplate.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
+**Why this file exists**: 6 SKILL.md files (audit, codebase-map, doc-gen, fix-issue, quality-metrics, research) carry an identical 2-line "Additional Resources" block pointing to `agent-orchestration.md` + `terse-output.md`. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own resources for context discovery. This file is the **author-time dedup target** (Pattern A from `agent-orchestration.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
 
 **Surfaced by**: 2026-05-16 audit-FP-prevention test (`docs/_research/2026-05-16_audit-agent-fp-prevention.md` test run, Finding 1, Confidence 88).
 
@@ -14,7 +14,7 @@ For SKILL.md files that (a) spawn subagents AND (b) follow the canonical output 
 
 ```markdown
 ## Additional Resources
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 ```
 
@@ -30,7 +30,7 @@ When updating the canonical wording: change this file first, then propagate to t
 
 ```bash
 # Detect drift between canonical wording and inline copies
-CANONICAL="For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see \[spawn-protocol.md\]"
+CANONICAL="For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see \[agent-orchestration.md\]"
 EXPECTED_FILES=6
 ACTUAL=$(grep -rl "$CANONICAL" skills/ --include="SKILL.md" | wc -l)
 [ "$ACTUAL" = "$EXPECTED_FILES" ] || echo "DRIFT: $ACTUAL/$EXPECTED_FILES files carry canonical Additional Resources block"
@@ -53,6 +53,6 @@ When the same multi-line cross-reference block appears in ≥4 SKILL.md files, e
 
 ## Related
 
-- [`agent-prompt-boilerplate.md`](agent-prompt-boilerplate.md) — analogous dedup target for recurring Agent() prompt sections (BUDGET, HEARTBEAT, PARTIAL, CONFIRMATION, Self-Falsification).
-- [`spawn-protocol.md`](spawn-protocol.md) — the destination of the canonical block's first line.
+- [`agent-orchestration.md`](agent-orchestration.md) — analogous dedup target for recurring Agent() prompt sections (BUDGET, HEARTBEAT, PARTIAL, CONFIRMATION, Self-Falsification).
+- [`agent-orchestration.md`](agent-orchestration.md) — the destination of the canonical block's first line.
 - [`terse-output.md`](terse-output.md) — the destination of the canonical block's second line.

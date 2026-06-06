@@ -75,11 +75,11 @@ Apply the canonical phrasing everywhere: **"20 catalogued detectors (det-01…20
 - `critic.md` description line "any of the 19 documented autonomous-coder failure modes" → "any of the 20 catalogued failure modes (13 reject-authority, 7 advisory; see check-provenance.json)."
 - `critic.md §2.1` heading "Shortcut taxonomy (19 detectors)" → "(20 detectors; 13 reject, 7 advisory)."
 - LGTM summary "No reject signals found across 8 critic checks" → keep "8" — it counts the 8 reject-checklist *classes* §2.1–2.8, which is distinct from the 20 detectors. Optionally append "(20 registry detectors; 13 reject-authority enforced via these 8 classes)."
-- `shortcut-taxonomy.md` title "19 Autonomous-Coder Failure Modes" → "20 Autonomous-Coder Failure Modes (13 reject, 7 advisory)."
+- `quality-engine.md` title "19 Autonomous-Coder Failure Modes" → "20 Autonomous-Coder Failure Modes (13 reject, 7 advisory)."
 
 ## 6. Registry-driven, not inline
 
-The critic's §2.1 grep block is replaced by *loading `reject_only` from check-provenance.json* and running each check's `detection.command`. No grep pattern lives in `critic.md` anymore — it cites `det-NN`. This removes the duplication between `critic.md §2.1`, `shortcut-taxonomy.md §3`, and the hook scripts, killing the drift class. The eight checklist *sections* (§2.1–2.8) remain as the human-readable run order; their contents come from the registry.
+The critic's §2.1 grep block is replaced by *loading `reject_only` from check-provenance.json* and running each check's `detection.command`. No grep pattern lives in `critic.md` anymore — it cites `det-NN`. This removes the duplication between `critic.md §2.1`, `quality-engine.md §3`, and the hook scripts, killing the drift class. The eight checklist *sections* (§2.1–2.8) remain as the human-readable run order; their contents come from the registry.
 
 ## 7. What stays exactly as-is
 

@@ -62,14 +62,14 @@ grep -iE "pivot to (a |an )?different (tone|aesthetic)" skills/ui-build/SKILL.md
 
 ---
 
-## E4 — Sprint-contract negotiation (Gap 3) · `skills/sprint-dev/SKILL.md` + `skills/_shared/state-handoff.md`
+## E4 — Sprint-contract negotiation (Gap 3) · `skills/sprint-dev/SKILL.md` + `skills/_shared/session-lifecycle.md`
 
 Add a pre-wave contract step: generator proposes build + verification; evaluator (critic/design-critic) amends; converge (bounded N rounds, else escalate); negotiated criteria become `scope.acceptance` (co-owned). Scope the negotiation to the gap between high-level acceptance and testable behaviors — do not duplicate what `sprint-plan` already pins ([`gap-fixes.md`](gap-fixes.md) Gap 3). Register the contract artifact in the handoff table.
 
 **Acceptance**
 ```sh
 grep -iE "sprint contract|contract negotiation|propose.*verify|co-own" skills/sprint-dev/SKILL.md
-grep -iE "negotiated contract|sprint-contract" skills/_shared/state-handoff.md
+grep -iE "negotiated contract|sprint-contract" skills/_shared/session-lifecycle.md
 ```
 
 ---
@@ -88,10 +88,10 @@ grep -iE "v1.16.0|cohesion-2026-05|det-20" skills/ui-build/SKILL.md
 
 ## Cross-cutting requirements
 
-1. **Reuse, don't rebuild.** Every epic extends an existing artifact — no new agents ([`blitz-loop-map.md`](blitz-loop-map.md) §1). E1/E3/E5 → `ui-build/SKILL.md`; E2 → `design-critic.md` + ui-build; E4 → `sprint-dev` + `state-handoff.md`.
+1. **Reuse, don't rebuild.** Every epic extends an existing artifact — no new agents ([`blitz-loop-map.md`](blitz-loop-map.md) §1). E1/E3/E5 → `ui-build/SKILL.md`; E2 → `design-critic.md` + ui-build; E4 → `sprint-dev` + `session-lifecycle.md`.
 2. **5-dim ↔ 4-criteria reconciliation** holds (Creative Distinction≈Originality, Visual Polish≈Craft, UX≈Functionality, Aesthetic Fit+Prompt Adherence≈Design quality). Keep equal numeric scoring; make the "grade hardest where the model is weakest" emphasis explicit and symmetric ([`blitz-loop-map.md`](blitz-loop-map.md) §3).
 3. **Compose with the design pillar.** Deterministic `npx impeccable detect` (Layer 0/1/2, `check-registry.json pillar==design`) runs first and feeds the live-nav critic mechanical findings; the critic spends its navigation budget on what only live interaction reveals ([`design-critic-upgrade.md`](design-critic-upgrade.md) §6).
-4. **Budget honesty.** Article: full harness 6 hr / $200; DAW 3 hr 50 / $124.70 ([`harness-model.md`](harness-model.md) §8). Bound E3's ceiling and E2's live-nav cost via `token-budget.md`; reserve the expensive path for `high`; E5 reclaims `standard`-tier waste. Surface the tradeoff; never silently incur it on `standard`.
+4. **Budget honesty.** Article: full harness 6 hr / $200; DAW 3 hr 50 / $124.70 ([`harness-model.md`](harness-model.md) §8). Bound E3's ceiling and E2's live-nav cost via `agent-orchestration.md`; reserve the expensive path for `high`; E5 reclaims `standard`-tier waste. Surface the tradeoff; never silently incur it on `standard`.
 5. **Stress-test framing.** The whole integration is the article's closing lesson applied to Blitz: strip stale scaffolding (E5), add capability the model now enables (E2 live nav, E3 longer creative loop), steer earlier (E1). Re-examine each design release against the current model — exactly as v1.16.0/cohesion did for code detectors.
 
 ## Corrections folded in (vs. the brief)

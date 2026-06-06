@@ -51,9 +51,9 @@ Result: `MATCH` — `skills/quick/SKILL.md:21` carries the verbatim canonical li
 
 Links verified to exist on disk:
 
-- `/_shared/package-install-policy.md` → `skills/_shared/package-install-policy.md` — EXISTS
+- `/_shared/security.md` → `skills/_shared/security.md` — EXISTS
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — EXISTS
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` — EXISTS
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` — EXISTS
 
 No dead links.
 
@@ -71,7 +71,7 @@ Per unit notes: quick has no O1–O5 owner role and does not delegate to an owne
 
 **Verdict: N/A**
 
-`quick` is a standalone ad-hoc skill. It is not listed in `skills/_shared/state-handoff.md` as either a producer or consumer in any sprint pipeline chain. No upstream producer or downstream consumer to trace. The skill explicitly states "No session protocol. No activity feed logging. No agents." — it operates outside the sprint pipeline I/O graph.
+`quick` is a standalone ad-hoc skill. It is not listed in `skills/_shared/session-lifecycle.md` as either a producer or consumer in any sprint pipeline chain. No upstream producer or downstream consumer to trace. The skill explicitly states "No session protocol. No activity feed logging. No agents." — it operates outside the sprint pipeline I/O graph.
 
 ---
 

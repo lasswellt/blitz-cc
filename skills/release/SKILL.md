@@ -46,7 +46,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **NEVER delete remote tags without user confirmation.** Rollback of remote tags is destructive and requires explicit consent.
 
-8. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/definition-of-done.md).
+8. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/sprint-contracts.md).
 
 ---
 
@@ -54,7 +54,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode and Version
 

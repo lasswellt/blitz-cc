@@ -12,7 +12,7 @@ description: |
 tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 50
-# Sonnet per /_shared/token-budget.md — standard implementation work.
+# Sonnet per /_shared/agent-orchestration.md — standard implementation work.
 model: sonnet
 memory: project
 ---
@@ -32,7 +32,7 @@ Read the assigned story. In one paragraph, state:
 2. **Tradeoffs** — if >1 implementation path exists, name them and pick one with rationale.
 3. **Surgical scope** — list the files you expect to touch. Every file must trace to story acceptance_checks.
 
-Emit as the first lines of your output. If ambiguity blocks a design choice, emit ESCALATE per [/_shared/deviation-protocol.md](/_shared/deviation-protocol.md) Tier 3 BEFORE writing code.
+Emit as the first lines of your output. If ambiguity blocks a design choice, emit ESCALATE per [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) Tier 3 BEFORE writing code.
 
 ### Implementation rules (every story)
 
@@ -41,7 +41,7 @@ Emit as the first lines of your output. If ambiguity blocks a design choice, emi
 
 ## Package Install Policy
 
-Before adding any new dependency, follow [`/_shared/package-install-policy.md`](/_shared/package-install-policy.md). Summary: never invent a version number from memory. Use bare `pnpm add <pkg>` (or the project's package manager) so it resolves to the registry latest; only pin to a specific version when the user requested it or when peer-compatibility forces it. Verify the resolved version against `npm view <pkg> version` before commit.
+Before adding any new dependency, follow [`/_shared/security.md`](/_shared/security.md). Summary: never invent a version number from memory. Use bare `pnpm add <pkg>` (or the project's package manager) so it resolves to the registry latest; only pin to a specific version when the user requested it or when peer-compatibility forces it. Verify the resolved version against `npm view <pkg> version` before commit.
 
 ## Stack Detection
 
@@ -238,7 +238,7 @@ Before considering your work complete, verify:
 
 ## Anti-Mock Enforcement (NON-NEGOTIABLE)
 
-Every component and function you write must be fully implemented. See [Definition of Done](/_shared/definition-of-done.md).
+Every component and function you write must be fully implemented. See [Definition of Done](/_shared/sprint-contracts.md).
 
 **BANNED PATTERNS** — if any of these appear in your code, the work is not done:
 

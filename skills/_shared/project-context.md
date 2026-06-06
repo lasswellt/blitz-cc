@@ -2,7 +2,7 @@
 
 Source of truth for the `## Project Context` heading + `detect-stack.sh` invocation that appears in 29 of 38 SKILL.md files.
 
-**Why this file exists**: 29 SKILL.md files carry the identical 2-line block below. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own context-injection commands at load time. This file is the **author-time dedup target** (Pattern A from `agent-prompt-boilerplate.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
+**Why this file exists**: 29 SKILL.md files carry the identical 2-line block below. The block cannot be eliminated — Claude Code's skill loader needs each SKILL.md to declare its own context-injection commands at load time. This file is the **author-time dedup target** (Pattern A from `agent-orchestration.md` §How Orchestrators Use This Fragment): one source-of-truth for the canonical wording; each SKILL.md still carries its own copy, but updates land here first and propagate manually.
 
 **Surfaced by**: 2026-05-16 audit-FP-prevention blind retest (`docs/_research/2026-05-16_audit-agent-fp-prevention.md` test follow-up, Finding 2, Confidence 85, count refined from claimed 30/38 to actual 29/38 via independent falsification).
 
@@ -46,5 +46,5 @@ Note: `grep -l ... | wc -l` (file count), NOT `grep -rn ... | wc -l` (hit count)
 ## Related
 
 - [`skill-cross-references.md`](skill-cross-references.md) — analogous dedup target for the Additional Resources block.
-- [`agent-prompt-boilerplate.md`](agent-prompt-boilerplate.md) — analogous dedup target for recurring Agent() prompt sections.
+- [`agent-orchestration.md`](agent-orchestration.md) — analogous dedup target for recurring Agent() prompt sections.
 - `${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh` — the actual script invoked by the canonical block.

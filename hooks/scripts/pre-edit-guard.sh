@@ -4,7 +4,7 @@ set -euo pipefail
 # Pre-edit guard hook
 # Blocks edits to protected files.
 # Containment: environment-layer enforcement of TB-1 (project-local secrets/keys/locks untrusted).
-# Canonical posture: /_shared/threat-model.md §3 TB-1.
+# Canonical posture: /_shared/security.md §3 TB-1.
 # Reads JSON from stdin with tool_input.file_path.
 # Exit 0 = allow, Exit 2 = block.
 

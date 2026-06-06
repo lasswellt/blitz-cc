@@ -4,7 +4,7 @@ sprint: v1.16.0
 validator: cli-a1b2c3d4
 date: 2026-05-28
 verdict: cohesive
-highest_leverage_fix: "V5 — add a one-line pipeline-position note ('standalone utility, not in sprint pipeline') to state-handoff.md so the pipeline table is complete; compress is the only utility skill with explicit I/O docs in its SKILL.md but no entry in the handoff contract."
+highest_leverage_fix: "V5 — add a one-line pipeline-position note ('standalone utility, not in sprint pipeline') to session-lifecycle.md so the pipeline table is complete; compress is the only utility skill with explicit I/O docs in its SKILL.md but no entry in the handoff contract."
 ---
 
 # Compress Skill — v1.16.0 Validation
@@ -48,9 +48,9 @@ The OUTPUT STYLE line at SKILL.md:15 is identical to the canonical snippet bound
 Evidence: `hooks/scripts/markdown-link-validate.sh skills/compress/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 All `/_shared/` links resolve to real files:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` ✓
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` ✓
-- `/_shared/spawn-protocol.md` → `skills/_shared/spawn-protocol.md` ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` ✓
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
+- `/_shared/agent-orchestration.md` → `skills/_shared/agent-orchestration.md` ✓
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` ✓
 - `hooks/scripts/reference-compression-validate.sh` → file exists ✓
 
@@ -70,16 +70,16 @@ Per unit notes: compress has no O1–O5 owner role and does not delegate to one.
 
 **Verdict: PASS** (with minor gap noted)
 
-Compress is a **standalone utility skill** — not part of the sprint pipeline (`bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review`). `skills/_shared/state-handoff.md` has no entry for compress (confirmed by grep). The skill's SKILL.md is self-documenting:
+Compress is a **standalone utility skill** — not part of the sprint pipeline (`bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review`). `skills/_shared/session-lifecycle.md` has no entry for compress (confirmed by grep). The skill's SKILL.md is self-documenting:
 
 - **Input**: user-provided file path(s) (`.md`, `.txt`, `.rst`, extensionless text); validated in Phase 0.
 - **Output**: compressed file (in-place) + `<file>.original` backup.
 - **Upstream**: none (operator invocation only).
 - **Downstream**: operator reviews diff; `hooks/scripts/reference-compression-validate.sh` runs as Phase 3 gate.
 
-This is consistent with state-handoff.md's standalone pattern (the `migrate` skill has a parallel `standalone (not part of the sprint cycle)` declaration).
+This is consistent with session-lifecycle.md's standalone pattern (the `migrate` skill has a parallel `standalone (not part of the sprint cycle)` declaration).
 
-Minor gap: compress lacks a formal entry in state-handoff.md noting its standalone position. This mirrors how `migrate` is documented. Not a contract violation — compress predates the migrate entry convention and has no sprint-pipeline consumers requiring a handoff row.
+Minor gap: compress lacks a formal entry in session-lifecycle.md noting its standalone position. This mirrors how `migrate` is documented. Not a contract violation — compress predates the migrate entry convention and has no sprint-pipeline consumers requiring a handoff row.
 
 ---
 
@@ -125,8 +125,8 @@ Body:              141  (lines 9–149)
 
 **cohesive**
 
-All applicable checks pass. Frontmatter validates clean via script. OUTPUT STYLE snippet is byte-identical to canonical. All shared-protocol links resolve. Body at 141 lines is well under budget. No O1–O5 owner conflicts, no DW wiring, no spawn tools. Only gap is absence of a state-handoff.md entry noting standalone position — a documentation completeness issue, not a contract violation.
+All applicable checks pass. Frontmatter validates clean via script. OUTPUT STYLE snippet is byte-identical to canonical. All shared-protocol links resolve. Body at 141 lines is well under budget. No O1–O5 owner conflicts, no DW wiring, no spawn tools. Only gap is absence of a session-lifecycle.md entry noting standalone position — a documentation completeness issue, not a contract violation.
 
 ## Highest-Leverage Fix
 
-Add a one-line pipeline-position entry for compress in `skills/_shared/state-handoff.md` (standalone utility, not in sprint pipeline) — the same pattern as the `migrate` skill — so the handoff contract is complete for all skills with explicit I/O docs.
+Add a one-line pipeline-position entry for compress in `skills/_shared/session-lifecycle.md` (standalone utility, not in sprint pipeline) — the same pattern as the `migrate` skill — so the handoff contract is complete for all skills with explicit I/O docs.

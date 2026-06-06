@@ -14,7 +14,7 @@ argument-hint: "<issue-number>"
 
 ## Additional Resources
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -28,7 +28,7 @@ Resolve a GitHub issue end-to-end: fetch context, identify root cause, implement
 
 ---
 
-All code produced must satisfy the [Definition of Done](/_shared/definition-of-done.md). No placeholder implementations.
+All code produced must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder implementations.
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
@@ -44,7 +44,7 @@ All code produced must satisfy the [Definition of Done](/_shared/definition-of-d
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Arguments
 
@@ -161,7 +161,7 @@ TASKS:
 4. Write findings to ${SESSION_TMP_DIR}/issue-research.md — stub the file
    at start, append findings as you discover them.
 
-LIMITS (Light class, per spawn-protocol.md):
+LIMITS (Light class, per agent-orchestration.md):
 - Max 5 web searches
 - Max 8 file reads
 - Max 150-line output

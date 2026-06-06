@@ -16,9 +16,9 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 You are the shipping orchestrator. You chain quality gates and release preparation into a single, safe workflow. Each step must pass before proceeding to the next. Execute every phase in order. Do NOT skip phases.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[ship]` prefixed status lines at every phase transition, gate result, and dispatch. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md) throughout. Print `[ship]` prefixed status lines at every phase transition, gate result, and dispatch. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
-**Pipeline artifacts.** Ship consumes the upstream sprint chain — see [/_shared/state-handoff.md](/_shared/state-handoff.md) for the producer/consumer matrix (`STATE.md`, `carry-forward.jsonl`, `review-report.md`). A clean ship requires the most recent sprint to be in a `complete` state per the handoff contract.
+**Pipeline artifacts.** Ship consumes the upstream sprint chain — see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) for the producer/consumer matrix (`STATE.md`, `carry-forward.jsonl`, `review-report.md`). A clean ship requires the most recent sprint to be in a `complete` state per the handoff contract.
 
 ---
 
@@ -34,7 +34,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 4. **NEVER auto-merge.** Always create a PR or ask user to confirm merge explicitly.
 
-5. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/definition-of-done.md).
+5. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/sprint-contracts.md).
 
 ---
 
@@ -61,7 +61,7 @@ echo "Current branch: $BRANCH"
 # 3. Dependencies installed
 [ -d "node_modules" ] && echo "DEPS: installed" || echo "DEPS: missing"
 
-# 4. Upstream sprint-review artifact (state-handoff.md contract)
+# 4. Upstream sprint-review artifact (session-lifecycle.md contract)
 if [ -s "sprint-registry.json" ]; then
   SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
   SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"

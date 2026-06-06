@@ -61,12 +61,12 @@ The Pillar-C verification pass, run on the prompt's *own* research basis, caught
 
 ## Sequenced implementation (behind the suite's own gates)
 
-1. **Registry** — ship `check-registry.json`; make `shortcut-taxonomy.md` a view; write the schema lint. No behavior change.
+1. **Registry** — ship `check-registry.json`; make `quality-engine.md` a view; write the schema lint. No behavior change.
 2. **Critic redesign** — apply `critic-redesign.md`; registry-drive §2.1; verdict-flip asymmetry + FP-verify substep.
 3. **Research-critic redesign** — apply `research-critic-redesign.md`; scope-claim blocker; UNKNOWN state.
 4. **/blitz:review** — fold completeness-gate + integration-check + code-doctor(fw) + code-sweep(T1); `--only`; two-lane + confidence gate.
 5. **/blitz:audit** — add aggregation + FP-panel + deterministic lane + recall instrumentation; rename codebase-audit.
-6. **Cleanup** — delete folded SKILL.md; deprecation shims; rewrite quality-matrix.md; migrate ship + sprint-dev call-sites.
+6. **Cleanup** — delete folded SKILL.md; deprecation shims; rewrite quality-engine.md; migrate ship + sprint-dev call-sites.
 
 **The recursion is the validation**: each epic's `sprint-review` runs the *redesigned critic on itself*. Epic 2 ships only if Epic 2's own critic emits LGTM. The consolidation proves out by surviving its own gates.
 

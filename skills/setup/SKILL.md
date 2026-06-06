@@ -15,7 +15,7 @@ argument-hint: "[--fix|--check] [--scope global|project|all]"
 
 ## Additional Resources
 - For conflict catalog schema and detailed pattern list, see [references/main.md](references/main.md)
-- For session protocol, see [session-protocol.md](/_shared/session-protocol.md)
+- For session protocol, see [session-lifecycle.md](/_shared/session-lifecycle.md)
 - For the research driving this skill, see `docs/_research/2026-04-16_plugin-agent-strategy.md`
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
@@ -44,7 +44,7 @@ Scan the user's `~/.claude/CLAUDE.md` and project `./CLAUDE.md` for rules that c
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Parse Arguments
 

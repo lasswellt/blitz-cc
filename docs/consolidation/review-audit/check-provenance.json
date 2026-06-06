@@ -2,7 +2,7 @@
   "$schema": "blitz-check-registry/2.0",
   "generated": "2026-05-29",
   "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check)",
-  "supersedes": ["skills/_shared/shortcut-taxonomy.md §1 (prose table)", "skills/_shared/shortcut-taxonomy.md §3 (grep patterns)", "scattered grep patterns across 7 quality skills"],
+  "supersedes": ["skills/_shared/quality-engine.md §1 (prose table)", "skills/_shared/quality-engine.md §3 (grep patterns)", "scattered grep patterns across 7 quality skills"],
   "doc": "registry-design.md",
   "detector_count": {
     "catalogued": 20,

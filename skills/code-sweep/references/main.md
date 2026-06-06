@@ -6,8 +6,8 @@ Grep patterns, auto-fix strategies, state schemas, and severity rules for the co
 
 ## Tier Agent Prompt Template
 
-<!-- import: /_shared/agent-prompt-boilerplate.md -->
-Canonical recurring sections (BUDGET classes, WRITE-AS-YOU-GO, HEARTBEAT/PARTIAL, CONFIRMATION) live in [/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md). The tier template below has its own 90-second tier-budget inline (not a Light/Medium/Heavy class) and a single-array JSON Write that implicitly satisfies write-as-you-go. OUTPUT STYLE remains inline per Invariant 5.
+<!-- import: /_shared/agent-orchestration.md -->
+Canonical recurring sections (BUDGET classes, WRITE-AS-YOU-GO, HEARTBEAT/PARTIAL, CONFIRMATION) live in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The tier template below has its own 90-second tier-budget inline (not a Light/Medium/Heavy class) and a single-array JSON Write that implicitly satisfies write-as-you-go. OUTPUT STYLE remains inline per Invariant 5.
 
 Used in Phase 2 when spawning scan workers. The main skill fills in `{{…}}` placeholders and passes the result as the `prompt` argument to the `Agent` tool (with `model: sonnet`, `subagent_type: general-purpose`).
 

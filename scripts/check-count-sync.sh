@@ -40,7 +40,7 @@ cd "$REPO_ROOT" || exit 0
 
 COUNTS_JSON=".claude-plugin/counts.json"
 HOOKS_JSON="hooks/hooks.json"
-TAXONOMY="skills/_shared/shortcut-taxonomy.md"
+TAXONOMY="skills/_shared/quality-engine.md"
 [[ -f "$HOOKS_JSON" ]] || exit 0   # not a blitz plugin repo
 
 # ── 1. Recompute every count from the filesystem ──────────────────────────

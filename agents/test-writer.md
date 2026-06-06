@@ -13,7 +13,7 @@ description: |
 tools: Read, Write, Edit, Bash, Glob, Grep
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 35
-# Sonnet per /_shared/token-budget.md — test generation needs to follow patterns
+# Sonnet per /_shared/agent-orchestration.md — test generation needs to follow patterns
 # AND reason about edge cases. Haiku is too coarse for the latter.
 model: sonnet
 memory: project
@@ -204,7 +204,7 @@ describe("Firestore Rules", () => {
 
 ## Deterministic Test Recipe (for async / timing / mock-heavy targets)
 
-When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`/_shared/deterministic-test-recipe.md`](/_shared/deterministic-test-recipe.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
+When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`/_shared/quality-engine.md`](/_shared/quality-engine.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
 
 ## Spec Fix Mode — Pre-Flight Complexity Classifier
 
@@ -222,7 +222,7 @@ When invoked to **fix a failing spec** (not generate new tests), classify the sp
 Classification dictates strategy:
 
 - `SIMPLE_SPEC` → proceed with normal Spec Fix Prompt Template (below).
-- `HARD_SPEC` → BEFORE any edit, consult `/_shared/deterministic-test-recipe.md` AND emit an `INVESTIGATE:` signal to the orchestrator describing which signals tripped. The orchestrator may route through ask-before-code (read-only investigation) per `agents/orchestrator.md` §2 routing matrix.
+- `HARD_SPEC` → BEFORE any edit, consult `/_shared/quality-engine.md` AND emit an `INVESTIGATE:` signal to the orchestrator describing which signals tripped. The orchestrator may route through ask-before-code (read-only investigation) per `agents/orchestrator.md` §2 routing matrix.
 
 Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` (pre-flight classifier) + `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3.
 
@@ -284,7 +284,7 @@ Before considering your work complete, verify:
 
 ## Test Integrity Rules (NON-NEGOTIABLE)
 
-Every test must verify real behavior. See [Definition of Done](/_shared/definition-of-done.md).
+Every test must verify real behavior. See [Definition of Done](/_shared/sprint-contracts.md).
 
 **BANNED PATTERNS** — if any of these appear in your tests, the work is not done:
 

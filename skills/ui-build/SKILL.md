@@ -35,7 +35,7 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 ## Phase 0: SESSION — Register and Check for Conflicts
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ---
 
@@ -363,7 +363,7 @@ is the 13-tone menu (§3.0.1).
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
                                                                # (article ran 5–15; cost-aware midpoint)
-                                                               # budget bound per /_shared/token-budget.md
+                                                               # budget bound per /_shared/agent-orchestration.md
 after evaluation N (scores S_N), trend = mean(S_N) - mean(S_{N-1}):   # first iter has no trend → REFINE
   PASS (all dims ≥7)                          → STOP (ship)
   trend > +0.5                                → REFINE: feed critique to Phase 4 IMPLEMENT, one
@@ -412,7 +412,7 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 ## Production Readiness (NON-NEGOTIABLE)
 
-Every component and function must be fully implemented. See [Definition of Done](/_shared/definition-of-done.md).
+Every component and function must be fully implemented. See [Definition of Done](/_shared/sprint-contracts.md).
 
 **BANNED PATTERNS** — if any of these appear in your code, the work is not done:
 

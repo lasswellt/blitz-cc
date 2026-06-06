@@ -46,9 +46,9 @@ Snippet at SKILL.md line 26.
 All five links extracted from SKILL.md verified to exist on disk:
 - `skills/browse/references/main.md` — OK
 - `skills/_shared/terse-output.md` — OK
-- `skills/_shared/session-protocol.md` — OK
-- `skills/_shared/verbose-progress.md` — OK
-- `skills/_shared/definition-of-done.md` — OK
+- `skills/_shared/session-lifecycle.md` — OK
+- `skills/_shared/terse-output.md` — OK
+- `skills/_shared/sprint-contracts.md` — OK
 
 ---
 
@@ -64,7 +64,7 @@ Per unit notes: no O1–O5 ownership role. Browse is a standalone utility skill 
 
 **Verdict: N/A**
 
-`grep -n "browse" skills/_shared/state-handoff.md` returned no results. Browse is not listed in the `state-handoff.md` pipeline (bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship). It is an ad-hoc utility skill invoked directly, not as a pipeline stage. No upstream producer / downstream consumer chain to verify.
+`grep -n "browse" skills/_shared/session-lifecycle.md` returned no results. Browse is not listed in the `session-lifecycle.md` pipeline (bootstrap → research → roadmap → sprint-plan → sprint-dev → sprint-review → ship). It is an ad-hoc utility skill invoked directly, not as a pipeline stage. No upstream producer / downstream consumer chain to verify.
 
 ---
 

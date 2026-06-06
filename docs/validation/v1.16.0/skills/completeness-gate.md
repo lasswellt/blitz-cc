@@ -45,11 +45,11 @@ No drift. Invariant 5 satisfied.
 Script: `hooks/scripts/markdown-link-validate.sh skills/completeness-gate/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 Citations in SKILL.md body:
-- `/_shared/session-protocol.md` (SKILL.md:46) → `skills/_shared/session-protocol.md` — exists
-- `/_shared/verbose-progress.md` (SKILL.md:46) → `skills/_shared/verbose-progress.md` — exists
+- `/_shared/session-lifecycle.md` (SKILL.md:46) → `skills/_shared/session-lifecycle.md` — exists
+- `/_shared/terse-output.md` (SKILL.md:46) → `skills/_shared/terse-output.md` — exists
 - `references/main.md` (SKILL.md:16, 113) → `skills/completeness-gate/references/main.md` — exists
 - `/_shared/terse-output.md` (SKILL.md:17) → `skills/_shared/terse-output.md` — exists
-- `/_shared/quality-matrix.md` (SKILL.md:115) → `skills/_shared/quality-matrix.md` — resolves per validator
+- `/_shared/quality-engine.md` (SKILL.md:115) → `skills/_shared/quality-engine.md` — resolves per validator
 - `../integration-check/SKILL.md` (SKILL.md:202, 221) — resolves per validator
 
 All 397 links checked by validator; no broken links reported.
@@ -91,7 +91,7 @@ Traced chain: `sprint-dev → completeness-gate` (as mid-sprint gate at Phase 3.
 
 **completeness-gate consumes:**
 - Scope argument: path or `all` (SKILL.md §0.1) — matches what sprint-dev provides
-- Story `files` fields from frontmatter (SKILL.md §2.12): consumed when sprint context is provided — matches `story-frontmatter.md` field `files` (string[], producer: sprint-plan Phase 3.2, confirmed at `_shared/story-frontmatter.md:112`)
+- Story `files` fields from frontmatter (SKILL.md §2.12): consumed when sprint context is provided — matches `sprint-contracts.md` field `files` (string[], producer: sprint-plan Phase 3.2, confirmed at `_shared/sprint-contracts.md:112`)
 
 **completeness-gate produces:**
 - `${SESSION_TMP_DIR}/completeness-gate.json` (SKILL.md §4.1) — JSON with findings, score, grade
@@ -100,7 +100,7 @@ Traced chain: `sprint-dev → completeness-gate` (as mid-sprint gate at Phase 3.
 
 State-handoff.md does not have a dedicated completeness-gate row (the artifact is transient / SESSION_TMP_DIR-scoped), but the sprint-dev §sprint-dev table covers the sprint-dev → sprint-review chain. The SESSION_TMP_DIR artifact is consistent with the ephemeral-artifact convention used by other non-pipeline skills.
 
-I/O composition is coherent with `_shared/state-handoff.md` and `_shared/story-frontmatter.md`.
+I/O composition is coherent with `_shared/session-lifecycle.md` and `_shared/sprint-contracts.md`.
 
 ---
 

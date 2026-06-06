@@ -14,14 +14,14 @@ compatibility: ">=2.1.71"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [story-frontmatter.md](/_shared/story-frontmatter.md)
-- For pipeline state contracts (which artifacts this skill produces and requires), see [state-handoff.md](/_shared/state-handoff.md)
+- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/session-lifecycle.md)
 - For agent prompt templates, coordination patterns, and story distribution rules, see [references/main.md](references/main.md)
-- For autonomy modes (low/medium/high/full), see [session-protocol.md](/_shared/session-protocol.md) §Autonomy Levels
-- For checkpoint/resume + deviation handling + context hygiene, see [checkpoint-protocol.md](/_shared/checkpoint-protocol.md), [deviation-protocol.md](/_shared/deviation-protocol.md), [context-management.md](/_shared/context-management.md)
-- For the carry-forward registry (Reader Algorithm + writer contract on story completion in Phase 3.1a), see [carry-forward-registry.md](/_shared/carry-forward-registry.md)
-- For subagent spawning, agent output contract (success/failure/partial thresholds), see [spawn-protocol.md](/_shared/spawn-protocol.md)
-- For package install policy (every dep added by backend-dev / frontend-dev / test-writer agents resolves to registry latest, no invented versions), see [package-install-policy.md](/_shared/package-install-policy.md). Sprint-dev injects this into every dev-agent prompt via the Dev Agent Prompt Specification in references/main.md.
+- For autonomy modes (low/medium/high/full), see [session-lifecycle.md](/_shared/session-lifecycle.md) §Autonomy Levels
+- For checkpoint/resume + deviation handling + context hygiene, see [session-lifecycle.md](/_shared/session-lifecycle.md), [sprint-contracts.md](/_shared/sprint-contracts.md), [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For the carry-forward registry (Reader Algorithm + writer contract on story completion in Phase 3.1a), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agent-orchestration.md)
+- For package install policy (every dep added by backend-dev / frontend-dev / test-writer agents resolves to registry latest, no invented versions), see [security.md](/_shared/security.md). Sprint-dev injects this into every dev-agent prompt via the Dev Agent Prompt Specification in references/main.md.
 - For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
@@ -34,7 +34,7 @@ Implement a planned sprint by spawning coordinated agent teams in isolated workt
 
 ## Execution Mode
 
-Read autonomy from `.cc-sessions/developer-profile.json` per [session-protocol.md](/_shared/session-protocol.md) §Autonomy Levels (default: `medium`). Map autonomy to `--mode` per the table below; an explicit `--mode` flag overrides only when autonomy is `low` or `medium`. **At autonomy `high` or `full`, force `autonomous` regardless of any `--mode` flag** — loop mode with bypass permissions cannot pause for confirmations.
+Read autonomy from `.cc-sessions/developer-profile.json` per [session-lifecycle.md](/_shared/session-lifecycle.md) §Autonomy Levels (default: `medium`). Map autonomy to `--mode` per the table below; an explicit `--mode` flag overrides only when autonomy is `low` or `medium`. **At autonomy `high` or `full`, force `autonomous` regardless of any `--mode` flag** — loop mode with bypass permissions cannot pause for confirmations.
 
 | Autonomy (canonical) | Default mode | User `--mode` honored? |
 |---|---|---|
@@ -53,7 +53,7 @@ Read autonomy from `.cc-sessions/developer-profile.json` per [session-protocol.m
 
 ## Phase 0.0: INPUT GATE — Validate Pipeline Inputs
 
-Before any other work, hard-fail if required upstream artifacts are missing. Per [state-handoff.md](/_shared/state-handoff.md):
+Before any other work, hard-fail if required upstream artifacts are missing. Per [session-lifecycle.md](/_shared/session-lifecycle.md):
 
 ```bash
 PIPELINE_MISSING=()
@@ -65,24 +65,24 @@ SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
 [ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
 ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
 if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
-  echo "BLOCK: missing pipeline inputs (see /_shared/state-handoff.md §sprint-dev):" >&2
+  echo "BLOCK: missing pipeline inputs (see /_shared/session-lifecycle.md §sprint-dev):" >&2
   printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
   echo "Producer: /blitz:sprint-plan." >&2
   exit 1
 fi
 ```
 
-Then validate every story file against [story-frontmatter.md](/_shared/story-frontmatter.md) §Validation algorithm. Report ALL validation failures together, do not abort on the first.
+Then validate every story file against [sprint-contracts.md](/_shared/sprint-contracts.md) §Validation algorithm. Report ALL validation failures together, do not abort on the first.
 
 ## Phase 0: CONTEXT — Load Project State
 
-0. **Register session.** Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration (steps 1-9) and [verbose-progress.md](/_shared/verbose-progress.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per verbose-progress.md.
+0. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
 1. **Check for checkpoint (STATE.md).** Before anything else, check if the target sprint has a `STATE.md` file:
    ```bash
    SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
    cat "${SPRINT_DIR}/STATE.md" 2>/dev/null | head -5
    ```
-   If STATE.md exists, follow the **resume flow** from [checkpoint-protocol.md](/_shared/checkpoint-protocol.md):
+   If STATE.md exists, follow the **resume flow** from [session-lifecycle.md](/_shared/session-lifecycle.md):
    - Validate staleness (>24h = warn user, ask whether to resume or start fresh). **If autonomy is `high` or `full` (e.g., loop mode), skip the staleness prompt and auto-resume regardless of age.** Log a `decision` event noting the auto-resume.
    - Validate worktrees (`git worktree list`).
    - **Branch divergence gate** (prevents sprint-289-class dual-implementation conflicts per [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)). For each expected `sprint-${N}/${role}` branch, count commits ahead of `git merge-base "$BRANCH" HEAD`. Full check script in `references/main.md` section **"Resume Divergence Gate"**. If any branch is DIVERGENT, stop and prompt the user with reconciliation options: `rebase` (replay onto HEAD), `abandon` (delete branch + restart), `inspect` (open diff). Never auto-merge. In `autonomy=full` loops, behavior is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
@@ -198,7 +198,7 @@ If the manifest has `carry_forward` entries, load those stories and add them to 
 
 ### 1.6 Update Sprint Status
 
-**Registry Lock — `sprint-registry.json`**: Before writing, acquire a file-based lock per [session-protocol.md](/_shared/session-protocol.md):
+**Registry Lock — `sprint-registry.json`**: Before writing, acquire a file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
 1. CHECK if `sprint-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `sprint-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading the lock file — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
@@ -213,7 +213,7 @@ Update `sprint-registry.json`: set sprint status to `in-progress`, record `start
 
 ### 2.1 Create Development Team
 
-Group agents into a team named `sprint-${SPRINT_NUMBER}-dev` by passing `team_name` to each `Agent()` spawn in Phase 2.3 — the team forms implicitly on first spawn (canonical `Agent(team_name)` pattern, per [/_shared/spawn-protocol.md](/_shared/spawn-protocol.md)). No separate team-creation tool call.
+Group agents into a team named `sprint-${SPRINT_NUMBER}-dev` by passing `team_name` to each `Agent()` spawn in Phase 2.3 — the team forms implicitly on first spawn (canonical `Agent(team_name)` pattern, per [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md)). No separate team-creation tool call.
 
 ### 2.2 Determine Required Agents
 
@@ -248,7 +248,7 @@ Agent(
 
 **Note:** The `isolation: "worktree"` parameter replaces manual `git worktree add` commands. Each agent gets its own branch and working directory automatically. Worktrees with no changes are auto-cleaned on agent completion; worktrees with changes are preserved for merging.
 
-**Weight class**: Heavy (per [spawn-protocol.md](/_shared/spawn-protocol.md)). Dev agents implement multiple stories with reads+writes+verify per story.
+**Weight class**: Heavy (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Dev agents implement multiple stories with reads+writes+verify per story.
 
 **Per-wave caps (CRITICAL)** — whichever bites first: ≤**4 stories** AND ≤**6 affected files** per agent per wave (sum across stories). A 5-file story + two 1-file siblings = 7 files → split to next wave even with 3-story count. Each file averages 5-7 tool calls; 6 files fits Heavy-class, 8 exhausts mid-work (sprint-276 root cause).
 
@@ -298,9 +298,9 @@ Each agent follows a per-story loop: read → implement → verify → check don
 The orchestrator (you) must:
 
 1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. On wave completion, print progress report and unblock Wave N+1 stories.
-1a. **Write carry-forward registry progress on story `DONE:`.** When an agent signals `DONE:`, before updating STATE.md, follow the writer contract in [/_shared/carry-forward-registry.md](/_shared/carry-forward-registry.md) §Writers (sprint-dev): validate the story's `registry_entries` ids (per [story-frontmatter.md](/_shared/story-frontmatter.md)), compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, and log the activity-feed mirror. Apply the inference-fallback (parent-epic link with `delta: 1`) when the story omits `registry_entries`. No-op for stories whose epic also has no registry link.
+1a. **Write carry-forward registry progress on story `DONE:`.** When an agent signals `DONE:`, before updating STATE.md, follow the writer contract in [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers (sprint-dev): validate the story's `registry_entries` ids (per [sprint-contracts.md](/_shared/sprint-contracts.md)), compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, and log the activity-feed mirror. Apply the inference-fallback (parent-epic link with `delta: 1`) when the story omits `registry_entries`. No-op for stories whose epic also has no registry link.
 
-1b. **Update STATE.md** — After each story completion (or at wave boundaries), update `${SPRINT_DIR}/STATE.md` per [checkpoint-protocol.md](/_shared/checkpoint-protocol.md). This enables session recovery if interrupted. Include wave progress.
+1b. **Update STATE.md** — After each story completion (or at wave boundaries), update `${SPRINT_DIR}/STATE.md` per [session-lifecycle.md](/_shared/session-lifecycle.md). This enables session recovery if interrupted. Include wave progress.
 1c. **Commit and push at wave boundaries** — `git add -A && git commit -m "feat(sprint-${N}): wave ${WAVE} complete — ${COMPLETED}/${TOTAL} stories" && git push origin HEAD`. Required for `/loop` mode resumability (next tick runs in fresh context). Also push after each integration fix round (Phase 4.3) and at sprint completion (Phase 4.9).
 2. **Unblock stories** — When a dependency completes, send newly-ready stories to the appropriate agent.
 3. **Coordinate via SendMessage** — When an agent completes a story that another agent depends on:
@@ -312,7 +312,7 @@ The orchestrator (you) must:
 4. **Handle stuck agents** — If an agent reports errors or makes no progress:
    - Send a `ASSIST:` message with hints from other agents' completed work.
    - If still stuck after 2 assists, invoke circuit breaker.
-5. **Context hygiene** — Follow the [Context Management Protocol](/_shared/context-management.md):
+5. **Context hygiene** — Follow the [Context Management Protocol](/_shared/session-lifecycle.md):
    - Summarize agent completions (files + exports), don't relay full output.
    - Print compact progress at wave boundaries (every wave completion).
    - Offload progress to STATE.md rather than keeping it all in context.
@@ -320,7 +320,7 @@ The orchestrator (you) must:
 
 ### 3.3 Cross-Agent Communication Protocol
 
-Agents communicate through the orchestrator using prefixed messages (DONE, BLOCKED, DEVIATION, ESCALATE, UNBLOCK, ASSIST, SYNC, HALT). Full direction/purpose table in `references/main.md` section **"Communication Prefix Table"**. See also [deviation-protocol.md](/_shared/deviation-protocol.md).
+Agents communicate through the orchestrator using prefixed messages (DONE, BLOCKED, DEVIATION, ESCALATE, UNBLOCK, ASSIST, SYNC, HALT). Full direction/purpose table in `references/main.md` section **"Communication Prefix Table"**. See also [sprint-contracts.md](/_shared/sprint-contracts.md).
 
 ### 3.4 Story Distribution Rules
 
@@ -338,7 +338,7 @@ Run `/blitz:review --only wiring` (consolidated front-door; integration-check fo
 
 ### 3.5.1 Spawn Integration Agent
 
-Spawn `blitz:frontend-dev` (reused or fresh as `ui-integrator`) as a Medium-class agent on a dedicated `sprint-${N}/integration` worktree branch. Full spawn parameters, progress-file schema, HEARTBEAT inclusion, and the mandatory-fallback rule when the agent exits mid-checklist are in `references/main.md` section **"Integration Agent Spawn + Fallback"**. See also [spawn-protocol.md](/_shared/spawn-protocol.md).
+Spawn `blitz:frontend-dev` (reused or fresh as `ui-integrator`) as a Medium-class agent on a dedicated `sprint-${N}/integration` worktree branch. Full spawn parameters, progress-file schema, HEARTBEAT inclusion, and the mandatory-fallback rule when the agent exits mid-checklist are in `references/main.md` section **"Integration Agent Spawn + Fallback"**. See also [agent-orchestration.md](/_shared/agent-orchestration.md).
 
 ### 3.5.2 Integration Checklist
 
@@ -400,7 +400,7 @@ Send `HALT:` to remaining agents.
 
 ### 4.7 Update Sprint Registry
 
-Acquire `sprint-registry.json.lock` per [session-protocol.md](/_shared/session-protocol.md) §File-Based Locking Protocol (the canonical acquire/verify/release sequence lives there — do not restate it). Update sprint status to `review` with `completed_date`, `stories_completed`, `stories_blocked`, `integration_issues`.
+Acquire `sprint-registry.json.lock` per [session-lifecycle.md](/_shared/session-lifecycle.md) §File-Based Locking Protocol (the canonical acquire/verify/release sequence lives there — do not restate it). Update sprint status to `review` with `completed_date`, `stories_completed`, `stories_blocked`, `integration_issues`.
 
 ### 4.8 Update Story Statuses
 
@@ -433,7 +433,7 @@ Print the summary block per `references/main.md` §"Final Output Template".
 - **Agent timeout/OOM**: escalate story to `blocked`; send `HALT:` to agent; fallback to next story in wave.
 - **Malformed agent output**: retry with narrower scope (one story, reduced file count); abort agent after 3 retry failures.
 - **Lock-acquisition failure** (sprint-registry.json.lock): retry 3× with 20s backoff; abort with `BLOCK: lock conflict` if still held.
-- **STATE.md corrupt on resume**: recover per [checkpoint-protocol.md](/_shared/checkpoint-protocol.md) §STATE.md Parse-Failure Handling (abort vs auto-reset).
+- **STATE.md corrupt on resume**: recover per [session-lifecycle.md](/_shared/session-lifecycle.md) §STATE.md Parse-Failure Handling (abort vs auto-reset).
 - **Validation failures** (story frontmatter): run `/blitz:conform --fix` then re-validate; escalate if persist after conform.
 
 ### 4.11 Push Completion Notification

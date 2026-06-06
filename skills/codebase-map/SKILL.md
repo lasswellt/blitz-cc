@@ -14,7 +14,7 @@ argument-hint: "(no arguments — analyzes the current project)"
 
 ## Additional Resources
 <!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [spawn-protocol.md](/_shared/spawn-protocol.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
 
@@ -34,7 +34,7 @@ Produce a comprehensive, prescriptive analysis of an existing codebase by spawni
 
 ### 0.0 Register Session
 
-Follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration and [verbose-progress.md](/_shared/verbose-progress.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Build File Inventory
 
@@ -83,7 +83,7 @@ For each agent, call the `Agent` tool with:
 - `prompt`: the dimension-agent prompt template (see `references/main.md` section "Dimension Agent Prompt Template")
 - `run_in_background: false` (orchestrator waits on all 4 synchronously)
 
-**Weight class**: Medium (per [spawn-protocol.md](/_shared/spawn-protocol.md)). The prompt MUST declare: file cap from the roster, max 25 tool calls, max 250-line output, 5-min wall-clock, stub-then-append write pattern.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). The prompt MUST declare: file cap from the roster, max 25 tool calls, max 250-line output, 5-min wall-clock, stub-then-append write pattern.
 
 ### 1.3 Inputs Each Agent Receives
 

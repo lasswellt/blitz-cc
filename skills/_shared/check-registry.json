@@ -3,8 +3,8 @@
   "generated": "2026-05-29",
   "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check) + design pillar (47 rows: impeccable@2.3.2 + new L1/L2)",
   "supersedes": [
-    "skills/_shared/shortcut-taxonomy.md §1 (prose table)",
-    "skills/_shared/shortcut-taxonomy.md §3 (grep patterns)",
+    "skills/_shared/quality-engine.md §1 (prose table)",
+    "skills/_shared/quality-engine.md §3 (grep patterns)",
     "scattered grep patterns across 7 quality skills"
   ],
   "doc": "registry-design.md",
@@ -2338,7 +2338,7 @@
       "consolidated_target": "audit",
       "escape_hatch": "content from a first-party repo path already covered by pre-edit-guard",
       "source": "Anthropic containment 2026-05-25 (AP-5); OWASP MCP Tool Poisoning arXiv 2603.22489; Spotlighting arXiv 2403.14720",
-      "notes": "TB-4. Semantic→advisory (never flips a verdict); deterministic regex pre-pass is the env-first floor. Haiku per token-budget.md — the classifier is not the reasoning model. Rug-pull: hash MCP tool descriptions on first approval."
+      "notes": "TB-4. Semantic→advisory (never flips a verdict); deterministic regex pre-pass is the env-first floor. Haiku per agent-orchestration.md — the classifier is not the reasoning model. Rug-pull: hash MCP tool descriptions on first approval."
     },
     {
       "id": "sec-capability-grant",

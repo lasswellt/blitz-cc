@@ -54,7 +54,7 @@ Per unit notes: `todo` has no owner/consumer role in the O1–O5 hierarchy. Not 
 
 **Verdict: N/A**
 
-`todo` is a standalone utility skill; it is not in the sprint pipeline defined by `skills/_shared/state-handoff.md`. It produces/consumes only `.cc-sessions/todos.jsonl` (not a pipeline artifact). The state-handoff table has no entry for `todo`. No upstream producer → this skill → downstream consumer chain exists to trace.
+`todo` is a standalone utility skill; it is not in the sprint pipeline defined by `skills/_shared/session-lifecycle.md`. It produces/consumes only `.cc-sessions/todos.jsonl` (not a pipeline artifact). The state-handoff table has no entry for `todo`. No upstream producer → this skill → downstream consumer chain exists to trace.
 
 ---
 

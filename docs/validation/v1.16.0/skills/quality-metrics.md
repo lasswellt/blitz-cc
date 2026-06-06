@@ -57,13 +57,13 @@ markdown-link-validate: OK (397 link(s) checked)
 ```
 
 Links in SKILL.md manually verified:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` — EXISTS
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` — EXISTS
-- `/_shared/spawn-protocol.md` → `skills/_shared/spawn-protocol.md` — EXISTS
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` — EXISTS
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — EXISTS
+- `/_shared/agent-orchestration.md` → `skills/_shared/agent-orchestration.md` — EXISTS
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — EXISTS
 
 Link in `references/main.md`:
-- `[/_shared/agent-prompt-boilerplate.md](/_shared/agent-prompt-boilerplate.md)` → `skills/_shared/agent-prompt-boilerplate.md` — EXISTS
+- `[/_shared/agent-orchestration.md](/_shared/agent-orchestration.md)` → `skills/_shared/agent-orchestration.md` — EXISTS
 
 ---
 
@@ -83,11 +83,11 @@ Per unit notes: quality-metrics has no special owner/delegation role. It is not 
 
 **Upstream producer (ship)**: `ship` Phase 1.3 dispatches `Invoke: /blitz:quality-metrics collect` with no artifact handoff — quality-metrics takes no upstream file inputs for `collect` mode. Ship runs completeness-gate immediately before (Phase 1.2), but quality-metrics does not consume completeness-gate's `${SESSION_TMP_DIR}/completeness-gate.json`. Instead, the `collect-completeness` collector agent reads a *prior* quality-metrics snapshot (`docs/metrics/*.json`) to forward the completeness score — this is intentional self-referential design (pass-through of prior snapshot; null if none).
 
-**state-handoff.md**: Does not list quality-metrics as a consumer of any sprint pipeline artifact (confirmed: no `quality-metrics` row in the pipeline table). This is correct — collect mode is a standalone observability snapshot requiring no upstream handoff artifact.
+**session-lifecycle.md**: Does not list quality-metrics as a consumer of any sprint pipeline artifact (confirmed: no `quality-metrics` row in the pipeline table). This is correct — collect mode is a standalone observability snapshot requiring no upstream handoff artifact.
 
 **Downstream consumers**: `sprint-review` Phase 4.5 calls `collect` informally (informational, no gate). Ship Phase 1.3 calls `collect` (informational, no gate). Neither skill expects a specific file contract beyond `docs/metrics/YYYY-MM-DD.json` existing.
 
-**story-frontmatter.md**: `skills/_shared/story-frontmatter.md` line 109 lists quality-metrics as a reader of the `points` field — valid (for sprint-plan story context; this is consumed during metric collection cross-references, not a pipeline I/O dependency).
+**sprint-contracts.md**: `skills/_shared/sprint-contracts.md` line 109 lists quality-metrics as a reader of the `points` field — valid (for sprint-plan story context; this is consumed during metric collection cross-references, not a pipeline I/O dependency).
 
 Composition is sound: no missing inputs, no schema mismatch between what upstream produces and what this skill consumes.
 

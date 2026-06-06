@@ -159,7 +159,7 @@ Verify all shared protocol files exist:
 ls skills/_shared/*.md 2>/dev/null
 ```
 
-Check that the expected protocols are present: session-protocol.md, verbose-progress.md, definition-of-done.md, checkpoint-protocol.md, deviation-protocol.md, context-management.md, session-report-template.md.
+Check that the expected protocols are present: session-lifecycle.md, terse-output.md, sprint-contracts.md, session-lifecycle.md, sprint-contracts.md, session-lifecycle.md, session-report-template.md.
 
 ---
 

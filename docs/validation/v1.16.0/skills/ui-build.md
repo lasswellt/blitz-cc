@@ -6,8 +6,8 @@
 - `skills/ui-build/SKILL.md` (409 lines)
 - `skills/ui-build/references/main.md` (222 lines)
 - `skills/_shared/terse-output.md` (canonical OUTPUT STYLE)
-- `skills/_shared/state-handoff.md`
-- `skills/_shared/story-frontmatter.md`
+- `skills/_shared/session-lifecycle.md`
+- `skills/_shared/sprint-contracts.md`
 
 ---
 
@@ -51,9 +51,9 @@ Script: `hooks/scripts/markdown-link-validate.sh skills/ui-build/SKILL.md` → `
 
 Internal `/_shared/` links found in SKILL.md:
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — file exists ✓
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` — file exists ✓
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` — file exists ✓
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` — file exists ✓
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` — file exists ✓
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — file exists ✓
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` — file exists ✓
 
 All four resolved.
 
@@ -73,9 +73,9 @@ Unit notes specify V4 is N/A unless own read finds otherwise. No O1–O5 owner c
 
 Chain traced: `sprint-plan → [story files] → sprint-dev → ui-build → DESIGN.md, .vue files`
 
-Key handoff: `story-frontmatter.md` line 85 documents `design_quality` field: producer = `sprint-plan` (UI stories only), consumer = `ui-build` Phase 5.4.2 (design-critic spawning). SKILL.md line 315 reads `Story frontmatter \`design_quality:\` controls this step` — directly consuming the field documented in `story-frontmatter.md` line 125.
+Key handoff: `sprint-contracts.md` line 85 documents `design_quality` field: producer = `sprint-plan` (UI stories only), consumer = `ui-build` Phase 5.4.2 (design-critic spawning). SKILL.md line 315 reads `Story frontmatter \`design_quality:\` controls this step` — directly consuming the field documented in `sprint-contracts.md` line 125.
 
-ui-build produces: `.vue` components, TypeScript types, `DESIGN.md` (Phase 3.0.2). These are implementation artifacts consumed downstream by the user/repo, not by another blitz skill — consistent with ui-build's position as a leaf skill. `state-handoff.md` does not list ui-build as a node in the core pipeline (bootstrap→ship), which is correct — it is invoked by sprint-dev agents, not as a pipeline step itself. No I/O mismatch found.
+ui-build produces: `.vue` components, TypeScript types, `DESIGN.md` (Phase 3.0.2). These are implementation artifacts consumed downstream by the user/repo, not by another blitz skill — consistent with ui-build's position as a leaf skill. `session-lifecycle.md` does not list ui-build as a node in the core pipeline (bootstrap→ship), which is correct — it is invoked by sprint-dev agents, not as a pipeline step itself. No I/O mismatch found.
 
 ---
 
@@ -109,7 +109,7 @@ Body lines (second `---` fence to EOF): **395**
 
 **Verdict: N/A**
 
-`allowed-tools` does not declare `TeamCreate` or `SendMessage`. SKILL.md uses an inline `Agent({…})` call at Phase 5.4.2 (design-critic spawn) which is the canonical pattern per `spawn-protocol.md`. No drift.
+`allowed-tools` does not declare `TeamCreate` or `SendMessage`. SKILL.md uses an inline `Agent({…})` call at Phase 5.4.2 (design-critic spawn) which is the canonical pattern per `agent-orchestration.md`. No drift.
 
 ---
 
@@ -121,7 +121,7 @@ Body lines (second `---` fence to EOF): **395**
 | V2 OUTPUT STYLE | PASS | Byte-identical match to canonical; SKILL.md:31 |
 | V3 Link resolution | PASS | `markdown-link-validate.sh` → OK (397 links); all 4 `/_shared/` refs resolve |
 | V4 Owner compliance | N/A | No O1–O5 delegation, no owner role |
-| V5 Pipeline I/O | PASS | `story-frontmatter.md`:125 documents `design_quality` producer→consumer; SKILL.md:315 consumes it |
+| V5 Pipeline I/O | PASS | `sprint-contracts.md`:125 documents `design_quality` producer→consumer; SKILL.md:315 consumes it |
 | V6 DW wiring | N/A | Not codebase-audit or research |
 | V7 Disallowed-tools | N/A | Not read-only; Write+Edit in allowed-tools |
 | V8 Body-line budget | PASS | 395 body lines (hard cap 500, target 450) |

@@ -204,7 +204,7 @@ if [[ -n "$STAGED_SKILLS" ]]; then
       echo "" >&2
       echo "$LINT_OUTPUT" >&2
       echo "BLOCKED: SKILL.md frontmatter violations in staged files." >&2
-      echo "  See /_shared/terse-output.md and /_shared/spawn-protocol.md §7 for canonical conventions." >&2
+      echo "  See /_shared/terse-output.md and /_shared/agent-orchestration.md §7 for canonical conventions." >&2
       exit 2
     fi
   fi
@@ -219,7 +219,7 @@ if echo "$STAGED_FILES" | grep -qE '^skills/_shared/check-registry\.json$'; then
     if [[ "$REG_EXIT" -ne 0 ]]; then
       echo "" >&2
       echo "$REG_OUTPUT" >&2
-      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/check-registry.md)." >&2
+      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/quality-engine.md)." >&2
       exit 2
     fi
   fi

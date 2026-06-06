@@ -29,7 +29,7 @@ Append a line to `.cc-sessions/activity-feed.jsonl` when you:
 {"ts":"<ISO-8601>","session":"<id>","skill":"freeform","event":"<type>","message":"<human-readable>","detail":{}}
 ```
 
-For skill invocations, the skill name replaces `"freeform"`. The verbose-progress protocol in `skills/_shared/verbose-progress.md` has the full specification.
+For skill invocations, the skill name replaces `"freeform"`. The verbose-progress protocol in `skills/_shared/terse-output.md` has the full specification.
 
 ### Reading the Feed
 
@@ -49,33 +49,24 @@ This repo contains **37 development skills** in `skills/` and **10 plugin agents
 
 Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hooks/scripts/skill-frontmatter-validate.sh`: third-person description ≤1024 chars (stricter than platform's 1536 cap by design — keeps the always-loaded skill listing lean), body ≤500 lines, required fields (`name`, `description`, `model`, `effort`, `compatibility`, `allowed-tools` when invokable), and the verbatim OUTPUT STYLE snippet from `/_shared/terse-output.md`.
 
-**Holistic-machine entry point**: `agents/orchestrator.md` is activated as the plugin's main-thread agent via `.claude-plugin/settings.json {"agent": "orchestrator"}` (Claude Code ≥2.1.117). Freeform user input lands on the orchestrator; explicit slash commands bypass it. See `skills/_shared/agent-routing.md` for the constraint-aware routing protocol (subagents cannot spawn subagents → super-orchestrator skills stay slash-invoked).
+**Holistic-machine entry point**: `agents/orchestrator.md` is activated as the plugin's main-thread agent via `.claude-plugin/settings.json {"agent": "orchestrator"}` (Claude Code ≥2.1.117). Freeform user input lands on the orchestrator; explicit slash commands bypass it. See `skills/_shared/agent-orchestration.md` for the constraint-aware routing protocol (subagents cannot spawn subagents → super-orchestrator skills stay slash-invoked).
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (30 files). Required for every skill:
-- **session-protocol.md** — Multi-session safety (locks, conflict matrix, session registration, autonomy levels)
-- **verbose-progress.md** — Verbose output format and activity feed logging
-- **terse-output.md** — Output style + canonical exemptions list
+All skills follow the protocols in `skills/_shared/` (12 `.md` files + `check-registry.json`). As of the 2026-06-06 consolidation, each file owns one cross-cutting concern (former fragments absorbed; see each file's top-of-file **Absorbs/Consolidates** map):
 
-Required for the sprint family:
-- **story-frontmatter.md** — Canonical YAML schema for sprint stories (producer/consumer matrix, validation algorithm)
-- **state-handoff.md** — Pipeline contracts (which artifacts each skill produces/requires)
-- **carry-forward-registry.md** — Carry-forward registry (canonical Reader Algorithm + writer contracts)
-
-Required for skills that spawn agents:
-- **spawn-protocol.md** — Subagent type selection, weight classes, HEARTBEAT/PARTIAL/WRAP_UP, three-tier timeout, stuck-loop detection, **Agent Output Contract** + **Token Budget & Reply Contract** (§9)
-- **agent-prompt-boilerplate.md** — Author-time dedup target for recurring Agent() prompt sections (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT/PARTIAL, CONFIRMATION). Cited via `<!-- import: -->` markers in 7 `references/main.md` files
-- **token-budget.md** (v1.11+) — model routing matrix (60/35/5 Haiku/Sonnet/Opus), 1-hr cache TTL, JSON reply contract, lazy MCP/skill load, anti-patterns
-- **workflow-dispatch.md** (v1.16+) — opt-in `Workflow` (dynamic-workflows) dispatch contract: capability gate + `Agent()` fallback, hybrid wrapper boundary (script owns dispatch, skill owns filesystem I/O), main-thread-only constraint, prompt invariants. `audit` is the pilot (Phase 1.0/1.1-W)
-- **agent-routing.md** (v1.11+) — orchestrator routing decision tree + the subagents-cannot-spawn-subagents constraint
-
-Required for autonomous loops + quality:
-- **ratchet-protocol.md** (v1.11+) — 8 monotonic metrics (incl. `stale_worktree_branch_count`), schema, multi-agent worktree merge, auto-revert on regression
-- **shortcut-taxonomy.md** (v1.11+) — 20 anti-shortcut detectors (13 reject, 7 advisory) with grep patterns + escape-hatch rules
-- **knowledge-protocol.md** (v1.11+) — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format
-- **docs/integrations/impeccable/** (v1.16+) — framework-adaptive design pillar (normalized model + Tailwind/MD3/Vuetify/Quasar adapters); supersedes the retired `frontend-design-heuristics.md`, now `references-regrounded.md` §8.1 + the registry `design` pillar (`/blitz:review --only design`, `/blitz:audit --pillar design`)
-- **quality-matrix.md** (v1.15+) — decision matrix for the 5 quality-related skills (sprint-review, audit, code-doctor, code-sweep, review — completeness + wiring checks folded into `/blitz:review --only completeness|wiring`); cites why apparent overlaps are real distinctions
+- **terse-output.md** — output style + canonical exemptions + console verbosity / activity-feed logging (absorbed `verbose-progress.md`). Validator-pinned home of the canonical OUTPUT STYLE snippet.
+- **session-lifecycle.md** — multi-session safety (locks, registration, autonomy), checkpoints, context/compaction handoff, the **state-handoff** resume contract, and loop scheduling (absorbed `session-protocol`, `checkpoint-protocol`, `context-management`, `state-handoff`, `scheduling`).
+- **sprint-contracts.md** — carry-forward registry (Reader Algorithm + writer contracts), story frontmatter schema, Definition of Done, deviation + scope-limit protocols (absorbed `carry-forward-registry`, `story-frontmatter`, `definition-of-done`, `deviation-protocol`, `scope-limit-protocol`).
+- **agent-orchestration.md** — subagent type/weight, HEARTBEAT/PARTIAL/WRAP_UP, timeouts, stuck-loop detection, Agent Output + Token Budget & Reply contract, prompt boilerplate, routing decision tree (+ subagents-cannot-spawn-subagents), the opt-in `Workflow` dispatch contract, and the 60/35/5 model-routing matrix (absorbed `spawn-protocol`, `agent-prompt-boilerplate`, `agent-routing`, `agent-view-dispatch`, `workflow-dispatch`, `token-budget`).
+- **quality-engine.md** — check-registry semantics, the quality-skill decision matrix, the 20-detector anti-shortcut taxonomy (13 reject / 7 advisory), the 8-metric ratchet, and the deterministic verification recipe (absorbed `check-registry.md`, `quality-matrix`, `shortcut-taxonomy`, `ratchet-protocol`, `deterministic-test-recipe`). The `check-registry.json` data file stays separate.
+- **security.md** — Blitz containment posture / threat model (TB-1…TB-4, canonical owner cited by the `block-*.sh` guards), hook-trust boundary, package-install policy (absorbed `threat-model`, `hook-trust`, `package-install-policy`).
+- **project-context.md** — load-time injection block imported verbatim into SKILL.md headers.
+- **skill-cross-references.md** — author-time dedup target for the Additional Resources block.
+- **design-criteria.md** — design-pillar criteria; complemented by `docs/integrations/impeccable/` (framework-adaptive design pillar; supersedes the retired `frontend-design-heuristics.md`).
+- **knowledge-protocol.md** — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format.
+- **session-report-template.md** — session report output template.
+- **worktree-lifecycle.md** — worktree lifecycle, ratchet-linked (`stale_worktree_branch_count`).
 
 ## Hooks
 

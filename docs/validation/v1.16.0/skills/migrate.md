@@ -3,7 +3,7 @@ unit: migrate
 validator: cli-valid-mg01
 date: 2026-05-28
 verdict: needs-tightening
-highest_leverage_fix: "Align SKILL.md body to write docs/migrations/<from>-<to>/{plan.md,STATE.md,report.md} and implement the --resume / BLOCK protocol declared in state-handoff.md §migrate; currently the body only writes to ${SESSION_TMP_DIR} and uses a different resume mechanism (migrate-progress.json), making the canonical pipeline I/O contract unimplemented."
+highest_leverage_fix: "Align SKILL.md body to write docs/migrations/<from>-<to>/{plan.md,STATE.md,report.md} and implement the --resume / BLOCK protocol declared in session-lifecycle.md §migrate; currently the body only writes to ${SESSION_TMP_DIR} and uses a different resume mechanism (migrate-progress.json), making the canonical pipeline I/O contract unimplemented."
 ---
 
 # migrate — v1.16.0 Cohesion+DW Validation
@@ -44,10 +44,10 @@ canonical == skill_line → MATCH
 `hooks/scripts/markdown-link-validate.sh skills/migrate/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 Spot-checked cited shared files exist on disk:
-- `skills/_shared/session-protocol.md` ✓
-- `skills/_shared/verbose-progress.md` ✓
-- `skills/_shared/package-install-policy.md` ✓
-- `skills/_shared/definition-of-done.md` ✓
+- `skills/_shared/session-lifecycle.md` ✓
+- `skills/_shared/terse-output.md` ✓
+- `skills/_shared/security.md` ✓
+- `skills/_shared/sprint-contracts.md` ✓
 - `skills/migrate/references/main.md` ✓
 
 ---
@@ -64,21 +64,21 @@ migrate is not an O1–O5 canonical owner (not sprint-dev, sprint-plan, sprint-r
 
 **Verdict: FAIL**
 
-`skills/_shared/state-handoff.md` §migrate (lines 150–163) declares three canonical output artifacts and a strict resume contract:
+`skills/_shared/session-lifecycle.md` §migrate (lines 150–163) declares three canonical output artifacts and a strict resume contract:
 
-**Declared outputs (state-handoff.md):**
+**Declared outputs (session-lifecycle.md):**
 - `docs/migrations/<from>-<to>/plan.md`
 - `docs/migrations/<from>-<to>/STATE.md`
 - `docs/migrations/<from>-<to>/report.md`
 
-**Resume contract (state-handoff.md):** if STATE.md exists and `--resume` not passed → `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1.
+**Resume contract (session-lifecycle.md):** if STATE.md exists and `--resume` not passed → `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1.
 
 **What SKILL.md body actually instructs:**
 - Phase 1.1 writes `${SESSION_TMP_DIR}/migration-research.md` (line 125)
 - Phase 4.2.1 writes `${SESSION_TMP_DIR}/migrate-progress.json` (line 334)
 - Phase 4.2.2 reads `${SESSION_TMP_DIR}/migrate-progress.json` for resume (line 358)
 
-The SKILL.md body contains zero references to `docs/migrations/`, `plan.md`, `STATE.md`, `report.md`, or `--resume`. The canonical pipeline I/O contract is declared in state-handoff.md but not implemented in the skill instructions. Consumer skills (fix-issue, sprint-plan) and operators expecting `docs/migrations/<from>-<to>/report.md` will find nothing.
+The SKILL.md body contains zero references to `docs/migrations/`, `plan.md`, `STATE.md`, `report.md`, or `--resume`. The canonical pipeline I/O contract is declared in session-lifecycle.md but not implemented in the skill instructions. Consumer skills (fix-issue, sprint-plan) and operators expecting `docs/migrations/<from>-<to>/report.md` will find nothing.
 
 ---
 
@@ -124,7 +124,7 @@ The body starts at line 11 (after the second `---` fence) and runs to line 470 E
 | V2 OUTPUT STYLE | PASS | Byte-identical match vs canonical; addendum permitted |
 | V3 Link resolution | PASS | `markdown-link-validate.sh` → OK (397 links checked) |
 | V4 Owner compliance | N/A | migrate is not an O1–O5 owner |
-| V5 Pipeline I/O | FAIL | state-handoff.md declares docs/migrations/ outputs + --resume contract; SKILL.md body only writes ${SESSION_TMP_DIR}/* — contract unimplemented |
+| V5 Pipeline I/O | FAIL | session-lifecycle.md declares docs/migrations/ outputs + --resume contract; SKILL.md body only writes ${SESSION_TMP_DIR}/* — contract unimplemented |
 | V6 DW wiring | N/A | Not codebase-audit or research |
 | V7 Disallowed-tools | N/A | Mutating skill; disallowed-tools not required |
 | V8 Body-line budget | FAIL | 461 lines — 11 over 450-line target (under 500 hard cap) |
@@ -132,4 +132,4 @@ The body starts at line 11 (after the second `---` fence) and runs to line 470 E
 
 **Skill verdict: needs-tightening**
 
-**Highest-leverage fix:** Align SKILL.md body to write `docs/migrations/<from>-<to>/{plan.md,STATE.md,report.md}` and implement the `--resume` / BLOCK protocol declared in `state-handoff.md §migrate`. Currently the body only writes to `${SESSION_TMP_DIR}` (migration-research.md, migrate-progress.json) and handles resume via a different mechanism, making the canonical pipeline I/O contract a dead letter. Fixing this also shrinks body bloat: migrate-progress.json can collapse into STATE.md (one file instead of two), which may recover the 11 lines over target.
+**Highest-leverage fix:** Align SKILL.md body to write `docs/migrations/<from>-<to>/{plan.md,STATE.md,report.md}` and implement the `--resume` / BLOCK protocol declared in `session-lifecycle.md §migrate`. Currently the body only writes to `${SESSION_TMP_DIR}` (migration-research.md, migrate-progress.json) and handles resume via a different mechanism, making the canonical pipeline I/O contract a dead letter. Fixing this also shrinks body bloat: migrate-progress.json can collapse into STATE.md (one file instead of two), which may recover the 11 lines over target.

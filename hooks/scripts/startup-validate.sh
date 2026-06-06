@@ -2,10 +2,10 @@
 # startup-validate.sh — Persistent-state validation (Gap 1 / TB-2).
 #
 # Containment: environment-layer startup classifier. Canonical posture:
-#   /_shared/threat-model.md §3 TB-2 (persistent .cc-sessions/ state is untrusted across sessions).
+#   /_shared/security.md §3 TB-2 (persistent .cc-sessions/ state is untrusted across sessions).
 # Registry: check-registry.json sec-startup-schema + sec-startup-injection.
 #
-# WHY: session-protocol.md startup reads ALL .cc-sessions/*.json + activity-feed
+# WHY: session-lifecycle.md startup reads ALL .cc-sessions/*.json + activity-feed
 # + carry-forward.jsonl into context. An injection landing there is reloaded each
 # session and (for carry-forward) auto-injected into the next sprint. This is the
 # article's persistent-state poisoning (AP-4) and the memory-poisoning literature's

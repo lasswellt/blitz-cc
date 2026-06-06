@@ -16,13 +16,13 @@ OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fille
 
 You run the implementation phase of a sprint.
 
-**Session registration**: follow [session-protocol.md](/_shared/session-protocol.md) §Session Registration before any other work.
+**Session registration**: follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration before any other work.
 
-**Verbose progress is mandatory.** Follow [verbose-progress.md](/_shared/verbose-progress.md) throughout. Print `[implement]` prefixed status lines at every phase transition, decision point, and when dispatching to sprint-dev. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md) throughout. Print `[implement]` prefixed status lines at every phase transition, decision point, and when dispatching to sprint-dev. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
 
 ## Dispatch
 
-`implement` is a thin ergonomic verb. It owns no flags or validation of its own — it forwards verbatim to **sprint-dev**, which is the single source of truth for flag semantics (`--sprint`, `--stories`, `--resume`, `--mode`), pre-flight (its Phase 0.0 hard-fails on a missing manifest/stories), and the [Definition of Done](/_shared/definition-of-done.md).
+`implement` is a thin ergonomic verb. It owns no flags or validation of its own — it forwards verbatim to **sprint-dev**, which is the single source of truth for flag semantics (`--sprint`, `--stories`, `--resume`, `--mode`), pre-flight (its Phase 0.0 hard-fails on a missing manifest/stories), and the [Definition of Done](/_shared/sprint-contracts.md).
 
 1. If no args are given, check for an in-progress sprint with a `STATE.md` and offer `--resume`; otherwise ask which sprint/stories to implement.
 2. Invoke the **sprint-dev** skill, passing the user's arguments through unchanged.

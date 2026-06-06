@@ -51,7 +51,7 @@ Evidence: `[ "$CANONICAL" = "$SKILL_LINE" ] && echo "MATCH"` → `MATCH` (bash c
 Run: `hooks/scripts/markdown-link-validate.sh skills/code-sweep/SKILL.md`
 Output: `markdown-link-validate: OK (397 link(s) checked)`
 
-All `/_shared/X` links verified to resolve: `/_shared/session-protocol.md`, `/_shared/verbose-progress.md`, `/_shared/terse-output.md`, `/_shared/quality-matrix.md`. Relative link `../completeness-gate/SKILL.md` also resolves.
+All `/_shared/X` links verified to resolve: `/_shared/session-lifecycle.md`, `/_shared/terse-output.md`, `/_shared/terse-output.md`, `/_shared/quality-engine.md`. Relative link `../completeness-gate/SKILL.md` also resolves.
 
 Evidence: `markdown-link-validate.sh skills/code-sweep/SKILL.md` → `OK (397 link(s) checked)`
 
@@ -84,13 +84,13 @@ Evidence: `grep "todo-fixme" skills/code-sweep/references/main.md` → line 95 s
 
 **Verdict: PASS**
 
-code-sweep is a standalone continuous loop skill, not part of the sprint pipeline. It appears in `state-handoff.md` only as a listed consumer of the story `files` field (`story-frontmatter.md` line 112: `files | string[] | sprint-plan Phase 3.2 | … code-sweep | R`).
+code-sweep is a standalone continuous loop skill, not part of the sprint pipeline. It appears in `session-lifecycle.md` only as a listed consumer of the story `files` field (`sprint-contracts.md` line 112: `files | string[] | sprint-plan Phase 3.2 | … code-sweep | R`).
 
 The chain traced: sprint-plan Phase 3.2 writes story files with `files: string[]` → code-sweep Phase 0.2 reads scope from `.code-sweep.json` (which can include story-scoped paths). Primary self-chain: code-sweep produces `docs/sweeps/YYYY-MM-DD.json` + `sweep-ledger.jsonl` (Phase 5) → code-sweep Phase 1 (next run) reads them as snapshot + ledger. State-handoff.md does not document code-sweep's own artifacts (correct — standalone skills with self-referential state are excluded from the sprint-pipeline table by design).
 
 No upstream producer emits a mandatory artifact that code-sweep would fail Phase 0 without — Phase 0.3 only requires at least one source directory exists. Composition is sound.
 
-Evidence: `skills/_shared/state-handoff.md` has no code-sweep entry (confirmed by `grep -n "code-sweep" state-handoff.md` → empty); `skills/_shared/story-frontmatter.md` line 112 lists code-sweep as optional consumer of `files`.
+Evidence: `skills/_shared/session-lifecycle.md` has no code-sweep entry (confirmed by `grep -n "code-sweep" session-lifecycle.md` → empty); `skills/_shared/sprint-contracts.md` line 112 lists code-sweep as optional consumer of `files`.
 
 ---
 
@@ -128,7 +128,7 @@ Evidence: `awk '/^---$/{count++; if(count==2){start=1; next}} start{lines++} END
 
 **Verdict: PASS**
 
-`allowed-tools` does NOT declare `TeamCreate` or `SendMessage`. The skill uses the canonical `Agent` tool pattern (SKILL.md Phase 2.2, lines 156–168: "call the `Agent` tool with: `subagent_type: general-purpose`, `model: sonnet`…"). spawn-protocol.md §79 confirms: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — the SDK picks by heuristic. Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)." No exception needed because the correct idiom is already used.
+`allowed-tools` does NOT declare `TeamCreate` or `SendMessage`. The skill uses the canonical `Agent` tool pattern (SKILL.md Phase 2.2, lines 156–168: "call the `Agent` tool with: `subagent_type: general-purpose`, `model: sonnet`…"). agent-orchestration.md §79 confirms: "`TeamCreate`+`SendMessage` does not accept `subagent_type` — the SDK picks by heuristic. Use the `Agent` tool instead (v1.4.0 migrated all spawning skills to this)." No exception needed because the correct idiom is already used.
 
 Evidence: `grep "allowed-tools" skills/code-sweep/SKILL.md` → `Agent` present, no `TeamCreate`/`SendMessage`; SKILL.md line 156 → `Agent tool with: subagent_type: general-purpose, model: sonnet`.
 

@@ -4,7 +4,7 @@ bias: recall (catch everything — runs rarely, pre-release)
 absorbs: codebase-audit (core, 5-pillar) + code-sweep Tier-2/3 + code-doctor-at-scale + quality-metrics snapshot
 registry: check-provenance.json (consolidated_target ∈ {audit, both})
 critic: agents/critic.md (redesigned) + adversarial-verify panel; BLITZ_DUAL_CRITIC=1 default
-dispatch: Workflow (pilot, WIRED) with Agent() fallback per workflow-dispatch.md
+dispatch: Workflow (pilot, WIRED) with Agent() fallback per agent-orchestration.md
 status: spec
 ---
 
@@ -28,7 +28,7 @@ Pre-release deep audit. Runs rarely, so its bias is **recall**: a missed bug is 
 
 ```
 Phase 0    setup — inventory, register session, read registry audit_checks
-Phase 1.0  dispatch-mode gate (Workflow|Agent) per workflow-dispatch.md
+Phase 1.0  dispatch-mode gate (Workflow|Agent) per agent-orchestration.md
 Phase 1.D  DETERMINISTIC LANE — registry.filter(lane=deterministic ∧ target∈{audit,both})
            run det-* + o3-* + fw-* across whole codebase; zero-FP, fast, no aggregation needed
 Phase 1.S  SEMANTIC LANE (AGGREGATED) — 5 pillars × ≥2 independent agents = ≥10 agents (Workflow parallel())
@@ -58,7 +58,7 @@ This is SWRBench's multi-review aggregation (2509.01494, **+43.67% F1** — *not
 
 ## FP-verification panel (Pillar A + native /code-review parity)
 
-Every surviving finding faces an adversarial refuter panel (native `/code-review`'s validation agent, <1% FP, source #12 — implemented as the "net-new adversarial-verify panel" `workflow-dispatch.md` already names):
+Every surviving finding faces an adversarial refuter panel (native `/code-review`'s validation agent, <1% FP, source #12 — implemented as the "net-new adversarial-verify panel" `agent-orchestration.md` already names):
 
 ```js
 // per finding, parallel refuters with diverse lenses, majority vote

@@ -48,10 +48,10 @@ SKILL.md line 20 is byte-identical to canonical (Python `==` comparison: `True`)
 `hooks/scripts/markdown-link-validate.sh skills/retrospective/SKILL.md` → `markdown-link-validate: OK (397 link(s) checked)`
 
 Links verified by script include:
-- `/_shared/session-protocol.md` → `skills/_shared/session-protocol.md` — resolves
-- `/_shared/verbose-progress.md` → `skills/_shared/verbose-progress.md` — resolves
+- `/_shared/session-lifecycle.md` → `skills/_shared/session-lifecycle.md` — resolves
 - `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — resolves
-- `/_shared/definition-of-done.md` → `skills/_shared/definition-of-done.md` — EXISTS (confirmed via ls)
+- `/_shared/terse-output.md` → `skills/_shared/terse-output.md` — resolves
+- `/_shared/sprint-contracts.md` → `skills/_shared/sprint-contracts.md` — EXISTS (confirmed via ls)
 - `references/main.md` (relative) — EXISTS in `skills/retrospective/references/main.md`
 
 Script exit OK.
@@ -70,13 +70,13 @@ Retrospective is not an O1-O5 owner and does not explicitly delegate to an O-own
 
 **Verdict:** PASS
 
-`skills/_shared/state-handoff.md` line 78: `sprints/sprint-${N}/review-report.md` — producer: `sprint-review Phase 4.1`, consumer: `ship, retrospective`, Required.
+`skills/_shared/session-lifecycle.md` line 78: `sprints/sprint-${N}/review-report.md` — producer: `sprint-review Phase 4.1`, consumer: `ship, retrospective`, Required.
 
 SKILL.md Phase 0.2 data-sources table (line 93) lists `**/review-findings.md`, `**/review-report.md` as "Review reports" — exact match to what sprint-review produces.
 
 SKILL.md Phase 0.1 bash block reads `.cc-sessions/activity-feed.jsonl` and `.cc-sessions/*.json` — these are written by the session-protocol (session-start) which all skills produce. No upstream producer gap.
 
-Retrospective has no section in state-handoff.md as a *producer* (it writes `docs/retrospective/YYYY-MM-DD-proposals.md` and `.cc-sessions/developer-profile.json` for downstream consumers). Neither is declared as a downstream input in state-handoff.md for any other skill — consistent with retrospective being a terminal analysis skill.
+Retrospective has no section in session-lifecycle.md as a *producer* (it writes `docs/retrospective/YYYY-MM-DD-proposals.md` and `.cc-sessions/developer-profile.json` for downstream consumers). Neither is declared as a downstream input in session-lifecycle.md for any other skill — consistent with retrospective being a terminal analysis skill.
 
 Chain: `sprint-review → review-report.md → retrospective (Phase 0.2)` — input exactly matches declared source.
 
