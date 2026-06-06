@@ -44,3 +44,6 @@ installer/node_modules/
 
 # compress skill local backups (git history is the backup)
 *.original
+
+# audit skill output (generated; not source)
+.review/

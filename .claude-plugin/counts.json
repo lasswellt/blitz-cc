@@ -29,7 +29,7 @@
   "anti_shortcut_hooks": 7,
   "canonical_phrasing": {
     "hook_scripts": "38 hook scripts (35 event-wired, 2 sub-invoked, 1 critic-spawned) across 16 events",
-    "shared": "32 shared protocol files",
+    "shared": "12 shared protocol files",
     "detectors": "20 anti-shortcut detectors (13 reject, 7 advisory)"
   }
 }
