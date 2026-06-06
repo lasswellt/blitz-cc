@@ -19,7 +19,8 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **`critic-gemini.sh` stderr noise broke JSON parsing** (#17): line 146 captured gemini output with `2>&1`, merging the CLI's terminal-capability warnings ("True color (24-bit) support not detected", "Ripgrep is not available…") into the JSON on stdout, so `jq -e .` failed and the wrapper exited 1 — disabling the cross-model critic (gemini-only / dual-CMC modes). Now captures stderr to a tempfile (surfaced only on real invocation failure) and adds a line-based pre-JSON guard (`awk '/^[[:space:]]*\{/{f=1} f'`) as defense-in-depth for gemini-cli #21433 (startup messages leaking to stdout). Regression coverage: `hooks/tests/critic-gemini.bats` (5 tests, incl. brace-in-string non-truncation). Background: `docs/_research/2026-06-06_critic-gemini-stderr-json.md`.
 
 ## [2.3.4] — 2026-06-01 · argument-hint coverage + concision
 

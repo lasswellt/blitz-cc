@@ -143,14 +143,27 @@ FULL_PROMPT="${PROMPT_BODY}${CTX}${JSON_DIRECTIVE}"
 # interactive — `-p/--prompt` is required to trigger headless. Long prompts
 # go on stdin (gemini appends stdin to --prompt) so we don't hit shell
 # arg-length limits.
-RAW_REPLY="$(printf '%s\n' "$FULL_PROMPT" | "$GEMINI_BIN" --model "$GEMINI_MODEL" --prompt "" "${GEMINI_FLAGS[@]}" 2>&1)" || {
+# Capture stderr separately — do NOT merge it into the JSON via `2>&1`. The
+# gemini CLI prints terminal-capability warnings ("True color (24-bit) support
+# not detected", "Ripgrep is not available...") to stderr on every run; merging
+# them prepended noise to the JSON and broke `jq` validation below (fixes #17).
+GEMINI_STDERR="$(mktemp)"
+trap 'rm -f "$GEMINI_STDERR"' EXIT
+if ! RAW_REPLY="$(printf '%s\n' "$FULL_PROMPT" | "$GEMINI_BIN" --model "$GEMINI_MODEL" --prompt "" "${GEMINI_FLAGS[@]}" 2>"$GEMINI_STDERR")"; then
   echo "[$SCRIPT_NAME] gemini invocation failed:" >&2
-  echo "$RAW_REPLY" >&2
+  cat "$GEMINI_STDERR" >&2
   exit 1
-}
+fi
 
-# Strip optional markdown fence if Gemini wrapped despite the directive.
-CLEAN_REPLY="$(printf '%s' "$RAW_REPLY" | sed -E '1{/^```(json)?$/d}; ${/^```$/d}')"
+# Strip optional markdown fence if Gemini wrapped despite the directive, then
+# drop any pre-JSON noise lines. Stderr separation above handles the common
+# case; this awk guard is defense-in-depth for gemini-cli #21433 (some startup
+# messages can leak to stdout). Keep from the first line beginning with `{`
+# onward — it never truncates JSON content (unlike brace-counting), only drops
+# leading noise. Fixes #17.
+CLEAN_REPLY="$(printf '%s' "$RAW_REPLY" \
+  | sed -E '1{/^```(json)?$/d}; ${/^```$/d}' \
+  | awk '/^[[:space:]]*\{/{f=1} f')"
 
 # Validate JSON.
 if ! printf '%s' "$CLEAN_REPLY" | jq -e . >/dev/null 2>&1; then
