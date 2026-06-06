@@ -21,6 +21,18 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.5.0] — 2026-06-06 · compaction pass II
+
+Maintenance/refactor pass — **zero behavior change** (validator-attested: skill-frontmatter, agent-frontmatter, markdown-link, check-registry, reference-compression, plugin-structure, count-sync, version-sync all exit 0). Skill semantics, hook wiring, agent roles, and flags are identical. Attacks the two content pools v2.4.0 left untouched (`docs/`, `references/main.md`).
+
+**Tracked lines 54,803 → 42,301 (−12,502).**
+
+- **`docs/` 91 → 14 files (11,408 → 1,854 lines).** Removed the uncited 51-file `docs/validation/v1.16.0/` snapshot (recoverable via `git tag validation-v1.16.0`) and archived design-process history across `consolidation/review-audit`, `integrations/harness-design`, `integrations/impeccable`, `security/containment` — keeping only runtime-cited references (`effectiveness-research.md`, `audit-spec.md`, `design-critic-upgrade.md`, `references-regrounded.md`, `detector-rebuild.md`, `blitz-surface-map.md`, the impeccable design pillar core + Apache-2.0 license/attribution). Every inbound link to a removed file rewritten in-commit.
+- **`.review/` untracked + gitignored** — audit-skill generated output, not source (same category as the `.original` files v2.4.0 removed).
+- **`counts.json` phrasing fix** — `canonical_phrasing.shared` now reads "12 shared protocol files".
+- **`references/main.md` (12,718 → 12,708)** — collapsed two duplicated file-lock step-lists in `roadmap/references` to cite `session-lifecycle.md §File-Based Locking Protocol`. The hypothesized large de-boilerplating win did not materialize: the top reference files are dense skill-specific procedure protected by named-section SKILL.md contracts and the agent-prompt-payload invariant (intentional verbatim duplication), not boilerplate.
+- **`agent-orchestration.md` (1,454 → 1,435)** — removed two HEARTBEAT/PARTIAL default blocks re-embedded in the boilerplate section, which already declared §3 canonical. No `_shared` file re-split.
+
 ## [2.4.0] — 2026-06-06 · unification & slimming pass
 
 Maintenance/refactor pass — **zero behavior change**. Reduces redundancy and lazy-loaded context across the suite. Skill semantics, hook wiring, agent roles, and flags are identical.
