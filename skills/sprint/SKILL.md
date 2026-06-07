@@ -1,6 +1,6 @@
 ---
 name: sprint
-description: "Orchestrates the full sprint cycle (plan → implement → review). Use when the user says 'run a sprint', 'do a full sprint'. Since v1.13.0, --loop is a backwards-compat alias that dispatches /blitz:next --loop (the canonical autonomous reconciliation engine, which handles the full project lifecycle, not just sprints). Use only for the full plan→implement→review cycle; for implementation-only of an already-planned sprint use /blitz:implement or /blitz:sprint-dev."
+description: "Orchestrates the full sprint cycle (plan → implement → review). Use for 'run a sprint', 'do a full sprint'. `--loop` is a backwards-compat alias for /blitz:next --loop (the canonical autonomous engine). For implementation-only of an already-planned sprint use /blitz:implement or /blitz:sprint-dev."
 argument-hint: "[--epics EP-001,EP-002] [--plan-only] [--skip-review] [--loop]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
 disable-model-invocation: false

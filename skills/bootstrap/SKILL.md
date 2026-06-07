@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Scaffolds new projects, features, or packages with project conventions auto-detected. Distinguishes greenfield (creates package.json, src/, docs/, empty roadmap stubs) from existing projects (adds to existing structure). Use when the user says 'bootstrap', 'scaffold', 'init a new project', 'set up a Vue/Nuxt/Firebase project', 'create a new package'. Required first step in the greenfield pipeline before /blitz:research and /blitz:roadmap."
+description: "Scaffolds new projects, features, or packages with conventions auto-detected. Greenfield (creates package.json, src/, docs/, roadmap stubs) vs existing (adds to structure). Use for 'bootstrap', 'scaffold', 'init a new project', 'set up a Vue/Nuxt/Firebase project', 'create a new package'. First step in the greenfield pipeline before /blitz:research and /blitz:roadmap."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
 model: opus
 effort: medium

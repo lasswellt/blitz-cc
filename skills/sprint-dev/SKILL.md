@@ -1,6 +1,6 @@
 ---
 name: sprint-dev
-description: "Implements planned sprints with coordinated agent teams. Spawns backend-dev, frontend-dev, and test-writer agents in isolated worktrees, distributes stories as tasks with dependency-ordered waves, and monitors progress via the Monitor tool. Use when the user says 'implement sprint', 'develop stories', 'start coding', 'work the sprint', or 'resume sprint' (with STATE.md). Hard-fails at Phase 0.0 if the sprint manifest or stories are missing."
+description: "Implements planned sprints with coordinated agent teams — spawns backend-dev/frontend-dev/test-writer in isolated worktrees, distributes stories as dependency-ordered waves, monitors via Monitor. Use for 'implement sprint', 'develop stories', 'start coding', 'work the sprint', 'resume sprint'. Hard-fails at Phase 0.0 if the manifest or stories are missing."
 argument-hint: "[--sprint N | --resume] [--stories ID,ID] [--mode autonomous|checkpoint|interactive]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, TaskCreate, TaskUpdate, TaskList
 disable-model-invocation: false
