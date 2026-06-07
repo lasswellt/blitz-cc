@@ -19,7 +19,7 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
-_Nothing yet._
+- **conform: `wave-plan.json` entry** — `/blitz:conform` now inventories + shape-probes sprint-dev's `${SESSION_TMP_DIR}/wave-plan.json` (jq `.waves and .done and .derived_from`). Ephemeral/skip-if-absent, INFO-only, never MIGRATE (re-derived from STATE.md each run). Closes the last open question from `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md` §8.
 
 ## [2.4.2] — 2026-06-07 · Workflow dispatch adoption
 

@@ -75,6 +75,7 @@ For each artifact, record **presence**, **count**, and **schema version** (where
 | Sprint manifests | `sprints/sprint-N/manifest.{json,md}` | per-sprint | shape |
 | Stories | `sprints/sprint-N/stories/*.md` | per-sprint | **canonical = `epic`+`verify`(+`registry_entries`); pre-registry stories lack `registry_entries`** — see references/main.md §Story Schema Versions. `epic`/`verify` are canonical names, NOT renamed. |
 | STATE.md | `sprints/sprint-N/STATE.md`, `STATE.md` (root) | per-sprint | **field-form vs table-form** — try both parsers |
+| Wave plan | `${SESSION_TMP_DIR}/wave-plan.json` (sprint-dev §1.4) | per-session | **ephemeral, re-derived from STATE.md+stories each run** — shape probe only, INFO; never MIGRATE |
 | Roadmap (canonical) | the 6 files: `capability-index.json`, `epic-registry.json`, `phase-plan.json`, `domain-index.json`, `ROADMAP.md`, `gap-analysis.md` | yes | jq -e shape probes |
 | Roadmap (extensions) | any other file in `docs/roadmap/` | n/a | INFO only — project-specific extensions are not drift |
 | Research docs | `docs/_research/*.md` | yes | scope-block presence + ingestion status (only if carry-forward.jsonl exists) |
@@ -107,6 +108,7 @@ Findings classified as:
 | `developer-profile.json` autonomy | `jq '.autonomy'` in `{low, medium, high, full}` | **skip** if file absent and no skill/hook references it |
 | Story frontmatter | shape per sprint-contracts.md | field-presence check on canonical `epic`+`verify`; if `registry_entries` absent AND carry-forward in use → MIGRATE (add `[]`); else conformant |
 | STATE.md required fields | per session-lifecycle.md, with table-form fallback parser | **try both formats** before flagging MANUAL |
+| `wave-plan.json` shape | `jq -e '.waves and .done and .derived_from'` (sprint-dev §1.4 emit) | **skip** if file absent (ephemeral/`SESSION_TMP_DIR`); malformed → INFO only, never MIGRATE (regenerated next run from STATE.md) |
 | Active sessions older than 4h | compare `started`/dir mtime to now | works for both file + dir model |
 | Orphan locks | set diff `*.lock` minus active sessions | works for both models |
 | Roadmap canonical files schema | `jq -e .` + per-file required-fields | only the 6 canonical files; extensions get INFO line |
