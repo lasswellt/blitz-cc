@@ -64,6 +64,41 @@ done
 
 Spawn 4 agents in **a single assistant message** so they execute concurrently. Each agent writes its findings to a dedicated file; the orchestrator merges in Phase 3.
 
+### 1.0 Select Dispatch Mode (capability gate)
+
+Per [agent-orchestration.md](/_shared/agent-orchestration.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 4-dimension pool — no DAG, no worktree, no cross-session resume.
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+echo "[codebase-map] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §1.0-W (Workflow path).
+- **else, or on ANY `Workflow` failure** → fall back to §1.2 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+- Phase 0 inventory, Phase 2 gate, Phase 3 synthesis, and activity-feed writes stay in this skill's main-thread Bash — the `Workflow` script touches none of it (hybrid wrapper boundary).
+
+### 1.0-W Dispatch via Workflow (opt-in path)
+
+Dispatch the 4 dimension agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
+
+```js
+export const meta = { name: 'codebase-map', description: '4-dimension parallel codebase analysis (Technology/Architecture/Quality/Concerns)', phases: [{ title: 'Map' }] }
+// args: { roster:[{name,prompt}], findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
+const dims = await parallel(args.roster.map(a => () =>
+  agent(a.prompt, { label: a.name, phase: 'Map', model: 'sonnet', schema: args.findingsSchema })))
+return { dims: dims.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f })) }
+```
+
+- `model: 'sonnet'` per token-budget routing (semantic codebase reasoning; explicit — prevents `[1m]` inheritance).
+- Each `a.prompt` is the dimension template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.
+- `schema` replaces the Phase 2 presence gate; `null` entries = failed dimensions. Apply the Phase 2 gate (ABORT at `MISSING_COUNT >= 2`) against the count of non-`null` results.
+- After the workflow returns, proceed to Phase 2 (validate) → Phase 3 (synthesize) unchanged.
+
 ### 1.1 Agent Roster
 
 | Agent | Dimension | Output File | File Cap |

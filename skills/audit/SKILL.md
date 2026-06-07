@@ -252,6 +252,20 @@ Cross-agent deduplication:
 
 Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agent-orchestration.md](/_shared/agent-orchestration.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
 
+When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
+
+```js
+// args: { findings:[{key,desc,fileLine}], lenses:['correctness','security','reproduces'], verdictSchema }
+const judged = await parallel(args.findings.map(f => () =>
+  parallel(args.lenses.map(lens => () =>
+    agent(`Re-read ${f.fileLine}. REFUTE via the ${lens} lens: "${f.desc}". Default refuted=true if not reproducible.`,
+      { label: `refute:${lens}:${f.key}`, phase: 'Audit', model: 'sonnet', schema: args.verdictSchema })))
+    .then(votes => ({ f, refuted: votes.filter(Boolean).filter(v => v.refuted).length > args.lenses.length / 2 }))))
+const survivors = judged.filter(j => !j.refuted).map(j => j.f)  // ≥majority refute → dropped
+```
+
+- `schema`-validated verdicts replace inline parsing; `.filter(Boolean)` drops `null` (failed) refuters before the majority count. Deterministic findings never enter `args.findings`.
+
 ### 2.4 Classify and Sort
 
 Group findings by pillar, then sort by severity within each pillar:

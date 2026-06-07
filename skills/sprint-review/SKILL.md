@@ -144,6 +144,31 @@ git diff --stat ${SPRINT_BASE}..HEAD
 
 Default: parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git diff --shortstat` LOC > 2000. Selection script + sequential-mode injection contract in `references/main.md` §"Reviewer Spawn Strategy".
 
+#### 2.2.0-W Dispatch via Workflow (opt-in path)
+
+Per [agent-orchestration.md](/_shared/agent-orchestration.md) capability gate (`BLITZ_DISPATCH`: `auto`/`workflow`/`agent`). When `USE_WORKFLOW` truthy AND `Workflow` tool available, dispatch reviewers + critic via native primitives; on ANY failure fall back to §2.2.1 (`Agent()`). Never hard-fail. Findings files + report synthesis stay in main-thread Bash (hybrid wrapper boundary); the script touches no filesystem.
+
+```js
+export const meta = { name: 'sprint-review', description: 'Parallel/sequential reviewers + adversarial critic', phases: [{ title: 'Review' }, { title: 'Critic' }] }
+// args: { roster:[{name,prompt}], sequential:bool, criticPrompt, reviewerSchema, criticSchema }
+const reviews = args.sequential
+  // sequential: each reviewer receives prior findings (pipeline, no barrier)
+  ? await pipeline(args.roster, ...args.roster.map((a, i) => (prev) =>
+      agent(`${args.roster[i].prompt}\n\nPrior findings:\n${JSON.stringify(prev ?? [])}`,
+        { label: args.roster[i].name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
+  // parallel (default): all reviewers concurrent
+  : await parallel(args.roster.map(a => () =>
+      agent(a.prompt, { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
+// Invariant 7: adversarial critic, schema-validated (replaces jq parse of LGTM|REJECT)
+const critic = await agent(args.criticPrompt, { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', schema: args.criticSchema })
+return { reviews: reviews.map((f, i) => ({ name: args.roster[i]?.name, ok: f !== null, result: f })), critic }
+```
+
+- `model: 'sonnet'` per token-budget (explicit — prevents `[1m]` inheritance). Critic uses `agentType: 'blitz:critic'` so its system prompt loads; `schema` forces canonical `{verdict: LGTM|REJECT, ...}` and removes inline jq parsing.
+- Each `a.prompt`/`criticPrompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.
+- `null` reviewer entries = failures; apply the §2.4 N=4 gate (ABORT at `MISSING_COUNT >= 2`) against non-`null` count. A `null` critic → fall back to the §2.2.1 + Phase 3.6 Invariant 7 `Agent()` critic spawn (critic verdict is load-bearing; never silently skip).
+- After the workflow returns, proceed to §2.4 (collect) → Phase 3 unchanged.
+
 #### 2.2.1 Parallel Spawn (default)
 
 Spawn 3-4 specialized reviewers in **a single assistant message** (concurrent). Each writes findings to session-scoped temp files. Per-spawn: `subagent_type: general-purpose`, `model: sonnet`, `run_in_background: true`. Prompt from `references/main.md` "Reviewer Prompt Templates" with diff slice (max 500 lines), ACs, Phase 1 results. Weight class: Medium — max 15 reads, 25 tool calls, 300-line output, 5-min budget.

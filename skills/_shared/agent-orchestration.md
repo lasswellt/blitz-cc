@@ -1178,9 +1178,11 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 
 | Skill | Status | Notes |
 |---|---|---|
-| `audit` | **WIRED** (pilot) | 10 flat agents → one `parallel()` + `schema`. No DAG, no worktree, no cross-session resume. Lowest risk. Phase 1.0 gate + 1.1-W. |
+| `audit` | **WIRED** | 10 flat agents → one `parallel()` + `schema` (Phase 1.0 gate + 1.1-W). Adversarial FP-verify refuter panel wired §2.3.5 (per-finding nested `parallel()`, pipeline-over-findings / barrier-over-lenses). |
 | `research` | **WIRED** | 2-4 agent pool (`parallel()`) + conditional gap second-wave (`agent()`). §1.2.6 gate + §1.3-W. |
-| `sprint-review` | candidate (narrow) | single critic `agent()` + `schema`; net-new adversarial-verify panel. |
+| `sprint-plan` | **WIRED** | 3-4 flat research pool → `parallel()` + `schema`. §2.0 gate + §2.1-W. Mirrors `research`/`audit`. |
+| `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
+| `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or `pipeline()` (sequential mode, prior findings threaded); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
 | `sprint-dev` | **deferred** | wave-DAG → `pipeline()` ideal, worktree supported, BUT `resumeFromRunId` (same-session) ≠ `STATE.md` (cross-session) resume — reconcile first. |
 | pure workers / single-spawn | **forbidden** | constraint §1. |
 
@@ -1204,7 +1206,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 - Token budget + model routing: [token-budget.md](#token-budget-protocol)
 - Output style (Invariant 5 snippet): [terse-output.md](terse-output.md)
 - Worktree isolation contract: [worktree-lifecycle.md](worktree-lifecycle.md)
-- Research provenance: `docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md`
+- Research provenance: `docs/_research/2026-05-28_dynamic-workflows-blitz-adoption.md`; `docs/_research/2026-06-06_dynamic-workflows-claude-code.md` (§5 adoption-table expansion: sprint-plan, codebase-map, sprint-review wired)
 
 
 ---

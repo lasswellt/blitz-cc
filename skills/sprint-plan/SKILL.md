@@ -144,6 +144,43 @@ Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-lifecycle.md](/_shared/s
 
 ## Phase 2: RESEARCH — Parallel Agent Investigation
 
+### 2.0 Select Dispatch Mode (capability gate)
+
+Per [agent-orchestration.md](/_shared/agent-orchestration.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 3-4 agent pool — no DAG, no worktree, no cross-session resume.
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+echo "[sprint-plan] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §2.1-W (Workflow path).
+- **else, or on ANY `Workflow` failure** → fall back to §2.1 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+- All filesystem I/O (manifest, story files, GitHub sync, activity-feed) stays in this skill's main-thread Bash — the `Workflow` script touches none of it (hybrid wrapper boundary).
+
+### 2.1-W Dispatch via Workflow (opt-in path)
+
+Dispatch the research agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in §2.4 exactly as the `Agent()` path does.
+
+```js
+export const meta = { name: 'sprint-plan', description: 'Parallel sprint research agents (domain/library/codebase/optional infra)', phases: [{ title: 'Research' }] }
+// args: { roster:[{name,prompt,semantic}], findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
+const found = await parallel(args.roster.map(a => () =>
+  agent(a.prompt, { label: a.name, phase: 'Research',
+    model: a.semantic ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
+return { found: found.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f })) }
+```
+
+- `codebase-analyst` → `semantic: true` (sonnet); retrieval agents → haiku per token-budget routing. Explicit `model` prevents `[1m]` inheritance.
+- `infra-analyst` included in `args.roster` only when backend/cloud services detected (§2.1 optional row).
+- Each `a.prompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.
+- `schema` replaces the §2.4 `classify_output()` gate; `null` entries = failed agents. Apply the §2.4 abort threshold against the count of non-`null` results.
+- After the workflow returns, proceed to §2.4 (collect) unchanged.
+
 ### 2.1 Spawn Research Agents via Agent Tool
 
 Spawn 3-4 named agents in **a single assistant message** (concurrent). Each writes findings to `${SESSION_TMP_DIR}/` files incrementally.
