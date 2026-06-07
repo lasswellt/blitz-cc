@@ -21,6 +21,16 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.4.2] — 2026-06-07 · Workflow dispatch adoption
+
+Feature dot-release — extends the opt-in `Workflow` (dynamic-workflows) dispatch path to the remaining fan-out skills, with `Agent()` fallback preserved throughout. Research-backed (`docs/_research/2026-06-06_dynamic-workflows-claude-code.md`, `2026-06-07_cross-session-resume-plus-workflow.md`, `2026-06-07_deferred-resume-microopts.md`).
+
+- **Workflow wiring (adoption table now all WIRED):** `sprint-plan` + `codebase-map` (flat pool → `parallel()`), `sprint-review` (reviewers → `parallel()`/`pipeline()`, critic → `agent({agentType,schema})`), `audit` refuter panel (per-finding nested `parallel()`).
+- **sprint-dev cross-session resume + Workflow:** per-wave `parallel()` + `isolation:'worktree'`; lifted the `Agent()`-only resume guard — `STATE.md` is the durable journal, resume re-derives remaining waves (serialized `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only; Resume Divergence Gate is the safety interlock.
+- **Alt A — observability-only attempt counter:** `total_attempts` + `last_attempt_ts` mirrored to the STATE.md Blocked table (`Attempts`/`Last Attempt`). Diagnostic only — the circuit-breaker still resets per sprint run (Airflow-`clear` / CI-re-run model). Durable breaker counter, in-session `resumeFromRunId`, and idempotency tokens remain deferred behind documented trigger metrics.
+
+No change to skill/agent/hook counts (37/10/38). Validators: skill-frontmatter, markdown-link (350), version-sync expected green.
+
 ## [2.4.1] — 2026-06-06 · compaction passes II–III
 
 Maintenance/refactor pass — **zero behavior change** (validator-attested: skill-frontmatter, agent-frontmatter, markdown-link, check-registry, reference-compression, plugin-structure, count-sync, version-sync all exit 0; hook test suite 66/66). Skill semantics, hook wiring, agent roles, and flags are identical. Attacks the content pools v2.4.0 left untouched (`docs/`, `references/main.md`), plus changelog history and duplicated hook helpers.
