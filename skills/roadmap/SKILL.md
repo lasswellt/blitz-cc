@@ -336,3 +336,10 @@ Also write the registry entry's id into the epic's `registry_entries` array in `
 ## Autonomous Execution Rules and Error Recovery
 
 See `references/main.md` sections **"Autonomous Execution Rules"** and **"Error Recovery"**.
+
+## Gotchas
+
+- `extend` hard-fails on a duplicate registry id — rename the new scope entry or use `refresh` mode.
+- "new documents only" can blanket-ingest historical docs when `source_documents` is stale — verify which docs are already ingested before running.
+- Quantified-claim fallback scan HARD-FAILs `extend` if a doc has a `\d+ (files|components|...)` claim without a `scope:` block or `<!-- no-registry -->` waiver (§1.1.6).
+- `roadmap-registry.json` epic_index status can drift from `epic-registry.json` (the source of truth) — `refresh` reconciles it.

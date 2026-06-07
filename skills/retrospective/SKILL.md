@@ -35,9 +35,10 @@ These rules override ALL other instructions. Violating any of these is a critica
 2. **NEVER modify skills in ways that remove safety rules.** Safety rules are sacrosanct. No proposal may weaken, delete, or circumvent them.
 3. **NEVER reduce the number of verification gates in any skill.** Verification gates exist to catch regressions. Removing them is always unsafe.
 4. **ALWAYS validate plugin structure after applying changes.** Run `./scripts/validate-plugin-structure.sh` after every applied proposal.
-5. **Minimum 3 completed sessions required before running retrospective.** Insufficient data leads to bad conclusions.
-6. **NEVER modify session data.** Session files are read-only input. Never edit, delete, or rewrite session JSONs or operation logs.
-7. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
+5. **NEVER auto-apply a proposal that authors or edits a SKILL.md (skill-authoring).** Such proposals are propose-only / human-curated regardless of apparent safety class. Rationale: SkillsBench (arXiv:2602.12670) measured Claude-self-generated skills at zero average benefit — the +16.2pp accuracy gain comes only from human-curated skills, so the model cannot reliably author the procedural knowledge it benefits from consuming. Surface skill-authoring proposals to the user; do not self-apply.
+6. **Minimum 3 completed sessions required before running retrospective.** Insufficient data leads to bad conclusions.
+7. **NEVER modify session data.** Session files are read-only input. Never edit, delete, or rewrite session JSONs or operation logs.
+8. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
 
 ---
 

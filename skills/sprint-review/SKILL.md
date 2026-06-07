@@ -380,3 +380,11 @@ Print summary block per `references/main.md` §"Final Output Template".
 - **No test runner found**: fallback to "SKIPPED" gate marker (not "FAIL").
 - **Corrupt sprint artifacts**: recover with `/blitz:conform --fix`; retry review gate after.
 - **Prior PASS re-run**: abort early ("already reviewed PASS — nothing to do"); do not overwrite.
+
+## Gotchas
+
+- Ratchet regression on any of the 8 monotonic metrics without a carry-forward entry → FAIL (Invariant 6; `type_errors > 0` is an absolute floor).
+- Critic must emit LGTM (20-detector shortcut taxonomy) before PASS (Invariant 7).
+- Undeleted per-sprint `sprint-N/{role}` branches → FAIL (Invariant 8).
+- OUTPUT STYLE snippet must stay byte-identical (SHA-256) across every SKILL.md + agent template (Invariant 5) — never hand-edit the snippet block.
+- Carry-forward Reader Algorithm inconsistency → FAIL (Invariant 1).

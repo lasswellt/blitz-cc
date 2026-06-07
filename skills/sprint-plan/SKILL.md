@@ -381,3 +381,11 @@ Full detail in `references/main.md` §"Error Recovery".
 - **Corrupt planning-inputs.json**: validate with `jq -e`; fallback to skipping (log `warning`, escalate to user).
 - **Validation failures** (story frontmatter): run `/blitz:conform --fix` then re-validate; escalate if persist.
 - **AC coverage < 100% after 3 attempts**: auto-waive if `autonomy ≥ high`; otherwise abort and ask user.
+
+## Gotchas
+
+- Missing `roadmap-registry.json`/`epic-registry.json` → Phase 0.0 BLOCK. Run `/blitz:roadmap` first.
+- 0 unblocked epics + non-empty carry-forward ≠ "nothing to do" — `status ∈ {active,partial}` registry entries are mandatory planning inputs (Phase 0 step 8).
+- Bulk-story SPIDR guard: >5 files or horizontal-scope language ("all X files", "via glob", "across the codebase") → mandatory split (§3.1.1).
+- AC coverage <100% blocks publish unless autonomy≥high auto-waives — and auto-waive needs all 4 registry writes or it reintroduces the CAP-133 silent-drop (§4.1).
+- `roadmap-registry.json` epic_index status can lag `epic-registry.json` (the source of truth) — select epics from epic-registry.

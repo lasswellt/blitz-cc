@@ -419,3 +419,10 @@ Suggest next steps. Full research-outcome → skill table: [references/main.md](
 - **No relevant codebase code found**: Greenfield investigation — skip codebase compatibility analysis; focus on stack-level compatibility.
 - **Contradictory findings**: Present both sides with evidence; let recommendation acknowledge the trade-off.
 - **Agent timeout**: Proceed with available findings; note which agent timed out and coverage lost.
+
+## Gotchas
+
+- Agent-output classify gate: MISSING/EMPTY/MALFORMED ≥ threshold → ABORT (§2.1); never pass blanks through as SUCCESS.
+- Citation-validity critic returning CITATIONS_MISSING blocks Phase 3.3 cleanup — the findings dir is preserved for inspection, not deleted.
+- A quantified scope claim without a `scope:` block silently drops at roadmap ingestion — emit `scope:` (§3.1.1) or a `<!-- no-registry: <reason> -->` waiver.
+- `infra-analyst` is conditional (§1.2.5 spawn-N gate) — don't assume all 4 agents run.

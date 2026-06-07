@@ -822,3 +822,13 @@ Stories are sent to agents in this priority order:
 | 6 | Tests | After implementation is stable |
 
 Within same priority, higher `priority` field stories go first, then lower `points` (smaller stories first).
+
+## Gotchas
+
+Expanded failure-mode detail for the SKILL.md §Gotchas summary.
+
+- **Missing/locked manifest or unset SPRINT_NUMBER (Phase 0.0).** The input gate computes `SPRINT_NUMBER` from `.current_sprint` in `sprint-registry.json`; if unset, pass `SPRINT_NUMBER=<n>` explicitly. A held `manifest.json.lock` from a dead session is stale after >4h — clear it.
+- **Per-wave caps (sprint-276).** ≤4 stories AND ≤6 files per agent per wave, whichever bites first. A 5-file story + two 1-file siblings = 7 files → exhausts a Heavy-class agent mid-work. Split the 5-file story to its own wave.
+- **Ratchet (Invariant 6).** 8 monotonic metrics; `type_errors > 0` is an absolute floor; `stale_worktree_branch_count` regresses if Phase 4.4 leaves branches. A regression needs an explicit carry-forward entry or the sprint cannot reach PASS.
+- **Branch hygiene (Invariant 8).** `git worktree remove` leaves the underlying branch; Phase 4.4 must also `git branch -d sprint-N/{backend,frontend,tests,infra,integration}`.
+- **Blocked-story accountability (Phase 4.8.5).** Circuit-breaker (3 same-story failures) or timeout → mark `blocked`, document why + what remains, add to manifest `carry_forward`, surface prominently in the summary.

@@ -66,3 +66,10 @@ Per [quality-engine.md](/_shared/quality-engine.md), select `consolidated_target
 - Findings by severity (Critical/Warning/Suggestion), ranked by `effective_confidence`; advisory findings below `--min-confidence` suppressed (logged, not surfaced).
 - `--auto-fix`: report auto-fixed vs manual.
 - Pass/fail per gate; for `full`, the 8-invariant PASS/FAIL summary.
+
+## Gotchas
+
+- Only high-confidence-band findings are actionable; lower bands are advisory — don't escalate them to blockers.
+- Lane authority differs: the critic's reject is binding; reviewer findings are advisory. Don't conflate them.
+- `--only {wiring|completeness|framework}` scopes the run; the full 8-invariant PASS/FAIL gate is `/blitz:sprint-review`'s job, not this skill's.
+- This is per-change/pre-commit precision review of a diff — not the end-of-sprint gate.

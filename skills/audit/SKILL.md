@@ -414,3 +414,10 @@ Index:  docs/audits/audit-YYYYMMDD-index.json
 - **Agent timeout**: Mark as failed, proceed with available findings. Note gaps in report.
 - **All agents failed**: Abort and report the failure. Suggest checking stack detection and file permissions.
 - **Existing audit found**: Load previous findings for comparison. Include a "Delta" section in the report showing improvements and regressions.
+
+## Gotchas
+
+- Spawns 10 parallel agents (2 same-scope passes/pillar); MISSING_COUNT ≥ threshold aborts (spawn-protocol §8 gate) — don't pass blank outputs as SUCCESS.
+- Findings without 2-pass Multi-Review agreement are FP-prone; require convergence before reporting.
+- Object-noun routing for "audit X": code→audit, deps→`/blitz:dep-health`, Firestore/Vue/Pinia→`/blitz:code-doctor`, cross-page UI→`/blitz:ui-audit`, sprint→`/blitz:sprint-review`. Bare "audit"→`/blitz:ask`.
+- Quantified findings without a `scope:` block silently drop at `/blitz:roadmap` ingestion — emit `scope:` or a `<!-- no-registry -->` waiver.

@@ -398,3 +398,13 @@ PushNotification(
 ```
 
 Call unconditionally — no-op if Remote Control not configured.
+
+## Gotchas
+
+- Missing/locked `manifest.json` or unset `SPRINT_NUMBER` → Phase 0.0 hard-fail. Run `/blitz:sprint-plan` first.
+- Per-wave caps: >4 stories OR >6 files per agent/wave exhausts a Heavy-class agent mid-work (sprint-276 root cause). Split to next wave.
+- Ratchet regression (`type_errors` floor, `stale_worktree_branch_count`) blocks PASS without a carry-forward entry (Invariant 6).
+- Undeleted `sprint-N/{backend,frontend,tests,infra}` branches fail Invariant 8 — Phase 4.4 must `git branch -d` them.
+- Agent-wave timeout → mark story `blocked` + carry forward (Phase 4.8.5); never silently drop.
+
+Detail: [references/main.md](references/main.md#gotchas).
