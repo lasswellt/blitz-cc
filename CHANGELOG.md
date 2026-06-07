@@ -21,6 +21,12 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 _Nothing yet._
 
+## [2.4.4] — 2026-06-07 · fix [1m] inheritance on invokable skills
+
+Bug-fix dot-release.
+
+- **fix(skills): promote invokable skills to `model: opus`** — `next` + 9 others (`compress`, `dep-health`, `design-extract`, `health`, `quick`, `setup`, `test-gen`, `todo`, `worktree-prune`) declared `model: sonnet`. Invoked from an `opus[1m]` session they inherited `[1m]` → `sonnet[1m]`, which is credits-gated **separately** from Opus 1M (on every plan incl. Max) → `API Error: Usage credits required for 1M context`. `/blitz:next` broke while `/blitz:sprint` (already `model: opus` → `opus[1m]`) worked. Promoted to `opus` to match the sprint-family entry skills; heavy work still runs in spawned sonnet Agents (isolated, non-`[1m]` context). Per `docs/_research/2026-06-07_1m-context-credits-on-loop.md`. No change to skill/agent/hook counts (37/10/38).
+
 ## [2.4.3] — 2026-06-07 · conform wave-plan + gitignore hygiene
 
 Maintenance dot-release.
