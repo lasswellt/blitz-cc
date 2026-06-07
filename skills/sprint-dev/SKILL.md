@@ -83,7 +83,7 @@ Validate every story file against [sprint-contracts.md](/_shared/sprint-contract
    cat "${SPRINT_DIR}/STATE.md" 2>/dev/null | head -5
    ```
    If STATE.md exists, follow the **resume flow** from [session-lifecycle.md](/_shared/session-lifecycle.md):
-   - **Set `RESUMED_FROM_PRIOR_SESSION=1`** — a prior-session STATE.md has no live `Workflow` runId, so §2.0 routes wave dispatch to the `Agent()` path (STATE.md authoritative). An in-session re-tick whose runId is still live leaves it `0`.
+   - **Set `RESUMED_FROM_PRIOR_SESSION=1`** — marks a cross-session resume. §2.0 keeps the `Workflow` path; this flag gates the re-derive log line and the Resume-Divergence-Gate precondition (STATE.md is the durable journal — remaining waves are re-derived, not resumed via runId). An in-session re-tick whose runId is still live leaves it `0`.
    - Validate staleness (>24h = warn user, ask whether to resume or start fresh). **If autonomy is `high` or `full`, skip the staleness prompt and auto-resume regardless of age.** Log a `decision` event.
    - Validate worktrees (`git worktree list`).
    - **Branch divergence gate** (prevents sprint-289-class dual-implementation conflicts per [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)). For each expected `sprint-${N}/${role}` branch, count commits ahead of `git merge-base "$BRANCH" HEAD`. Full check script in `references/main.md` §**"Resume Divergence Gate"**. If any branch is DIVERGENT, stop and prompt the user with options: `rebase`, `abandon`, `inspect`. Never auto-merge. In `autonomy=full` loops, behavior is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
@@ -168,6 +168,17 @@ Print the wave execution plan:
   Critical path: S${N}-001 → S${N}-004 → S${N}-005 (3 waves minimum)
 ```
 
+**Serialize the plan (control-flow checkpoint).** The Kahn sort is a **pure function** of story files + the `done` set, so re-running it next session reproduces the identical plan. Emit it to disk so resume *reads* the plan rather than re-reasoning it (LLM re-derivation of control flow is the #1 cross-session drift hazard — see `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md` §F4.3):
+
+```bash
+# wave-plan.json — deterministic, read-only after plan time. done[] sourced from STATE.md Completed table on resume, [] on fresh start.
+jq -n --argjson waves "$WAVES_JSON" --argjson done "${DONE_IDS:-[]}" \
+  '{waves:$waves, done:$done, derived_from:"stories+STATE.md", critical_path:$ENV.CRITICAL_PATH}' \
+  > "${SESSION_TMP_DIR}/wave-plan.json"
+```
+
+On resume, `remaining = all_stories − done − blocked`; the dispatch loop (Phase 3) walks `wave-plan.json` waves and dispatches only the not-yet-`done` stories per wave (per-story granularity avoids partial-wave double-execution — §F4.2).
+
 **Pre-flight complexity gate**: `complexity_score = story_count * 2 + est_loc / 100`. Warn >40, hard-stop >80 (escape: `BLITZ_SPRINT_COMPLEXITY_OVERRIDE=1`). Script in `references/main.md` §**Pre-Flight Complexity Gate**.
 
 ### 1.5 Load Carry-Forward Items
@@ -182,9 +193,9 @@ If the manifest has `carry_forward` entries, load those stories and add them to 
 
 ## Phase 2: CREATE TEAM AND TASKS — Spawn Agents with Worktree Isolation
 
-### 2.0 Select Dispatch Mode (capability gate — resume-guarded)
+### 2.0 Select Dispatch Mode (capability gate — durable across sessions)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md). `Workflow` dispatches **one wave at a time** (`parallel()` barrier); cross-wave sequencing, STATE.md writes, and wave-boundary commits stay in main-thread Bash (hybrid wrapper boundary). **`STATE.md` is authoritative; `resumeFromRunId` is an in-session optimization only.**
+Per [agent-orchestration.md](/_shared/agent-orchestration.md). `Workflow` dispatches **one wave at a time** (`parallel()` barrier); cross-wave sequencing, STATE.md writes, and wave-boundary commits stay in main-thread Bash (hybrid wrapper boundary). **Durability comes from `STATE.md` (the durable journal) + the deterministic Phase 1.4 re-derive — NOT from `resumeFromRunId`.** So cross-session resume keeps the Workflow path: a prior-session sprint re-derives its remaining waves from STATE.md (§1.4) and dispatches each via `Workflow` exactly as a fresh run. `resumeFromRunId` is an in-session-only speed optimization and is never used across sessions (there's no live runId to resume). Rationale + prior-art: `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md`.
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -192,18 +203,20 @@ case "${BLITZ_DISPATCH:-auto}" in
   workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
   *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
 esac
-# Resume guard: a STATE.md authored by a PRIOR session has no live runId to resume.
-# Workflow resume is same-session only → force the Agent() path on cross-session resume.
+# Cross-session resume retains the Workflow path: STATE.md re-derive (§1.4) is the durability
+# mechanism, not resumeFromRunId. The Resume Divergence Gate (§0 step 1 / references §Resume
+# Divergence Gate) MUST have passed before any dispatch — it guards double-execution + semantic
+# rollback (research §F4.1/§F4.4). resumeFromRunId: in-session re-tick only, never cross-session.
 if [ "${RESUMED_FROM_PRIOR_SESSION:-0}" = "1" ]; then
-  USE_WORKFLOW=false
-  echo "[sprint-dev] cross-session resume → Agent() path (STATE.md authoritative; no Workflow resume)" >&2
+  echo "[sprint-dev] cross-session resume → re-derive remaining waves from STATE.md; Workflow path retained (no cross-session resumeFromRunId)" >&2
 fi
 echo "[sprint-dev] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
 ```
 
-- Phase 0 sets `RESUMED_FROM_PRIOR_SESSION=1` when it took the STATE.md resume flow (§0 step 1). A fresh sprint, or an in-session re-tick whose runId is still live, leaves it `0`.
-- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §2.3-W (Workflow path, per wave).
+- `USE_WORKFLOW` is driven by `BLITZ_DISPATCH` + tool presence **only** — resume no longer forces `Agent()`. Phase 0 still sets `RESUMED_FROM_PRIOR_SESSION=1` on the STATE.md resume flow (§0 step 1); it now gates the re-derive log line + the divergence-gate precondition, not the dispatch mode.
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §2.3-W (Workflow path, per wave — fresh AND resumed).
 - **else, or on ANY `Workflow` failure** → fall back to §2.3 (`Agent()` path). Never hard-fail.
+- **Precondition on resume:** the Resume Divergence Gate must pass before the first Workflow dispatch (already runs in Phase 0). It is the interlock that makes lifting the old `Agent()`-only guard safe.
 - Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
 
 ### 2.1 Create Development Team
@@ -265,7 +278,7 @@ return { wave: args.wave, agents: results.map((r, i) => ({ role: args.agents[i].
 - `agentType: 'blitz:<role>'` preserves role system prompts + MCP scoping (§2.2); `isolation: 'worktree'` gives each agent its own worktree exactly as the `Agent()` path's `isolation: "worktree"`. Weight class Heavy — keep per-wave caps (≤4 stories AND ≤6 files/agent, §2.3).
 - `team_name` semantics: the `Workflow` per-wave barrier subsumes team coordination (no peer messaging within a wave); cross-wave state lives in STATE.md, not a persistent team.
 - `null` result = agent died → main-thread applies the §2.4 circuit breaker (3-strike → `blocked` + `block_reason`, persisted to STATE.md) and may re-dispatch the story in a later wave.
-- **No `resumeFromRunId` across sessions.** If a wave is interrupted and the session ends, the next invocation takes the §0 STATE.md resume flow, which §2.0 routes to the `Agent()` path. In-session re-dispatch may pass `resumeFromRunId` as an optimization only.
+- **Cross-session durability via re-derive, not `resumeFromRunId`.** If a wave is interrupted and the session ends, the next invocation takes the §0 STATE.md resume flow, re-derives `remaining = all − done − blocked` (§1.4 `wave-plan.json`), and dispatches each remaining wave via `Workflow` again — only the not-yet-`done` stories per wave (per-story granularity). `resumeFromRunId` is an in-session-only optimization for a re-tick whose run is still live; it is never passed across sessions.
 - Each `a.prompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + the full 12-item spec. After each wave returns, proceed to Phase 3.1a–3.1c (collect → registry → commit) unchanged, then loop to the next wave.
 
 ### 2.5 Create Tasks with Dependency Ordering

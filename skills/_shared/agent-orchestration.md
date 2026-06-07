@@ -1183,7 +1183,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | `sprint-plan` | **WIRED** | 3-4 flat research pool → `parallel()` + `schema`. §2.0 gate + §2.1-W. Mirrors `research`/`audit`. |
 | `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
 | `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or `pipeline()` (sequential mode, prior findings threaded); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
-| `sprint-dev` | **WIRED** (guarded) | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Resume-guarded:** `STATE.md` authoritative — `RESUMED_FROM_PRIOR_SESSION=1` forces the `Agent()` path (no cross-session `resumeFromRunId`). |
+| `sprint-dev` | **WIRED** | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Cross-session durable:** `STATE.md` is the durable journal — resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only. Resume Divergence Gate is the safety interlock before dispatch. |
 | pure workers / single-spawn | **forbidden** | constraint §1. |
 
 ### Escape hatches
@@ -1197,7 +1197,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 - **Portability** — `Workflow` preview + Enterprise-disabled. Never remove the `Agent()` fallback while preview. If runtime capability-detection proves unreliable, defer.
 - **API churn** — preview hook signatures may shift before GA. Confine all `Workflow` calls behind this doc's gate so a fix is one-skill-shaped.
 - **Autonomous loops** — if a skill-instructed `Workflow` call still triggers the platform per-run confirmation prompt, `/blitz:next --loop` flows could stall. Verify before any autonomous-loop skill adopts.
-- **Resume divergence (sprint-dev)** — RESOLVED by the §2.0 resume guard: `STATE.md` stays authoritative; `resumeFromRunId` is in-session optimization only; cross-session resume (`RESUMED_FROM_PRIOR_SESSION=1`) forces the `Agent()` path. Per-wave `Workflow` dispatch keeps STATE.md/commit at wave boundaries in main-thread Bash.
+- **Resume divergence (sprint-dev)** — RESOLVED by treating `STATE.md` as the durable journal (durable-execution "re-derive from external state" pattern; `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md`). Cross-session resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort — control flow serialized at plan time, never LLM-re-derived) and dispatches each via `Workflow`. `resumeFromRunId` is in-session-only. The Resume Divergence Gate runs before any resumed dispatch (guards double-execution + semantic rollback). Per-wave dispatch keeps STATE.md/carry-forward/commit at wave boundaries in main-thread Bash; carry-forward re-apply is idempotent (clamp-at-target + latest-wins).
 
 ### Cross-references
 
