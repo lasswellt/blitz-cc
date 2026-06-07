@@ -19,7 +19,16 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [2.4.3] — 2026-06-07 · conform wave-plan + gitignore hygiene
+
+Maintenance dot-release.
+
 - **conform: `wave-plan.json` entry** — `/blitz:conform` now inventories + shape-probes sprint-dev's `${SESSION_TMP_DIR}/wave-plan.json` (jq `.waves and .done and .derived_from`). Ephemeral/skip-if-absent, INFO-only, never MIGRATE (re-derived from STATE.md each run). Closes the last open question from `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md` §8.
+- **gitignore: skill-generated root artifacts** — root-anchored ignores for `CODEBASE-MAP.md`, `DESIGN.md`, `.ui-audit.json`, `.quality-metrics.json`, `KNOWLEDGE.md`, `todos.jsonl`, `.blitz-cache/`, `firebase-debug*.log` so running blitz skills in the plugin-dev repo can't accidentally commit generated output. Tracked `.ui-audit.json.example` fixture unaffected.
+
+No change to skill/agent/hook counts (37/10/38).
 
 ## [2.4.2] — 2026-06-07 · Workflow dispatch adoption
 

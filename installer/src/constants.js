@@ -3,7 +3,7 @@
 const path = require('path');
 const os = require('os');
 
-const VERSION = '2.4.2';
+const VERSION = '2.4.3';
 const PLUGIN_NAME = 'blitz';
 const MARKETPLACE_NAME = 'blitz';
 const PLUGIN_KEY = `${PLUGIN_NAME}@${MARKETPLACE_NAME}`;
