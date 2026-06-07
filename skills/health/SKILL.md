@@ -4,7 +4,7 @@ description: "Validates plugin structural integrity: hooks executable + valid ho
 argument-hint: "(no arguments — runs all checks)"
 allowed-tools: Read, Bash, Glob, Grep
 disallowed-tools: Edit, Write, NotebookEdit
-model: sonnet
+model: opus
 effort: low
 compatibility: ">=2.1.152"
 ---

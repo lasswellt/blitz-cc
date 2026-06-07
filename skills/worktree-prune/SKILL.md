@@ -4,7 +4,7 @@ description: "Lists and safely deletes stale git worktrees + agent-spawned branc
 argument-hint: "[--dry-run|--apply] [--merged-only|--all-older-than <duration>] [--force]"
 allowed-tools: Read, Bash, Glob, Grep
 disallowed-tools: Edit, Write, NotebookEdit
-model: sonnet
+model: opus
 effort: low
 compatibility: ">=2.1.71"
 ---

@@ -2,7 +2,7 @@
 name: todo
 description: "Tracks development ideas, follow-up items, and technical debt discovered mid-task. Modes: add, list, check, resolve. Stores in .cc-sessions/todos.jsonl with file:line context. Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', 'todos for this sprint', or when Claude itself surfaces a follow-up that shouldn't become a stale TODO comment in code."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: sonnet
+model: opus
 effort: low
 compatibility: ">=2.1.71"
 argument-hint: "<add <description> | list | check | resolve <id>>"
