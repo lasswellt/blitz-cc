@@ -365,9 +365,11 @@ Phase: <current phase number> (<PHASE_NAME>)
 
 ## Blocked Stories
 
-| ID | Reason | Since |
-|---|---|---|
-| S${N}-010 | circuit-breaker (3 failures) | <ISO-8601> |
+| ID | Reason | Since | Attempts | Last Attempt |
+|---|---|---|---|---|
+| S${N}-010 | circuit-breaker (3 failures) | <ISO-8601> | 3 | <ISO-8601> |
+
+`Attempts` / `Last Attempt` are **observability-only** (diagnostic signal for stuck-after-recovery / env-kill patterns). They are NOT rebuilt into the circuit-breaker count on resume — the breaker counter resets to 0 on a new sprint run (Airflow-`clear` / CI-re-run model). Columns are optional; STATE.md rows without them parse fine (missing = 0). Rationale: `docs/_research/2026-06-07_deferred-resume-microopts.md` Alt A.
 
 ## Ready Stories (unblocked, not started)
 

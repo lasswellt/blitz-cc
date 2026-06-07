@@ -87,7 +87,7 @@ Validate every story file against [sprint-contracts.md](/_shared/sprint-contract
    - Validate staleness (>24h = warn user, ask whether to resume or start fresh). **If autonomy is `high` or `full`, skip the staleness prompt and auto-resume regardless of age.** Log a `decision` event.
    - Validate worktrees (`git worktree list`).
    - **Branch divergence gate** (prevents sprint-289-class dual-implementation conflicts per [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)). For each expected `sprint-${N}/${role}` branch, count commits ahead of `git merge-base "$BRANCH" HEAD`. Full check script in `references/main.md` §**"Resume Divergence Gate"**. If any branch is DIVERGENT, stop and prompt the user with options: `rebase`, `abandon`, `inspect`. Never auto-merge. In `autonomy=full` loops, behavior is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
-   - Rebuild `agent_tracker` from STATE.md tables. Skip to Phase 3 with remaining stories.
+   - Rebuild `agent_tracker` from STATE.md tables. Skip to Phase 3 with remaining stories. **Reset `failed_attempts` to 0** (fresh breaker budget per run); carry `total_attempts`/`last_attempt_ts` forward from the Blocked table `Attempts`/`Last Attempt` columns for diagnosis only (Alt A — observability without locking the breaker).
    - Log `decision` event: "Resuming sprint ${N} from checkpoint".
 
 1b. **Check for incomplete sprints.** Check `sprint-registry.json` for sprints with `status: in-progress`. If one exists, resume it. Warn the user *(autonomy `high`/`full`: log and auto-resume)*.
@@ -298,13 +298,17 @@ agent_tracker = {
     "status": "active",       // active | stuck | completed
     "current_story": "S1-003",
     "completed": ["S1-001"],
-    "failed_attempts": 0,     // circuit breaker counter
+    "failed_attempts": 0,     // circuit breaker counter (in-memory; resets on new sprint run)
+    "total_attempts": 0,      // observability-only, mirrored to STATE.md Attempts column
+    "last_attempt_ts": null,  // observability-only, mirrored to STATE.md Last Attempt column
     "block_reason": null      // set when circuit breaker trips
   }
 }
 ```
 
 **Circuit breaker**: if an agent fails the same story 3 times OR emits `ESCALATE:`, mark `blocked` and set `block_reason` on the story (persist to STATE.md). Controlled vocabulary + SCOPE_FILES injection pattern in `references/main.md` §**"`block_reason` Vocabulary"** and §**"Per-Story Scope Constraint"**.
+
+**Attempt observability (Alt A).** On each failed attempt, increment `total_attempts` and stamp `last_attempt_ts`, and mirror both to the STATE.md Blocked table `Attempts` / `Last Attempt` columns (§3.1b). These are **diagnostic only** — they make stuck-after-recovery and env-kill patterns visible across sessions without locking the breaker. The breaker counter (`failed_attempts`) is NOT rebuilt from them on resume; it resets to 0 per new sprint run (Airflow-`clear` / CI-re-run model — a `blitz:next` re-invocation is operator intervention). Rationale: `docs/_research/2026-06-07_deferred-resume-microopts.md` Alt A.
 
 ---
 
@@ -317,7 +321,7 @@ Each agent follows a per-story loop: read → implement → verify → check don
 
 1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. **Workflow path (§2.3-W):** the per-wave `parallel()` barrier already blocks until the wave completes and returns structured per-story results — skip the Monitor loop within a wave; resume this loop's STATE.md/commit duties (3.1a–3.1c) at each wave boundary between `Workflow` calls.
 1a. **Write carry-forward registry progress on story `DONE:`.** Before updating STATE.md, follow the writer contract in [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers (sprint-dev): validate story `registry_entries` ids, compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, log the activity-feed mirror. Apply inference-fallback (parent-epic link with `delta: 1`) when story omits `registry_entries`.
-1b. **Update STATE.md** after each story completion or wave boundary per [session-lifecycle.md](/_shared/session-lifecycle.md). Include wave progress.
+1b. **Update STATE.md** after each story completion or wave boundary per [session-lifecycle.md](/_shared/session-lifecycle.md). Include wave progress. For blocked/in-progress rows, write the `Attempts` (`total_attempts`) and `Last Attempt` (`last_attempt_ts`) columns — observability-only (Alt A); do not rebuild the breaker from them on resume.
 1c. **Commit and push at wave boundaries**: `git add -A && git commit -m "feat(sprint-${N}): wave ${WAVE} complete — ${COMPLETED}/${TOTAL} stories" && git push origin HEAD`. Also push after each integration fix round (Phase 4.3) and at sprint completion.
 2. **Unblock stories** — when a dependency completes, send newly-ready stories to the appropriate agent.
 3. **Coordinate via SendMessage** — when an agent completes a story another depends on:
