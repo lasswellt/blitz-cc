@@ -47,3 +47,16 @@ installer/node_modules/
 
 # audit skill output (generated; not source)
 .review/
+
+# Skill-generated artifacts at repo root (this is the plugin repo — these are
+# produced by running blitz skills here, NOT plugin source). Root-anchored so
+# tracked fixtures like .ui-audit.json.example are unaffected.
+/CODEBASE-MAP.md
+/DESIGN.md
+/.ui-audit.json
+/.quality-metrics.json
+/KNOWLEDGE.md
+/todos.jsonl
+/.blitz-cache/
+firebase-debug.log
+firebase-debug.*.log
