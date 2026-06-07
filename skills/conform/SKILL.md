@@ -1,6 +1,6 @@
 ---
 name: conform
-description: Conforms blitz runtime artifacts to current canonical schemas. Detects drift in `.cc-sessions/`, sprint dirs, roadmap JSON, and research `scope:` blocks. Schema-version aware — migrates story frontmatter additively (adds `registry_entries` when a project adopts the carry-forward registry; `epic`/`verify` are canonical, never renamed) preserving project extensions. Read-only by default; `--fix` applies idempotent migrations. Use after upgrading blitz, when sprint-dev/review complains about schema fields, or when a forked plugin needs structural alignment. `--scope plugin` targets SKILL.md + hooks rather than runtime artifacts.
+description: Conforms blitz runtime artifacts to current canonical schemas — detects drift in `.cc-sessions/`, sprint dirs, roadmap JSON, research `scope:` blocks. Schema-version aware; migrates story frontmatter additively (preserves project extensions). Read-only by default; `--fix` applies idempotent migrations; `--scope plugin` targets SKILL.md + hooks. Use after upgrading blitz, when sprint-dev/review complains about schema fields, or when aligning a forked plugin.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: low

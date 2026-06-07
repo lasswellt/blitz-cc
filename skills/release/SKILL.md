@@ -1,6 +1,6 @@
 ---
 name: release
-description: "Manages semantic versioning, changelogs, and GitHub releases. Modes: prepare (compute version + draft CHANGELOG), verify (run all gates), publish (tag + push + npm publish if configured), rollback (revert + delete tag). Use for the versioning/tag/publish/rollback step in isolation: 'publish release', 'tag and ship', 'rollback release', 'prepare changelog'. For the full pre-release quality chain (review → completeness → metrics → release), use /blitz:ship instead — ship composes this skill as its final step."
+description: "Manages semantic versioning, changelogs, GitHub releases. Modes: prepare (version + draft CHANGELOG), verify (gates), publish (tag + push + npm publish), rollback (revert + delete tag). Use for the versioning/tag/publish/rollback step in isolation: 'publish release', 'tag and ship', 'rollback release', 'prepare changelog'. For the full pre-release chain use /blitz:ship instead."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 effort: medium
