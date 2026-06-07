@@ -1183,7 +1183,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | `sprint-plan` | **WIRED** | 3-4 flat research pool → `parallel()` + `schema`. §2.0 gate + §2.1-W. Mirrors `research`/`audit`. |
 | `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
 | `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or `pipeline()` (sequential mode, prior findings threaded); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
-| `sprint-dev` | **deferred** | wave-DAG → `pipeline()` ideal, worktree supported, BUT `resumeFromRunId` (same-session) ≠ `STATE.md` (cross-session) resume — reconcile first. |
+| `sprint-dev` | **WIRED** (guarded) | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Resume-guarded:** `STATE.md` authoritative — `RESUMED_FROM_PRIOR_SESSION=1` forces the `Agent()` path (no cross-session `resumeFromRunId`). |
 | pure workers / single-spawn | **forbidden** | constraint §1. |
 
 ### Escape hatches
@@ -1197,7 +1197,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 - **Portability** — `Workflow` preview + Enterprise-disabled. Never remove the `Agent()` fallback while preview. If runtime capability-detection proves unreliable, defer.
 - **API churn** — preview hook signatures may shift before GA. Confine all `Workflow` calls behind this doc's gate so a fix is one-skill-shaped.
 - **Autonomous loops** — if a skill-instructed `Workflow` call still triggers the platform per-run confirmation prompt, `/blitz:next --loop` flows could stall. Verify before any autonomous-loop skill adopts.
-- **Resume divergence (sprint-dev)** — keep `STATE.md` authoritative; treat `resumeFromRunId` as in-session optimization only.
+- **Resume divergence (sprint-dev)** — RESOLVED by the §2.0 resume guard: `STATE.md` stays authoritative; `resumeFromRunId` is in-session optimization only; cross-session resume (`RESUMED_FROM_PRIOR_SESSION=1`) forces the `Agent()` path. Per-wave `Workflow` dispatch keeps STATE.md/commit at wave boundaries in main-thread Bash.
 
 ### Cross-references
 

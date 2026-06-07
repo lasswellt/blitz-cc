@@ -83,6 +83,7 @@ Validate every story file against [sprint-contracts.md](/_shared/sprint-contract
    cat "${SPRINT_DIR}/STATE.md" 2>/dev/null | head -5
    ```
    If STATE.md exists, follow the **resume flow** from [session-lifecycle.md](/_shared/session-lifecycle.md):
+   - **Set `RESUMED_FROM_PRIOR_SESSION=1`** — a prior-session STATE.md has no live `Workflow` runId, so §2.0 routes wave dispatch to the `Agent()` path (STATE.md authoritative). An in-session re-tick whose runId is still live leaves it `0`.
    - Validate staleness (>24h = warn user, ask whether to resume or start fresh). **If autonomy is `high` or `full`, skip the staleness prompt and auto-resume regardless of age.** Log a `decision` event.
    - Validate worktrees (`git worktree list`).
    - **Branch divergence gate** (prevents sprint-289-class dual-implementation conflicts per [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)). For each expected `sprint-${N}/${role}` branch, count commits ahead of `git merge-base "$BRANCH" HEAD`. Full check script in `references/main.md` §**"Resume Divergence Gate"**. If any branch is DIVERGENT, stop and prompt the user with options: `rebase`, `abandon`, `inspect`. Never auto-merge. In `autonomy=full` loops, behavior is governed by `BLITZ_RESUME_ON_DIVERGENCE={prompt|abandon|halt}` (default `halt`).
@@ -181,6 +182,30 @@ If the manifest has `carry_forward` entries, load those stories and add them to 
 
 ## Phase 2: CREATE TEAM AND TASKS — Spawn Agents with Worktree Isolation
 
+### 2.0 Select Dispatch Mode (capability gate — resume-guarded)
+
+Per [agent-orchestration.md](/_shared/agent-orchestration.md). `Workflow` dispatches **one wave at a time** (`parallel()` barrier); cross-wave sequencing, STATE.md writes, and wave-boundary commits stay in main-thread Bash (hybrid wrapper boundary). **`STATE.md` is authoritative; `resumeFromRunId` is an in-session optimization only.**
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+# Resume guard: a STATE.md authored by a PRIOR session has no live runId to resume.
+# Workflow resume is same-session only → force the Agent() path on cross-session resume.
+if [ "${RESUMED_FROM_PRIOR_SESSION:-0}" = "1" ]; then
+  USE_WORKFLOW=false
+  echo "[sprint-dev] cross-session resume → Agent() path (STATE.md authoritative; no Workflow resume)" >&2
+fi
+echo "[sprint-dev] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- Phase 0 sets `RESUMED_FROM_PRIOR_SESSION=1` when it took the STATE.md resume flow (§0 step 1). A fresh sprint, or an in-session re-tick whose runId is still live, leaves it `0`.
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §2.3-W (Workflow path, per wave).
+- **else, or on ANY `Workflow` failure** → fall back to §2.3 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+
 ### 2.1 Create Development Team
 
 Group agents into team `sprint-${SPRINT_NUMBER}-dev` by passing `team_name` to each `Agent()` spawn in Phase 2.3 — team forms implicitly on first spawn per [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md).
@@ -224,6 +249,25 @@ Agent(
 
 **Agent prompt content** — full 12-item prompt specification (role, stories, BUDGET block, project conventions, commit format, conventions guide, reusable assets, anti-mock rules, deviation protocol, wave assignment, context management, HEARTBEAT+PARTIAL protocol) is in `references/main.md` §**"Dev Agent Prompt Specification"**. Every spawn must include all 12 items.
 
+### 2.3-W Dispatch via Workflow (opt-in path — one wave per call)
+
+When §2.0 selected the `Workflow` path, dispatch **each wave** as one `parallel()` barrier with `isolation: 'worktree'` and `schema:` validation. The barrier replaces the Phase 3.2 Monitor loop *within* a wave: it returns only when every story-agent in the wave finishes, handing control back to main-thread Bash at the wave boundary for STATE.md + carry-forward writes (§3.1a/§3.1b) and the commit+push (§3.1c). Then the orchestrator calls `Workflow` again for the next wave.
+
+```js
+export const meta = { name: 'sprint-dev-wave', description: 'Dispatch one dependency-ordered wave of dev agents in isolated worktrees', phases: [{ title: 'Wave' }] }
+// args: { wave:N, agents:[{role,prompt}], storySchema } — prompts are the 12-item spec; worktree per agent
+const results = await parallel(args.agents.map(a => () =>
+  agent(a.prompt, { label: `${a.role}:w${args.wave}`, phase: 'Wave',
+    agentType: `blitz:${a.role}`, isolation: 'worktree', schema: args.storySchema })))
+return { wave: args.wave, agents: results.map((r, i) => ({ role: args.agents[i].role, ok: r !== null, result: r })) }
+```
+
+- `agentType: 'blitz:<role>'` preserves role system prompts + MCP scoping (§2.2); `isolation: 'worktree'` gives each agent its own worktree exactly as the `Agent()` path's `isolation: "worktree"`. Weight class Heavy — keep per-wave caps (≤4 stories AND ≤6 files/agent, §2.3).
+- `team_name` semantics: the `Workflow` per-wave barrier subsumes team coordination (no peer messaging within a wave); cross-wave state lives in STATE.md, not a persistent team.
+- `null` result = agent died → main-thread applies the §2.4 circuit breaker (3-strike → `blocked` + `block_reason`, persisted to STATE.md) and may re-dispatch the story in a later wave.
+- **No `resumeFromRunId` across sessions.** If a wave is interrupted and the session ends, the next invocation takes the §0 STATE.md resume flow, which §2.0 routes to the `Agent()` path. In-session re-dispatch may pass `resumeFromRunId` as an optimization only.
+- Each `a.prompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + the full 12-item spec. After each wave returns, proceed to Phase 3.1a–3.1c (collect → registry → commit) unchanged, then loop to the next wave.
+
 ### 2.5 Create Tasks with Dependency Ordering
 
 For each story, create a task via `TaskCreate`:
@@ -258,7 +302,7 @@ Each agent follows a per-story loop: read → implement → verify → check don
 
 ### 3.2 Orchestrator Monitoring Loop
 
-1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable.
+1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. **Workflow path (§2.3-W):** the per-wave `parallel()` barrier already blocks until the wave completes and returns structured per-story results — skip the Monitor loop within a wave; resume this loop's STATE.md/commit duties (3.1a–3.1c) at each wave boundary between `Workflow` calls.
 1a. **Write carry-forward registry progress on story `DONE:`.** Before updating STATE.md, follow the writer contract in [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers (sprint-dev): validate story `registry_entries` ids, compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, log the activity-feed mirror. Apply inference-fallback (parent-epic link with `delta: 1`) when story omits `registry_entries`.
 1b. **Update STATE.md** after each story completion or wave boundary per [session-lifecycle.md](/_shared/session-lifecycle.md). Include wave progress.
 1c. **Commit and push at wave boundaries**: `git add -A && git commit -m "feat(sprint-${N}): wave ${WAVE} complete — ${COMPLETED}/${TOTAL} stories" && git push origin HEAD`. Also push after each integration fix round (Phase 4.3) and at sprint completion.
