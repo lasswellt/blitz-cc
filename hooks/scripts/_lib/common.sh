@@ -10,6 +10,16 @@
 # Designed for set -euo pipefail callers. Every function handles its own
 # error paths. Global fallback vars: SESSION_ID, SESSIONS_DIR, INPUT.
 
+# BLITZ_INJECTION_RX — canonical prompt-injection marker pattern (POSIX ERE, for grep -iE).
+# Single source of truth for BOTH the live echo path (session-start.sh) and the
+# persistent-state classifier (startup-validate.sh) so the two never drift (SEC-R2-03).
+# UNION of the historical patterns from both scripts: instruction verbs, role
+# directives, tag/role smuggling (HTML-style AND ChatML <|im_start|>/<|im_end|>),
+# tool-invocation strings, and secret/exfil markers. Case-insensitivity is the
+# caller's responsibility (always pair with grep -i). Keep ERE-safe: `\|` is a
+# literal pipe, `\.` a literal dot — both escaped for grep -E.
+BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
+
 # blitz_find_root [start_dir]
 # Walk up from start_dir (or pwd) looking for .claude-plugin/.
 # Prints absolute project root. Falls back to pwd on miss; returns 1.

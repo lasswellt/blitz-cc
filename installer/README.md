@@ -13,8 +13,8 @@ One command detects your stack, registers the plugin + marketplace, configures p
 Blitz turns Claude Code into an opinionated, partly-autonomous development environment:
 
 - **37 skills** (`/blitz:*`) — research → sprint → ship pipeline, a consolidated `review`/`audit` quality surface over a shared check-registry, UI build, docs, release.
-- **10 agents** — 6 builders (run in isolated git worktrees), 3 adversarial critics, 1 freeform-routing orchestrator.
-- **37 hook scripts across 16 events** — including 7 anti-shortcut blockers that stop `--no-verify`, destructive git/SQL, test deletion, `as any` insertion, and type-error regressions at the tool boundary.
+- **11 agents** — 7 builders (run in isolated git worktrees), 3 adversarial critics, 1 freeform-routing orchestrator.
+- **38 hook scripts across 16 events** — including 7 anti-shortcut blockers that stop `--no-verify`, destructive git/SQL, test deletion, `as any` insertion, and type-error regressions at the tool boundary.
 - **8-invariant quality ratchet** + optional Cross-Model Critic (Gemini).
 
 ## Usage

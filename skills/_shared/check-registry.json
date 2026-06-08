@@ -23,9 +23,9 @@
       "det-20"
     ],
     "whole_registry": {
-      "rows": 30,
-      "reject": 15,
-      "advisory": 15
+      "rows": 94,
+      "reject": 18,
+      "advisory": 76
     }
   },
   "field_contract": {

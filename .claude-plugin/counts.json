@@ -16,7 +16,7 @@
     "anti_shortcut_hooks": "block-*.sh + post-edit-typecheck-block.sh (5 P0 + 2 P1)"
   },
   "skills": 37,
-  "agents": 10,
+  "agents": 11,
   "shared": 13,
   "hook_scripts": 38,
   "hook_scripts_wired": 35,

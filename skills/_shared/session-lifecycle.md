@@ -198,12 +198,24 @@ For files that are written by multiple skills (registries, story statuses, manif
 
 #### Lock Cycle
 
-```
-1. CHECK:   Does <file>.lock exist?
-2. ACQUIRE: Write <file>.lock with { session_id, acquired: <ISO-8601> }
-3. VERIFY:  Re-read <file>.lock — confirm it contains YOUR session_id
-4. OPERATE: Read/modify/write the protected file
-5. RELEASE: Delete <file>.lock
+CHECK+ACQUIRE MUST be a single atomic step — a separate test-then-write has a
+TOCTOU window where two sessions both pass the CHECK before either writes. Use an
+atomic CAS primitive (`set -o noclobber` redirect, or `mkdir`, both of which fail
+iff the lock already exists). VERIFY is demoted to a post-acquire sanity check.
+
+```bash
+# 1. CHECK+ACQUIRE (atomic CAS): create-if-absent in one syscall.
+#    noclobber makes `>` fail (non-zero) when "$f.lock" already exists.
+if ( set -o noclobber; printf '%s' "{\"session_id\":\"$SID\",\"acquired\":\"$(date -u +%FT%TZ)\"}" > "$f.lock" ) 2>/dev/null; then
+  trap 'rm -f "$f.lock"' EXIT INT TERM   # 2. RELEASE-on-abort: never leak the lock on crash/signal
+else
+  # contended — apply Stale Lock Detection, else Wait/Retry below.
+  :
+fi
+# Alternative atomic primitive: `mkdir "$f.lock.d" 2>/dev/null || <contended>`
+# 3. VERIFY:  Re-read the lock — confirm it holds YOUR session_id (sanity only).
+# 4. OPERATE: Read/modify/write the protected file.
+# 5. RELEASE: rm -f "$f.lock"  (trap above also fires on normal EXIT).
 ```
 
 #### Stale Lock Detection

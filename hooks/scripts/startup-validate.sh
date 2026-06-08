@@ -41,7 +41,9 @@ QUARANTINE_DIR="$SESSIONS_DIR/quarantine"
 # Injection markers (case-insensitive). Instruction verbs / role directives / tag
 # smuggling / tool-invocation strings. URL handling is field-scoped (see below) to
 # avoid flagging legitimate incident URLs in activity-feed messages.
-INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
+# Canonical pattern lives in _lib/common.sh (BLITZ_INJECTION_RX) — single source of
+# truth shared with session-start.sh's live echo path so the two never drift (SEC-R2-03).
+INJECTION_RX="$BLITZ_INJECTION_RX"
 
 FINDINGS=0
 PROV_MISSING=0

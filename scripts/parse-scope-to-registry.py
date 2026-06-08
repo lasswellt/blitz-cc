@@ -77,8 +77,32 @@ def parse_acceptance(raw: str) -> list:
     return out
 
 
+def existing_ids(path: Path) -> set:
+    """Collect ids already present in the append-only registry (dedup guard)."""
+    ids = set()
+    if not path.exists():
+        return ids
+    for raw in path.read_text().splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        rid = obj.get("id")
+        if rid is not None:
+            ids.add(rid)
+    return ids
+
+
 def main():
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    registry = Path(".cc-sessions/carry-forward.jsonl")
+    # Append-only contract (sprint-contracts.md:38): never truncate. Dedup new
+    # entry ids against ids already on disk — roadmap extend-mode hard-fails on
+    # duplicate ids, so we skip (do not re-emit) any id that already exists.
+    seen = existing_ids(registry)
     all_lines = []
     activity_lines = []
     session = sys.argv[1] if len(sys.argv) > 1 else "cli-unknown"
@@ -87,6 +111,9 @@ def main():
         fm = extract_frontmatter(p)
         entries = parse_scope_entries(fm)
         for e in entries:
+            if e["id"] in seen:
+                continue  # already in registry — skip (append-only, no dup ids)
+            seen.add(e["id"])
             acc = parse_acceptance(e["acceptance_raw"])
             line = {
                 "id": e["id"],
@@ -120,9 +147,14 @@ def main():
                     }
                 )
             )
-    Path(".cc-sessions/carry-forward.jsonl").write_text("\n".join(all_lines) + "\n")
-    with open(".cc-sessions/activity-feed.jsonl", "a") as f:
-        f.write("\n".join(activity_lines) + "\n")
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    # Append only the new lines; never truncate the append-only registry.
+    if all_lines:
+        with open(registry, "a") as f:
+            f.write("\n".join(all_lines) + "\n")
+    if activity_lines:
+        with open(".cc-sessions/activity-feed.jsonl", "a") as f:
+            f.write("\n".join(activity_lines) + "\n")
     print(f"wrote {len(all_lines)} registry entries")
 
 

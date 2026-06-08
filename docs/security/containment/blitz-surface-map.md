@@ -1,6 +1,6 @@
 # Blitz Surface Map — Security Artifacts in the Risk × Layer Matrix
 
-> Companion to `containment-model.md`. Classifies **what Blitz already has** before adding anything. Every cell is filled from the live tree (file:line confirmed 2026-05-31). Thin/empty cells are named as gaps.
+> Companion to the security posture in [`skills/_shared/security.md`](../../../skills/_shared/security.md) (the containment model that promoted from this research pass). Classifies **what Blitz already has** before adding anything. Every cell is filled from the live tree (file:line confirmed 2026-05-31). Thin/empty cells are named as gaps.
 
 The point of this map: Blitz already has substantial environment-layer machinery. The integration is *not* "add more checks" — it is (1) name the framework that organizes the existing guards, and (2) close the specific empty cells.
 
@@ -8,7 +8,7 @@ The point of this map: Blitz already has substantial environment-layer machinery
 
 ## 1. The filled matrix
 
-Rows = risk type (who originates harm). Columns = defense layer. `★` = a confirmed gap (see `gap-fixes.md`).
+Rows = risk type (who originates harm). Columns = defense layer. `★` = a confirmed gap (each fix-designed as an epic in [`SYNTHESIS.md`](SYNTHESIS.md)).
 
 ### User misuse
 
@@ -59,7 +59,7 @@ The article repeatedly names mitigations Blitz **already implements** — the in
 
 1. **Structured-facts-not-raw-text** (AP-6 mitigation): spawn-protocol's canonical JSON reply (`{status, summary≤50w, files_changed, issues, …}`, §9) already forces sub-agents to return typed facts, not raw prose. Gap 2 *labels* the trust level; it does not invent the structure.
 2. **Injection caps**: orchestrator.md:146-149 already truncates skill-written fields to `[0:200]` with an explicit "injection-surface guard; Opus 4.8 ASR regression" rationale. Gap 1/2/5 *extend this same principle* to startup and sub-agent paths.
-3. **Deterministic environment layer**: 7 `block-*.sh` hooks + `pre-edit-guard.sh` are a genuine deterministic boundary, mapped 1:1 to auto-mode's hard-deny groups (containment-model.md §6.1).
+3. **Deterministic environment layer**: 7 `block-*.sh` hooks + `pre-edit-guard.sh` are a genuine deterministic boundary that complements (does not reimplement) the platform auto-mode hard-deny groups ([`security.md`](../../../skills/_shared/security.md) §6 Scope).
 4. **A registry-driven check system**: `check-registry.json` already has a `security` pillar (det-06 env-fallback, det-07 hardcoded-creds, det-15 localhost-ports, det-18 destructive-sql, sem-sec) + `check-registry-validate.sh`. New security checks register here — no new subsystem.
 5. **A startup-classifier seed**: the `rollover_count >= 3` → human-review escalation (carry-forward) is a primitive startup classifier. Gap 1 generalizes it.
 
@@ -89,7 +89,5 @@ The article repeatedly names mitigations Blitz **already implements** — the in
 ---
 
 ## 5. Cross-references
-- `containment-model.md` — the model these cells instantiate.
-- `gap-fixes.md` — each `★` confirmed + fix-designed.
-- `self-audit.md` — Gaps 1/4/5 scored honestly against the live tree.
-- `threat-model.md` — the posture that owns this map.
+- [`skills/_shared/security.md`](../../../skills/_shared/security.md) — the canonical security posture / containment model these cells instantiate, and the owner of this map (§1 cites it for the cell-by-cell mapping).
+- [`SYNTHESIS.md`](SYNTHESIS.md) — the sequenced integration plan; each `★` gap is confirmed and fix-designed as a blast-radius-ordered epic (folds the former standalone gap analysis and self-audit).

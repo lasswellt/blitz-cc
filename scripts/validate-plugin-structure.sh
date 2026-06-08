@@ -189,18 +189,18 @@ if [[ -f "$README" ]]; then
     done
   fi
 
-  # Check README for "Skills (N)" pattern
-  readme_skills=$(grep -oP 'Skills\s*\(\K\d+' "$README" 2>/dev/null || echo "")
+  # Check README for "**N skills**" pattern (README.md:14 format)
+  readme_skills=$(grep -oP '\*\*\K\d+(?= skills\*\*)' "$README" 2>/dev/null | head -1 || echo "")
   if [[ -n "$readme_skills" && "$readme_skills" -ne "$actual_skills" ]]; then
-    check_fail "README says Skills ($readme_skills) but found $actual_skills skill directories"
+    check_fail "README says $readme_skills skills but found $actual_skills skill directories"
   elif [[ -n "$readme_skills" ]]; then
     check_pass "README skill count matches ($actual_skills)"
   fi
 
-  # Check README for "Agents (N)" pattern
-  readme_agents=$(grep -oP 'Agents\s*\(\K\d+' "$README" 2>/dev/null || echo "")
+  # Check README for "**N agents**" pattern (README.md:14 format)
+  readme_agents=$(grep -oP '\*\*\K\d+(?= agents\*\*)' "$README" 2>/dev/null | head -1 || echo "")
   if [[ -n "$readme_agents" && "$readme_agents" -ne "$actual_agents" ]]; then
-    check_fail "README says Agents ($readme_agents) but found $actual_agents agent files"
+    check_fail "README says $readme_agents agents but found $actual_agents agent files"
   elif [[ -n "$readme_agents" ]]; then
     check_pass "README agent count matches ($actual_agents)"
   fi

@@ -18,10 +18,11 @@ mkdir -p "$SESSIONS_DIR"
 # and injection-scanned — replaced with a quarantine marker on a hit. This hook NEVER
 # eval/sources project-controlled content; it only parses (jq) and echoes sanitized text.
 # Canonical posture: /_shared/security.md §3 TB-1 + /_shared/security.md.
-INJ_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|</?(system|tool|assistant)>|tool_call|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE)|exfiltrat)'
+# Canonical injection pattern lives in _lib/common.sh (BLITZ_INJECTION_RX) so the
+# live echo path here and startup-validate.sh's persistent-state scan never drift (SEC-R2-03).
 sanitize() {
   local s; s=$(cut -c1-200)
-  if printf '%s' "$s" | grep -qiE "$INJ_RX"; then
+  if printf '%s' "$s" | grep -qiE "$BLITZ_INJECTION_RX"; then
     printf '[quarantined: suspicious field — see startup-validate.sh]'
   else
     printf '%s' "$s"

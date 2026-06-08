@@ -32,6 +32,16 @@ Bump these files together on every release. `installer/package.json` and `instal
 - **Count-sync gate hardened:** adding/removing a file under `skills/_shared`, `skills/*/SKILL.md`, `agents/`, or `hooks/scripts/` now hard-blocks the commit until counts are refreshed.
 - **Frontmatter validator:** added a cumulative-description-chars guard near the 15k load-time budget.
 
+### Round 2
+
+#### Fixed
+- **Missing `infra-dev` agent (agents 10->11):** `infra-dev` is a first-class dispatchable sprint-dev role (sprint-dev role table + `sprint-contracts.md` schema/validator regex; sprint-plan assigns it; prompt template lives at `sprint-dev/references/main.md`), but `agents/infra-dev.md` never existed — only 10 agent files. `blitz:infra-dev` dispatched via `agentType: blitz:${a.role}` (and the legacy `subagent_type: blitz:<role>` path) could never resolve, silently breaking any sprint that assigned infra work. Created `agents/infra-dev.md` (sonnet, Infra/CI-CD/deploy/IaC/Firebase scope), regenerated `counts.json` (agents 10->11), and reconciled all prose counts (CLAUDE.md, README.md, plugin.json, marketplace.json; builder sub-count 6->7).
+- **Security-hook bypass fixes:** anti-shortcut blockers hardened against bypass paths.
+- **Installer count drift:** npm-installer manifest advertised stale component counts (hooks 37->38, agents 10->11).
+- **Protocol-logic + scripts/docs fixes:** assorted protocol-logic corrections and script/documentation reconciliation across the round.
+
+No version bump.
+
 ## [2.4.4] — 2026-06-07 · fix [1m] inheritance on invokable skills
 
 Bug-fix dot-release.

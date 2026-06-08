@@ -77,7 +77,37 @@ if [[ -f "$INSTALL_SH" ]]; then
   fi
 fi
 
-# --- 4. Summary ---
+# --- 4. Check installer/package.json (.version) ---
+INSTALLER_PKG="installer/package.json"
+if [[ -f "$INSTALLER_PKG" ]]; then
+  # Prefer jq; fall back to a grep/sed parse if jq is unavailable.
+  if command -v jq >/dev/null 2>&1; then
+    PKG_VERSION=$(jq -r '.version // empty' "$INSTALLER_PKG" 2>/dev/null || echo "")
+  else
+    PKG_VERSION=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$INSTALLER_PKG" \
+      | head -1 \
+      | sed -E 's/.*"([^"]+)"$/\1/')
+  fi
+  if [[ -n "$PKG_VERSION" && "$PKG_VERSION" != "$AUTHORITATIVE" ]]; then
+    log "  drift: $INSTALLER_PKG has \"version\": \"$PKG_VERSION\" (expected $AUTHORITATIVE)"
+    DRIFT=$((DRIFT + 1))
+  fi
+fi
+
+# --- 5. Check installer/src/constants.js (VERSION const) ---
+CONSTANTS_JS="installer/src/constants.js"
+if [[ -f "$CONSTANTS_JS" ]]; then
+  # Matches: const VERSION = '2.4.4';  (single or double quotes)
+  CONST_VERSION=$(grep -oE "VERSION[[:space:]]*=[[:space:]]*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" "$CONSTANTS_JS" \
+    | head -1 \
+    | sed -E "s/.*['\"]([0-9]+\.[0-9]+\.[0-9]+)['\"].*/\1/")
+  if [[ -n "$CONST_VERSION" && "$CONST_VERSION" != "$AUTHORITATIVE" ]]; then
+    log "  drift: $CONSTANTS_JS has VERSION = '$CONST_VERSION' (expected $AUTHORITATIVE)"
+    DRIFT=$((DRIFT + 1))
+  fi
+fi
+
+# --- 6. Summary ---
 if [[ "$DRIFT" -gt 0 ]]; then
   log ""
   log "Version drift detected: $DRIFT file(s) out of sync with $PLUGIN_JSON (v$AUTHORITATIVE)."

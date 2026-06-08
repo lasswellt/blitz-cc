@@ -15,11 +15,17 @@ const CLAUDE_SETTINGS = path.join(CLAUDE_HOME, 'settings.json');
 const INSTALLED_PLUGINS = path.join(CLAUDE_HOME, 'plugins', 'installed_plugins.json');
 const KNOWN_MARKETPLACES = path.join(CLAUDE_HOME, 'plugins', 'known_marketplaces.json');
 
+// Only write-capable WORKER agents are copied into the user's project.
+// The read-only critics (critic / design-critic / research-critic) and the
+// main-thread orchestrator are not user-installed worker agents — they are
+// spawned/activated by the plugin runtime, not handed to the project as
+// editable agent definitions. infra-dev is a new write-capable worker agent.
 const AGENT_NAMES = [
   'architect.md',
   'backend-dev.md',
   'doc-writer.md',
   'frontend-dev.md',
+  'infra-dev.md',
   'reviewer.md',
   'test-writer.md',
 ];

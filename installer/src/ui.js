@@ -50,7 +50,7 @@ function banner() {
     `${color.cyan}   ──────────────────────────────── ${sym.bolt} ───${color.reset}`,
     '',
     `${color.dim}     Claude Code Plugin Installer · v${VERSION}${color.reset}`,
-    `${color.dim}       37 skills · 10 agents · 37 hooks${color.reset}`,
+    `${color.dim}       37 skills · 11 agents · 38 hooks${color.reset}`,
     '',
   ];
   console.log(lines.join('\n'));

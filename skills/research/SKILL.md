@@ -130,6 +130,7 @@ Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a condit
 ```js
 export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
 // args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
+const OS = 'OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
     model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
@@ -137,7 +138,7 @@ const found = await parallel(args.roster.map(a => () =>
 const gaps = (await agent(args.gapPrompt, { phase: 'GapFill', model: 'haiku', schema: args.gapSchema }))
   ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
 const gapFills = await parallel(gaps.map(g => () =>
-  agent(`Research only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
+  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
 return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
 ```
 

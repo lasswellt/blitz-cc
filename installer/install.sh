@@ -43,7 +43,7 @@ echo ""
 echo -e "${CYAN}   ──────────────────────────────── ⚡ ───${NC}"
 echo ""
 echo -e "${DIM}     Claude Code Plugin Installer · v2.4.4${NC}"
-echo -e "${DIM}       37 skills · 10 agents · 37 hooks${NC}"
+echo -e "${DIM}       37 skills · 11 agents · 38 hooks${NC}"
 echo ""
 
 # ── Try npx first ──────────────────────────────────────────────
@@ -107,6 +107,16 @@ for arg in "$@"; do
   esac
 done
 PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
+
+# Scan ALL args for --yes (not just positional $1), so that
+# `install.sh /proj --yes` suppresses the prompt the same as `install.sh --yes`.
+YES=0
+for arg in "$@"; do
+  if [ "$arg" = "--yes" ]; then
+    YES=1
+    break
+  fi
+done
 PROJECT_SETTINGS="$PROJECT_DIR/.claude/settings.json"
 
 # ── Register marketplace ───────────────────────────────────────
@@ -119,7 +129,7 @@ header "Registering marketplace..."
 # the upstream is compromised, every install silently pulls attacker code. The
 # user must explicitly opt in to that trust relationship.
 AUTO_UPDATE="false"
-if [ "${1:-}" != "--yes" ] && [ "${BLITZ_AUTO_UPDATE:-}" != "1" ] && [ -t 0 ] && [ -t 1 ]; then
+if [ "$YES" != 1 ] && [ "${BLITZ_AUTO_UPDATE:-}" != "1" ] && [ -t 0 ] && [ -t 1 ]; then
   read -r -p "    Enable automatic upstream updates from GitHub? [y/N]: " AU_ANS || AU_ANS=""
   case "$AU_ANS" in
     y|Y|yes|YES) AUTO_UPDATE="true"; info "Auto-update enabled" ;;

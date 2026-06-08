@@ -35,9 +35,29 @@ case "$TOOL" in
     CMD="$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")"
     [[ -z "$CMD" ]] && exit 0
 
-    # rm of test/spec files or test directories
-    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|/__tests__/|/test/|/tests/)'; then
-      block "Bash command: $CMD"
+    # rm of test/spec files or test directories.
+    # H3: the old pattern blocked rm of build/cache ARTIFACTS that merely live
+    # under a test/ path or carry .test./.spec. (e.g. dist/app.test.js.map,
+    # node_modules/.cache/test/, coverage/lcov.test.info). Those are generated
+    # output, not source tests. Exclude obvious non-source dirs and
+    # compiled/sourcemap extensions before deciding to block.
+    # Directory tokens match at a token boundary (operand start, whitespace, or
+    # after a `/`) so a top-level `rm -rf tests/` is caught — the original
+    # `/tests/` form required a leading slash and missed bare `tests/`. The
+    # boundary class avoids false-matching substrings like `latest/`.
+    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|([[:space:]/]|^)(__tests__|tests?)/)'; then
+      # Pull the operand portion (everything after `rm` and its flags) so the
+      # exclusions test the actual target path, not the whole command line.
+      RM_TARGET="$(printf '%s' "$CMD" | sed -nE 's/.*(^|[;&|])[[:space:]]*rm[[:space:]]+((-[a-zA-Z]+[[:space:]]+)*)([^;&|]*).*/\4/p')"
+      [[ -z "$RM_TARGET" ]] && RM_TARGET="$CMD"
+      # Skip (allow) when the target is a generated artifact / non-source tree.
+      #  - non-source dirs: node_modules/, dist/, build/, .cache/, coverage/, /tmp/
+      #  - compiled/sourcemap extensions: .test.js.map, .spec.js.map, .test.d.ts (and .spec variants)
+      if printf '%s' "$RM_TARGET" | grep -qE '(node_modules/|dist/|build/|\.cache/|coverage/|(^|[[:space:]])/tmp/|\.(test|spec)\.js\.map|\.(test|spec)\.d\.ts)'; then
+        : # allow — generated artifact, not a source test
+      else
+        block "Bash command: $CMD"
+      fi
     fi
 
     # mv test → non-test (rename to bypass test discovery)

@@ -251,11 +251,13 @@ if [ "$PROVISIONAL" -gt 0 ] && [ "$MODE" != "audit" ]; then
 fi
 
 # Step 4 — Invariant 2 (active/partial entries touched-or-deferred this sprint).
+# A deferred entry escapes STALE ONLY with non-empty notes (matches :190).
+# A bare `event:deferred` with empty/absent notes is still STALE.
 STALE=$(echo "$LATEST" | jq --arg s "$SPRINT" '
   [.[] | select(
     (.status == "active" or .status == "partial") and
     .last_touched.sprint != $s and
-    .event != "deferred"
+    (.event != "deferred" or ((.notes // "") == ""))
   )]
 ')
 STALE_COUNT=$(echo "$STALE" | jq 'length')

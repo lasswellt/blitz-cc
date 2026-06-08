@@ -132,6 +132,6 @@ fi
 if [ -f "package.json" ]; then
   grep -q '"@openfga"' package.json 2>/dev/null && echo "- **Authorization**: OpenFGA"
 fi
-} | tee "$CACHE_FILE" 2>/dev/null || true
+} | { mkdir -p "$(dirname "$CACHE_FILE")" 2>/dev/null || true; tee "$CACHE_FILE" 2>/dev/null || true; }
 
 exit 0

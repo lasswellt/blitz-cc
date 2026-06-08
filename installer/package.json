@@ -1,7 +1,7 @@
 {
   "name": "blitz-cc",
   "version": "2.4.4",
-  "description": "Installer for the Blitz Claude Code plugin — 37 skills, 10 agents, 37 hooks for Vue/Nuxt + Firebase development",
+  "description": "Installer for the Blitz Claude Code plugin — 37 skills, 11 agents, 38 hooks for Vue/Nuxt + Firebase development",
   "bin": {
     "blitz-cc": "./bin/install.js"
   },

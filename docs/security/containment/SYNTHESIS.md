@@ -12,9 +12,9 @@ Sequence rationale (from the article): build the framework first (so guards regi
 
 | Step | Action | Acceptance (grep) |
 |---|---|---|
-| 0.1 | Move `docs/security/containment/threat-model.md` → `skills/_shared/security.md`; adapt to shared-protocol conventions. | `test -f skills/_shared/security.md` |
+| 0.1 | Promote the threat-model research draft → `skills/_shared/security.md` (landed; the standalone draft no longer ships); adapt to shared-protocol conventions. | `test -f skills/_shared/security.md` |
 | 0.2 | Add `security` to the canonical-owner registry; declare TB-1..TB-4. | `grep -q 'TB-1' skills/_shared/security.md` |
-| 0.3 | Bidirectional cite stubs: each `block-*.sh` header → `threat-model.md §<TB>`; threat-model → each guard. | `grep -l 'threat-model.md' hooks/scripts/block-*.sh \| wc -l` ≥ 4 |
+| 0.3 | Bidirectional cite stubs: each `block-*.sh` header → `security.md §<TB>`; security.md → each guard. | `grep -l 'security.md' hooks/scripts/block-*.sh \| wc -l` ≥ 4 |
 | 0.4 | Confirm `check-registry.json` `security` pillar present (it is); reserve new row ids. | `jq '[.checks[]\|select(.pillar=="security")]\|length' skills/_shared/check-registry.json` ≥ 5 |
 
 **Gate:** `check-registry-validate.sh` passes; `markdown-link-validate.sh` passes (xref dead-refs are known false positives per project memory — trust the validator).
@@ -88,7 +88,7 @@ Sequence rationale (from the article): build the framework first (so guards regi
 |---|---|---|
 | 6.1 | `/blitz:audit --pillar security` covers sec-startup-*, sec-content-inspection, sec-capability-grant + existing det-06/07/15/18/sem-sec. | `jq '[.checks[]\|select(.pillar=="security")]\|length'` ≥ 8 |
 | 6.2 | Add security-pillar pass to sprint-review Phase 3.6 as a gate (alongside the 8 invariants). | review report shows a "Security pillar" line |
-| 6.3 | Each guard cites its TB; `threat-model.md` is canonical owner. | bidirectional-cite check passes |
+| 6.3 | Each guard cites its TB; [`skills/_shared/security.md`](../../../skills/_shared/security.md) is canonical owner. | bidirectional-cite check passes |
 
 ---
 
@@ -105,7 +105,7 @@ Epics 4 and 5 have no interdependency and may run in parallel. All later epics d
 
 ## What this plan deliberately does NOT do (scope discipline)
 
-- No VM, gVisor, or MITM proxy (threat-model.md §6).
+- No VM, gVisor, or MITM proxy ([`security.md`](../../../skills/_shared/security.md) §6).
 - No reimplementation of auto-mode tiers or the platform trust prompt.
 - No new subsystem — every fix extends an existing primitive (check-registry validator, `[0:200]` cap, spawn JSON contract, Haiku routing, `/blitz:audit` pillar).
 - No model-layer-only fix where the article shows only the environment layer holds — Gap 1/3 are deterministic-scan + small-classifier steps, not "the model will notice."
@@ -113,4 +113,4 @@ Epics 4 and 5 have no interdependency and may run in parallel. All later epics d
 ---
 
 ## Cross-references
-- `containment-model.md` · `blitz-surface-map.md` · `threat-model.md` · `gap-fixes.md` · `self-audit.md`
+- [`skills/_shared/security.md`](../../../skills/_shared/security.md) — the canonical security posture and containment model (promoted from this research pass) · [`blitz-surface-map.md`](blitz-surface-map.md) — the risk × layer surface map (subsumes the former standalone gap analysis and self-audit).

@@ -15,7 +15,7 @@ Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 3 
 
 ## Threat Model — Blitz Containment Posture (canonical owner)
 
-> **Canonical owner (O-style)** for Blitz's security posture. Promoted from the containment research pass (`docs/security/containment/`) — see that directory for the derivation, the Anthropic source article, the surface map, the gap analysis, the self-audit, and the external best-practice cross-check.
+> **Canonical owner (O-style)** for Blitz's security posture. Promoted from the containment research pass — see [`docs/security/containment/`](../../docs/security/containment/) for the surviving derivation artifacts: the surface map ([`blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md), the risk × layer matrix) and the sequenced integration plan ([`SYNTHESIS.md`](../../docs/security/containment/SYNTHESIS.md), which folds the gap analysis and self-audit into blast-radius-ordered epics).
 >
 > Grounded in Anthropic, "How we contain Claude across products" (2026-05-25), cross-checked against OWASP (LLM / Agentic / MCP Top 10), CaMeL (arXiv 2503.18813), the dual-LLM / Spotlighting pattern, the memory-poisoning literature (MINJA / MemoryGraft / Zombie Agents), and NIST's agent identity/authorization direction.
 >
@@ -128,7 +128,7 @@ Blitz is a **Claude Code-class HITL plugin**; it inherits the platform's OS sand
 - [hook-trust.md](#hook-trust-boundary-tb-1) — pre-trust parsing boundary (TB-1).
 - [agent-orchestration.md](agent-orchestration.md) — Haiku-class classifier routing (TB-2/TB-4).
 - [check-registry.json](check-registry.json) — `security` pillar checks.
-- Derivation + research: [docs/security/containment/](../../docs/security/containment/) (`containment-model.md`, `blitz-surface-map.md`, `gap-fixes.md`, `self-audit.md`, `best-practices.md`, `SYNTHESIS.md`).
+- Derivation + research: [docs/security/containment/](../../docs/security/containment/) — surviving artifacts are [`blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md) (risk × layer surface map) and [`SYNTHESIS.md`](../../docs/security/containment/SYNTHESIS.md) (sequenced integration plan).
 
 
 

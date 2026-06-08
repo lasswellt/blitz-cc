@@ -22,8 +22,20 @@ if ! echo "$CMD" | grep -qE '(^|[[:space:];&|])(psql|mysql|sqlite3|mongosh|redis
   exit 0
 fi
 
-# Migration runs are intentional — skip if running a migration file or tool
-if echo "$CMD" | grep -qiE '(migrations?/|migrate[[:space:]]+(up|down|run)|knex[[:space:]]+migrate|prisma[[:space:]]+migrate|alembic[[:space:]]+upgrade|atlas[[:space:]]+schema)'; then
+# Migration runs are intentional — skip ONLY when the INVOCATION FORM is a
+# migration, not when the string "migrations/" merely appears anywhere.
+#
+# SEC-R2-02: the old broad match exempted any command containing `migrations/`,
+# so an SQL comment `-- migrations/` bypassed the DROP guard entirely. The
+# exemption is now scoped to:
+#   (a) a migration FILE passed via -f (psql -f db/migrations/001.sql), where
+#       the path component contains a migrations/ directory; OR
+#   (b) a migration TOOL subcommand at command position (knex migrate:*,
+#       prisma migrate *, alembic upgrade, atlas schema, or a bare
+#       `migrate up|down|run` runner).
+# A path-only match (-f .../migrations/...) cannot be forged inside a SQL
+# string passed via -c because -c carries the SQL, not a -f file path.
+if echo "$CMD" | grep -qiE '(-f[[:space:]]+[^[:space:]]*migrations?/|(^|[[:space:];&|])migrate[[:space:]]+(up|down|run)([[:space:]]|$)|knex[[:space:]]+migrate|prisma[[:space:]]+migrate|alembic[[:space:]]+upgrade|atlas[[:space:]]+schema)'; then
   exit 0
 fi
 

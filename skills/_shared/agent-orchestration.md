@@ -1177,7 +1177,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | Blitz `Agent()` pattern | `Workflow` primitive |
 |---|---|
 | single-message `run_in_background` pool + poll-until-all | `parallel([...thunks])` (barrier; `null` on throw) |
-| Kahn wave layers (Wave 0 → barrier → Wave 1) | sequential `parallel()` per wave, OR `pipeline()` for independent chains |
+| Kahn wave layers (Wave 0 → barrier → Wave 1) | sequential `parallel()` per wave, OR `pipeline()` only for genuinely independent per-item stage chains (each stage's `prev` = the SAME item's prior-stage output; pipeline does NOT thread sibling state across the wave) |
 | JSON reply + `jq` validate | `agent(prompt, {schema})` → validated object |
 | `classify_output()` MISSING/EMPTY/MALFORMED gate | `null`-on-throw + `.filter(Boolean)` |
 | HEARTBEAT markers + grep polling | `log()` streaming |
@@ -1193,7 +1193,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | `research` | **WIRED** | 2-4 agent pool (`parallel()`) + conditional gap second-wave (`agent()`). §1.2.6 gate + §1.3-W. |
 | `sprint-plan` | **WIRED** | 3-4 flat research pool → `parallel()` + `schema`. §2.0 gate + §2.1-W. Mirrors `research`/`audit`. |
 | `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
-| `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or `pipeline()` (sequential mode, prior findings threaded); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
+| `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or a sequential for-loop accumulator (threads prior reviewers' findings; NOT pipeline — pipeline `prev` is same-item prior-stage only); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
 | `sprint-dev` | **WIRED** | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Cross-session durable:** `STATE.md` is the durable journal — resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only. Resume Divergence Gate is the safety interlock before dispatch. |
 | `code-sweep` | **DEFERRED** | flat finder pool; same `parallel()` + `schema` shape as `audit`. |
 | `quality-metrics` | **DEFERRED** | flat collector pool; `parallel()` + `schema` candidate. |
