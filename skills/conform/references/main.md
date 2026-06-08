@@ -212,7 +212,7 @@ These artifacts are OPTIONAL — absence alone is not drift. Only flag MISSING i
 
 ### `carry-forward.jsonl`
 
-Consumers in this plugin: `sprint-plan` (Phase 1, Phase 2.4), `sprint-dev` (Phase 0.0, Phase 3.1a registry write), `sprint-review` (Phase 3.6 Reader Algorithm), `next` (Phase 0.6 CF_ACTIVE/CF_ESCALATED), `roadmap` (Phase 1.1.5 scope ingestion).
+Consumers in this plugin: `sprint-plan` (Phase 1, Phase 2.4), `sprint-dev` (Phase 0.0, Phase 3.2.1b registry write), `sprint-review` (Phase 3.6 Reader Algorithm), `next` (Phase 0.6 CF_ACTIVE/CF_ESCALATED), `roadmap` (Phase 1.1.5 scope ingestion).
 
 A project consumes carry-forward if ANY of:
 - File exists at `.cc-sessions/carry-forward.jsonl`

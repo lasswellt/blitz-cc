@@ -794,7 +794,7 @@ Reading order: **Producer → Artifact → Required-By**. Every artifact has exa
 | Artifact | Producer | Consumer | Required? |
 |---|---|---|---|
 | `docs/roadmap/roadmap-registry.json` (populated) | roadmap (extend, refresh, init) | sprint-plan Phase 0 step 2 | Required |
-| `docs/roadmap/epic-registry.json` (populated) | roadmap | sprint-plan Phase 0 step 2; sprint-dev Phase 3.2 step 1a (registry inference fallback) | Required |
+| `docs/roadmap/epic-registry.json` (populated) | roadmap | sprint-plan Phase 0 step 2; sprint-dev Phase 3.2 step 1b (registry inference fallback) | Required |
 | `.cc-sessions/carry-forward.jsonl` lines (`event: "created"`) | roadmap extend (Phase 1.1.5) | sprint-plan Phase 0 step 8 (mandatory inputs), sprint-review Phase 3.6 Invariant 1 | Required if research had `scope:` |
 
 #### sprint-plan
@@ -814,9 +814,9 @@ Reading order: **Producer → Artifact → Required-By**. Every artifact has exa
 |---|---|---|---|
 | Negotiated sprint-contract (`${SESSION_TMP_DIR}/HANDOFF.json` `scope.acceptance`) | sprint-dev Phase 0.6 (generator ↔ evaluator) | sprint-dev Phase 3.5 verification, sprint-review | Optional (skipped for trivial single-story sprints) |
 | Worktrees `.cc-sessions/${SESSION_ID}/worktrees/agent-<role>/` | sprint-dev Phase 2.3 | Internal (agent dispatch); merged back at Phase 4.1 | Internal |
-| `STATE.md` (in repo root or `.cc-sessions/`) | sprint-dev Phase 3.2 step 1b (per checkpoint-protocol) | sprint-dev resume on next invocation, sprint-review report | Required by checkpoint-protocol |
+| `STATE.md` (in repo root or `.cc-sessions/`) | sprint-dev Phase 3.2 step 1a (per checkpoint-protocol) | sprint-dev resume on next invocation, sprint-review report | Required by checkpoint-protocol |
 | Story `status` transitions (`in-progress`, `done`, `blocked`) | sprint-dev Phase 4.8 | sprint-review (report), next sprint-plan (carry-forward injection) | Required |
-| `.cc-sessions/carry-forward.jsonl` lines (`event: "progress"`, Phase 3.2 step 1a) | sprint-dev | sprint-review Phase 3.6 Invariant 2 cross-check | Required when stories had `registry_entries` |
+| `.cc-sessions/carry-forward.jsonl` lines (`event: "progress"`, Phase 3.2 step 1b) | sprint-dev | sprint-review Phase 3.6 Invariant 2 cross-check | Required when stories had `registry_entries` |
 | Commits + branches (one per agent worktree) | sprint-dev | sprint-review diff, ship | Required |
 | `${SESSION_TMP_DIR}/HANDOFF.json` (on interrupted exit only) | sprint-dev cleanup | sprint-dev resume | Conditional |
 

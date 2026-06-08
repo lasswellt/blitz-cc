@@ -85,7 +85,9 @@ for c in checks:
             "find", "sed", "awk", "cat", "echo", "head", "tail", "sort",
             "uniq", "python3", "bash", "sh", "rg", "ls", "diff", "xargs",
         }
-        if dt in {"git", "regex", "tsc"}:
+        # Leading-binary heuristic only on literal-command types — `regex`
+        # detection.command is a pattern/prose rule-pack, not a shell invocation.
+        if dt in {"command", "import-graph"}:
             first = cmd.strip().split("|")[0].strip()
             try:
                 head = (shlex.split(first) or [""])[0]
@@ -102,7 +104,11 @@ for c in checks:
                 )
         # (b) any scripts/*.sh anywhere in the command must exist
         for m in re.findall(r"(scripts/[\w./-]+\.sh)", cmd):
-            if not os.path.isfile(os.path.join(root, m)):
+            # Resolve against both repo-root scripts/ and hooks/scripts/ so a
+            # reference like `hooks/scripts/foo.sh` (captured as `scripts/foo.sh`)
+            # is not a false "missing" positive.
+            if not (os.path.isfile(os.path.join(root, m))
+                    or os.path.isfile(os.path.join(root, "hooks", m))):
                 warnings.append(f"{cid}: detection.command references missing script {m!r}")
 
 # 5. confidence_gate.reject_bypass present (facts bypass the min-confidence gate)
