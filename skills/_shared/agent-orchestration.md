@@ -927,9 +927,9 @@ The same boundary applies to the `Workflow` tool (dynamic workflows): it is main
 | Class | Count | Examples | Routing rule |
 |---|---|---|---|
 | **Super-orchestrator** (spawns ≥2 agents in parallel) | 10 | sprint-dev, sprint-plan, sprint-review, research, audit, quality-metrics, code-sweep, sprint, code-doctor, ui-audit | **Slash-only**. Orchestrator routes user to `/blitz:<name>`. Never tries to invoke directly. |
-| **Single-spawn orchestrator** (spawns ≤1 agent or invokes one downstream skill) | 9 | codebase-map, doc-gen, health, implement, migrate, retrospective, roadmap, design-extract | Future: could become subagents (out of scope for v1.11). Today: slash-only. |
+| **Single-spawn orchestrator** (spawns ≤1 agent or invokes one downstream skill) | 8 | codebase-map, doc-gen, health, implement, migrate, retrospective, roadmap, design-extract | Future: could become subagents (out of scope for v1.11). Today: slash-only. |
 | **Router / chainer** (invokes other skills sequentially via slash) | 10 | ship, fix-issue, ui-build, review, bootstrap, conform, setup, browse, perf-profile, next | **Slash-only**. Chains slash invocations the orchestrator can't replicate. |
-| **Pure worker** (no spawning, no chaining) | 7 | quick, ask, todo, dep-health, refactor, test-gen, perf-profile | **Slash-only by default**. Migration to agent costs ~15× tokens with no parallelism gain — keep as cheap slash invocations. |
+| **Pure worker** (no spawning, no chaining) | 9 | quick, ask, todo, dep-health, refactor, test-gen, compress, worktree-prune, release | **Slash-only by default**. Migration to agent costs ~15× tokens with no parallelism gain — keep as cheap slash invocations. |
 
 Total: orchestrator routes everything to slash commands. The "agent ecosystem" lives below the slash boundary, where each orchestrator-tier skill spawns its own specialist agents.
 
@@ -1285,7 +1285,7 @@ Plugin agents whose system prompt is ≥1024 tokens (Sonnet) / ≥4096 tokens (O
 | 5min (default) | 1.25× input | 0.10× input | ~1.3 |
 | 1h (opt-in) | 2.00× input | 0.10× input | ~2.2 |
 
-For a 10-spawn sprint-dev: 1h TTL → 1 write + 9 reads = ~2.9× write cost amortized. Default 5min TTL → potentially 10 writes = ~12.5× write cost. **Opt in to 1h.**
+For a 10-spawn sprint-dev: 1h TTL → 1 write + 9 reads = ~2.9× write cost amortized. Default 5min TTL → potentially 10 writes = ~12.5× write cost. **Where the SDK/platform exposes the TTL, the 1h prefix cache is the better tradeoff for multi-spawn sessions** (not settable from skill/agent markdown — see Rule above).
 
 #### Verification
 
