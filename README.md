@@ -162,9 +162,13 @@ Four layers turn a skill collection into a partly-autonomous environment. Slash 
 
 `agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
 
-```bash
-export BLITZ_DISABLE_ORCHESTRATOR=1   # opt out per session
+Opt out via a user settings override — set `{"agent": null}` (or remove the plugin `agent` setting) in `~/.claude/settings.json`:
+
+```json
+{ "agent": null }
 ```
+
+(The `BLITZ_DISABLE_ORCHESTRATOR=1` env var is **not currently honored by any blitz hook** — use the settings override above.)
 
 ### 2. Anti-shortcut blockers
 
@@ -324,7 +328,7 @@ Three roles. **Builder agents** are spawned by skills via `Agent({isolation: "wo
 
 | Agent | Model | Role |
 |---|---|---|
-| **orchestrator** | sonnet | Read-only main-thread router (no Write/Edit/Agent — cannot spawn subagents). Surfaces in-flight state from `HANDOFF.json` + activity feed, routes to a `/blitz:*` skill. `BLITZ_DISABLE_ORCHESTRATOR=1` to opt out. |
+| **orchestrator** | sonnet | Read-only main-thread router (no Write/Edit/Agent — cannot spawn subagents). Surfaces in-flight state from `HANDOFF.json` + activity feed, routes to a `/blitz:*` skill. Opt out via a `{"agent": null}` settings override (the `BLITZ_DISABLE_ORCHESTRATOR` env var is not currently honored by any hook). |
 
 Model defaults follow a 60/35/5 Haiku/Sonnet/Opus routing recorded in `.claude-plugin/model-profiles.json`; a spawning skill may bump a worker to opus for genuinely heavy reasoning.
 
@@ -423,7 +427,7 @@ Hooks are *the* enforcement layer — they fire on tool calls the model can't ta
 
 ### Environment overrides
 
-`BLITZ_DISABLE_ORCHESTRATOR`, `BLITZ_DISPATCH` (auto\|workflow\|agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`, `BLITZ_NOTIFY_ON_IDLE` — each documented at its point of use.
+`BLITZ_DISPATCH` (auto\|workflow\|agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`, `BLITZ_NOTIFY_ON_IDLE` — each documented at its point of use. (To disable the orchestrator, use the `{"agent": null}` settings override — the `BLITZ_DISABLE_ORCHESTRATOR` env var is not currently honored by any blitz hook.)
 
 ---
 

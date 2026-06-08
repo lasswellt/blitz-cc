@@ -51,9 +51,9 @@ Skills SHOULD declare an intended level in their SKILL.md frontmatter (`output_s
 
 ---
 
-## Intensity override precedence
+## Intensity override precedence (model-followed convention)
 
-When an Agent() spawn or skill invocation interpolates the active intensity, resolve in this order (first hit wins):
+This is an **advisory convention the orchestrator follows when interpolating** the active intensity into a spawn prompt — NOT a deterministic resolver read by any hook or script. When the orchestrator assembles the OUTPUT STYLE snippet for an Agent() spawn or skill invocation, it SHOULD consult these sources in order and use the first one present:
 
 1. **Environment variable:** `BLITZ_OUTPUT_INTENSITY=lite|full|ultra` — session-scoped override, typically set for one `/loop` run.
 2. **Developer profile:** `.cc-sessions/developer-profile.json` top-level `output_intensity` field — per-user/per-repo preference that survives sessions.
@@ -61,7 +61,7 @@ When an Agent() spawn or skill invocation interpolates the active intensity, res
 4. **Output-style field:** the legacy `output_style:` frontmatter field (treated as an alias of `output_intensity`).
 5. **Default:** `lite`.
 
-The active intensity is what gets substituted into the canonical `agent-orchestration.md` §7 OUTPUT STYLE snippet when agents spawn. See `agent-orchestration.md` for the interpolation point.
+The chosen intensity is what gets substituted into the canonical `agent-orchestration.md` §7 OUTPUT STYLE snippet when agents spawn. See `agent-orchestration.md` for the interpolation point. Because resolution is model-followed rather than coded, treat the ordering as a strong recommendation, not a guaranteed runtime contract.
 
 ---
 

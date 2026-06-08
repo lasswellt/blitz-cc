@@ -466,12 +466,17 @@ after each fix commit:
   for each metric where direction-violation detected:
     if metric in {type_errors, as_any_count, lint_violations, completeness_score, mocks_in_src, todo_count, stale_worktree_branch_count}:
       git reset --hard HEAD~1   # only the fix commit
-      append to .cc-sessions/carry-forward.jsonl: {needs-human, reason: "ratchet:<metric>"}
+      # Conforming carry-forward line (Entry Schema, sprint-contracts.md). The
+      # human-review intent maps to blocker/notes — NOT a bare token (a non-schema
+      # line breaks the Reader's group_by(.id)).
+      append to .cc-sessions/carry-forward.jsonl:
+        {"id":"cf-<date>-ratchet-<metric>","ts":"<ISO>","event":"correction","status":"active","blocker":"ratchet:<metric>","notes":"auto-revert <metric> <old>-><new>; needs human review","provenance":{"source":"sprint-review","session":"<id>"}}
       activity-feed: event=auto_revert detail={metric, old, new}
       stop further auto-fixes for this metric this sprint
     elif metric == "test_count":
-      # flaky, do not auto-revert; flag for human
-      append to carry-forward: {needs-human, reason: "test_count regression — possible flaky"}
+      # flaky, do not auto-revert; flag for human via a conforming carry-forward line
+      append to .cc-sessions/carry-forward.jsonl:
+        {"id":"cf-<date>-ratchet-test_count","ts":"<ISO>","event":"correction","status":"active","blocker":"ratchet:test_count","notes":"test_count regression — possible flaky; needs human review","provenance":{"source":"sprint-review","session":"<id>"}}
 ```
 
 `test_count` regression NEVER triggers auto-revert (could be flaky test removal); it only flags. All other metrics are deterministic.

@@ -173,6 +173,8 @@ Step 1: <description>
 
 ## Phase 4: EXECUTE — Incremental Migration
 
+### 4.1 Execute Loop
+
 For each step: make the change (edit files, run codemods, update configs — least change principle), then verify:
 ```bash
 <TYPE_CHECK_CMD> 2>&1 | tail -30
@@ -202,7 +204,7 @@ Migration Progress: <current> → <target>
   [ ] Step 6: Clean up deprecations — PENDING
 ```
 
-### 4.2.1 Output Artifacts (canonical, per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §migrate)
+### 4.2 Output Artifacts (canonical, per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §migrate)
 
 Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
 - `plan.md` — incremental step plan + per-step verification commands.
@@ -217,13 +219,13 @@ After each step (pass or fail), update `STATE.md`:
   "remaining":["..."], "last_updated":"<ISO-8601>" }
 ```
 
-### 4.2.2 Resume Contract (`--resume`)
+### 4.3 Resume Contract (`--resume`)
 
 At Phase 0, if `docs/migrations/<from>-<to>/STATE.md` exists:
 - **without `--resume`** — refuse to clobber: print `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1.
 - **with `--resume`** — read STATE.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
 
-### 4.3 Consecutive Failure Check
+### 4.4 Consecutive Failure Check
 
 Track consecutive failures across steps. If 3 steps in a row fail verification:
 

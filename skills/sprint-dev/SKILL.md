@@ -19,7 +19,7 @@ compatibility: ">=2.1.71"
 - For agent prompt templates, coordination patterns, and story distribution rules, see [references/main.md](references/main.md)
 - For autonomy modes (low/medium/high/full), see [session-lifecycle.md](/_shared/session-lifecycle.md) §Autonomy Levels
 - For checkpoint/resume + deviation handling + context hygiene, see [session-lifecycle.md](/_shared/session-lifecycle.md), [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For the carry-forward registry (Reader Algorithm + writer contract on story completion in Phase 3.1a), see [sprint-contracts.md](/_shared/sprint-contracts.md)
+- For the carry-forward registry (Reader Algorithm + writer contract on story completion in Phase 3.2 step 3.2.1b), see [sprint-contracts.md](/_shared/sprint-contracts.md)
 - For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agent-orchestration.md)
 - For package install policy (every dep added by backend-dev / frontend-dev / test-writer agents resolves to registry latest, no invented versions), see [security.md](/_shared/security.md). Sprint-dev injects this into every dev-agent prompt via the Dev Agent Prompt Specification in references/main.md.
 - For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
@@ -260,15 +260,15 @@ Agent(
 
 **Per-wave caps (CRITICAL)** — whichever bites first: ≤**4 stories** AND ≤**6 affected files** per agent per wave (sum across stories). A 5-file story + two 1-file siblings = 7 files → split to next wave even with 3-story count.
 
-**Agent prompt content** — full 12-item prompt specification (role, stories, BUDGET block, project conventions, commit format, conventions guide, reusable assets, anti-mock rules, deviation protocol, wave assignment, context management, HEARTBEAT+PARTIAL protocol) is in `references/main.md` §**"Dev Agent Prompt Specification"**. Every spawn must include all 12 items.
+**Agent prompt content** — full 14-item prompt specification (role, stories, BUDGET block, project conventions, commit format, conventions guide, reusable assets, anti-mock rules, deviation protocol, wave assignment, context management, HEARTBEAT+PARTIAL protocol, package install policy, KNOWLEDGE.md Project Lessons block) is in `references/main.md` §**"Dev Agent Prompt Specification"**. Every spawn must include all 14 items.
 
 ### 2.3-W Dispatch via Workflow (opt-in path — one wave per call)
 
-When §2.0 selected the `Workflow` path, dispatch **each wave** as one `parallel()` barrier with `isolation: 'worktree'` and `schema:` validation. The barrier replaces the Phase 3.2 Monitor loop *within* a wave: it returns only when every story-agent in the wave finishes, handing control back to main-thread Bash at the wave boundary for STATE.md + carry-forward writes (§3.1a/§3.1b) and the commit+push (§3.1c). Then the orchestrator calls `Workflow` again for the next wave.
+When §2.0 selected the `Workflow` path, dispatch **each wave** as one `parallel()` barrier with `isolation: 'worktree'` and `schema:` validation. The barrier replaces the Phase 3.2 Monitor loop *within* a wave: it returns only when every story-agent in the wave finishes, handing control back to main-thread Bash at the wave boundary for STATE.md + carry-forward writes (§3.2.1a/§3.2.1b) and the commit+push (§3.2.1c). Then the orchestrator calls `Workflow` again for the next wave.
 
 ```js
 export const meta = { name: 'sprint-dev-wave', description: 'Dispatch one dependency-ordered wave of dev agents in isolated worktrees', phases: [{ title: 'Wave' }] }
-// args: { wave:N, agents:[{role,prompt}], storySchema } — prompts are the 12-item spec; worktree per agent
+// args: { wave:N, agents:[{role,prompt}], storySchema } — prompts are the 14-item spec; worktree per agent
 const results = await parallel(args.agents.map(a => () =>
   agent(a.prompt, { label: `${a.role}:w${args.wave}`, phase: 'Wave',
     agentType: `blitz:${a.role}`, isolation: 'worktree', schema: args.storySchema })))
@@ -279,7 +279,7 @@ return { wave: args.wave, agents: results.map((r, i) => ({ role: args.agents[i].
 - `team_name` semantics: the `Workflow` per-wave barrier subsumes team coordination (no peer messaging within a wave); cross-wave state lives in STATE.md, not a persistent team.
 - `null` result = agent died → main-thread applies the §2.4 circuit breaker (3-strike → `blocked` + `block_reason`, persisted to STATE.md) and may re-dispatch the story in a later wave.
 - **Cross-session durability via re-derive, not `resumeFromRunId`.** If a wave is interrupted and the session ends, the next invocation takes the §0 STATE.md resume flow, re-derives `remaining = all − done − blocked` (§1.4 `wave-plan.json`), and dispatches each remaining wave via `Workflow` again — only the not-yet-`done` stories per wave (per-story granularity). `resumeFromRunId` is an in-session-only optimization for a re-tick whose run is still live; it is never passed across sessions.
-- Each `a.prompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + the full 12-item spec. After each wave returns, proceed to Phase 3.1a–3.1c (collect → registry → commit) unchanged, then loop to the next wave.
+- Each `a.prompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + the full 14-item spec. After each wave returns, proceed to Phase 3.2.1a–3.2.1c (STATE.md → registry → commit) unchanged, then loop to the next wave.
 
 ### 2.5 Create Tasks with Dependency Ordering
 
@@ -308,7 +308,7 @@ agent_tracker = {
 
 **Circuit breaker**: if an agent fails the same story 3 times OR emits `ESCALATE:`, mark `blocked` and set `block_reason` on the story (persist to STATE.md). Controlled vocabulary + SCOPE_FILES injection pattern in `references/main.md` §**"`block_reason` Vocabulary"** and §**"Per-Story Scope Constraint"**.
 
-**Attempt observability (Alt A).** On each failed attempt, increment `total_attempts` and stamp `last_attempt_ts`, and mirror both to the STATE.md Blocked table `Attempts` / `Last Attempt` columns (§3.1b). These are **diagnostic only** — they make stuck-after-recovery and env-kill patterns visible across sessions without locking the breaker. The breaker counter (`failed_attempts`) is NOT rebuilt from them on resume; it resets to 0 per new sprint run (Airflow-`clear` / CI-re-run model — a `blitz:next` re-invocation is operator intervention). Rationale: `docs/_research/2026-06-07_deferred-resume-microopts.md` Alt A.
+**Attempt observability (Alt A).** On each failed attempt, increment `total_attempts` and stamp `last_attempt_ts`, and mirror both to the STATE.md Blocked table `Attempts` / `Last Attempt` columns (§3.2.1a). These are **diagnostic only** — they make stuck-after-recovery and env-kill patterns visible across sessions without locking the breaker. The breaker counter (`failed_attempts`) is NOT rebuilt from them on resume; it resets to 0 per new sprint run (Airflow-`clear` / CI-re-run model — a `blitz:next` re-invocation is operator intervention). Rationale: `docs/_research/2026-06-07_deferred-resume-microopts.md` Alt A.
 
 ---
 
@@ -319,10 +319,10 @@ Each agent follows a per-story loop: read → implement → verify → check don
 
 ### 3.2 Orchestrator Monitoring Loop
 
-1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. **Workflow path (§2.3-W):** the per-wave `parallel()` barrier already blocks until the wave completes and returns structured per-story results — skip the Monitor loop within a wave; resume this loop's STATE.md/commit duties (3.1a–3.1c) at each wave boundary between `Workflow` calls.
-1a. **Write carry-forward registry progress on story `DONE:`.** Before updating STATE.md, follow the writer contract in [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers (sprint-dev): validate story `registry_entries` ids, compute `new_actual = current + delta` (clamp at `scope.target`), append a `progress` line transitioning to `partial` or `complete`, log the activity-feed mirror. Apply inference-fallback (parent-epic link with `delta: 1`) when story omits `registry_entries`.
-1b. **Update STATE.md** after each story completion or wave boundary per [session-lifecycle.md](/_shared/session-lifecycle.md). Include wave progress. For blocked/in-progress rows, write the `Attempts` (`total_attempts`) and `Last Attempt` (`last_attempt_ts`) columns — observability-only (Alt A); do not rebuild the breaker from them on resume.
-1c. **Commit and push at wave boundaries**: `git add -A && git commit -m "feat(sprint-${N}): wave ${WAVE} complete — ${COMPLETED}/${TOTAL} stories" && git push origin HEAD`. Also push after each integration fix round (Phase 4.3) and at sprint completion.
+1. **Monitor progress** (event-driven): start `Monitor(command: "tail -f ${PROGRESS_FILE} | grep --line-buffered 'done\\|blocked\\|wave_complete'", persistent: true)` before first wave. Fall back to `TaskList` polling (every 2-3 turns) if Monitor unavailable. **Workflow path (§2.3-W):** the per-wave `parallel()` barrier already blocks until the wave completes and returns structured per-story results — skip the Monitor loop within a wave; resume this loop's STATE.md/commit duties (3.2.1a–3.2.1c) at each wave boundary between `Workflow` calls.
+3.2.1a. **Update STATE.md Completed FIRST (durable `done[]` source).** After each story completion or wave boundary, write the STATE.md Completed table per [session-lifecycle.md](/_shared/session-lifecycle.md) BEFORE the carry-forward delta in 3.2.1b. Resume sources `done[]` from STATE.md only (§0 step 1 / SKILL.md:174), so writing STATE.md first makes STATE.md authoritative and the registry delta replay-safe. Include wave progress. For blocked/in-progress rows, write the `Attempts` (`total_attempts`) and `Last Attempt` (`last_attempt_ts`) columns — observability-only (Alt A); do not rebuild the breaker from them on resume.
+3.2.1b. **Write carry-forward registry progress on story `DONE:`.** Idempotency rule (R3-LOOP-02): a crash between STATE.md write (3.2.1a) and this step re-dispatches the story on resume, so before appending a `progress` delta, reduce the registry and SKIP if a `progress` line for this `(entry_id, story_id, sprint)` triple already exists — never double-count the delta. Then follow the writer contract in [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers (sprint-dev): validate story `registry_entries` ids, compute `new_actual = current + delta` (clamp at `scope.target`), append the `progress` line transitioning to `partial` or `complete`, log the activity-feed mirror. Apply inference-fallback (parent-epic link with `delta: 1`) when story omits `registry_entries`.
+3.2.1c. **Commit and push at wave boundaries**: `git add -A && git commit -m "feat(sprint-${N}): wave ${WAVE} complete — ${COMPLETED}/${TOTAL} stories" && git push origin HEAD`. Also push after each integration fix round (Phase 4.3) and at sprint completion.
 2. **Unblock stories** — when a dependency completes, send newly-ready stories to the appropriate agent.
 3. **Coordinate via SendMessage** — when an agent completes a story another depends on:
    ```

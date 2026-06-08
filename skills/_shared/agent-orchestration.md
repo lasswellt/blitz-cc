@@ -981,7 +981,7 @@ The orchestrator never silently writes files. The orchestrator never spawns suba
 Two paths:
 
 1. **Per-project**: project-level `.claude/settings.json` overrides plugin settings. Set `{"agent": null}` to disable.
-2. **Per-session**: env var `BLITZ_DISABLE_ORCHESTRATOR=1`. Hooks honor this and skip orchestrator initialization.
+2. **Settings override (only working mechanism)**: the same `{"agent": null}` override (or removing the plugin `agent` setting) in `~/.claude/settings.json`. NOTE: the env var `BLITZ_DISABLE_ORCHESTRATOR=1` is **not currently honored by any blitz hook** (no hook reads it) — use the settings override.
 
 Disabling falls back to direct user-typed slash commands as the sole entry point — the pre-v1.11 behavior.
 
@@ -1322,7 +1322,7 @@ Every `Agent()` prompt MUST instruct the subagent to return ONLY the canonical J
 
 #### Exception: sprint-dev streaming prefixes (`DONE:`/`BLOCKED:`)
 
-`sprint-dev`'s coordinated dev agents (backend-dev, frontend-dev, test-writer) are a documented exception to the JSON-only reply: during a multi-story wave they stream single prefixed status lines (`DONE:`/`BLOCKED:`/`DEVIATION:`/`ESCALATE:`/`HEARTBEAT:`) to the orchestrator's progress file for live monitoring (see [spawn-protocol.md](#subagent-spawn-protocol) §Communication Prefix Table). These are event-stream lines parsed by the Monitor tool, not final-reply bloat. The canonical JSON reply contract above still governs one-shot `Agent()` returns (reviewers, critics, researchers).
+`sprint-dev`'s coordinated dev agents (backend-dev, frontend-dev, infra-dev, test-writer) are a documented exception to the JSON-only reply: during a multi-story wave they stream single prefixed status lines (`DONE:`/`BLOCKED:`/`DEVIATION:`/`ESCALATE:`/`HEARTBEAT:`) to the orchestrator's progress file for live monitoring (see [spawn-protocol.md](#subagent-spawn-protocol) §Communication Prefix Table). These are event-stream lines parsed by the Monitor tool, not final-reply bloat. The canonical JSON reply contract above still governs one-shot `Agent()` returns (reviewers, critics, researchers).
 
 #### Embedding in spawn prompts
 

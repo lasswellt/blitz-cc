@@ -44,3 +44,10 @@ jobs:
           for f in installer/bin/*.js installer/src/*.js; do
             node --check "$f"
           done
+
+      - name: Hook tests (bats)
+        run: |
+          command -v bats >/dev/null || sudo apt-get update && sudo apt-get install -y bats
+          command -v bats >/dev/null || { echo "bats missing"; exit 1; }   # HTC-4: fail, don't skip vacuously
+          bats hooks/tests/
+          bash hooks/scripts/tests/test-link-resolver.sh

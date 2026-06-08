@@ -15,10 +15,11 @@ if [[ ! -f "$REGISTRY" ]]; then
   exit 1
 fi
 
-python3 - "$REGISTRY" <<'PY'
-import json, sys
+python3 - "$REGISTRY" "$ROOT" <<'PY'
+import json, sys, os, re, shlex
 
 path = sys.argv[1]
+root = sys.argv[2] if len(sys.argv) > 2 else "."
 try:
     d = json.load(open(path))
 except Exception as e:
@@ -26,6 +27,7 @@ except Exception as e:
     sys.exit(1)
 
 errors = []
+warnings = []
 checks = d.get("checks", [])
 
 # 1. row-count floor (20 detectors + 5 pillars + O2/O3/fw = 30 today; floor at 20)
@@ -66,9 +68,51 @@ for c in checks:
     if lane == "semantic" and dt != "semantic":
         errors.append(f"{cid}: semantic lane must use detection.type=='semantic', got {dt!r}")
 
+    # 4b. command executability (advisory WARNINGS — never fails the gate, so
+    #     prose-described regex/counter rows and out-of-package script gaps don't
+    #     hard-block; surfaces the R3-CR-01/02 class: bare binaries that don't
+    #     ship + dangling scripts/ references). Conservative, two parts:
+    #   (a) leading-token of a shell-runnable row resolves to a hyphenated bare
+    #       binary (e.g. blitz-import-graph) that is not a known tool/builtin and
+    #       not a repo path -> warn. Only checked for git/regex/tsc rows whose
+    #       leading token has executable shape; `command`/`counter` rows hold
+    #       inspection predicates / operational signals, not shell lines.
+    #   (b) any scripts/*.sh referenced anywhere in the command must exist -> warn.
+    cmd = det.get("command", "")
+    if dt != "semantic":
+        SAFE_TOOLS = {
+            "grep", "git", "tsc", "npx", "jq", "node", "wc", "test",
+            "find", "sed", "awk", "cat", "echo", "head", "tail", "sort",
+            "uniq", "python3", "bash", "sh", "rg", "ls", "diff", "xargs",
+        }
+        if dt in {"git", "regex", "tsc"}:
+            first = cmd.strip().split("|")[0].strip()
+            try:
+                head = (shlex.split(first) or [""])[0]
+            except ValueError:
+                head = first.split()[0] if first.split() else ""
+            # executable shape: hyphenated lowercase name (blitz-import-graph,
+            # detect-stack) or a relative path — but NOT a known safe tool.
+            looks_binary = bool(re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)+", head))
+            if (looks_binary and head not in SAFE_TOOLS
+                    and not os.path.isfile(os.path.join(root, head))):
+                warnings.append(
+                    f"{cid}: detection.command leading token {head!r} looks like a bare binary "
+                    f"that does not ship (not a known tool or repo path)"
+                )
+        # (b) any scripts/*.sh anywhere in the command must exist
+        for m in re.findall(r"(scripts/[\w./-]+\.sh)", cmd):
+            if not os.path.isfile(os.path.join(root, m)):
+                warnings.append(f"{cid}: detection.command references missing script {m!r}")
+
 # 5. confidence_gate.reject_bypass present (facts bypass the min-confidence gate)
 if "reject_bypass" not in (d.get("confidence_gate") or {}):
     errors.append("confidence_gate.reject_bypass missing")
+
+if warnings:
+    print(f"check-registry-validate: {len(warnings)} command-executability warning(s) in {path}:", file=sys.stderr)
+    for w in warnings:
+        print(f"  ! {w}", file=sys.stderr)
 
 if errors:
     print(f"check-registry-validate: {len(errors)} violation(s) in {path}:", file=sys.stderr)

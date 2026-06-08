@@ -24,8 +24,8 @@
     ],
     "whole_registry": {
       "rows": 94,
-      "reject": 18,
-      "advisory": 76
+      "reject": 16,
+      "advisory": 78
     }
   },
   "field_contract": {
@@ -378,14 +378,14 @@
     {
       "id": "det-16",
       "name": "orphaned-files-never-imported",
-      "lane": "deterministic",
+      "lane": "semantic",
       "pillar": "maintainability",
       "base_confidence": 0.75,
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
-        "type": "import-graph",
-        "command": "blitz-import-graph --orphans src/   # AST import-graph traversal, no single grep"
+        "type": "semantic",
+        "command": "semantic: trace orphan files by reading the import graph — list src/ modules never imported by any reachable entrypoint (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "review",
@@ -635,14 +635,14 @@
     {
       "id": "o3-wiring",
       "name": "export-to-import-tracing",
-      "lane": "deterministic",
+      "lane": "semantic",
       "pillar": "wiring",
       "base_confidence": 0.9,
       "severity": "P2",
-      "verdict_authority": "reject",
+      "verdict_authority": "advisory",
       "detection": {
-        "type": "import-graph",
-        "command": "blitz-import-graph --trace-exports src/   # export-to-import reachability"
+        "type": "semantic",
+        "command": "semantic: trace export-to-import reachability by reading the import graph — flag new modules whose exports are never imported (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "review",
@@ -657,14 +657,14 @@
     {
       "id": "o3-orphan-route",
       "name": "orphan-route-auth-coverage",
-      "lane": "deterministic",
+      "lane": "semantic",
       "pillar": "wiring",
       "base_confidence": 0.85,
       "severity": "P2",
-      "verdict_authority": "reject",
+      "verdict_authority": "advisory",
       "detection": {
-        "type": "import-graph",
-        "command": "blitz-import-graph --routes --auth-guards   # route nav mapping + auth guard coverage"
+        "type": "semantic",
+        "command": "semantic: map route nav reachability + auth-guard coverage by reading the import graph — flag orphan routes and guards missing on protected routes (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "review"
@@ -2046,7 +2046,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "scripts/detect-stack.sh | grep -q \"Adapter conflict: quasar+tailwind\""
+        "command": "scripts/detect-stack.sh | grep -q \"incompat=quasar+tailwind\""
       },
       "enforcement": [
         "skill:review --only design",

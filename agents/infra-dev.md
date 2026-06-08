@@ -186,3 +186,7 @@ Report to the orchestrator with one of:
 - `BLOCKED: S${N}-XXX` — stuck after max 3 attempts. Include the specific error
   and what you tried.
 - `DEVIATION:` / `ESCALATE:` — per the tiers above, before proceeding.
+- `HEARTBEAT:` — after each story DONE, append `HEARTBEAT: S${N}-XXX done at <ISO-timestamp>`
+  (`date -u +%Y-%m-%dT%H:%M:%SZ`) to `${SESSION_TMP_DIR}/agent-infra-dev-progress.md`.
+- `PARTIAL:` — if you have fewer than 3 tool calls remaining, STOP before starting a new
+  story; send `PARTIAL: <N> done, <M> remaining` with COMPLETED/REMAINING/CONFIDENCE and end.

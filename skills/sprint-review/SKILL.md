@@ -299,7 +299,7 @@ Full invariant procedures (Invariants 1-4, hard-gate decision, report schema, es
 ### Invariants 6 and 7 — Ratchet + Critic (BLOCKERs)
 
 - **Invariant 6 (ratchet)**: see [`/_shared/quality-engine.md`](/_shared/quality-engine.md). Compute 8 monotonic metrics, compare to `docs/sweeps/ratchet.json`, tighten on improvement, block PASS on regression without covering carry-forward. `type_errors > 0` is an absolute floor. The 8th metric `stale_worktree_branch_count` (added 2026-05-17 per [worktree-lifecycle.md](/_shared/worktree-lifecycle.md)) requires existing projects to run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt. Full procedure: `references/main.md` §Invariant 6 — Ratchet Procedures.
-- **Invariant 7 (critic)**: spawn `blitz:critic` (read-only adversarial — see `agents/critic.md`). Runs 19-detector shortcut scan + ratchet + hallucinated-symbol spot-check; returns canonical JSON `{verdict: LGTM | REJECT, ...}`. REJECT blocks PASS. Spawn template: `references/main.md` §Invariant 7 — Critic Spawn.
+- **Invariant 7 (critic)**: spawn `blitz:critic` (read-only adversarial — see `agents/critic.md`). Runs 20-detector shortcut scan + ratchet + hallucinated-symbol spot-check; returns canonical JSON `{verdict: LGTM | REJECT, ...}`. REJECT blocks PASS. Spawn template: `references/main.md` §Invariant 7 — Critic Spawn.
 
 ### Invariant 5 — Agent-Prompt Output Style Snippet (BLOCKER)
 

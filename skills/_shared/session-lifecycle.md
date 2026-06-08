@@ -82,7 +82,11 @@ Execute this preamble **before any other work** in the skill:
       - `last_activity` is older than 30 minutes AND no activity feed entry from this session ID exists in the last 50 lines of `activity-feed.jsonl`
    3. If the session is stale:
       - Update the session file: set `status` to `"failed"`, add `"failed_reason": "stale_session_cleanup"`.
-      - Release any locks listed in `locks_held` (delete the corresponding `<file>.lock` files).
+      - Release any locks listed in `locks_held` by deleting the corresponding
+        `<file>.lock` files **only after confirming each still names the stale
+        session** (`grep -q "<STALE_SID>" "<file>.lock"`). A lock that has since been
+        re-acquired by another live session no longer names the stale SID and MUST be
+        left alone — the same ownership-guard discipline the Lock Cycle trap applies.
       - Log cleanup to the activity feed:
         ```jsonl
         {"ts":"<ISO-8601>","session":"<CURRENT_SESSION_ID>","skill":"<skill-name>","event":"warning","message":"Cleaned up stale session <STALE_SID> (inactive >30min or started >4h ago)","detail":{"stale_session":"<STALE_SID>","reason":"inactive|timeout"}}
@@ -203,11 +207,26 @@ TOCTOU window where two sessions both pass the CHECK before either writes. Use a
 atomic CAS primitive (`set -o noclobber` redirect, or `mkdir`, both of which fail
 iff the lock already exists). VERIFY is demoted to a post-acquire sanity check.
 
+Two release hazards the trap MUST avoid:
+- **Multi-lock leak.** EXIT traps do **not** stack — a second `trap '... "$f.lock" ...'`
+  replaces the first, and `$f` resolves at fire-time to its LAST value, so a session
+  holding several locks would leak all-but-one on abort. Accumulate every held lock
+  path in `RELEASE_LIST` at acquire-time (captured then, not via a mutating `$f`) and
+  release the whole array in a single trap.
+- **Foreign-lock free.** Never `rm` a lock you do not own: after a stale-sweep another
+  session may legitimately re-acquire the same path. The ownership guard
+  `grep -q "$SID"` (your own session_id) MUST gate BOTH the trap and the explicit
+  step-5 RELEASE.
+
 ```bash
+RELEASE_LIST=()   # accumulate every lock this session holds (set once, near the top)
+# trap captures the array by reference at fire-time; guard each path by ownership.
+trap 'for l in "${RELEASE_LIST[@]}"; do grep -q "$SID" "$l" 2>/dev/null && rm -f "$l"; done' EXIT INT TERM
+
 # 1. CHECK+ACQUIRE (atomic CAS): create-if-absent in one syscall.
 #    noclobber makes `>` fail (non-zero) when "$f.lock" already exists.
 if ( set -o noclobber; printf '%s' "{\"session_id\":\"$SID\",\"acquired\":\"$(date -u +%FT%TZ)\"}" > "$f.lock" ) 2>/dev/null; then
-  trap 'rm -f "$f.lock"' EXIT INT TERM   # 2. RELEASE-on-abort: never leak the lock on crash/signal
+  RELEASE_LIST+=("$f.lock")   # 2. register for RELEASE-on-abort (never leak on crash/signal)
 else
   # contended — apply Stale Lock Detection, else Wait/Retry below.
   :
@@ -215,7 +234,8 @@ fi
 # Alternative atomic primitive: `mkdir "$f.lock.d" 2>/dev/null || <contended>`
 # 3. VERIFY:  Re-read the lock — confirm it holds YOUR session_id (sanity only).
 # 4. OPERATE: Read/modify/write the protected file.
-# 5. RELEASE: rm -f "$f.lock"  (trap above also fires on normal EXIT).
+# 5. RELEASE: ownership-guarded — grep -q "$SID" "$f.lock" && rm -f "$f.lock"
+#    (the trap above also fires on normal EXIT and applies the same ownership guard).
 ```
 
 #### Stale Lock Detection

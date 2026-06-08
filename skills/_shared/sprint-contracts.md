@@ -187,7 +187,7 @@ For every research doc touched this sprint (any doc referenced by a story, epic,
 
 For every registry entry with `status ∈ {active, partial}`:
 - If `last_touched.sprint == <current sprint>` → pass (entry was touched this sprint).
-- Else if the latest line for the entry has `event: "deferred"` with a non-empty `notes` → pass (explicitly deferred).
+- Else if **any** line for the entry is a `deferred` event with a non-empty `notes` → pass (explicitly deferred). The deferred-escape is **sticky**: a later `correction`/`auto_waived` delta that field-merges over the entry (changing the merged `.event`) does not revoke it. The Reader computes this as a `_deferred` flag during reduction rather than testing the merged `.event` (see Reader Algorithm Step 1/4).
 - Else → **FAIL** and increment `rollover_count`. Require the author to either (a) link a story in this sprint that touched the entry, (b) write a `deferred` event with a reason, or (c) write a `dropped` event with `drop_reason` + `revival_candidate`.
 
 Entries with `rollover_count >= 3` escalate: they must be resolved by human action before sprint close (no auto-inject into next sprint). This prevents infinite bounce loops.
@@ -228,12 +228,25 @@ set -euo pipefail
 REG="${REG:-.cc-sessions/carry-forward.jsonl}"
 OUT="${SESSION_TMP_DIR}/registry-state.json"
 
-# Step 1 — Reduce to latest-wins.
+# Step 1 — Reduce to latest-wins (field-merge), preserving a sticky deferred flag.
+# Field-merge makes .event the LAST event, so a deferred line later patched by a
+# correction/auto_waived delta would lose its deferred-ness. Compute `_deferred`
+# during reduction: true iff ANY line for this id is `event:deferred` with
+# non-empty notes. Step 4 tests `_deferred`, not the merged `.event`.
 [ -s "$REG" ] || { echo "{}" > "$OUT"; exit 0; }
-LATEST=$(jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' "$REG")
+LATEST=$(jq -s '
+  group_by(.id)
+  | map(
+      . as $grp
+      | ($grp | sort_by(.ts) | reduce .[] as $x ({}; . * $x))
+      + { _deferred: ($grp | any(.event == "deferred" and ((.notes // "") != ""))) }
+    )
+' "$REG")
 
-# Step 2 — Bucket by status.
+# Step 2 — Bucket by status. Strip the synthetic `_deferred` flag (internal to the
+# Reader's Invariant-2 check) so registry-state.json stays schema-clean.
 echo "$LATEST" | jq '
+  map(del(._deferred)) |
   {
     active:   map(select(.status == "active")),
     partial:  map(select(.status == "partial")),
@@ -252,12 +265,15 @@ fi
 
 # Step 4 — Invariant 2 (active/partial entries touched-or-deferred this sprint).
 # A deferred entry escapes STALE ONLY with non-empty notes (matches :190).
-# A bare `event:deferred` with empty/absent notes is still STALE.
+# We test the sticky `_deferred` flag (computed in Step 1 across ALL lines for the
+# id), NOT the merged `.event`: a deferred line later patched by a correction/
+# auto_waived delta sets `.event=correction` but stays escaped. A bare
+# `event:deferred` with empty/absent notes never sets `_deferred`, so it is STALE.
 STALE=$(echo "$LATEST" | jq --arg s "$SPRINT" '
   [.[] | select(
     (.status == "active" or .status == "partial") and
     .last_touched.sprint != $s and
-    (.event != "deferred" or ((.notes // "") == ""))
+    (._deferred != true)
   )]
 ')
 STALE_COUNT=$(echo "$STALE" | jq 'length')
@@ -533,7 +549,7 @@ Required = R, Optional = O, Conditional = C (required iff condition).
 | `research_refs` | string[] | sprint-plan Phase 3.2 | sprint-dev (read findings during impl), sprint-review (Invariant 1) | R |
 | `github_issue` | int\|null | sprint-plan Phase 4.4 (after issue create); never sprint-dev | sprint-review (link in report), ship | R (nullable) |
 | `carry_forward` | bool | sprint-plan Phase 0 step 8 (if injected from prior sprint) | sprint-review Phase 3.6 Invariant 4 (cross-check) | R |
-| `registry_entries` | object[] | sprint-plan Phase 4.1 (link stories to scope) | sprint-dev Phase 3.2 step 1a (writes `progress` event) | O |
+| `registry_entries` | object[] | sprint-plan Phase 4.1 (link stories to scope) | sprint-dev Phase 3.2 step 1b (writes `progress` event; STATE.md write is 1a) | O |
 | `registry_entries[*].id` | string | sprint-plan | sprint-dev (registry id validation; hard-fail on unknown) | R if `registry_entries` present |
 | `registry_entries[*].delta` | int | sprint-plan | sprint-dev (passed as `delivered.actual` increment) | O (defaults to `len(files)`) |
 | `source_finding` | object | sprint-plan `--gaps` mode | sprint-review (gap-closure traceability) | C (required iff `type == "gap-closure"`) |
@@ -567,7 +583,7 @@ Reference implementation lives in `agents/critic.md` §2.5 (consumes the schema)
 
 `verify:` is a story-local pre-commit gate (sprint-dev story-done check). `acceptance_checks:` is a critic-level pre-PASS gate (sprint-review). They overlap intentionally: `verify:` ensures the story implementation passes its own tests; `acceptance_checks:` ensures the artifact contains the right shape (specific symbols exported, no `as any`, etc.). Both must pass for sprint PASS; failure surfaces at different phases.
 
-**Consumer hard rules.** Consumers MUST treat unknown fields as forward-compatible (don't reject), but MUST hard-fail on missing required fields. The `registry_entries` inference fallback (parent-epic pro-rata with `delta: 1`) lives in sprint-dev Phase 3.2 step 1a — see [carry-forward-registry.md](#carry-forward-registry-protocol) §Writers.
+**Consumer hard rules.** Consumers MUST treat unknown fields as forward-compatible (don't reject), but MUST hard-fail on missing required fields. The `registry_entries` inference fallback (parent-epic pro-rata with `delta: 1`) lives in sprint-dev Phase 3.2 step 1b — see [carry-forward-registry.md](#carry-forward-registry-protocol) §Writers.
 
 ---
 

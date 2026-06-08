@@ -475,13 +475,13 @@ Record results as `invariant_1: {pass|fail, violations: [...]}` in report.
 For every registry entry with `status ∈ {active, partial}`:
 
 - **Touched:** `last_touched.sprint == sprint-${SPRINT_NUMBER}` → pass.
-- **Explicitly deferred:** latest line has `event: "deferred"` with non-empty `notes` AND written during this sprint → pass.
+- **Explicitly deferred:** the **merged** entry has `status == "deferred"` (the deferral writer sets `status: "deferred"`, not just `event: "deferred"`) with non-empty `notes` → pass. Do **NOT** test `.event` of the merged object for the deferred-escape: the reader field-merges by `id` in `ts` order, so a deferred-then-corrected entry has its `.event` clobbered to `"correction"` and would be mis-flagged STALE. The canonical Step-4 reducer in [sprint-contracts.md](/_shared/sprint-contracts.md) §registry escapes STALE on `status == "deferred"` (or an explicit `deferred` flag), which survives later corrections. Keep this prose consistent with that Step 4.
 - **Waivered this sprint:** entry id in current manifest's `registry_entries_touched`, AND registry has matching `event: "auto_waived"` line dated within sprint → pass. Catches sprint-plan Phase 4.1 auto-waivers.
-- **Otherwise:** **FAIL**. Increment `rollover_count` in a new `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so this patches `rollover_count` while preserving `status`/`scope`/`coverage`):
+- **Otherwise:** **FAIL**. Increment `rollover_count` in a new `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so this patches `rollover_count` while preserving `status`/`scope`/`coverage` — and because the deferred-escape now tests merged `status`, a prior `deferred` is not undone by this `correction` line, which omits `status`):
   ```jsonl
   {"id":"<entry-id>","ts":"<ISO-8601>","event":"correction","rollover_count":<prev+1>,"notes":"sprint-review Invariant 2: entry not touched in sprint-${SPRINT_NUMBER}"}
   ```
-  Operator must (a) link a story that advanced the entry, (b) write `deferred` event with reason, or (c) write `dropped` event with `drop_reason` + `revival_candidate`.
+  Operator must (a) link a story that advanced the entry, (b) write a `deferred` event that sets `status: "deferred"` with reason, or (c) write `dropped` event with `drop_reason` + `revival_candidate`.
 
 **Waiver accounting sub-check:** cross-reference manifest `waived_ac_count > 0` against registry. For every sprint with waivers, MUST have at least one `event: "auto_waived"` line written during sprint for entry whose `parent.epic` appears in the manifest's `epics` array. Missing mirror → Invariant 2 failure.
 
@@ -605,15 +605,28 @@ AS_ANY=$(grep -rEn '\bas any\b' src/ --include='*.ts' --include='*.tsx' --includ
 LINT_VIOLATIONS=$(npx --no-install eslint --format=json . 2>/dev/null | jq '[.[].errorCount] | add // 0')
 MOCKS_IN_SRC=$(grep -rEn '\b(vi\.mock|jest\.mock|sinon\.stub)\b' src/ --exclude-dir=__tests__ 2>/dev/null | wc -l)
 TODO_COUNT=$(grep -rEn '\b(TODO|FIXME)\b' src/ 2>/dev/null | wc -l)
+# stale_worktree_branch_count — deterministic, mirrors the detector at quality-engine.md §1
+STALE_WT=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -cE 'worktree-|sprint-[0-9]+/' || true)
+# completeness_score — source from the completeness lane already run this sprint
+# (Phase 1.5 / `/blitz:review --only completeness`). If that lane produced a number,
+# use it; else carry forward the prior snapshot value. NEVER fabricate.
+COMPLETENESS_SCORE="${COMPLETENESS_SCORE:-}"  # set by Phase 1.5 completeness lane if it ran
+if [ -z "$COMPLETENESS_SCORE" ]; then
+  COMPLETENESS_SCORE=$(jq -r '[.history[].metrics.completeness_score // empty] | last // .metrics.completeness_score.current // empty' "$RATCHET" 2>/dev/null)
+fi
 ```
+
+All **8** canonical ratchet metrics are now computed: `TEST_COUNT`, `TYPE_ERRORS`, `AS_ANY`, `LINT_VIOLATIONS`, `COMPLETENESS_SCORE`, `MOCKS_IN_SRC`, `TODO_COUNT`, `STALE_WT` (see [quality-engine.md](/_shared/quality-engine.md) §1 for the canonical metric table). Omitting any lets a regression in it silently pass.
 
 ### Compare and act
 
-For each metric:
+For each of the 8 metrics (map: `test_count→TEST_COUNT`, `type_errors→TYPE_ERRORS`, `as_any_count→AS_ANY`, `lint_violations→LINT_VIOLATIONS`, `completeness_score→COMPLETENESS_SCORE`, `mocks_in_src→MOCKS_IN_SRC`, `todo_count→TODO_COUNT`, `stale_worktree_branch_count→STALE_WT`):
 - direction `down`, `current > max_allowed` AND no carry-forward entry covering it → REGRESSION → BLOCKER
 - direction `up`, `current < min_allowed` AND no carry-forward entry → REGRESSION → BLOCKER
 - direction `down`, `current < max_allowed` → IMPROVEMENT → tighten `max_allowed` to `current`, append history snapshot
 - direction `up`, `current > min_allowed` → IMPROVEMENT → tighten `min_allowed` to `current`, append history snapshot
+
+`completeness_score` (↑) and `stale_worktree_branch_count` (↓) are full ratchet metrics — compare them in this loop too; do not skip them. If `COMPLETENESS_SCORE` is empty (lane did not run and no prior snapshot), skip only that metric's comparison and note `completeness_score: unmeasured` in the report — never treat empty as `0` (that would false-flag a regression).
 
 `type_errors > 0` is an absolute floor regardless of baseline — sprint FAILs.
 
@@ -622,7 +635,7 @@ For each metric:
 Append to `docs/sweeps/ratchet.json -> history[]`. Never rewrite prior entries:
 
 ```json
-{"sprint": "sprint-N", "ts": "2026-05-01T00:00:00Z", "metrics": {"test_count": 158, "type_errors": 0, "as_any_count": 2, "lint_violations": 5, "completeness_score": 94, "mocks_in_src": 3, "todo_count": 7}}
+{"sprint": "sprint-N", "ts": "2026-05-01T00:00:00Z", "metrics": {"test_count": 158, "type_errors": 0, "as_any_count": 2, "lint_violations": 5, "completeness_score": 94, "mocks_in_src": 3, "todo_count": 7, "stale_worktree_branch_count": 0}}
 ```
 
 ### Multi-agent worktree merge
@@ -644,7 +657,11 @@ LEAKED=$(git for-each-ref --format='%(refname:short)' \
   "refs/heads/sprint-${SPRINT_NUMBER}/tests" \
   "refs/heads/sprint-${SPRINT_NUMBER}/infra" \
   "refs/heads/sprint-${SPRINT_NUMBER}/integration" 2>/dev/null)
-if [ -n "$LEAKED" ]; then
+if [ "${BLITZ_SKIP_INVARIANT_8:-0}" = "1" ]; then
+  # Escape hatch honored: forensic review of broken sprints. Sprint cannot reach
+  # PASS while set — CONDITIONAL at best (see Phase 4.2).
+  [ -n "$LEAKED" ] && { echo "Invariant 8 CONDITIONAL: BLITZ_SKIP_INVARIANT_8=1 set; leaked branches present but check skipped:"; echo "$LEAKED" | sed 's/^/  - /'; } || echo "Invariant 8 CONDITIONAL: BLITZ_SKIP_INVARIANT_8=1 set; check skipped."
+elif [ -n "$LEAKED" ]; then
   echo "Invariant 8 FAIL: sprint-${SPRINT_NUMBER} leaked branches:"
   echo "$LEAKED" | sed 's/^/  - /'
   echo "Resolution: run /blitz:worktree-prune --apply --merged-only"

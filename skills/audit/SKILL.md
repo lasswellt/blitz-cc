@@ -132,7 +132,7 @@ return { agents: findings.map((f, i) => ({ name: args.roster[i].name, ok: f !== 
 - Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
 - `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).
 - `schema` replaces the `classify_output()` gate; `null` entries = failed agents (handled by Phase 2.2).
-- After the workflow returns, proceed to Phase 1.4 / Phase 2 unchanged.
+- After the workflow returns, proceed to Phase 1.4 / Phase 1.5 / Phase 2 unchanged.
 
 ### 1.1 Spawn 10 Pillar Agents via Agent Tool (default path)
 

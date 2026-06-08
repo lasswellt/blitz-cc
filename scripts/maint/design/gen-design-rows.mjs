@@ -152,7 +152,7 @@ const E4_ROWS = [
     "grep -rnE '(color|background-color):[[:space:]]*#' ${TARGETS} --include=*.vue --include=*.css",
     null, 'Layer 2 Quasar. Raw color outside the 8 brand vars + palette vocabulary; use $primary-family / bg-*/text-*.'),
   newRow('design-quasar-tailwind-coexist', 2, 'quasar', 'Quasar + Tailwind incompatibility',
-    'scripts/detect-stack.sh | grep -q "Adapter conflict: quasar+tailwind"',
+    'scripts/detect-stack.sh | grep -q "incompat=quasar+tailwind"',
     null, 'Layer 2 Quasar. Build conflict: class collisions + unlayered-CSS specificity war; Quasar overrides Tailwind on <q-*>.',
     'P1', 'command'),
 ];

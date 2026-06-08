@@ -35,3 +35,23 @@ load '_helpers'
   BLITZ_OVERRIDE_NO_VERIFY=1 assert_allows "block-no-verify.sh" \
     "$(fake_tool_input "git commit --no-verify -m 'emergency'")"
 }
+
+# ---------------------------------------------------------------------------
+# Segment-scoping regression cases (HTC-2). The short-flag scan must stay
+# inside the `git ... commit` segment and not leak across &&/; separators.
+# ---------------------------------------------------------------------------
+
+@test "blocks --no-verify after a chained command (lint && git commit --no-verify)" {
+  assert_blocks "block-no-verify.sh" \
+    "$(fake_tool_input "lint && git commit --no-verify")"
+}
+
+@test "blocks git commit -n after a semicolon-chained command (foo; git commit -n)" {
+  assert_blocks "block-no-verify.sh" \
+    "$(fake_tool_input "foo; git commit -n")"
+}
+
+@test "allows -n on a non-commit command chained after a clean commit" {
+  assert_allows "block-no-verify.sh" \
+    "$(fake_tool_input "git commit -m wip && npm run lint -n")"
+}

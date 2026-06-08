@@ -108,7 +108,7 @@ Wait for completion.
 
 ### 1.2 Completeness Gate
 
-Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review Phase 1.5):
+Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review's deterministic lane (--only completeness)):
 ```
 Invoke: /blitz:review --only completeness
 ```

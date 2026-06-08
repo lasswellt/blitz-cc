@@ -247,6 +247,9 @@ ANTI-MOCK RULES (CRITICAL — NON-NEGOTIABLE):
 PROJECT CONVENTIONS (from discovery):
 ${CONVENTIONS_GUIDE}
 
+REUSABLE ASSETS (use these, do not recreate):
+${REUSABLE_ASSETS}
+
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
 DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
@@ -354,12 +357,18 @@ Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md`.
 
 ### Per-Story Scope Constraint (atomic+scoped attempts)
 
-When dispatching a story to an agent, declare the file set the agent MAY touch. Derived from the story's `files_touched` frontmatter (if present) or inferred from the story body's mentioned paths:
+When dispatching a story to an agent, declare the file set the agent MAY touch. Derived from the story's canonical `files` frontmatter (per [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Field Contract; if present) or, as a true fallback for stories missing `files:`, inferred from the story body's mentioned paths:
 
 ```bash
-# Per story dispatch
-SCOPE_FILES=$(jq -r '.files_touched[]?' "$STORY_FILE" 2>/dev/null \
-  || grep -oE '[a-zA-Z0-9_/-]+\.(ts|tsx|vue|js|md)' "$STORY_FILE" | sort -u)
+# Per story dispatch. Canonical field is `files` (sprint-contracts.md §Field Contract).
+# Read the parsed YAML front-matter as JSON (e.g. via the project's fm→json helper),
+# then take .files. The body-grep is a TRUE fallback — it runs ONLY when files: is
+# absent/empty, not unconditionally.
+SCOPE_FILES=$(jq -r '.files[]?' "$STORY_FRONTMATTER_JSON" 2>/dev/null)
+if [ -z "$SCOPE_FILES" ]; then
+  # Fallback: story omits files: — infer paths from the body.
+  SCOPE_FILES=$(grep -oE '[a-zA-Z0-9_/-]+\.(ts|tsx|vue|js|md)' "$STORY_FILE" | sort -u)
+fi
 echo "FILES YOU MAY TOUCH:" > "${WORKTREE}/.scope-constraint.txt"
 echo "$SCOPE_FILES" >> "${WORKTREE}/.scope-constraint.txt"
 echo "" >> "${WORKTREE}/.scope-constraint.txt"

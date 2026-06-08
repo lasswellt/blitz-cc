@@ -328,7 +328,7 @@ If ACs uncovered: attempt generation 3×. If still uncovered, offer: (1) waive, 
 
 *(Autonomy `high`/`full`: auto-waive uncovered ACs. Fix for CAP-133 silent-drop in `docs/_research/2026-04-08_sprint-carryforward-registry.md`.)*
 
-**Auto-waiver procedure (autonomy ∈ {high, full})** — all four writes required (jsonl schemas in `references/main.md` §Auto-Waiver Procedure); manifest carry_forward alone reintroduces CAP-133 silent-drop:
+**Auto-waiver procedure (autonomy ∈ {high, full})** — all four writes required (jsonl schemas in [sprint-contracts.md](/_shared/sprint-contracts.md) §Writers #3 — `sprint-plan` auto-waivers; manifest carry_forward alone reintroduces CAP-133 silent-drop):
 
 1. Add uncovered ACs to sprint manifest `carry_forward` + `waived_ac_count`/`reason_waivers`.
 2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl`. Precompute `coverage = actual / target`. Schema: [sprint-contracts.md](/_shared/sprint-contracts.md).
