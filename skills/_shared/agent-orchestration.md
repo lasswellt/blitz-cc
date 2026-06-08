@@ -563,7 +563,7 @@ Cost-control rules for every spawn. Authoritative protocol is [`token-budget.md`
 
 1. **Explicit `model:`** — never inherit. Default Haiku; promote to Sonnet for impl/review; reserve Opus for heavy reasoning. ≈60/35/5 distribution target.
 2. **Canonical JSON reply** — return ONLY `{status, summary≤50w, files_changed, issues, next_blocked_by, metrics}`. Prose forbidden. Files referenced by path; never inlined.
-3. **Cache-friendly system prompts** — long agent bodies (≥1024 tokens) must place static prefix first, dynamic content after, with `{type:"ephemeral", ttl:"1h"}` cache breakpoint.
+3. **Cache-friendly system prompts** — structure long agent bodies (≥1024 tokens) static-prefix-first (role/roster/protocols/output-style), dynamic content (sprint context, story args, feed slice) after. The platform/SDK applies prompt caching to the stable prefix; the 1h ephemeral TTL is a platform/SDK concern, not settable from skill/agent markdown.
 4. **Lazy MCP / skill loading** — never bulk-enable; ToolSearch + on-demand grep only.
 5. **PostToolUse output summarization** — verbose tool output (test/build logs) MUST be summarized before reaching the orchestrator.
 
@@ -1107,7 +1107,7 @@ Research provenance: `docs/_research/2026-05-28_dynamic-workflows-blitz-adoption
 
 ### Why this exists
 
-`Workflow` is a deterministic JS orchestration primitive: a script with `agent()` / `parallel()` / `pipeline()` / `phase()` / `log()` hooks dispatches ≤1000 subagents (16 concurrent) in the background, with built-in `schema:` structured output, `null`-on-throw error handling, and `resumeFromRunId` resume. It maps ~1:1 onto blitz's hand-rolled spawn-protocol (single-message `run_in_background` pools, output-file polling, `classify_output()`, `jq` reply parsing) and removes ~80–150 lines of bash per adopting skill.
+`Workflow` is a deterministic JS orchestration primitive: a script with `agent()` / `parallel()` / `pipeline()` / `phase()` / `log()` hooks dispatches ≤1000 subagents (min(16, cores-2) concurrent) in the background, with built-in `schema:` structured output, `null`-on-throw error handling, and `resumeFromRunId` resume. It maps ~1:1 onto blitz's hand-rolled spawn-protocol (single-message `run_in_background` pools, output-file polling, `classify_output()`, `jq` reply parsing) and removes ~80–150 lines of bash per adopting skill.
 
 Blitz cannot adopt it naively. `Workflow` is a **research preview**, **disabled-by-default on Enterprise**, and **per-user opt-in gated**. blitz ships to arbitrary users — a skill that *requires* `Workflow` hard-fails for any user without it. Adoption is therefore additive: a capability-gated fast path with the existing `Agent()` path retained as the portable default.
 
@@ -1120,6 +1120,17 @@ Blitz cannot adopt it naively. `Workflow` is a **research preview**, **disabled-
 3. **Spawned agents are NOT sandboxed.** Each `agent()` call runs a normal subagent with full Read/Write/Bash/Grep. They still stub-and-append their own findings files exactly as under `Agent()`. The sandbox binds the *script*, not its agents.
 
 4. **Opt-in is satisfied by skill instructions.** Per the `Workflow` tool contract, "the user invoked a skill or slash command whose instructions tell you to call Workflow" counts as opt-in. A blitz super-orchestrator MAY legitimately dispatch via `Workflow` when its SKILL.md instructs it to — no extra user keyword required. (First-trigger confirmation behavior is still platform-controlled — see Open risks.)
+
+### Tool API reference (current)
+
+Live limits/signatures for the `Workflow` runtime (supersedes any earlier fixed-16 wording):
+
+- **Concurrency** — `min(16, cores-2)` simultaneous agents (host-derived; NOT a fixed 16).
+- **Lifetime cap** — ≤1000 agents per workflow run.
+- **Batch cap** — a single `parallel()` / `pipeline()` call takes ≤4096 items.
+- **Budget object** — `{ total, spent(), remaining() }`. `spent()` is shared across the main loop + all workflows; `remaining()` = `max(0, total - spent())`, or `Infinity` when no `total` is set.
+- **Nesting** — `workflow(name | {scriptPath}, args)` nests ONE level only; a `workflow()` call from inside a workflow throws.
+- **Resume** — `resumeFromRunId` is same-session only (same script + same args ⇒ full cache hit; cross-session resume must re-derive from external state per the sprint-dev `STATE.md` journal pattern).
 
 ### Hybrid wrapper boundary
 
@@ -1184,6 +1195,10 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
 | `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or `pipeline()` (sequential mode, prior findings threaded); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
 | `sprint-dev` | **WIRED** | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Cross-session durable:** `STATE.md` is the durable journal — resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only. Resume Divergence Gate is the safety interlock before dispatch. |
+| `code-sweep` | **DEFERRED** | flat finder pool; same `parallel()` + `schema` shape as `audit`. |
+| `quality-metrics` | **DEFERRED** | flat collector pool; `parallel()` + `schema` candidate. |
+| `code-doctor` | **DEFERRED** | Vue-gated framework audit; lower fan-out `parallel()` + `schema` candidate. |
+| `ui-audit` | **DEFERRED** | already spawns per-category Agents (references/main.md §5.2) for >30-page runs; portable `Agent()` path sufficient; revisit post-GA. |
 | pure workers / single-spawn | **forbidden** | constraint §1. |
 
 ### Escape hatches
@@ -1196,7 +1211,7 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 
 - **Portability** — `Workflow` preview + Enterprise-disabled. Never remove the `Agent()` fallback while preview. If runtime capability-detection proves unreliable, defer.
 - **API churn** — preview hook signatures may shift before GA. Confine all `Workflow` calls behind this doc's gate so a fix is one-skill-shaped.
-- **Autonomous loops** — if a skill-instructed `Workflow` call still triggers the platform per-run confirmation prompt, `/blitz:next --loop` flows could stall. Verify before any autonomous-loop skill adopts.
+- **Autonomous loops** — **MITIGATED**: `next --loop` forces `BLITZ_DISPATCH=agent` for dispatched skills (see next/SKILL.md §3.1) so an unattended loop can't stall on a platform `Workflow` per-run confirmation; revisit when that confirmation is verified non-blocking under skill-instructed dispatch.
 - **Resume divergence (sprint-dev)** — RESOLVED by treating `STATE.md` as the durable journal (durable-execution "re-derive from external state" pattern; `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md`). Cross-session resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort — control flow serialized at plan time, never LLM-re-derived) and dispatches each via `Workflow`. `resumeFromRunId` is in-session-only. The Resume Divergence Gate runs before any resumed dispatch (guards double-execution + semantic rollback). Per-wave dispatch keeps STATE.md/carry-forward/commit at wave boundaries in main-thread Bash; carry-forward re-apply is idempotent (clamp-at-target + latest-wins).
 
 ### Cross-references
@@ -1230,7 +1245,8 @@ Every agent definition (`agents/*.md`) and every dynamic spawn (`Agent({model: .
 | **Mechanical workers**: test-gen, lint-fix, file ops, doc-gen, formatting | `claude-haiku-4-5` | 5× cheaper than Opus; adequate for pattern-following work |
 | **Standard workers**: backend-dev, frontend-dev, reviewer, refactorer, browser-agent | `claude-sonnet-4-6` | 40% cheaper than Opus; sufficient for impl + review |
 | **Heavy reasoning**: architect, security audit, audit, research orchestrator | `claude-opus-4-8` | Reserve for genuinely hard multi-step decisions |
-| **Orchestrator agents** (`agents/orchestrator.md`, sprint-* orchestrators) | `claude-sonnet-4-6` | 40% cheaper than Opus; orchestration is routing, not synthesis |
+| **Subagent router** (`agents/orchestrator.md` — can't spawn subagents) | `claude-sonnet-4-6` | sonnet by design; routing not synthesis. See its header rationale |
+| **Slash-invoked super-orchestrators** (sprint-dev / sprint-plan / sprint-review / next) | `claude-opus-4-8` | top-level skills; `model: opus` required for `[1m]`-inheritance safety. Heavy reasoning delegated to spawned sonnet workers |
 | **Plan-check / critic** | `claude-sonnet-4-6` | Adversarial review needs reasoning, not depth |
 
 Model IDs (2026-05-28): `claude-haiku-4-5` (alias of `claude-haiku-4-5-20251001`), `claude-sonnet-4-6`, `claude-opus-4-8`. Skill frontmatter MAY use the short `haiku`/`sonnet`/`opus` aliases; dynamic `Agent({model})` spawns SHOULD use the full IDs above.
@@ -1252,19 +1268,15 @@ Model IDs (2026-05-28): `claude-haiku-4-5` (alias of `claude-haiku-4-5-20251001`
 
 ---
 
-### 2. Prompt Caching (1-hour TTL on the orchestrator prefix)
+### 2. Prompt Caching (cache-friendly prefix structure)
 
-Default cache TTL was silently dropped 60min → 5min in early 2026. For a sprint-dev session that spawns 10 subagents over 30 min, default TTL means every spawn after minute 5 pays full write cost on the shared prefix. Net effect: caching is worse than disabled.
+Default cache TTL was silently dropped 60min → 5min in early 2026. For a sprint-dev session that spawns 10 subagents over 30 min, the shorter TTL means every spawn after minute 5 pays full write cost on the shared prefix. The lever the markdown layer controls is *prompt structure*, not the TTL itself.
 
-#### Rule
+#### Rule (guidance)
 
-Plugin agents whose system prompt is ≥1024 tokens (Sonnet) / ≥4096 tokens (Opus, Haiku 4.5) MUST mark their static prefix with:
+Plugin agents whose system prompt is ≥1024 tokens (Sonnet) / ≥4096 tokens (Opus, Haiku 4.5) should be authored cache-friendly: place the **static prefix FIRST** — role definition, specialist roster, shared protocols, output style — and **dynamic content (sprint context, story args, activity-feed slice) AFTER** it, or the prefix match breaks and you pay full price.
 
-```
-{"type": "ephemeral", "ttl": "1h"}
-```
-
-Static prefix = role definition, specialist roster, shared protocols, output style. **Dynamic content (sprint context, story args, activity-feed slice) MUST come AFTER the cached block** or the prefix match breaks and you pay full price.
+`cache_control` (`{"type": "ephemeral", "ttl": "1h"}`) is an API/SDK request parameter, **not** something settable from a SKILL.md/agent.md system prompt. The platform/SDK applies prompt caching to the stable prefix and owns the 1h ephemeral TTL; the markdown layer's job is only to keep that prefix stable and front-loaded. The break-even table below is informational — it explains why a front-loaded prefix pays off, not a mechanism the markdown layer delivers.
 
 #### Break-even
 

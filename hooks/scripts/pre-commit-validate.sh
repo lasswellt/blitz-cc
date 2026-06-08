@@ -188,6 +188,15 @@ if [[ -x "$COUNT_SYNC_SCRIPT" ]]; then
       echo "  Override with --no-verify if intentional." >&2
       exit 2
     fi
+    # Also block when a STRUCTURAL inventory file is added/removed/renamed —
+    # a new or deleted file under these globs changes a count, so shipping with
+    # stale counts is exactly the drift that let shared 12->13 escape (the
+    # count-bearing docs weren't staged, so the gate only warned).
+    if echo "$STAGED_FILES" | grep -qE '^(skills/_shared/[^/]+\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md|hooks/scripts/[^/]+\.sh)$'; then
+      echo "" >&2
+      echo "BLOCKED: structural inventory change with stale counts — run scripts/check-count-sync.sh --write and re-stage (override --no-verify if intentional)." >&2
+      exit 2
+    fi
     echo "  (Warning — commit allowed. Count drift will be re-flagged until fixed.)" >&2
   fi
 fi

@@ -303,6 +303,14 @@ Only runs if `--loop` was specified. Implements the canonical Observe → Diff �
 
 Suppress all sub-skill confirmation prompts. Remaining safety overrides (always logged, never silently bypassed): `git push`, rollback to previous sprint state, deleting user files outside sprint scope. All other decisions auto-approved.
 
+Setting autonomy = full only suppresses blitz's OWN confirmation prompts — it does not cover a platform Workflow per-run confirmation. Force the portable dispatch path for every child skill this loop dispatches — an unattended loop must not stall on a platform Workflow per-run confirmation:
+
+```bash
+export BLITZ_DISPATCH=agent   # loop-safe: child fan-out skills take the Agent() path (no Workflow confirm prompt)
+```
+
+Loop-only: interactive `/blitz:next` (no --loop) leaves `BLITZ_DISPATCH` at its default (`auto`). Revisit when the platform Workflow confirmation is verified non-blocking under skill-instructed dispatch. (Consistent with agent-orchestration.md's dispatch gate: `auto` / `workflow` / `agent`.)
+
 ### 3.2 Session-conflict pre-check (loop-only soft fail)
 
 If another sprint-plan / sprint-dev / sprint-review session is active (after stale cleanup per session-protocol §5a), do NOT abort — print a defer message and exit:

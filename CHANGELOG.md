@@ -19,7 +19,18 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **Inventory drift (shared 12->13):** `html-template-helper.md` (E-039 HTML side-output) was never folded into inventory; `counts.json` + README + plugin.json + marketplace.json said "12 shared protocol files" while 13 exist. Regenerated `counts.json`, reconciled manifests, indexed the file in CLAUDE.md. `check-count-sync.sh` now exits 0.
+- **sprint-review Workflow `pipeline()` misuse:** sequential reviewer dispatch passed the roster as both items and stages (N×N), so reviewers never received prior findings. Replaced with an explicit sequential accumulator loop.
+- **Model-routing self-contradiction:** §1 routing matrix listed sprint-* orchestrators as `sonnet`, contradicting the weight-class table and deployed `model: opus` frontmatter (required for `[1m]` inheritance). Split the matrix row.
+- **orchestrator agent missing `effort: low`** (contract-mandated) — added.
+
+### Changed
+- **Workflow contract doc refreshed** to current tool API: `budget{spent(),remaining()}`, `workflow()` one-level nesting, 4096-item / 1000-agent caps, concurrency `min(16, cores-2)`; added DEFERRED adoption rows for code-sweep, code-doctor, quality-metrics, ui-audit.
+- **Autonomous-loop guard:** `next --loop` forces `BLITZ_DISPATCH=agent` so an unattended loop can't stall on a platform Workflow per-run confirmation.
+- **Prompt-cache mandate reframed** MUST->guidance (markdown system prompts can't set `cache_control`; platform applies caching when static-prefix-first ordering is respected).
+- **Count-sync gate hardened:** adding/removing a file under `skills/_shared`, `skills/*/SKILL.md`, `agents/`, or `hooks/scripts/` now hard-blocks the commit until counts are refreshed.
+- **Frontmatter validator:** added a cumulative-description-chars guard near the 15k load-time budget.
 
 ## [2.4.4] — 2026-06-07 · fix [1m] inheritance on invokable skills
 

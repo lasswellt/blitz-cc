@@ -151,14 +151,22 @@ Per [agent-orchestration.md](/_shared/agent-orchestration.md) capability gate (`
 ```js
 export const meta = { name: 'sprint-review', description: 'Parallel/sequential reviewers + adversarial critic', phases: [{ title: 'Review' }, { title: 'Critic' }] }
 // args: { roster:[{name,prompt}], sequential:bool, criticPrompt, reviewerSchema, criticSchema }
-const reviews = args.sequential
-  // sequential: each reviewer receives prior findings (pipeline, no barrier)
-  ? await pipeline(args.roster, ...args.roster.map((a, i) => (prev) =>
-      agent(`${args.roster[i].prompt}\n\nPrior findings:\n${JSON.stringify(prev ?? [])}`,
-        { label: args.roster[i].name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
+let reviews
+if (args.sequential) {
+  // sequential: each reviewer receives all prior reviewers' findings (true chain, sequential accumulator)
+  reviews = []
+  let prior = []
+  for (const a of args.roster) {
+    const f = await agent(`${a.prompt}\n\nPrior findings:\n${JSON.stringify(prior)}`,
+      { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })
+    reviews.push(f)
+    if (f) prior = [...prior, f]
+  }
+} else {
   // parallel (default): all reviewers concurrent
-  : await parallel(args.roster.map(a => () =>
-      agent(a.prompt, { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
+  reviews = await parallel(args.roster.map(a => () =>
+    agent(a.prompt, { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
+}
 // Invariant 7: adversarial critic, schema-validated (replaces jq parse of LGTM|REJECT)
 const critic = await agent(args.criticPrompt, { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', schema: args.criticSchema })
 return { reviews: reviews.map((f, i) => ({ name: args.roster[i]?.name, ok: f !== null, result: f })), critic }
@@ -397,6 +405,8 @@ Stores timestamped JSON snapshot in `docs/metrics/` for trend tracking. Informat
 ### 4.6 Final Output and Error Recovery
 
 Print summary block per `references/main.md` §"Final Output Template".
+
+Next on PASS: `/blitz:ship` (or `/blitz:release` to cut a version).
 
 **Inline recovery rules**:
 - **Reviewer timeout/missing**: PARTIAL counts if ≥1 finding-file non-empty; escalate security-MISSING as blocker.

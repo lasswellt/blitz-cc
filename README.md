@@ -11,7 +11,7 @@
 
 **⚡ A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase ⚡**
 
-**37 skills** · **10 agents** · **38 hook scripts across 16 events** · **12 shared protocol files**
+**37 skills** · **10 agents** · **38 hook scripts across 16 events** · **13 shared protocol files**
 
 Orchestrator main-thread router · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -393,7 +393,7 @@ blitz-cc/
 ├── agents/                      # 10 agents (6 builder · 3 critic · 1 orchestrator)
 ├── skills/
 │   ├── <name>/SKILL.md          # 37 skills (Anthropic-canonical, auto-discovered)
-│   └── _shared/                 # 12 shared protocol files + check-registry.json
+│   └── _shared/                 # 13 shared protocol files + check-registry.json
 ├── hooks/
 │   ├── hooks.json               # 16 events
 │   └── scripts/                 # 38 scripts: 35 event-wired + 2 sub-invoked + 1 critic-spawned

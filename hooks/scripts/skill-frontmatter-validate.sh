@@ -26,6 +26,12 @@ set -euo pipefail
 SCRIPT_NAME="$(basename "$0")"
 BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 RC=0
+# Cumulative description-char budget (full-scan only). The ~37 skill
+# descriptions load every session into the SLASH_COMMAND_TOOL_CHAR_BUDGET
+# (~15000 hard platform cap; see docs/audits/skill-startup-token-budget.md).
+# We guard at 14500 to leave headroom before the cap.
+CUMULATIVE_DESC_CHARS=0
+CUMULATIVE_DESC_BUDGET=14500
 SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output\.md'
 
 # Canonical OUTPUT STYLE drift detection.
@@ -82,9 +88,15 @@ Usage: $SCRIPT_NAME [skill-path...] | --all
 EOF
 }
 
-# Resolve target list
+# Resolve target list.
+# FULL_SCAN is set when the whole tree is scanned (--all or no-arg). The
+# cumulative-description budget guard runs ONLY in this mode — pre-commit and
+# PostToolUse invocations pass a subset of skill paths and must not be measured
+# against the global budget.
 TARGETS=()
+FULL_SCAN=0
 if [ "$#" -eq 0 ] || [ "${1:-}" = "--all" ]; then
+  FULL_SCAN=1
   while IFS= read -r f; do TARGETS+=("$f"); done < <(find "${BLITZ_ROOT}/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | sort)
 else
   for arg in "$@"; do
@@ -128,6 +140,8 @@ validate_one() {
   # 3. description
   [ -z "$desc" ] && fail "$rel" "frontmatter missing 'description:'"
   [ "${#desc}" -gt 1024 ] && fail "$rel" "description length ${#desc} exceeds 1024 chars"
+  # Accumulate toward the cumulative budget (consumed only in full-scan mode).
+  CUMULATIVE_DESC_CHARS=$((CUMULATIVE_DESC_CHARS + ${#desc}))
 
   # 6. allowed-tools (unless disable-model-invocation: true)
   if [ "$dmi" != "true" ]; then
@@ -170,6 +184,17 @@ validate_one() {
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done
+
+# Cumulative-description budget guard — full-scan only. A subset invocation
+# (pre-commit / PostToolUse) cannot meaningfully measure the global total.
+if [ "$FULL_SCAN" -eq 1 ]; then
+  if [ "$CUMULATIVE_DESC_CHARS" -gt "$CUMULATIVE_DESC_BUDGET" ]; then
+    echo "[$SCRIPT_NAME] FAIL: cumulative skill descriptions = $CUMULATIVE_DESC_CHARS chars > $CUMULATIVE_DESC_BUDGET budget guard (15000 hard platform cap) — trim a description before adding more" >&2
+    RC=1
+  else
+    echo "[$SCRIPT_NAME] cumulative skill descriptions = $CUMULATIVE_DESC_CHARS chars (<= $CUMULATIVE_DESC_BUDGET budget guard)"
+  fi
+fi
 
 if [ "$RC" -eq 0 ]; then
   echo "[$SCRIPT_NAME] OK: ${#TARGETS[@]} SKILL.md files conform"

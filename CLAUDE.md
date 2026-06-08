@@ -53,7 +53,7 @@ Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hook
 
 ## Shared Protocols
 
-All skills follow the protocols in `skills/_shared/` (12 `.md` files + `check-registry.json`). As of the 2026-06-06 consolidation, each file owns one cross-cutting concern (former fragments absorbed; see each file's top-of-file **Absorbs/Consolidates** map):
+All skills follow the protocols in `skills/_shared/` (13 `.md` files + `check-registry.json`). As of the 2026-06-06 consolidation, each file owns one cross-cutting concern (former fragments absorbed; see each file's top-of-file **Absorbs/Consolidates** map):
 
 - **terse-output.md** — output style + canonical exemptions + console verbosity / activity-feed logging (absorbed `verbose-progress.md`). Validator-pinned home of the canonical OUTPUT STYLE snippet.
 - **session-lifecycle.md** — multi-session safety (locks, registration, autonomy), checkpoints, context/compaction handoff, the **state-handoff** resume contract, and loop scheduling (absorbed `session-protocol`, `checkpoint-protocol`, `context-management`, `state-handoff`, `scheduling`).
@@ -67,6 +67,7 @@ All skills follow the protocols in `skills/_shared/` (12 `.md` files + `check-re
 - **knowledge-protocol.md** — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format.
 - **session-report-template.md** — session report output template.
 - **worktree-lifecycle.md** — worktree lifecycle, ratchet-linked (`stale_worktree_branch_count`).
+- **html-template-helper.md** — shared-protocol convention + reusable `emit_html()` bash helper for opt-in HTML side-output (E-039); consumed by audit, codebase-map, quality-metrics, research.
 
 ## Hooks
 
