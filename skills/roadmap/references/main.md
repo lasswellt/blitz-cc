@@ -660,7 +660,7 @@ The following epic fields link roadmap to carry-forward registry described in [s
 
 1. **Load the registry.** Reduce `.cc-sessions/carry-forward.jsonl` to latest-wins:
    ```bash
-   jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl > "${SESSION_TMP_DIR}/registry-latest.json"
+   jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' .cc-sessions/carry-forward.jsonl > "${SESSION_TMP_DIR}/registry-latest.json"
    ```
 
 2. **For every entry with `status ∈ {active, partial}`**, run each `scope.acceptance` check against the live codebase. Each acceptance entry is one of:

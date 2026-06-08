@@ -35,12 +35,14 @@ Shared reference for the **carry-forward registry** — an append-only JSONL led
 **File:** `.cc-sessions/carry-forward.jsonl`
 
 - One JSON object per line. Never comma-separated, never a JSON array.
-- Append-only. Updates are new lines with the same `id`; **latest-wins by `id`** when reducing.
-- Readers reduce to latest state with:
+- Append-only. Updates are new lines with the same `id`; reducing **field-merges in `ts` order** (latest non-null value wins per field). A line need only carry the fields it changes.
+- Readers reduce to latest state with (canonical — **field-merge**, not `max_by`):
   ```bash
-  jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl
+  jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' \
+    .cc-sessions/carry-forward.jsonl
   ```
-- Never rewrite prior lines. Corrections are a new line with a corrected state plus `event: "correction"` and `notes` explaining the prior mistake.
+  Field-merge is load-bearing: writers emit **thin delta lines** (`progress` carries `delivered`/`coverage`/`status`; `correction` carries just `parent` or `rollover_count`; `auto_waived` carries `waived_count`). A naïve `map(max_by(.ts))` reader would take the whole latest object and NULL every field the delta omits (`status`, `scope`, `coverage`) — silently dropping the entry. The deep-merge (`. * $x`) preserves earlier fields and overlays later ones.
+- Never rewrite prior lines. Corrections are a new delta line with `event: "correction"` (carrying only the changed fields) plus `notes` explaining the prior mistake; the field-merge preserves everything else.
 - The registry lives in the consumer project's `.cc-sessions/` directory, co-located with the activity feed. The blitz plugin source does not ship a registry file — it ships the *protocol* and the skill behaviors that read and write it.
 
 ---
@@ -228,7 +230,7 @@ OUT="${SESSION_TMP_DIR}/registry-state.json"
 
 # Step 1 — Reduce to latest-wins.
 [ -s "$REG" ] || { echo "{}" > "$OUT"; exit 0; }
-LATEST=$(jq -s 'group_by(.id) | map(max_by(.ts))' "$REG")
+LATEST=$(jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' "$REG")
 
 # Step 2 — Bucket by status.
 echo "$LATEST" | jq '
@@ -309,20 +311,20 @@ For ad-hoc inspection outside the canonical algorithm, reduce the registry with 
 
 ```bash
 # Latest-wins reduction
-jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl
+jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' .cc-sessions/carry-forward.jsonl
 
 # All active entries
-jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.status == "active" or .status == "partial"))' \
+jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x)) | map(select(.status == "active" or .status == "partial"))' \
   .cc-sessions/carry-forward.jsonl
 
 # Entries stalled for 2+ sprints
 jq -s --arg sprint "sprint-42" '
-  group_by(.id) | map(max_by(.ts))
+  group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))
   | map(select(.status == "partial" and .last_touched.sprint != $sprint and .rollover_count >= 2))
 ' .cc-sessions/carry-forward.jsonl
 
 # Coverage by parent epic
-jq -s 'group_by(.id) | map(max_by(.ts))
+jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))
        | group_by(.parent.epic)
        | map({epic: .[0].parent.epic, entries: length,
               avg_coverage: (map(.coverage) | add / length)})' \
@@ -376,7 +378,7 @@ Consumer projects that adopted blitz before the carry-forward registry shipped w
 
 4. **Verify the reconciliation.** Reduce the registry with `jq` and confirm the entry reflects true state:
    ```bash
-   jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.id == "cf-YYYY-MM-DD-<slug>"))' \
+   jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x)) | map(select(.id == "cf-YYYY-MM-DD-<slug>"))' \
      .cc-sessions/carry-forward.jsonl
    ```
    If `coverage` is `1.0` and `status` is `complete`, the legacy work was already fully shipped — no further action needed. The next `sprint-review` will honor this and the parent epic can close cleanly.
@@ -633,7 +635,7 @@ done
 
 # 5. registry_entries[*].id values exist in .cc-sessions/carry-forward.jsonl
 for rid in $(yq '.registry_entries[].id' "$story"); do
-  jq -se --arg id "$rid" 'group_by(.id) | map(max_by(.ts)) | map(select(.id == $id)) | length > 0' \
+  jq -se --arg id "$rid" 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x)) | map(select(.id == $id)) | length > 0' \
     .cc-sessions/carry-forward.jsonl || die "Unknown registry id: ${rid}"
 done
 

@@ -91,7 +91,7 @@ fi
 7. **Check STATE.md.** If a previous sprint has `STATE.md`, read it for blocked stories. See [session-lifecycle.md](/_shared/session-lifecycle.md).
 8. **Read carry-forward registry** (`.cc-sessions/carry-forward.jsonl`). Reduce to latest-wins by `id`:
    ```bash
-   jq -s 'group_by(.id) | map(max_by(.ts)) | map(select(.status == "active" or .status == "partial"))' \
+   jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x)) | map(select(.status == "active" or .status == "partial"))' \
      .cc-sessions/carry-forward.jsonl 2>/dev/null || echo '[]'
    ```
    Every returned entry is a **mandatory planning input** — this sprint MUST either include work against it OR operator must explicitly transition it to `deferred` with a `notes` reason before planning continues.

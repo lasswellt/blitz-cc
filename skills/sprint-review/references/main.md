@@ -452,7 +452,7 @@ L30: ❓ q: why `Map` over `Record<string, X>` here? Hot path?
 Reduce `.cc-sessions/carry-forward.jsonl` to latest-wins state:
 
 ```bash
-REGISTRY=$(jq -s 'group_by(.id) | map(max_by(.ts))' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo '[]')
+REGISTRY=$(jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo '[]')
 ```
 
 Load `sprints/sprint-${SPRINT_NUMBER}/manifest.json`, `sprint-registry.json`, and `docs/roadmap/epic-registry.json` (if exists). Identify every research doc referenced (directly or transitively) by any story, epic, or capability in this sprint — call this `SPRINT_RESEARCH_DOCS`.
@@ -477,7 +477,7 @@ For every registry entry with `status ∈ {active, partial}`:
 - **Touched:** `last_touched.sprint == sprint-${SPRINT_NUMBER}` → pass.
 - **Explicitly deferred:** latest line has `event: "deferred"` with non-empty `notes` AND written during this sprint → pass.
 - **Waivered this sprint:** entry id in current manifest's `registry_entries_touched`, AND registry has matching `event: "auto_waived"` line dated within sprint → pass. Catches sprint-plan Phase 4.1 auto-waivers.
-- **Otherwise:** **FAIL**. Increment `rollover_count` in new registry line:
+- **Otherwise:** **FAIL**. Increment `rollover_count` in a new `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so this patches `rollover_count` while preserving `status`/`scope`/`coverage`):
   ```jsonl
   {"id":"<entry-id>","ts":"<ISO-8601>","event":"correction","rollover_count":<prev+1>,"notes":"sprint-review Invariant 2: entry not touched in sprint-${SPRINT_NUMBER}"}
   ```

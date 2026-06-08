@@ -111,13 +111,13 @@ cat epic-registry.json 2>/dev/null | head -5 || echo "No epic registry"
 
 ```bash
 CF_ACTIVE=$(jq -s '
-  group_by(.id) | map(max_by(.ts))
+  group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))
   | map(select(.status == "active" or .status == "partial"))
   | length
 ' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "0")
 
 CF_ESCALATED=$(jq -s '
-  group_by(.id) | map(max_by(.ts))
+  group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))
   | map(select((.status == "active" or .status == "partial") and (.rollover_count // 0) >= 3))
   | length
 ' .cc-sessions/carry-forward.jsonl 2>/dev/null || echo "0")

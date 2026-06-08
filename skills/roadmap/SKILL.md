@@ -105,7 +105,7 @@ Before extracting capabilities, check the research doc for a **`scope:` YAML fro
 
 2. **Parse each entry.** For every item under `scope:`, extract: `id`, `unit`, `target`, `description`, `acceptance[]`. All five fields are required; reject the entry with a loud error and skip it if any are missing.
 
-3. **Dedup against existing registry.** Reduce `.cc-sessions/carry-forward.jsonl` with `jq -s 'group_by(.id) | map(max_by(.ts))'` and check each parsed `id`:
+3. **Dedup against existing registry.** Reduce `.cc-sessions/carry-forward.jsonl` with `jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x))'` and check each parsed `id`:
    - **`extend` mode** — Hard-fail on any duplicate id: print the offending id and the doc that introduced it, then STOP. The author must either rename the new entry or use `refresh` mode.
    - **`refresh` mode** — Duplicates are expected (re-ingest path). See Phase 1.1.6 below.
    - **`full` mode** — Treat duplicates as a registry conflict: warn the user, stop, and prompt for manual resolution. Full-mode runs usually start with an empty registry.
@@ -323,7 +323,7 @@ These phases are loaded on demand from `references/main.md` to keep this skill f
 
 **Phase 6**: Generate cross-cutting specs (auth system, error handling strategy, testing strategy, CI/CD pipeline, monitoring).
 
-**Phase 7**: Spawn agents per phase to convert specs into epics with stories, acceptance criteria, and effort estimates. **Phase 7 also backfills `parent.capability` and `parent.epic` on every carry-forward registry entry created in Phase 1.1.5.** For each registry entry, look up the capability whose `registry_entry_id` matches, then find the epic that contains that capability, and append a `correction` event line to `.cc-sessions/carry-forward.jsonl`:
+**Phase 7**: Spawn agents per phase to convert specs into epics with stories, acceptance criteria, and effort estimates. **Phase 7 also backfills `parent.capability` and `parent.epic` on every carry-forward registry entry created in Phase 1.1.5.** For each registry entry, look up the capability whose `registry_entry_id` matches, then find the epic that contains that capability, and append a `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so a thin line patches only the named fields and preserves `status`/`scope`/`coverage`):
 ```jsonl
 {"id":"<registry-id>","ts":"<ISO-8601>","event":"correction","parent":{"capability":"CAP-NNN","epic":"E<NNN>"},"notes":"Parent backfilled by roadmap Phase 7 after epic generation"}
 ```
