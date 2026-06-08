@@ -45,7 +45,7 @@ case "$TOOL" in
     # after a `/`) so a top-level `rm -rf tests/` is caught — the original
     # `/tests/` form required a leading slash and missed bare `tests/`. The
     # boundary class avoids false-matching substrings like `latest/`.
-    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|([[:space:]/]|^)(__tests__|tests?)/)'; then
+    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|([[:space:]/]|^)(__tests__|tests?)(/|[[:space:]]|[;&|]|$))'; then
       # Pull the operand portion (everything after `rm` and its flags) so the
       # exclusions test the actual target path, not the whole command line.
       RM_TARGET="$(printf '%s' "$CMD" | sed -nE 's/.*(^|[;&|])[[:space:]]*rm[[:space:]]+((-[a-zA-Z]+[[:space:]]+)*)([^;&|]*).*/\4/p')"

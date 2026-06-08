@@ -67,8 +67,8 @@ if echo "$CMD_N" | grep -qE 'git[[:space:]]+reset[[:space:]]+(.*[[:space:]])?--h
 fi
 
 # git checkout -- . / git checkout -- *
-if echo "$CMD_N" | grep -qE 'git[[:space:]]+(checkout|restore)[[:space:]]+--?[[:space:]]*(\.|\*)'; then
-  is_dirty && block "git checkout/restore -- ." "Discards all unstaged changes."
+if echo "$CMD_N" | grep -qE 'git[[:space:]]+(checkout|restore)[[:space:]]+(--[[:space:]]+)?(\.|\*)'; then
+  is_dirty && block "git checkout/restore ." "Discards all unstaged changes."
 fi
 
 # git clean -f / -fd / -fx (no dry-run)
