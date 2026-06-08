@@ -295,6 +295,12 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `/_shared/html-template-helper.md` `emit_html()` helper. Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+
+```bash
+[ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html "${REPORT_DIR}/audit-$(date +%Y%m%d).md" untrusted
+```
+
 ---
 
 ### 2.8 Coverage boundary (recall instrumentation, Phase 3.5)

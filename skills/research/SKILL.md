@@ -371,6 +371,15 @@ If verdict is `CITATIONS_MISSING`:
 
 Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on for docs destined for `/blitz:roadmap` ingestion).
 
+### 3.2.6 Opt-in HTML Twin (additive — `.md` stays canonical)
+
+After the `scope:`-bearing `docs/_research/...md` is finalized (§3.1) AND the §3.2 quality + §3.2.5 citation gates pass, before §3.3 cleanup: emit an HTML twin via the `/_shared/html-template-helper.md` `emit_html()` helper. Research docs may quote fetched/untrusted content → pass the `untrusted` trust arg so the body is HTML-escaped into `<pre>` (TB-4, the only complete close — converters + regex scrubbers leak across encodings). The canonical `.md` (with its `scope:` YAML) is never altered or replaced; `roadmap extend` keeps globbing the `.md`. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+
+```bash
+DOC_PATH="docs/_research/${TIMESTAMP}_${TOPIC_SLUG}.md"
+[ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html "$DOC_PATH" untrusted
+```
+
 ### 3.3 Clean Up (CONDITIONAL — preserve findings on failure)
 
 ```bash

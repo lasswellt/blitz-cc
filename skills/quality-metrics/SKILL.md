@@ -259,6 +259,12 @@ Write `docs/metrics/dashboard.md` with the following structure:
 - If previous snapshot exists, show the numeric difference (e.g., +5, -3, =)
 - If no previous snapshot, show "—"
 
+**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `docs/metrics/dashboard.md` Write completes, emit a styled HTML twin via the `/_shared/html-template-helper.md` `emit_html()` helper. The `.json` snapshot path is untouched.
+
+```bash
+[ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html docs/metrics/dashboard.md
+```
+
 ---
 
 ## Phase 4: TREND — Analyze Over Time
