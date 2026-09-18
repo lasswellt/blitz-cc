@@ -1,6 +1,6 @@
 # Hook Scripts
 
-36 scripts wired through `hooks/hooks.json`, covering 16 hook events. Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 6 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`). `workflow-guard.sh` is a WARNER (not a blocker — tracks phase execution order and emits warnings).
+38 scripts in this directory (35 wired through `hooks/hooks.json` across 16 hook events; `check-registry-validate.sh` and `startup-validate.sh` are sub-invoked; `critic-gemini.sh` is critic-spawned). Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 6 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`) — 7 anti-shortcut hooks counting `post-edit-typecheck-block.sh`. `workflow-guard.sh` is a WARNER (not a blocker — tracks phase execution order and emits warnings).
 
 ## By event
 
@@ -133,7 +133,7 @@ No plain `Stop` hook is registered. Turn-end state persistence is handled out-of
 
 - **Stdin contract** — `PreToolUse` / `PostToolUse` / `UserPromptExpansion` hooks receive a JSON blob on stdin (`{"tool_name": ..., "tool_input": {...}}`). Other events pass minimal context.
 - **Repo root discovery** — every script walks up from `pwd` to the nearest `.claude-plugin/` directory; falls back to `pwd`. Never hardcodes a path.
-- **Non-blocking default** — all scripts `exit 0` on success. Only `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, and `skill-frontmatter-validate.sh` can return exit 2 to block the originating action.
+- **Non-blocking default** — all scripts `exit 0` on success. Only the BLOCKING scripts listed at the top of this file return exit 2 to block the originating action.
 - **Activity-feed appends** — when a hook needs to record an event, it writes a single JSONL line to `.cc-sessions/activity-feed.jsonl` per the format in `skills/_shared/terse-output.md`. Use `jq -nc` to build the JSON (never `printf` — escaping bugs).
 - **Quiet by default** — hook scripts only emit output when there is something the user must see. Otherwise stay silent.
 

@@ -918,7 +918,7 @@ Source: `code.claude.com/docs/en/sub-agents`. Confirmed in research doc 2026-05-
 
 **Practical consequence**: any skill whose body contains `Agent({...})` calls — to spawn parallel reviewers, parallel research agents, parallel sprint workers — CANNOT itself be invoked as a subagent. It must remain a slash-invoked skill (which runs in the main thread and DOES have Agent() access).
 
-The same boundary applies to the `Workflow` tool (dynamic workflows): it is main-thread-only, so only the 11 super-orchestrators may dispatch via it, and only as a capability-gated opt-in path with the `Agent()` path retained as fallback. See [workflow-dispatch.md](#workflow-dispatch-contract).
+The same boundary applies to the `Workflow` tool (dynamic workflows): it is main-thread-only, so only the 10 super-orchestrators may dispatch via it, and only as a capability-gated opt-in path with the `Agent()` path retained as fallback. See [workflow-dispatch.md](#workflow-dispatch-contract).
 
 ---
 
@@ -1019,7 +1019,7 @@ The 9 "single-spawn orchestrator" skills (codebase-map, doc-gen, health, impleme
 - Verify the agent does not call `Agent()` (it cannot, it's a subagent).
 - Bump `compatibility:` if any new fields are used.
 
-The 11 super-orchestrators stay as skills permanently (the constraint is structural, not migratable).
+The 10 super-orchestrators stay as skills permanently (the constraint is structural, not migratable).
 
 ---
 

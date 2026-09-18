@@ -21,10 +21,10 @@ jobs:
       - name: Tooling versions
         run: jq --version && python3 --version && node --version && bash --version | head -1
 
-      - name: SKILL.md frontmatter (37)
+      - name: SKILL.md frontmatter
         run: bash hooks/scripts/skill-frontmatter-validate.sh skills/*/SKILL.md
 
-      - name: Agent frontmatter (10)
+      - name: Agent frontmatter
         run: bash hooks/scripts/agent-frontmatter-validate.sh agents/*.md
 
       - name: Check-registry schema

@@ -58,7 +58,7 @@ Four properties make it a *machine* rather than a pile of prompts:
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
 | **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-12) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-13) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -297,20 +297,21 @@ Three ideas do the work:
 - **Loop-safe** (4): `browse`, `code-sweep`, `next`, `ui-audit` — one unit of work per tick (`sprint --loop` aliases `next --loop`).
 - **Slash-only** (`disable-model-invocation`, 3): `migrate`, `release`, `ship` — destructive/irreversible, never auto-fire.
 - **Read-only by default**: `conform`, `design-extract`, `dep-health`, `health`, `perf-profile`, `setup`, `ui-audit`, `worktree-prune` — mutate only with an explicit `--fix`/`--apply` flag.
-- **Multi-agent super-orchestrators** (slash-invoked, spawn parallel waves): `sprint-dev`, `sprint-plan`, `sprint-review`, `research`, `audit`, `quality-metrics`, `code-sweep`, `code-doctor`, `ui-audit`.
+- **Multi-agent super-orchestrators** (slash-invoked, spawn parallel waves, 10): `sprint`, `sprint-dev`, `sprint-plan`, `sprint-review`, `research`, `audit`, `quality-metrics`, `code-sweep`, `code-doctor`, `ui-audit`.
 
 ---
 
-## Agent Catalog (10)
+## Agent Catalog (11)
 
 Three roles. **Builder agents** are spawned by skills via `Agent({isolation: "worktree"})` — each gets its own auto-cleaned branch. **Critic agents** are read-only adversarial reviewers at gate points. The **orchestrator** is the main-thread router.
 
-### Builder agents (6)
+### Builder agents (7)
 
 | Agent | Model | Role |
 |---|---|---|
 | **backend-dev** | sonnet | Cloud Functions v2 / Zod / Firestore; numbered flow (Auth → Validate → Logic → Audit → Return). |
 | **frontend-dev** | sonnet | Vue 3 `<script setup>` / Pinia; adapts to Tailwind / Quasar / Vuetify. |
+| **infra-dev** | sonnet | Firebase config, Cloud Functions deploy, CI workflows, emulators; spawned by sprint-dev for `infra` lane stories. |
 | **test-writer** | sonnet | Vitest/Jest, AAA + factories. Spawned by `test-gen` / sprint-dev. |
 | **reviewer** | sonnet | OWASP top-10 + pattern violations; writes findings incrementally. Spawned by `review` / sprint-review. |
 | **architect** | sonnet | Read-only structural analysis — coupling, cohesion, circular deps. Orchestrator-delegated. |
@@ -431,9 +432,9 @@ Hooks are *the* enforcement layer — they fire on tool calls the model can't ta
 
 ---
 
-## Shared Protocols (12)
+## Shared Protocols (13)
 
-All skills share 12 protocol files (+ `check-registry.json`) in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. As of the 2026-06-06 consolidation each file owns one concern (former fragments absorbed; see each file's top-of-file map):
+All skills share 13 protocol files (+ `check-registry.json`) in [`skills/_shared/`](skills/_shared/) that define cross-cutting behavior — so the machine's parts agree on contracts instead of each re-inventing them. As of the 2026-06-06 consolidation each file owns one concern (former fragments absorbed; see each file's top-of-file map):
 
 - **terse-output.md** — output style + canonical exemptions + console verbosity / activity-feed logging
 - **session-lifecycle.md** — multi-session safety (locks, autonomy), checkpoints, context/compaction handoff, state-handoff resume contract, `/loop` vs `/schedule` mechanics
@@ -441,6 +442,7 @@ All skills share 12 protocol files (+ `check-registry.json`) in [`skills/_shared
 - **agent-orchestration.md** — agent fan-out (spawn/weight/HEARTBEAT, routing, token-budget) + the opt-in `Workflow` dispatch path
 - **quality-engine.md** (+ **check-registry.json**) — single source of truth for every review/audit check, the 20-detector catalog (13 reject, 7 advisory), the 8-metric ratchet, the deterministic verification recipe
 - **security.md** — containment posture / threat model (TB-1…TB-4), hook-trust boundary, package-install policy
+- **html-template-helper.md** — shared `emit_html()` convention for opt-in HTML side-output (audit, codebase-map, quality-metrics, research)
 - Plus: **project-context.md**, **skill-cross-references.md**, **design-criteria.md**, **knowledge-protocol.md**, **session-report-template.md**, **worktree-lifecycle.md**
 
 ---
