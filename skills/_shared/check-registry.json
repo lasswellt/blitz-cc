@@ -23,9 +23,9 @@
       "det-20"
     ],
     "whole_registry": {
-      "rows": 94,
+      "rows": 96,
       "reject": 16,
-      "advisory": 78
+      "advisory": 80
     }
   },
   "field_contract": {
@@ -2361,6 +2361,51 @@
       "escape_hatch": "# capability rationale: <reason> comment present OR disallowed-tools declared OR documented <!-- no-disallowed-tools: --> exclusion",
       "source": "Anthropic containment 2026-05-25 (AP-3 allowlist=capability-grant); CaMeL arXiv 2503.18813; NIST agent identity/authz 2026 (least-privilege); MCP incremental-scope-consent 2025-11-25",
       "notes": "TB-4-adjacent (capability). Reframe allowed-tools as capability grants, not toggles. v1.16.0 VERDICT: only health/SKILL.md declares disallowed-tools."
+    },
+    {
+      "id": "tia-escaped-failures",
+      "name": "tia-escaped-failures",
+      "lane": "deterministic",
+      "pillar": "robustness",
+      "base_confidence": 1.0,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "counter",
+        "command": "jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json  # failures in the sprint-review full run whose test_file was NOT in the selected set (scripts/test-selector.sh); written by sprint-review §1.3 via scripts/test-listener.sh"
+      },
+      "enforcement": [
+        "ratchet:advisory:tia_escaped_failures",
+        "skill:sprint-review §1.3",
+        "skill:quality-metrics"
+      ],
+      "owner": "sprint-review",
+      "consolidated_target": "orthogonal",
+      "escape_hatch": "none needed: advisory (not yet ratcheted); any non-zero value in the last 3 sprint-review runs flips scripts/test-selector.sh to --full automatically",
+      "source": "Anthropic test-impact-analysis post (2026); E-043 S5",
+      "notes": "Advisory metric, direction down. Promotion to ratchet metric 9 is a separate story (touches the 8-metric prose in six files). Honesty-insensitive: computed from the journal, not self-reported."
+    },
+    {
+      "id": "tia-selection-ratio",
+      "name": "tia-selection-ratio",
+      "lane": "deterministic",
+      "pillar": "robustness",
+      "base_confidence": 1.0,
+      "severity": "P3",
+      "verdict_authority": "advisory",
+      "detection": {
+        "type": "counter",
+        "command": "scripts/test-selector.sh --json $(git diff --name-only ${SPRINT_BASE}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
+      },
+      "enforcement": [
+        "ratchet:advisory:tia_selection_ratio",
+        "skill:quality-metrics"
+      ],
+      "owner": "sprint-review",
+      "consolidated_target": "orthogonal",
+      "escape_hatch": null,
+      "source": "Anthropic test-impact-analysis post (2026); E-043 S5",
+      "notes": "Informational, no direction. 1.0 means the selector went --full (config/lockfile change, >40 files, or recent escaped failures). Track alongside tia-escaped-failures: a low ratio with zero escapes is the goal state."
     }
   ],
   "design": {

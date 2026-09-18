@@ -1,0 +1,21 @@
+{
+  "numTotalTestSuites": 2, "numPassedTestSuites": 1, "numFailedTestSuites": 1,
+  "numTotalTests": 2, "numPassedTests": 1, "numFailedTests": 1, "numPendingTests": 0,
+  "startTime": 1758200000000, "success": false,
+  "testResults": [
+    {
+      "name": "/fixture/tests/a.test.ts", "status": "passed",
+      "startTime": 1758200000100, "endTime": 1758200000142, "message": "",
+      "assertionResults": [
+        { "ancestorTitles": ["a"], "fullName": "a composes b", "status": "passed", "title": "composes b", "duration": 3, "failureMessages": [] }
+      ]
+    },
+    {
+      "name": "/fixture/tests/b.test.ts", "status": "failed",
+      "startTime": 1758200000150, "endTime": 1758200000230, "message": "",
+      "assertionResults": [
+        { "ancestorTitles": ["b"], "fullName": "b returns b", "status": "failed", "title": "returns b", "duration": 5, "failureMessages": ["expected 'b' to be 'c'"] }
+      ]
+    }
+  ]
+}

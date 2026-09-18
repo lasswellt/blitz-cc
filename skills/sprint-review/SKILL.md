@@ -74,9 +74,24 @@ npm run lint 2>&1 || npx eslint . 2>&1
 ```
 Record: Pass/Fail, warning count, error count, error list for auto-fix.
 
-### 1.3 Unit Tests (Changed Packages Only)
+### 1.3 Unit Tests (Selected Set, then ONE Full Run — TIA calibration)
 
-Monorepo: `for pkg in ${CHANGED_PACKAGES}; do (cd "$pkg" && npm run test); done`. Single-package: `npm run test -- --changed`. Record: total tests, passed/failed/skipped, failure details (test name + file + assertion).
+Sprint close is the calibration point for test-impact analysis ([docs/guides/tia.md](/docs/guides/tia.md)). Two runs, both journaled by the listener:
+
+```bash
+RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n'); CHANGED=$(git diff --name-only ${SPRINT_BASE}..HEAD)
+SELECTED=$(printf '%s\n' "$CHANGED" | ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh --base ${SPRINT_BASE} | cut -f1)
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-sel"
+npx vitest run --reporter=json --outputFile=${SESSION_TMP_DIR}/tests-selected.json $SELECTED   # jest: --json --outputFile
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by selector --run-id "$RUN_ID-sel" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < ${SESSION_TMP_DIR}/tests-selected.json
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-full"
+npx vitest run --reporter=json --outputFile=${SESSION_TMP_DIR}/tests-full.json                 # monorepo: per changed package
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by full --run-id "$RUN_ID-full" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < ${SESSION_TMP_DIR}/tests-full.json
+```
+
+`escaped_failures` = failing test files in the full run whose `test_file` was NOT in `$SELECTED` (compare repo-relative paths). Write it into the gates JSON (§1.5 `tests.escaped_failures`) and append it to `.cc-sessions/test-journal.meta.json` `escaped_failures_recent` (keep the last 10: `jq '.escaped_failures_recent = ((.escaped_failures_recent // []) + [$n])[-10:]'`). Any non-zero value flips the selector to `--full` for the next 3 sprint-review runs. The **full-suite** result still gates PASS; the selected run only calibrates. Record: total tests, passed/failed/skipped, failure details (test name + file + assertion), `selection_ratio` = selected / total test files.
 
 ### 1.4 Build Verification
 ```bash

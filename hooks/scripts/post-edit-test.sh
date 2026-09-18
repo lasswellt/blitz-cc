@@ -1,89 +1,41 @@
 #!/usr/bin/env bash
-# PostToolUse hook — runs matching tests after file edits
-# Always exits 0 (non-blocking)
+# PostToolUse hook (Write|Edit) — records the edited file for test-impact analysis.
+# Always exits 0 (non-blocking).
+#
+# E-043 S3: this script no longer finds or runs tests. The filename-sibling
+# matcher moved to scripts/test-selector.sh (source 1 of 4, alongside the
+# import graph and the journal's recent-fail / co-change history), and the run
+# itself moved to hooks/scripts/heartbeat.sh (PostToolBatch, async +
+# asyncRewake): once per tool batch it reads this session's touched.txt, asks
+# the selector for the impacted test files, runs them through
+# scripts/test-listener.sh, and re-wakes the model with a failure digest.
+# Splitting record (here) from run (heartbeat) means N edits in one batch cost
+# one selected-set run instead of N sibling runs. Set BLITZ_TIA_DISABLE=1 to
+# stop the heartbeat run; this recorder stays cheap and harmless.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
-# Read the hook input from stdin
 INPUT=$(cat)
 
 FILE_PATH=$(blitz_extract file_path)
+[ -n "$FILE_PATH" ] || exit 0
 
-# Skip if no file path
-if [[ -z "$FILE_PATH" ]]; then
-  exit 0
+SESSION_ID=$(blitz_extract session_id)
+[ -n "$SESSION_ID" ] || SESSION_ID=$(blitz_session_id)
+SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -c 'A-Za-z0-9_.-' '_')
+case "$SAFE_SID" in ''|.*) exit 0 ;; esac
+
+ROOT=$(blitz_find_root || true)
+SESSIONS_DIR="${SESSIONS_DIR:-$ROOT/.cc-sessions}"
+TOUCHED_DIR="$SESSIONS_DIR/sessions/$SAFE_SID"
+TOUCHED="$TOUCHED_DIR/touched.txt"
+
+# Never track the session/journal bookkeeping itself.
+case "$FILE_PATH" in *"/.cc-sessions/"*|".cc-sessions/"*) exit 0 ;; esac
+
+mkdir -p "$TOUCHED_DIR" 2>/dev/null || exit 0
+if [ ! -f "$TOUCHED" ] || ! grep -qxF -- "$FILE_PATH" "$TOUCHED" 2>/dev/null; then
+  printf '%s\n' "$FILE_PATH" >> "$TOUCHED" 2>/dev/null || true
 fi
 
-# Only trigger for JS/TS/Vue source files
-if [[ ! "$FILE_PATH" =~ \.(ts|tsx|js|jsx|vue)$ ]]; then
-  exit 0
-fi
-
-# Skip if the edited file IS a test file
-BASENAME=$(basename "$FILE_PATH")
-DIR=$(dirname "$FILE_PATH")
-
-if [[ "$BASENAME" =~ \.(test|spec)\. ]] || [[ "$DIR" == *"__tests__"* ]]; then
-  exit 0
-fi
-
-# Strip extension to get the base name for test file matching
-NAME_NO_EXT="${BASENAME%.*}"
-
-# Find matching test file by checking patterns in order
-TEST_FILE=""
-
-# 1. Same directory: name.test.ts, name.spec.ts, name.test.tsx
-for pattern in "${NAME_NO_EXT}.test.ts" "${NAME_NO_EXT}.spec.ts" "${NAME_NO_EXT}.test.tsx" "${NAME_NO_EXT}.spec.tsx" "${NAME_NO_EXT}.test.js" "${NAME_NO_EXT}.spec.js" "${NAME_NO_EXT}.test.jsx"; do
-  if [[ -f "$DIR/$pattern" ]]; then
-    TEST_FILE="$DIR/$pattern"
-    break
-  fi
-done
-
-# 2. __tests__/ sibling directory
-if [[ -z "$TEST_FILE" ]]; then
-  for pattern in "${NAME_NO_EXT}.test.ts" "${NAME_NO_EXT}.spec.ts" "${NAME_NO_EXT}.test.tsx" "${NAME_NO_EXT}.test.js"; do
-    if [[ -f "$DIR/__tests__/$pattern" ]]; then
-      TEST_FILE="$DIR/__tests__/$pattern"
-      break
-    fi
-  done
-fi
-
-# 3. For .vue files: also check name.test.ts, name.spec.ts (already covered above)
-
-# No test file found — exit silently
-if [[ -z "$TEST_FILE" ]]; then
-  exit 0
-fi
-
-find_project_root() {
-  local dir="$1"
-  while [[ "$dir" != "/" ]]; do
-    [[ -f "$dir/package.json" ]] && { echo "$dir"; return 0; }
-    dir=$(dirname "$dir")
-  done
-  return 1
-}
-
-PROJECT_ROOT=$(find_project_root "$DIR") || exit 0
-
-# Detect test runner from package.json
-TEST_RUNNER="jest"
-if [[ -f "$PROJECT_ROOT/package.json" ]]; then
-  if grep -qE '"vitest"' "$PROJECT_ROOT/package.json" 2>/dev/null; then
-    TEST_RUNNER="vitest"
-  fi
-fi
-
-# Run the matching test with a timeout
-echo "Running test: $TEST_FILE"
-if [[ "$TEST_RUNNER" == "vitest" ]]; then
-  timeout 30s npx vitest run "$TEST_FILE" 2>&1 || true
-else
-  timeout 30s npx jest "$TEST_FILE" 2>&1 || true
-fi
-
-# Always exit 0 — test failure should not block edits
 exit 0

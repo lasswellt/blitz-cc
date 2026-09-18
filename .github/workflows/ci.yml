@@ -54,3 +54,8 @@ jobs:
           command -v bats >/dev/null || { echo "bats missing"; exit 1; }   # HTC-4: fail, don't skip vacuously
           bats hooks/tests/
           bash hooks/scripts/tests/test-link-resolver.sh
+
+      - name: TIA scripts (bats)
+        # E-043: listener + selector suites (also covered by the glob above;
+        # listed separately so a test-impact regression is named in the job log).
+        run: bats hooks/tests/test-listener.bats hooks/tests/test-selector.bats
