@@ -1,7 +1,8 @@
 ---
 id: E-047
 title: "Hygiene drift"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P0
 phase: 1
 domain: docs

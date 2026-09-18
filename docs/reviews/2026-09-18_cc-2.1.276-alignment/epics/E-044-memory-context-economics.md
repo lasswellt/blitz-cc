@@ -1,7 +1,8 @@
 ---
 id: E-044
 title: "Memory + context economics"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P1
 phase: 2
 domain: platform

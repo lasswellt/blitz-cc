@@ -1,7 +1,8 @@
 ---
 id: E-046
 title: "Cloud threads, routines, channels posture"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P2
 phase: 3
 domain: session

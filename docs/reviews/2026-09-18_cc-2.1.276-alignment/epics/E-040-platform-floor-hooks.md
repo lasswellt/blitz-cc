@@ -1,7 +1,8 @@
 ---
 id: E-040
 title: "Platform floor + hook-surface modernization"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P0
 phase: 1
 domain: platform

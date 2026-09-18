@@ -1,7 +1,8 @@
 ---
 id: E-042
 title: "Verification modernization — /goal, Stop gate, /verify recipe"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P1
 phase: 2
 domain: quality

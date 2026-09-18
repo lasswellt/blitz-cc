@@ -13,7 +13,7 @@ epics: [E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047]
 
 **Inputs.** Anthropic docs (best-practices, hooks, sub-agents, skills, memory, sessions, agent view, cross-session messaging, workflows, scheduled tasks, channels, `/goal`, plugins reference, changelog 2.1.158–2.1.276), three Anthropic blog posts (session value, test impact analysis, Projects redesign), herdr (GitHub README + session-manager plugin), and the Lantern agent-dashboard article. Full list with fetch dates: [sources.md](sources.md).
 
-**Output.** Eight epic-ready plans under [epics/](epics/), numbered E-040..E-047 (continuing from E-039). Implementation is deferred to sprint-plan / sprint-dev; nothing in this review changes runtime behavior.
+**Output.** Eight epic-ready plans under [epics/](epics/), numbered E-040..E-047 (continuing from E-039). **All eight were implemented in release 2.5.0 (2026-09-18)**; each epic file carries `status: implemented`. Two items still need a live-account check (see CHANGELOG 2.5.0).
 
 ---
 

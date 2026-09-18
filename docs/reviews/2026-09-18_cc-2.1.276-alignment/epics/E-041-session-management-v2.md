@@ -1,7 +1,8 @@
 ---
 id: E-041
 title: "Session management v2 — hook-owned records, messaging, inbox, dashboard"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P0
 phase: 1
 domain: session

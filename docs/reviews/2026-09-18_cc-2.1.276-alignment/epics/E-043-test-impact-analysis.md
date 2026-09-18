@@ -1,7 +1,8 @@
 ---
 id: E-043
 title: "Test impact analysis v0 — stateless listener + in-repo selector"
-status: planned
+status: implemented
+implemented_in: "2.5.0"
 priority: P1
 phase: 2
 domain: quality
