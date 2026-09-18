@@ -1,6 +1,6 @@
 # CC Plugin Suite — Development Guidelines
 
-This repo is the **blitz** Claude Code plugin: 37 development skills in `skills/`, 11 plugin agents in `agents/`, 45 hook scripts across 24 events in `hooks/`, and 13 shared protocol files in `skills/_shared/`. Skills are auto-discovered from `skills/<name>/SKILL.md` and invoked as `/blitz:<name>`. The plugin floor is Claude Code ≥2.1.271 (`.claude-plugin/compat.json`).
+This repo is the **blitz** Claude Code plugin: 38 development skills in `skills/`, 11 plugin agents in `agents/`, 46 hook scripts across 24 events in `hooks/`, and 13 shared protocol files in `skills/_shared/`. Skills are auto-discovered from `skills/<name>/SKILL.md` and invoked as `/blitz:<name>`. The plugin floor is Claude Code ≥2.1.271 (`.claude-plugin/compat.json`).
 
 ## Activity Feed
 

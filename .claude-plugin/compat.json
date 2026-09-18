@@ -18,7 +18,8 @@
     "omit_claude_md": "2.1.271",
     "workflow_usage_limit_pause": "2.1.271",
     "post_tool_use_updated_tool_output": "2.1.121",
-    "agent_cache_ttl": "2.1.248"
+    "agent_cache_ttl": "2.1.248",
+    "docs_verified_against": "2.1.276"
   },
   "cited_in": [
     "README.md",

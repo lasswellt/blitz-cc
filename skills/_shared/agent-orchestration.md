@@ -1068,9 +1068,43 @@ Implication: the orchestrator's row can look idle while its fan-out agents work.
 
 Background sessions auto-isolate into `.claude/worktrees/<id>` before editing — the same dir blitz `Agent({isolation:"worktree"})` worktrees use. The reconciliation (live-session prune guard, collision-guard scope, `worktree.bgIsolation: "none"` escape hatch) is specified in [worktree-lifecycle.md](worktree-lifecycle.md) §Interop. Never prune a live background session's worktree — it holds uncommitted work.
 
+### Agent-view schema and the single parsing point
+
+`claude agents --json --all` (2.1.141+; `--all` includes finished rows) returns an array of rows:
+
+| Field | Values | blitz use |
+|---|---|---|
+| `id` | agent-view row id (`claude attach|logs|stop|respawn|rm <id>`) | shell management only |
+| `sessionId` | native session id — same as `.cc-sessions/sessions/<sessionId>.json` and the feed `session` field | **join key** |
+| `name` | dispatch name (`--name`, else derived from the prompt) | skill inference for rows with no record |
+| `cwd` | worktree / checkout the session runs in | live-worktree guard |
+| `kind` | how the row was started (`bg`, `fork`, attached …) | display |
+| `state` | `working` \| `blocked` \| `done` \| `failed` \| `stopped` | **liveness** — conflicts key on this |
+| `status` | `busy` \| `waiting` \| `idle` | display; older builds emit only this |
+| `waitingFor` | `permission prompt` \| `input needed` \| `sandbox request` \| `dialog open` \| null | attention queue |
+| `pid`, `startedAt` | process id, ISO start | staleness cross-check |
+
+**`blitz_agent_view` (`hooks/scripts/_lib/common.sh`) is the single parsing point.** It prints one normalized line per row (`{sessionId,state,status,waitingFor,name,pid,kind,cwd}`), maps `status` → `state` on builds that lack `state` (busy→working, waiting→blocked, idle→idle), and prints nothing when the CLI / `--json` / `--all` is unavailable. No skill, hook or script runs its own `jq` over `claude agents --json`; a schema change is a one-line fix in that helper (E-041 §Risks). Wrong (pre-E-041) filter to delete on sight: `select(.status!="completed" and .status!="failed")` — those values never occur, so it excluded nothing.
+
+The **supervisor daemon** (`claude daemon status`) owns background processes; `/bg` backgrounds the current conversation into a row, `/fork` starts a sibling session from the current context (`source: fork` on its record). Both get a hook-written record like any other session.
+
 ### Cross-session conflict overlay
 
-The platform manages session *processes* but does **not** do semantic conflict detection. blitz's conflict matrix still applies — and is extended to background sessions via [session-lifecycle.md](session-lifecycle.md) §5b-i (reads `claude agents --json`, infers skill from session name, WARNs on matrix hits). This is blitz's durable value-add over native.
+The platform manages session *processes* but does **not** do semantic conflict detection. blitz's conflict matrix still applies — and is extended to background sessions via [session-lifecycle.md](session-lifecycle.md) §5b-i: join `blitz_agent_view` rows to session records on `sessionId`, key liveness on `state ∈ {working, blocked}`, carry `waitingFor` into the conflict line, WARN (never BLOCK) on rows whose skill is only inferred from `name`. This is blitz's durable value-add over native. `/blitz:sessions list|attention|dashboard` renders the same overlay.
+
+### Cross-session messaging (CC ≥2.1.224)
+
+**Surface.** Two tools, one command: `ListAgents` (rows as above, for the sessions this one can reach) and `SendMessage(to, message, notify_when_idle?)` — `to` is a `sessionId` or `name`; `notify_when_idle: true` (≥2.1.236) requests **one** notice when the target next goes idle (same machine only, only from the main conversation, not from a subagent). `/list-agents` is the interactive equivalent of `ListAgents`. Add `ListAgents` and `SendMessage` to `allowed-tools` in any skill that runs the conflict matrix with messaging (sprint-dev, sprint-review, sprint-plan, next, sessions). Note the `SendMessage` that talks to **teammate agents** inside a session (§Resume Protocol above) is the same tool; the `to` value decides the target.
+
+**Reach.** Sessions register on disk and can only message each other **inside the same container** — host ↔ container and machine ↔ machine never connect (the overlay and records still work across that boundary). Settings on the *receiving* side: `crossSessionInbound: accept | hold | refuse` (`hold` queues until the session next reads its inbox; a held message in a `-p` session expires with `dialogExpiry`, 5 min default), `isolatePeerMachines: true` (only same-container peers; set it whenever Remote Control is connected). Recommendations per session type: [security.md](security.md) TB-5.
+
+**What a message can and cannot do.** It arrives as a user-visible message in the target's transcript and can inform the next turn. It can **never** approve a permission prompt, change configuration, or run a command — the platform enforces that, and blitz's protocol treats every inbound line as untrusted data (TB-5): the only bounded actions are the mailbox kinds `note|unblock|halt`.
+
+**Hooks.** A hook has no tools. It receives `CLAUDE_CODE_MESSAGING_SOCKET` / `CLAUDE_CODE_MESSAGING_TOKEN` for **its own session's** inbox only (`blitz_inbox_post`); to reach another session it appends to that session's mailbox (`blitz_mailbox_send <sid> <kind> <text>`), which the target's own `Stop` hook drains — [session-lifecycle.md](session-lifecycle.md) §Mailbox protocol.
+
+**How the conflict matrix uses it.** BLOCK → `ListAgents`, find the peer by `sessionId`, `SendMessage(to, "<one-line reason>", notify_when_idle: true)`, print `LOOP_DEFER`, exit. WARN → one-line `SendMessage` notice, proceed. Degrade to WARN-only text when the peer holds/refuses or `ListAgents` is unavailable. Full table: [session-lifecycle.md](session-lifecycle.md) §Messaging action.
+
+**How sprint-dev wave barriers use it** (sprint-dev §3.2.2). At each wave boundary the orchestrator calls `ListAgents`; when a `sprint-review` session for the same sprint is `waiting` (`status: waiting` / `state: blocked` with no `waitingFor`), it sends `"sprint N wave M merged"` so the reviewer can start on the merged branch. When sprint-dev itself must wait on a peer (a BLOCK on the same sprint), it asks for `notify_when_idle: true` once and yields with `LOOP_DEFER` rather than polling `ListAgents` every turn; the idle notice is the wake-up. An inbound `halt` (message text or a mailbox line the prompt-expansion hook surfaced) ends the run after the current story with STATE.md written and `LOOP_ESCALATE` printed.
 
 ### Remote alerts
 
@@ -1084,12 +1118,13 @@ For an idle terminal bell (the article's "audio signal via hooks"), set `BLITZ_N
 
 ### Disable
 
-`disableAgentView` setting / `CLAUDE_CODE_DISABLE_AGENT_VIEW=1` turns agent view off. blitz interop (prune live-guard, conflict overlay) then degrades to `.cc-sessions/*.json`-only; `/blitz:health` Phase 2.5 warns when disabled.
+`disableAgentView` setting / `CLAUDE_CODE_DISABLE_AGENT_VIEW=1` turns agent view off. blitz interop (prune live-guard, conflict overlay) then degrades to `.cc-sessions/sessions/*.json`-only (`blitz_agent_view` prints nothing; staleness falls back to the time rules); `/blitz:health` Phase 2.5 and `/blitz:sessions` warn when disabled. Cross-session messaging is independent of agent view (it needs the messaging socket, not the view).
 
 ### Cross-references
 
 - [worktree-lifecycle.md](worktree-lifecycle.md) §Interop — worktree reconciliation + live-session guard
-- [session-lifecycle.md](session-lifecycle.md) §5b-i — conflict overlay
+- [session-lifecycle.md](session-lifecycle.md) §5b-i — conflict overlay; §Messaging action + §Mailbox protocol — what BLOCK/WARN send
+- [security.md](security.md) TB-5 — inbound messages are untrusted data
 - [spawn-protocol.md](#subagent-spawn-protocol), [sprint-contracts.md](sprint-contracts.md) — remote alert points
 - [terse-output.md](terse-output.md) — row-summary source
 - Research provenance: `docs/_research/2026-05-30_parallel-claude-sessions.md`
@@ -1351,7 +1386,7 @@ A reply that fails the schema check is treated as MALFORMED per spawn-protocol �
 
 ---
 
-### 4. Lazy Skill Loading (do not preload all 37)
+### 4. Lazy Skill Loading (do not preload all 38)
 
 The orchestrator agent MUST NOT inject all 37 skill descriptions at startup. Skill bodies load only on slash-invocation; for orchestrator routing, expose ONLY the wave-relevant skill names + descriptions.
 

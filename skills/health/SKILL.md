@@ -123,6 +123,8 @@ fi
 
 Report: daemon reachable (y/n), live background-session count, and the disable warning if present. Cross-ref: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md) §Interop.
 
+Summary only here — per-session table, attention queue, locks, inbox, and dashboard: `/blitz:sessions` (detail: /blitz:sessions; runtime state lives there, structural checks stay here).
+
 ---
 
 ## Phase 3: REGISTRY CHECKS

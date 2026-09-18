@@ -185,9 +185,10 @@ Analyzed by: blitz codebase-map (v<plugin-version>)
 
 The `Recommendations` section is the orchestrator's cross-cutting synthesis — e.g., a quality concern that compounds with an architectural gap. This is the one place the orchestrator adds value beyond concatenation.
 
-**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `CODEBASE-MAP.md` Write completes, emit a styled HTML twin via the `/_shared/html-template-helper.md` `emit_html()` helper. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `CODEBASE-MAP.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
+. "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
 [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html CODEBASE-MAP.md
 ```
 

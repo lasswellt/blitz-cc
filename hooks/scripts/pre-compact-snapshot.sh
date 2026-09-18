@@ -9,12 +9,19 @@
 # session-start.sh consumes HANDOFF.json on next session boot.
 
 set -euo pipefail
+. "$(dirname "$0")/_lib/common.sh"
+
+# Read stdin exactly once; the native session_id arrives here (C9, E-041 S1).
+# Env CLAUDE_SESSION_ID is the fallback for manual runs / older harnesses.
+INPUT=$(cat 2>/dev/null || echo "{}")
+[ -n "$INPUT" ] || INPUT="{}"
 
 mkdir -p .cc-sessions
 SNAPSHOT_FILE=".cc-sessions/compact-state.json"
 HANDOFF_FILE=".cc-sessions/HANDOFF.json"
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
+SESSION_ID=$(blitz_extract session_id)
+[ -n "$SESSION_ID" ] || SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
 
 # --- Find any in-progress sprint (legacy snapshot) ---
 SPRINT_NUM=$(cat sprint-registry.json 2>/dev/null \
@@ -55,12 +62,14 @@ SPRINT_FIELD="null"
 PHASE="$(jq -r '.phase // "unknown"' ".cc-sessions/${SESSION_ID}-workflow.json" 2>/dev/null || echo "unknown")"
 LAST_ACTIVITY="$(tail -1 .cc-sessions/activity-feed.jsonl 2>/dev/null | jq -r '.message // ""' 2>/dev/null || echo "")"
 
-UNCOMMITTED_JSON="$(git status --porcelain 2>/dev/null | jq -R . | jq -sc . 2>/dev/null || echo '[]')"
+# `(cmd || true)` keeps a failing git/tail from tripping pipefail — otherwise jq's `[]`
+# AND the `|| echo '[]'` fallback both print, yielding invalid JSON (HANDOFF unreadable).
+UNCOMMITTED_JSON="$( (git status --porcelain 2>/dev/null || true) | jq -R . | jq -sc . 2>/dev/null || echo '[]')"
 BRANCH="$(git branch --show-current 2>/dev/null || echo unknown)"
 HEAD_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 # Recent file changes (last 5 from activity feed)
-RECENT_FILES="$(tail -50 .cc-sessions/activity-feed.jsonl 2>/dev/null \
+RECENT_FILES="$( (tail -50 .cc-sessions/activity-feed.jsonl 2>/dev/null || true) \
   | jq -sc '[.[] | select(.event=="file_change") | .detail.files // []] | flatten | unique | .[0:10]' 2>/dev/null \
   || echo '[]')"
 
@@ -82,9 +91,9 @@ JSON
 
 echo "[blitz:pre-compact] HANDOFF written to ${HANDOFF_FILE}" >&2
 
-# Append handoff event to activity feed
-printf '{"ts":"%s","session":"%s","skill":"hook","event":"handoff_written","message":"PreCompact handoff captured","detail":{"phase":"%s","sprint":%s}}\n' \
-  "$TS" "$SESSION_ID" "$PHASE" "$SPRINT_FIELD" \
+# Append handoff event to activity feed (jq-built: session_id / phase are stdin-supplied)
+jq -nc --arg ts "$TS" --arg session "$SESSION_ID" --arg phase "$PHASE" --argjson sprint "$SPRINT_FIELD" \
+  '{ts:$ts,session:$session,skill:"hook",event:"handoff_written",message:"PreCompact handoff captured",detail:{phase:$phase,sprint:$sprint}}' \
   >> .cc-sessions/activity-feed.jsonl 2>/dev/null || true
 
 exit 0

@@ -11,7 +11,7 @@
 
 **⚡ A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase ⚡**
 
-**37 skills** · **11 agents** · **45 hook scripts across 24 events** · **13 shared protocol files**
+**38 skills** · **11 agents** · **46 hook scripts across 24 events** · **13 shared protocol files**
 
 Orchestrator main-thread router · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -57,8 +57,8 @@ Four properties make it a *machine* rather than a pile of prompts:
 | Audience | Read |
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
-| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-45-scripts-24-events) · [Shared Protocols](#shared-protocols-13) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
+| **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-38) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-46-scripts-24-events) · [Shared Protocols](#shared-protocols-13) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -198,11 +198,11 @@ The adversarial critic can be lifted verbatim and piped to a different model fam
 
 ## How review & audit work (the shared-registry core)
 
-The quality surface is **two entry points over one rule registry** — the cleanest illustration of "gates run on data, not vibes." `skills/_shared/check-registry.json` holds 94 checks split evenly across a *deterministic* and a *semantic* lane, each row tagged with its pillar, `verdict_authority`, and `base_confidence`.
+The quality surface is **two entry points over one rule registry** — the cleanest illustration of "gates run on data, not vibes." `skills/_shared/check-registry.json` holds 96 checks split evenly across a *deterministic* and a *semantic* lane, each row tagged with its pillar, `verdict_authority`, and `base_confidence`.
 
 ```mermaid
 flowchart TD
-  REG[("check-registry.json — 94 checks<br/>each row: lane · pillar · verdict_authority · base_confidence")]
+  REG[("check-registry.json — 96 checks<br/>each row: lane · pillar · verdict_authority · base_confidence")]
   REG --> RV["/blitz:review<br/>precision · per-change<br/>--min-confidence high · FP-verify inline"]
   REG --> AU["/blitz:audit<br/>recall · pre-release<br/>--min-confidence low · FP-verify panel + vote"]
   RV --> CR
@@ -222,7 +222,7 @@ Three ideas do the work:
 
 ---
 
-## Skill Catalog (37)
+## Skill Catalog (38)
 
 ### Orchestrators
 
@@ -288,15 +288,16 @@ Three ideas do the work:
 | **retrospective** | Mines activity-feed + diffs → safety-classified self-improvement proposals. | `/blitz:retrospective` |
 | **setup** | Detects CLAUDE.md ↔ skill conflicts; validates permissions/stack. | `/blitz:setup` |
 | **health** | Plugin structural integrity (hooks, sessions, locks, frontmatter). | `/blitz:health` |
+| **sessions** | Runtime view of this checkout's sessions: hook-owned records + native `state`/`status`/`waitingFor` overlay, attention queue, markdown/HTML dashboard, prune. | `/blitz:sessions [list\|attention\|dashboard\|prune] [--html]` |
 | **conform** | Migrates a project's blitz runtime artifacts to current schemas. | `/blitz:conform [dir] [--fix\|--scope plugin]` |
 | **todo** | Tracks todos in `.cc-sessions/todos.jsonl` with `file:line`. | `/blitz:todo [add\|list\|resolve]` |
 | **worktree-prune** | Safely deletes stale agent-spawned branches (dry-run default). | `/blitz:worktree-prune [--apply --merged-only]` |
 
 ### At a glance
 
-- **Loop-safe** (4): `browse`, `code-sweep`, `next`, `ui-audit` — one unit of work per tick (`sprint --loop` aliases `next --loop`).
+- **Loop-safe** (5): `browse`, `code-sweep`, `next`, `sessions`, `ui-audit` — one unit of work per tick (`sprint --loop` aliases `next --loop`).
 - **Slash-only** (`disable-model-invocation`, 3): `migrate`, `release`, `ship` — destructive/irreversible, never auto-fire.
-- **Read-only by default**: `conform`, `design-extract`, `dep-health`, `health`, `perf-profile`, `setup`, `ui-audit`, `worktree-prune` — mutate only with an explicit `--fix`/`--apply` flag.
+- **Read-only by default**: `conform`, `design-extract`, `dep-health`, `health`, `perf-profile`, `sessions`, `setup`, `ui-audit`, `worktree-prune` — mutate only with an explicit `--fix`/`--apply` flag.
 - **Multi-agent super-orchestrators** (slash-invoked, spawn parallel waves, 10): `sprint`, `sprint-dev`, `sprint-plan`, `sprint-review`, `research`, `audit`, `quality-metrics`, `code-sweep`, `code-doctor`, `ui-audit`.
 
 ---
@@ -369,13 +370,16 @@ Builder agents run in isolated git worktrees on per-role branches (`sprint-N/{ba
 
 ## Parallel Sessions (native agent view)
 
-Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude Code's native agent view (`claude agents`, CC ≥2.1.139) — run `claude --bg "/blitz:audit"` or type the command into the agent-view input to run blitz work as a background session. blitz does **not** reimplement the agents view, recaps, or terminal multiplexing; it interops:
+Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude Code's native agent view (`claude agents`, `claude --bg "/blitz:audit"`, `/bg`, `/fork`). blitz does **not** reimplement the agents view, recaps, or terminal multiplexing; it adds the layer the platform leaves out:
 
-- **Worktree reconciliation** — background sessions auto-isolate into `.claude/worktrees/`; `/blitz:worktree-prune` never removes a worktree a live `claude agents` session owns (data-loss guard via `claude agents --json`).
-- **Conflict overlay** — blitz's semantic conflict matrix extends to background sessions (the platform manages processes, not semantic conflicts).
-- **Remote alerts** — `PushNotification` fires off-screen on stuck-loop / Tier-3 escalation (gated on developer-profile `notify`); `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell.
+- **Hook-owned session records** — `SessionStart` writes `.cc-sessions/sessions/<session_id>.json` (native id, cwd, transcript, scratchpad, permission mode, effort); `PostToolBatch`/`Stop`/`SessionEnd` keep `state` and `status` current and release locks. Skills only claim a record (`skill`, `working_on`, `args`) — they never mint IDs, so a session is visible to its peers whether or not the skill preamble ran.
+- **Native overlay** — `claude agents --json --all` rows (`state: working|blocked|done|failed|stopped`, `status: busy|waiting|idle`, `waitingFor: permission prompt|input needed|sandbox request|dialog open`) are joined to the records through one helper (`blitz_agent_view`); liveness, staleness and the worktree data-loss guard all key on `state`.
+- **Conflict matrix + cross-session messaging** — blitz's semantic conflict matrix extends to every session in the container; on BLOCK the second session finds the peer with `ListAgents`, sends one line via `SendMessage(..., notify_when_idle: true)`, prints `LOOP_DEFER` and yields; on WARN it sends a one-line notice. Hooks reach a session through its mailbox (`.cc-sessions/mailbox/<sid>.jsonl`), drained by that session's own `Stop` hook. Inbound messages are untrusted data (TB-5) — they never approve, reconfigure, or run anything.
+- **Inbox + heartbeat** — hooks queue anything needing a human in `.cc-sessions/inbox.jsonl` (`needs_input`, `permission`, `blocked`, `stale_lock`, `quarantine`, `hook_failure`, `escalation`); `/blitz:next` triages it first on every tick and prints `HEARTBEAT_OK` when nothing is pending and nobody is `waitingFor`.
+- **`/blitz:sessions list | attention | dashboard --html | prune`** — the single view: records + overlay, the attention queue oldest-first, a markdown/HTML dashboard (`scripts/sessions-dashboard.sh`), and a prune of closed records > 7 d that never touches a live overlay row.
+- **Remote alerts** — `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell; stuck-loop / Tier-3 escalations land in the inbox and the attention queue.
 
-Full contract: [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
+Full contract: [`skills/_shared/session-lifecycle.md`](skills/_shared/session-lifecycle.md) (registration, conflict matrix, mailbox, scheduling, inbox) and [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md) §Agent-View / §Cross-session messaging.
 
 ---
 
@@ -397,7 +401,7 @@ blitz-cc/
 │   └── model-profiles.json      # per-agent model defaults (60/35/5 routing)
 ├── agents/                      # 11 agents (7 builder · 3 critic · 1 orchestrator)
 ├── skills/
-│   ├── <name>/SKILL.md          # 37 skills (Anthropic-canonical, auto-discovered)
+│   ├── <name>/SKILL.md          # 38 skills (Anthropic-canonical, auto-discovered)
 │   └── _shared/                 # 13 shared protocol files + check-registry.json
 ├── hooks/
 │   ├── hooks.json               # 16 events
@@ -420,7 +424,7 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 ---
 
-## Hook Reference (45 scripts, 24 events)
+## Hook Reference (46 scripts, 24 events)
 
 Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Of the 38 scripts, 35 are event-wired; the rest are sub-invoked (`check-registry-validate.sh`, `startup-validate.sh`) or critic-spawned (`critic-gemini.sh`). Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
 
@@ -441,7 +445,7 @@ All skills share 13 protocol files (+ `check-registry.json`) in [`skills/_shared
 - **sprint-contracts.md** — scope-ledger (carry-forward) Reader Algorithm + writer contract, story frontmatter, Definition of Done, deviation + scope-limit
 - **agent-orchestration.md** — agent fan-out (spawn/weight/HEARTBEAT, routing, token-budget) + the opt-in `Workflow` dispatch path
 - **quality-engine.md** (+ **check-registry.json**) — single source of truth for every review/audit check, the 20-detector catalog (13 reject, 7 advisory), the 8-metric ratchet, the deterministic verification recipe
-- **security.md** — containment posture / threat model (TB-1…TB-4), hook-trust boundary, package-install policy
+- **security.md** — containment posture / threat model (TB-1…TB-5), hook-trust boundary, package-install policy
 - **html-template-helper.md** — shared `emit_html()` convention for opt-in HTML side-output (audit, codebase-map, quality-metrics, research)
 - Plus: **project-context.md**, **skill-cross-references.md**, **design-criteria.md**, **knowledge-protocol.md**, **session-report-template.md**, **worktree-lifecycle.md**
 

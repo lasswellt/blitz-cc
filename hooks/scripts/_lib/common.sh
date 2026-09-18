@@ -7,7 +7,9 @@
 # Provides: blitz_find_root, blitz_extract, blitz_session_id,
 #           blitz_log_event, blitz_live_worktree_paths, blitz_atomic_write,
 #           blitz_session_record_path, blitz_session_record_find,
-#           blitz_session_update, blitz_inbox_append, blitz_inbox_post
+#           blitz_session_update, blitz_inbox_append, blitz_inbox_post,
+#           blitz_iso_epoch, blitz_agent_view, blitz_session_stale,
+#           blitz_mailbox_send
 #
 # Designed for set -euo pipefail callers. Every function handles its own
 # error paths. Global fallback vars: SESSION_ID, SESSIONS_DIR, INPUT.
@@ -117,12 +119,122 @@ blitz_log_event() {
 #
 # Prints nothing and returns 0 when the `claude` CLI or `--json` is unavailable
 # (older CC, Bedrock/Vertex, or agent view disabled). Never blocks the caller.
+#
+# E-041 S1 (C2): only rows whose overlay `state` is working|blocked count as
+# live — a done/failed/stopped row's worktree is fair game for the pruner.
 blitz_live_worktree_paths() {
+  blitz_agent_view | jq -r 'select(.state=="working" or .state=="blocked") | .cwd // empty' 2>/dev/null || true
+  return 0
+}
+
+# blitz_agent_view
+# Normalized native agent view (`claude agents --json --all`, CC >=2.1.141).
+# Prints ONE compact JSON object per line, keyed by sessionId:
+#   {sessionId,state,status,waitingFor,name,pid,kind,cwd}
+# `state` (working|blocked|done|failed|stopped) is taken verbatim when the CLI
+# emits it; older builds emit only `status` (busy|waiting|idle), which is
+# mapped busy→working, waiting→blocked, idle→idle so callers can key on
+# `state` alone. Missing fields are null. Prints nothing and returns 0 when
+# the `claude` CLI, `--json`, or `--all` is unavailable (older CC,
+# Bedrock/Vertex, agent view disabled) or the output is not a JSON array.
+# The jq mapping lives here and ONLY here: an upstream schema change is a
+# one-line fix (E-041 §Risks).
+blitz_agent_view() {
   command -v claude >/dev/null 2>&1 || return 0
-  local json
-  json=$(claude agents --json 2>/dev/null) || return 0
+  local json="" t=""
+  command -v timeout >/dev/null 2>&1 && t="timeout 8"
+  json=$($t claude agents --json --all 2>/dev/null) || json=$($t claude agents --json 2>/dev/null) || return 0
   [ -n "$json" ] || return 0
-  printf '%s' "$json" | jq -r 'if type=="array" then .[]?.cwd // empty else empty end' 2>/dev/null || true
+  printf '%s' "$json" | jq -c '
+    if type=="array" then
+      .[]? | select(type=="object" and ((.sessionId // "") != "")) |
+      { sessionId: .sessionId,
+        state: (.state // (if .status=="busy" then "working"
+                           elif .status=="waiting" then "blocked"
+                           elif .status=="idle" then "idle" else null end)),
+        status: (.status // null), waitingFor: (.waitingFor // null),
+        name: (.name // null), pid: (.pid // null), kind: (.kind // null),
+        cwd: (.cwd // null) }
+    else empty end' 2>/dev/null || true
+  return 0
+}
+
+# blitz_iso_epoch iso8601
+# Print the epoch seconds for an ISO-8601 UTC timestamp. GNU date first, BSD
+# date, then python3. Returns 1 (prints nothing) when nothing can parse it.
+blitz_iso_epoch() {
+  local iso="${1:-}"
+  [ -n "$iso" ] || return 1
+  date -d "$iso" +%s 2>/dev/null && return 0
+  date -j -f "%Y-%m-%dT%H:%M:%SZ" "$iso" +%s 2>/dev/null && return 0
+  command -v python3 >/dev/null 2>&1 || return 1
+  python3 - "$iso" <<'PYEOF' 2>/dev/null && return 0
+import sys
+from datetime import datetime
+print(int(datetime.fromisoformat(sys.argv[1].replace('Z', '+00:00')).timestamp()))
+PYEOF
+  return 1
+}
+
+# blitz_session_stale record_path [agent_view_lines]
+# Return 0 iff the session record at record_path is stale:
+#   - last_activity older than 30 min AND overlay state ∉ {working, blocked}, OR
+#   - started older than 4 h AND no overlay row for that sessionId.
+# The overlay is the output of blitz_agent_view (pass it as $2 to avoid one CLI
+# call per record; omitted → fetched here). When the overlay is empty (no
+# `claude` CLI / `--json`), the time rules alone decide. Unparsable timestamps
+# never count as stale (returns 1). The sessionId is `.session_id`, else the
+# legacy `.claude_session_id`, else the file stem.
+blitz_session_stale() {
+  local path="${1:-}" view="${2-__fetch__}"
+  [ -f "$path" ] || return 1
+  local sid last started now last_e start_e row state
+  sid=$(jq -r '.session_id // .claude_session_id // empty' "$path" 2>/dev/null) || return 1
+  [ -n "$sid" ] || sid=$(basename "$path" .json)
+  last=$(jq -r '.last_activity // .started // empty' "$path" 2>/dev/null) || return 1
+  started=$(jq -r '.started // empty' "$path" 2>/dev/null) || return 1
+  [ "$view" = "__fetch__" ] && view=$(blitz_agent_view)
+  now=$(date +%s)
+  row=$(printf '%s\n' "$view" | jq -c --arg sid "$sid" 'select(.sessionId==$sid)' 2>/dev/null | head -1 || true)
+  state=$(printf '%s' "$row" | jq -r '.state // empty' 2>/dev/null || true)
+  # Overlay row present: agent view is authoritative. A listed session is live
+  # (working, blocked, or merely idle while its user reads) unless the platform
+  # itself says it ended.
+  if [ -n "$row" ]; then
+    case "$state" in done|failed|stopped) return 0 ;; *) return 1 ;; esac
+  fi
+  # No row (process gone, or `claude agents --json` unavailable): time rules.
+  if [ -n "$last" ] && last_e=$(blitz_iso_epoch "$last"); then
+    [ $((now - last_e)) -gt 1800 ] && return 0
+  fi
+  if [ -n "$started" ] && start_e=$(blitz_iso_epoch "$started"); then
+    [ $((now - start_e)) -gt 14400 ] && return 0
+  fi
+  return 1
+}
+
+# blitz_mailbox_send target_sid kind text
+# Append one line to .cc-sessions/mailbox/<target_sid>.jsonl (drained to the
+# target's messaging socket by stop-turn.sh):
+#   {ts,from:$SESSION_ID|"unknown",to,kind:note|unblock|halt,text}
+# text is capped at 500 chars and injection-scanned (BLITZ_INJECTION_RX) — a
+# hit stores the quarantine marker instead. Returns 1 on an unsafe target id
+# or unknown kind; never throws under set -e.
+blitz_mailbox_send() {
+  local target="${1:-}" kind="${2:-note}" text="${3:-}"
+  _blitz_safe_id "$target" || return 1
+  case "$kind" in note|unblock|halt) ;; *) return 1 ;; esac
+  local dir ts from
+  dir="$(_blitz_sessions_dir)/mailbox"
+  mkdir -p "$dir" 2>/dev/null || return 1
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)
+  from="${SESSION_ID:-unknown}"
+  text=$(printf '%s' "$text" | tr -d '\r' | tr '\n' ' ' | cut -c1-500)
+  if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
+    text='[quarantined: suspicious field — see startup-validate.sh]'
+  fi
+  jq -nc --arg ts "$ts" --arg from "$from" --arg to "$target" --arg kind "$kind" --arg text "$text" \
+    '{ts:$ts,from:$from,to:$to,kind:$kind,text:$text}' >> "$dir/$target.jsonl" 2>/dev/null || return 1
   return 0
 }
 
