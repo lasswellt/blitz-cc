@@ -266,14 +266,13 @@ Agent(
 
 When §2.0 selected the `Workflow` path, dispatch **each wave** as one `parallel()` barrier with `isolation: 'worktree'` and `schema:` validation. The barrier replaces the Phase 3.2 Monitor loop *within* a wave: it returns only when every story-agent in the wave finishes, handing control back to main-thread Bash at the wave boundary for STATE.md + carry-forward writes (§3.2.1a/§3.2.1b) and the commit+push (§3.2.1c). Then the orchestrator calls `Workflow` again for the next wave.
 
-```js
-export const meta = { name: 'sprint-dev-wave', description: 'Dispatch one dependency-ordered wave of dev agents in isolated worktrees', phases: [{ title: 'Wave' }] }
-// args: { wave:N, agents:[{role,prompt}], storySchema } — prompts are the 14-item spec; worktree per agent
-const results = await parallel(args.agents.map(a => () =>
-  agent(a.prompt, { label: `${a.role}:w${args.wave}`, phase: 'Wave',
-    agentType: `blitz:${a.role}`, isolation: 'worktree', schema: args.storySchema })))
-return { wave: args.wave, agents: results.map((r, i) => ({ role: args.agents[i].role, ok: r !== null, result: r })) }
-```
+**Dispatch:** invoke the plugin workflow `/blitz:sprint-wave` (`workflows/sprint-wave.js`) with
+`args: { wave: N, agents: [{ role, prompt }, …], storySchema }` — `prompt` is the full 14-item spec
+(OUTPUT STYLE snippet embedded), `storySchema` the per-story JSON Schema. The workflow returns
+`{ wave, agents: [{ role, ok, result }] }`. **On any failure** (tool absent, `Workflow(<name>)` not
+allowed in a `-p` run, script error, abort) **fall back to the `Agent()` path (§2.3)** — never
+hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agent-orchestration.md)
+§Workflow Dispatch Contract.
 
 - `agentType: 'blitz:<role>'` preserves role system prompts + MCP scoping (§2.2); `isolation: 'worktree'` gives each agent its own worktree exactly as the `Agent()` path's `isolation: "worktree"`. Weight class Heavy — keep per-wave caps (≤4 stories AND ≤6 files/agent, §2.3).
 - `team_name` semantics: the `Workflow` per-wave barrier subsumes team coordination (no peer messaging within a wave); cross-wave state lives in STATE.md, not a persistent team.

@@ -33,7 +33,7 @@ Verify the structural integrity and operational health of the blitz plugin. Repo
 
 Run the plugin structure validator:
 ```bash
-./scripts/validate-plugin-structure.sh 2>&1
+"${CLAUDE_PLUGIN_ROOT:-.}/scripts/validate-plugin-structure.sh" 2>&1
 ```
 
 Report the result. If validation fails, list each failure with its location.
@@ -134,7 +134,7 @@ Summary only here — per-session table, attention queue, locks, inbox, and dash
 Walk every `skills/*/SKILL.md` (Anthropic-canonical layout — no central registry) and validate via the lint hook:
 
 ```bash
-hooks/scripts/skill-frontmatter-validate.sh --all
+"${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/skill-frontmatter-validate.sh" --all
 ```
 
 The validator reports per-file violations: missing required frontmatter fields, description over 1024 chars, body over 500 lines, missing canonical OUTPUT STYLE snippet. Report the exit code (0 = all conform; 1 = violations listed) plus the count of skills found:
@@ -174,7 +174,7 @@ The cumulative description budget is enforced by the validator (14 500 chars). F
 If `/skill-doctor` is unavailable, report `SKIPPED (skill-doctor unavailable)` and fall back to the validator's cumulative figure:
 
 ```bash
-hooks/scripts/skill-frontmatter-validate.sh --all 2>&1 | grep 'cumulative skill descriptions'
+"${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/skill-frontmatter-validate.sh" --all 2>&1 | grep 'cumulative skill descriptions'
 ```
 
 Status: WARN when cumulative descriptions exceed 14 000 chars or any single skill exceeds 3 000 tokens per turn; never FAIL (advisory).
@@ -184,7 +184,7 @@ Status: WARN when cumulative descriptions exceed 14 000 chars or any single skil
 ## Phase 4: STACK DETECTION CHECK
 
 ```bash
-./scripts/detect-stack.sh 2>&1
+"${CLAUDE_PLUGIN_ROOT:-.}/scripts/detect-stack.sh" 2>&1
 ```
 
 Verify the stack detection script runs successfully and produces output.

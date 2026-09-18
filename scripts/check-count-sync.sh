@@ -3,7 +3,7 @@
 # ──────────────────
 # Companion to check-version-sync.sh. That script validates the semver across
 # manifests; this one validates the PROSE COUNTS (skills, agents, shared
-# protocol files, hook scripts/events, detectors) that every doc otherwise
+# protocol files, hook scripts/events, detectors, workflows, evals) that every doc otherwise
 # hand-maintains and drifts on.
 #
 # Source of truth: the filesystem. The script recomputes every count, compares
@@ -51,6 +51,8 @@ C_hook_scripts=$(find hooks/scripts -maxdepth 1 -name '*.sh' | wc -l | tr -d ' '
 C_hook_wired=$(grep -oE '[a-zA-Z0-9_-]+\.sh' "$HOOKS_JSON" | sort -u | wc -l | tr -d ' ')
 C_events=$(python3 -c "import json;d=json.load(open('$HOOKS_JSON'));e=d.get('hooks',d);print(len(e.keys()))")
 C_anti=$(find hooks/scripts -maxdepth 1 \( -name 'block-*.sh' -o -name 'post-edit-typecheck-block.sh' \) | wc -l | tr -d ' ')
+C_workflows=$(find workflows -maxdepth 1 -name '*.js' 2>/dev/null | wc -l | tr -d ' ')
+C_evals=$(find evals -mindepth 2 \( -name prompt.md -o -name case.yaml \) -not -path '*/results/*' -printf '%h\n' 2>/dev/null | sort -u | wc -l | tr -d ' ')
 
 # Detectors come from the registry (canonical), fall back to taxonomy rows.
 read -r C_det C_det_rej C_det_adv < <(python3 -c "
@@ -82,6 +84,11 @@ d.update({
   "hook_events": $C_events, "detectors": $C_det,
   "detectors_reject": $C_det_rej, "detectors_advisory": $C_det_adv,
   "anti_shortcut_hooks": $C_anti,
+  "workflows": $C_workflows, "evals": $C_evals,
+})
+d.setdefault("definitions", {}).update({
+  "workflows": "count of workflows/*.js (plugin workflows, run as /blitz:<meta.name>; E-045)",
+  "evals": "count of eval case directories under evals/ (a dir holding prompt.md or case.yaml, results/ excluded; claude plugin eval)",
 })
 json.dump(d, open(p, "w"), indent=2)
 open(p, "a").write("\n")
@@ -114,6 +121,8 @@ if [[ -f "$COUNTS_JSON" ]]; then
   check_json detectors_reject "$C_det_rej"
   check_json detectors_advisory "$C_det_adv"
   check_json anti_shortcut_hooks "$C_anti"
+  check_json workflows "$C_workflows"
+  check_json evals "$C_evals"
 else
   log "  drift: $COUNTS_JSON missing — run check-count-sync.sh --write"
   DRIFT=$((DRIFT+1))

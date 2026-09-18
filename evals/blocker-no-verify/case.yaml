@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: blocker-no-verify
+tags: [hooks, needs-bash, needs-scaffold]
+context:
+  scaffold_script: fixture.sh

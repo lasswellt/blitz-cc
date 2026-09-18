@@ -121,13 +121,13 @@ echo "[audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
 
 Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
 
-```js
-export const meta = { name: 'audit', description: '5-pillar audit, 2 independent same-scope agents/pillar (Multi-Review)', phases: [{ title: 'Audit' }] }
-// ROSTER passed via args (agent name, pillar, scope, fileCap, outputPath, checklist, stack, inventory)
-const findings = await parallel(args.roster.map(a => () =>
-  agent(a.prompt, { label: a.name, phase: 'Audit', model: 'sonnet', schema: args.findingsSchema })))
-return { agents: findings.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f })) }
-```
+**Dispatch:** invoke the plugin workflow `/blitz:audit-sweep` (`workflows/audit-sweep.js`) with
+`args: { roster: [{ name, prompt }, …], findingsSchema }` — the roster is the 10-agent table below with each
+`prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
+inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
+`Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
+hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agent-orchestration.md)
+§Workflow Dispatch Contract.
 
 - Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
 - `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).

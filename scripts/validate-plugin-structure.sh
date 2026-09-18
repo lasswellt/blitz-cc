@@ -294,6 +294,99 @@ while IFS= read -r -d '' sh_file; do
 done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/null)
 
 # ---------------------------------------------------------------
+# 9. Plugin workflows — workflows/*.js parse, meta literal first, no
+#    resume-breaking calls (Date.now / Math.random / new Date() / import()).
+#    Contract: skills/_shared/agent-orchestration.md §Plugin workflows (E-045).
+# ---------------------------------------------------------------
+echo "Checking plugin workflows..."
+WORKFLOWS_DIR="$PLUGIN_ROOT/workflows"
+if [[ -d "$WORKFLOWS_DIR" ]]; then
+  wf_count=0
+  for wf in "$WORKFLOWS_DIR"/*.js; do
+    [[ -f "$wf" ]] || continue
+    wf_count=$((wf_count + 1))
+    rel_path="${wf#"$PLUGIN_ROOT"/}"
+    if command -v node >/dev/null 2>&1; then
+      if node --check "$wf" >/dev/null 2>&1; then
+        check_pass "$rel_path parses (node --check)"
+      else
+        check_fail "$rel_path has a syntax error (node --check)"
+      fi
+    else
+      check_warn "$rel_path: node not found, skipping syntax check"
+    fi
+    # First statement must be the meta export (comments/blank lines may precede it).
+    first_stmt=$(grep -vE '^\s*(//.*)?$' "$wf" | head -1)
+    if [[ "$first_stmt" =~ ^export[[:space:]]+const[[:space:]]+meta[[:space:]]*= ]]; then
+      check_pass "$rel_path starts with export const meta"
+    else
+      check_fail "$rel_path: first statement must be 'export const meta = {...}' (got: ${first_stmt:0:60})"
+    fi
+    if grep -nE 'Date\.now\(|Math\.random\(|new Date\(\)|import\(' "$wf" >/dev/null 2>&1; then
+      check_fail "$rel_path uses a forbidden call (Date.now / Math.random / new Date() / import()): $(grep -nE 'Date\.now\(|Math\.random\(|new Date\(\)|import\(' "$wf" | head -1)"
+    else
+      check_pass "$rel_path has no resume-breaking calls"
+    fi
+  done
+  [[ "$wf_count" -eq 0 ]] && check_warn "workflows/ exists but contains no *.js"
+else
+  check_pass "no workflows/ directory (optional)"
+fi
+
+# ---------------------------------------------------------------
+# 10. Eval suite — every evals/**/case.yaml parses (python3 yaml when
+#     available, else a shape check) and every prompt.md has a body.
+#     Layout: https://code.claude.com/docs/en/plugin-evals
+# ---------------------------------------------------------------
+echo "Checking eval suite..."
+EVALS_DIR="$PLUGIN_ROOT/evals"
+if [[ -d "$EVALS_DIR" ]]; then
+  HAVE_PYYAML=0
+  python3 -c "import yaml" >/dev/null 2>&1 && HAVE_PYYAML=1
+  while IFS= read -r -d '' cy; do
+    rel_path="${cy#"$PLUGIN_ROOT"/}"
+    if [[ "$HAVE_PYYAML" -eq 1 ]]; then
+      if python3 -c "
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert isinstance(d, dict), 'not a mapping'
+assert 'schema_version' in d and 'name' in d, 'missing schema_version or name'
+" "$cy" >/dev/null 2>&1; then
+        check_pass "$rel_path parses (schema_version + name present)"
+      else
+        check_fail "$rel_path does not parse or lacks schema_version/name"
+      fi
+    else
+      if grep -qE '^schema_version:' "$cy" && grep -qE '^name:' "$cy" && ! grep -qP '\t' "$cy"; then
+        check_pass "$rel_path shape ok (no PyYAML: schema_version + name, no tabs)"
+      else
+        check_fail "$rel_path shape check failed (needs schema_version: and name:, no tabs)"
+      fi
+    fi
+  done < <(find "$EVALS_DIR" -name case.yaml -not -path "*/results/*" -print0 2>/dev/null)
+
+  while IFS= read -r -d '' pm; do
+    rel_path="${pm#"$PLUGIN_ROOT"/}"
+    # body = everything after the closing frontmatter fence (or the whole file when none)
+    body=$(awk 'BEGIN{fm=0} NR==1 && /^---$/ {fm=1; next} fm==1 && /^---$/ {fm=2; next} fm!=1 {print}' "$pm" | grep -vE '^\s*$' || true)
+    if [[ -n "$body" ]]; then
+      check_pass "$rel_path has a prompt body"
+    else
+      check_fail "$rel_path has an empty prompt body"
+    fi
+  done < <(find "$EVALS_DIR" -name prompt.md -not -path "*/results/*" -print0 2>/dev/null)
+
+  case_count=$(find "$EVALS_DIR" -mindepth 2 \( -name prompt.md -o -name case.yaml \) -not -path "*/results/*" -printf '%h\n' 2>/dev/null | sort -u | wc -l)
+  if [[ "$case_count" -gt 0 ]]; then
+    check_pass "evals/ contains $case_count case(s)"
+  else
+    check_warn "evals/ exists but contains no cases (prompt.md or case.yaml)"
+  fi
+else
+  check_pass "no evals/ directory (optional)"
+fi
+
+# ---------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------
 echo ""

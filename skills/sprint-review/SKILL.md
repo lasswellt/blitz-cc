@@ -163,29 +163,13 @@ Default: parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git
 
 Per [agent-orchestration.md](/_shared/agent-orchestration.md) capability gate (`BLITZ_DISPATCH`: `auto`/`workflow`/`agent`). When `USE_WORKFLOW` truthy AND `Workflow` tool available, dispatch reviewers + critic via native primitives; on ANY failure fall back to §2.2.1 (`Agent()`). Never hard-fail. Findings files + report synthesis stay in main-thread Bash (hybrid wrapper boundary); the script touches no filesystem.
 
-```js
-export const meta = { name: 'sprint-review', description: 'Parallel/sequential reviewers + adversarial critic', phases: [{ title: 'Review' }, { title: 'Critic' }] }
-// args: { roster:[{name,prompt}], sequential:bool, criticPrompt, reviewerSchema, criticSchema }
-let reviews
-if (args.sequential) {
-  // sequential: each reviewer receives all prior reviewers' findings (true chain, sequential accumulator)
-  reviews = []
-  let prior = []
-  for (const a of args.roster) {
-    const f = await agent(`${a.prompt}\n\nPrior findings:\n${JSON.stringify(prior)}`,
-      { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })
-    reviews.push(f)
-    if (f) prior = [...prior, f]
-  }
-} else {
-  // parallel (default): all reviewers concurrent
-  reviews = await parallel(args.roster.map(a => () =>
-    agent(a.prompt, { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
-}
-// Invariant 7: adversarial critic, schema-validated (replaces jq parse of LGTM|REJECT)
-const critic = await agent(args.criticPrompt, { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', schema: args.criticSchema })
-return { reviews: reviews.map((f, i) => ({ name: args.roster[i]?.name, ok: f !== null, result: f })), critic }
-```
+**Dispatch:** invoke the plugin workflow `/blitz:review-fanout` (`workflows/review-fanout.js`) with
+`args: { roster: [{ name, prompt }, …], sequential: <bool from §2.2.0>, criticPrompt, reviewerSchema, criticSchema }`.
+It runs the reviewers (parallel by default; a sequential accumulator that threads prior findings when
+`sequential: true`) and then the `blitz:critic` agent, and returns `{ reviews: [{ name, ok, result }], critic }`.
+**On any failure** (tool absent, no `Workflow(<name>)` allow rule in a `-p` run, script error, abort)
+**fall back to §2.2.1 (`Agent()`)** — never hard-fail. Resume semantics + concurrency cap:
+[agent-orchestration.md](/_shared/agent-orchestration.md) §Workflow Dispatch Contract.
 
 - `model: 'sonnet'` per token-budget (explicit — prevents `[1m]` inheritance). Critic uses `agentType: 'blitz:critic'` so its system prompt loads; `schema` forces canonical `{verdict: LGTM|REJECT, ...}` and removes inline jq parsing.
 - Each `a.prompt`/`criticPrompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.

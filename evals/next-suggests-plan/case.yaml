@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: next-suggests-plan
+tags: [routing, needs-scaffold]
+context:
+  scaffold_script: fixture.sh
