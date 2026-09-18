@@ -24,6 +24,9 @@ tools: Read, Grep, Glob, Bash, mcp__plugin_playwright_playwright__browser_naviga
 # dev-server URL ui-build passes. Still no Write/Edit/Agent; output remains the JSON reply contract.
 maxTurns: 30
 model: sonnet
+# Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
+# the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
+omitClaudeMd: true
 ---
 
 # Design Critic — Vision-Based Aesthetic Scorer

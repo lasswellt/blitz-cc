@@ -600,6 +600,19 @@ By story 4-5, the context is ~60% full. By story 7-8, quality degrades — the m
 
 ---
 
+### Session-level hygiene (all skills)
+
+Platform mechanics that change how much a session costs (Claude Code ≥2.1.271):
+
+- **Set model and effort once.** Every blitz skill is `model: inherit`; switching `/model` or `/effort` mid-session resets the prompt cache. The `PreModelSwitch` hook prints a one-line reminder. Start sprint work with `claude --model opus --effort high`.
+- **`/compact` before a break.** The prompt cache expires after ~1 hour on subscriptions; summarizing while it is still cached is far cheaper. The PreCompact hook writes `HANDOFF.json`, so a compaction is also a checkpoint.
+- **`/rewind` to discard, `/compact` to keep.** Dropping the last few turns costs nothing (earlier context stays cached); rewriting the whole conversation does.
+- **`/rename` before `/clear`.** A named session (`--name`, `/rename`) is the resume handle other sessions and `claude --resume <name>` use; blitz's session record stores the native `session_id`, not the name.
+- **`/btw` for side questions.** The answer never enters history.
+- **Quiet flags.** Tool output stays in context. Prefer `npx vitest run <file> --reporter=dot`, `git --no-pager`, `npm run lint --silent`. Outputs over ~30 k characters are auto-saved to a file with a preview, so skills no longer truncate manually.
+- **Loops in their own session.** A `/loop` fires as a full turn carrying the whole conversation; run `/blitz:next --loop` from a fresh session or a background session (`claude --bg`).
+- **`/skill-doctor`** reports per-skill context cost and never-invoked skills; `/blitz:health` Phase 3.4 surfaces it.
+
 ### Rules for Orchestrators (sprint-dev, sprint, ship)
 
 #### 1. Summarize, Don't Relay

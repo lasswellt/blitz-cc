@@ -2,11 +2,11 @@
 name: bootstrap
 description: "Scaffolds new projects, features, or packages with conventions auto-detected. Greenfield (creates package.json, src/, docs/, roadmap stubs) vs existing (adds to structure). Use for 'bootstrap', 'scaffold', 'init a new project', 'set up a Vue/Nuxt/Firebase project', 'create a new package'. First step in the greenfield pipeline before /blitz:research and /blitz:roadmap."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<type: project|feature|package> <name>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

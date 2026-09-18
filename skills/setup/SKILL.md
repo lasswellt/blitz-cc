@@ -3,11 +3,11 @@ name: setup
 description: "Detects conflicts between CLAUDE.md rules and blitz skill behaviors. Reads global + project CLAUDE.md, matches against a known-conflict catalog, and reports severity-graded findings with remediation. Validates tool permissions and stack assumptions. Use on new project install, after adding CLAUDE.md rules, or when blitz skills behave unexpectedly."
 allowed-tools: Read, Bash, Glob, Grep
 disallowed-tools: Edit, Write, NotebookEdit
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "[--fix|--check] [--scope global|project|all]"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

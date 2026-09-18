@@ -2,11 +2,11 @@
 name: fix-issue
 description: "Resolves GitHub issues end-to-end: fetches issue context via gh CLI, researches root cause, implements fix with regression tests, and updates the issue with a closing comment. Use when the user says 'fix issue #N', 'resolve issue', 'work on issue', 'pick up issue', or pastes a GitHub issue URL. Independent of sprint-dev — for one-off bugs not in the sprint plan."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<issue-number>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

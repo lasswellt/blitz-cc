@@ -2,11 +2,11 @@
 name: test-gen
 description: "Generates tests for target files matching the project's existing test conventions (Vitest/Jest, AAA/BDD style, factory patterns). Analyzes untested functions, edge cases, and error paths. Runs each generated test to verify it passes. Use when the user says 'add tests', 'generate tests for', 'test coverage', 'write tests', 'cover this file with tests'. Especially valuable after sprint-dev completes if test coverage gaps remain."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<file-path>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

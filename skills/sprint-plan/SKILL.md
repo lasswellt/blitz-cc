@@ -4,10 +4,10 @@ description: "Plans the next sprint from roadmap epics. Selects unblocked epics 
 argument-hint: "[--sprint N] [--gaps]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 disable-model-invocation: false
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

@@ -2,11 +2,11 @@
 name: quality-metrics
 description: "Collects, stores, and visualizes code-quality metrics over time (test counts, lint debt, cyclomatic complexity, dependency health, type-error trends). Modes: collect, dashboard, trend, compare. Use when the user says 'quality metrics', 'metrics dashboard', 'show trends', 'compare sprints', 'quality over time', or as a post-sprint observability snapshot in /blitz:ship."
 allowed-tools: Read, Write, Bash, Glob, Grep, Agent
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<collect|dashboard|trend|compare <date1> <date2>>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

@@ -17,6 +17,9 @@ maxTurns: 50
 # Sonnet per /_shared/agent-orchestration.md — standard implementation work.
 model: sonnet
 memory: project
+# Spawned several times per sprint: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 

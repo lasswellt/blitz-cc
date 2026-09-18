@@ -2,11 +2,11 @@
 name: doc-gen
 description: "Generates API docs, component docs, architecture diagrams (Mermaid), and CHANGELOG entries from source code and conventional commits. Modes: api, components, architecture, changelog, full. Use when the user says 'generate docs', 'doc-gen', 'API documentation', 'component docs', 'architecture diagram', 'auto-changelog', or when source code is ahead of docs/."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<api|components|architecture|changelog|full>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

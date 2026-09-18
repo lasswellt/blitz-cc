@@ -2,11 +2,11 @@
 name: ui-audit
 description: "Cross-page semantic consistency + data-quality + UI/UX heuristic audit. Extracts a labeled value registry, asserts cross-page invariants (same field = same value, no role leaks), flags placeholders and flapping values. Read-only, loop-safe. Use when the user says 'audit consistency', 'check cross-page data', 'ui-audit', 'role leak', or 'placeholder text on screen'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
-model: opus
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
-effort: low
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- no-disallowed-tools: not read-only — Writes/Edits the value-registry + audit report artifacts. Excluded from S14-008 disallowed-tools (S14-009 / audit §2 correction). Also excluded for the same reason: review --only wiring (Write+Agent), audit (writes reports), design-extract (writes DESIGN.md). Only `health` qualified. -->
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

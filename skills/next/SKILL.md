@@ -3,10 +3,10 @@ name: next
 description: "Reads project, sprint, and carry-forward state then recommends the next blitz command. With --loop, auto-dispatches the recommended phase and exits cleanly for /loop or ScheduleWakeup re-tick. Canonical autonomous reconciliation engine (supersedes /blitz:sprint --loop). Use when the user asks 'what should I do next?', 'where are we?', '/blitz:next', or starts autonomous loop mode."
 argument-hint: "[--loop]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

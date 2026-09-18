@@ -411,7 +411,7 @@ Resolution order (highest priority first):
 
 **Subagents cannot spawn subagents**: the harness prevents infinite nesting. Chain from the main conversation, not from within another subagent.
 
-**Subagents do not inherit skills**: list any required skills explicitly in the subagent definition's `skills:` frontmatter field.
+**Subagents do not inherit skills**: list any required skills explicitly in the subagent definition's `skills:` frontmatter field. Preload beats `@import` prose only when the skill is needed on every run of that agent (it costs its full body at spawn). `test-writer` ← `test-gen` is the one obvious candidate; measure with `/skill-doctor` before adding others.
 
 ---
 
@@ -1056,7 +1056,7 @@ Or interactively: open `claude agents`, type `/blitz:audit` in the dispatch inpu
 
 Manage from the shell: `claude attach <id>`, `claude logs <id>`, `claude stop <id>`, `claude respawn <id>`, `claude rm <id>`, `claude daemon status`.
 
-**Version floor:** agent view v2.1.139+; `claude agents --json` / `--cwd` v2.1.141+; `worktree.bgIsolation` v2.1.143+; `--agent` dispatch honoring blitz agent defs v2.1.157+. All blitz interop degrades silently below these floors.
+**Version floor:** the plugin's effective floor is **2.1.271** (`.claude-plugin/compat.json` is the single source; `check-version-sync.sh` asserts every citation). Feature floors that matter here: agent view 2.1.139, `claude agents --json` / `--cwd` 2.1.141, `worktree.bgIsolation` 2.1.143, `--agent` dispatch honoring blitz agent defs 2.1.157, cross-session messaging 2.1.224, `notify_when_idle` 2.1.236, Monitor deadline-only watches 2.1.271. Below the effective floor blitz interop degrades silently.
 
 ### Row-summary quality (orchestrators show as ONE row)
 
@@ -1276,7 +1276,7 @@ Default cache TTL was silently dropped 60min → 5min in early 2026. For a sprin
 
 Plugin agents whose system prompt is ≥1024 tokens (Sonnet) / ≥4096 tokens (Opus, Haiku 4.5) should be authored cache-friendly: place the **static prefix FIRST** — role definition, specialist roster, shared protocols, output style — and **dynamic content (sprint context, story args, activity-feed slice) AFTER** it, or the prefix match breaks and you pay full price.
 
-`cache_control` (`{"type": "ephemeral", "ttl": "1h"}`) is an API/SDK request parameter, **not** something settable from a SKILL.md/agent.md system prompt. The platform/SDK applies prompt caching to the stable prefix and owns the 1h ephemeral TTL; the markdown layer's job is only to keep that prefix stable and front-loaded. The break-even table below is informational — it explains why a front-loaded prefix pays off, not a mechanism the markdown layer delivers.
+`cache_control` (`{"type": "ephemeral", "ttl": "1h"}`) is an API/SDK request parameter. Since Claude Code 2.1.248 an agent file can request the 1h lifetime for its own prefix with `experimental:\n  cacheTtl: 1h` (blitz sets it on the builder agents and `reviewer`, which are spawned several times per sprint); workflow agents use the `subagentPromptCacheTtl` setting instead. Everything else about cache placement is still owned by the platform: The platform/SDK applies prompt caching to the stable prefix and owns the 1h ephemeral TTL; the markdown layer's job is only to keep that prefix stable and front-loaded. The break-even table below is informational — it explains why a front-loaded prefix pays off, not a mechanism the markdown layer delivers.
 
 #### Break-even
 
@@ -1395,7 +1395,7 @@ Pattern: any spawn site that runs `npm test` or `npm run build` and pipes to the
 
 CLAUDE.md is loaded into every session — keep ≤200 lines. Workflow-specific instructions belong in `skills/*/SKILL.md` (lazy-loaded), not CLAUDE.md.
 
-User memory at `~/.claude/projects/-home-tom-development-blitz/memory/MEMORY.md` is also loaded every session (truncated at 200 lines). Each entry should be one line, ≤150 chars.
+Auto memory is also loaded every session: the `MEMORY.md` index under `autoMemoryDirectory` (default `~/.claude/projects/<project>/memory/`), first 200 lines or 25 KB, whichever comes first; typed topic files (`user_*`, `feedback_*`, `project_*`, `reference_*`) load on demand. Each index entry should be one line, ≤150 chars. How blitz's KNOWLEDGE.md relates to it: [knowledge-protocol.md §8](knowledge-protocol.md#8-relationship-to-auto-memory). Path-scoped `.claude/rules/*.md` (`paths:` frontmatter) load only when a matching file is read and are the right home for instructions that apply to one part of the tree; HTML comments in CLAUDE.md are stripped before injection. Run `/skill-doctor` to see per-skill context cost and never-invoked skills.
 
 ---
 
@@ -1404,7 +1404,7 @@ User memory at `~/.claude/projects/-home-tom-development-blitz/memory/MEMORY.md`
 | Mode | Token overhead vs single chat | Use case |
 |---|---|---|
 | Subagents (current blitz) | 200–500% | Result-only return; orchestrator-worker pattern |
-| Agent Teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | ~700% (plan mode) | Peer-to-peer debate, competing hypotheses |
+| Agent teams (experimental, disabled by default in Claude Code; not adopted by blitz) | ~700% (plan mode) | Peer-to-peer debate, competing hypotheses |
 
 For blitz Hybrid Pattern A's 20 specialist workers: **use subagents**. Reserve Agent Teams for genuinely peer-to-peer debugging where multiple hypotheses must run concurrently.
 

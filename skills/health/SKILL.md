@@ -4,10 +4,10 @@ description: "Validates plugin structural integrity: hooks executable + valid ho
 argument-hint: "(no arguments — runs all checks)"
 allowed-tools: Read, Bash, Glob, Grep
 disallowed-tools: Edit, Write, NotebookEdit
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.152"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
@@ -160,6 +160,22 @@ ls skills/_shared/*.md 2>/dev/null
 ```
 
 Check that the expected protocols are present: session-lifecycle.md, terse-output.md, sprint-contracts.md, session-lifecycle.md, sprint-contracts.md, session-lifecycle.md, session-report-template.md.
+
+### 3.4 Skill Context Budget
+
+The cumulative description budget is enforced by the validator (14 500 chars). For the runtime view, invoke the bundled `/skill-doctor` (Claude Code ≥2.1.252; unavailable over Remote Control and when feature-flag fetching is off) via the Skill tool and report:
+
+- per-skill context cost (tokens per turn) for the ten most expensive skills
+- skills never invoked in the sampled transcripts — candidates for `skillOverrides` or trimming
+- unused plugins
+
+If `/skill-doctor` is unavailable, report `SKIPPED (skill-doctor unavailable)` and fall back to the validator's cumulative figure:
+
+```bash
+hooks/scripts/skill-frontmatter-validate.sh --all 2>&1 | grep 'cumulative skill descriptions'
+```
+
+Status: WARN when cumulative descriptions exceed 14 000 chars or any single skill exceeds 3 000 tokens per turn; never FAIL (advisory).
 
 ---
 

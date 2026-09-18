@@ -3,8 +3,7 @@ name: ui-build
 description: "Researches the codebase's design patterns (component library, layout system, design tokens, accessibility conventions) then generates production-grade Vue 3 UI that feels native to the project. Runs a 5-phase workflow (Discover → Analyze → Design → Implement → Refine). Use when the user says 'build a page', 'create UI', 'add a form', 'design component', 'build UI for X', 'add a screen for Y'."
 argument-hint: "<feature description>"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch, AskUserQuestion
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 paths:
   - "**/*.vue"
@@ -13,6 +12,7 @@ paths:
   - "**/pages/**/*.{vue,ts,js}"
   - "**/layouts/**/*.{vue,ts,js}"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

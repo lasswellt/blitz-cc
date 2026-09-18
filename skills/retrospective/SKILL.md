@@ -2,11 +2,11 @@
 name: retrospective
 description: "Analyzes completed sessions to identify improvement patterns. Reads activity-feed entries, session reports, and git diff to surface recurring friction. Generates proposals for plugin self-improvement classified by safety (auto-apply, propose-only, never-auto-apply). Use when the user says 'retrospective', 'what did we learn', 'session analysis', 'improve the plugin', 'find friction patterns'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "(no arguments — runs analysis automatically)"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

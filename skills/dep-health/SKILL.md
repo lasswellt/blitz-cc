@@ -2,11 +2,11 @@
 name: dep-health
 description: "Audits npm dependencies for known vulnerabilities (npm audit), outdated versions, and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON output). Use when the user says 'check deps', 'dep-health', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', or as a recurring weekly sweep."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<audit|upgrade|report>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `health` qualified). -->
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->

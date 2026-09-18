@@ -3,10 +3,10 @@ name: quick
 description: "Makes a small ad-hoc change (typo, one-line fix, single-file tweak) without the full sprint ceremony. Use when the user describes a tiny scoped change like 'fix the typo in X', 'change Y to Z in file foo', 'rename this var', 'tweak this string'. Do NOT use for multi-file refactors, new features, or anything that needs tests — those go through sprint-dev or refactor."
 argument-hint: "<describe what you want to change>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

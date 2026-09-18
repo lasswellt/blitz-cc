@@ -2,11 +2,11 @@
 name: codebase-map
 description: "Builds CODEBASE-MAP.md for brownfield onboarding: Technology, Architecture, Quality (test coverage, lint debt), Concerns (security/perf risks). Use for 'map the codebase', 'analyze this project', 'I just inherited this repo', or when no CODEBASE-MAP.md exists. For deep coupling/dependency-graph analysis use the architect agent; for quality/tech-debt findings use /blitz:audit."
 allowed-tools: Read, Write, Bash, Glob, Grep, Agent
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "(no arguments — analyzes the current project)"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

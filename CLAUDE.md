@@ -1,103 +1,38 @@
 # CC Plugin Suite — Development Guidelines
 
-## Activity Feed (Always-On)
+This repo is the **blitz** Claude Code plugin: 37 development skills in `skills/`, 11 plugin agents in `agents/`, 45 hook scripts across 24 events in `hooks/`, and 13 shared protocol files in `skills/_shared/`. Skills are auto-discovered from `skills/<name>/SKILL.md` and invoked as `/blitz:<name>`. The plugin floor is Claude Code ≥2.1.271 (`.claude-plugin/compat.json`).
 
-**Every Claude Code session in this repo MUST maintain the activity feed, regardless of whether a skill is invoked.**
+## Activity Feed
 
-### On Conversation Start
+The `SessionStart` hook prints recent activity from other sessions and the hooks record session start/end, idle, notifications, and file edits in `.cc-sessions/activity-feed.jsonl`. You still append the events only you can know, one JSONL line each, `session` = your native session id (`${CLAUDE_SESSION_ID}`):
 
-1. Create `.cc-sessions/` if it doesn't exist: `mkdir -p .cc-sessions`
-2. Read the last 20 lines of `.cc-sessions/activity-feed.jsonl` (if it exists)
-3. Print a brief summary of recent activity from other sessions so the user knows what's been happening
-4. Log your own session start:
-   ```
-   {"ts":"<ISO-8601>","session":"cli-<8-char-hex>","skill":"freeform","event":"session_start","message":"<brief description of what user asked>","detail":{}}
-   ```
+- `task_start` when you begin a task, `decision` for a non-trivial choice, `verification` with `detail: {"command", "result": "pass|fail"}` after a build/test/lint, `task_complete` with `detail: {"summary"}`.
+- Format: `{"ts":"<ISO-8601>","session":"<id>","skill":"freeform|<skill>","event":"<type>","message":"<≤200 chars>","detail":{}}`. Full spec: `skills/_shared/terse-output.md` §Activity Feed.
+- If the feed shows another session on overlapping files, say so before editing.
 
-### On Every Substantive Action
+## Where the rules live
 
-Append a line to `.cc-sessions/activity-feed.jsonl` when you:
-- Start working on a task (even without a skill): `event: "task_start"`
-- Make a significant decision: `event: "decision"`
-- Complete a file edit or creation: `event: "file_change"` with `detail: {"files": ["path1", "path2"]}`
-- Run a build, test, or lint command: `event: "verification"` with `detail: {"command": "...", "result": "pass|fail"}`
-- Complete the task: `event: "task_complete"` with `detail: {"summary": "..."}`
+- Skill and agent authoring contract (frontmatter, OUTPUT STYLE snippet, model inheritance): `.claude/rules/skills.md` (loads when you touch `skills/**` or `agents/**`).
+- Hook authoring contract (stdin fields, exit codes, helpers, bats): `.claude/rules/hooks.md` (loads when you touch `hooks/**`).
+- Shared protocols: `skills/_shared/` — one file per concern; `session-lifecycle.md` (sessions, locks, context), `sprint-contracts.md` (registry, DoD), `agent-orchestration.md` (spawning, routing, Workflow), `quality-engine.md` (checks, ratchet, verification stack), `security.md` (TB-1…TB-5), `terse-output.md` (output style, feed).
+- Hook index: `hooks/scripts/README.md`. Validators: `scripts/validate-plugin-structure.sh`, `scripts/check-count-sync.sh`, `scripts/check-version-sync.sh`, `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `bats hooks/tests/`.
 
-### Entry Format
+## Working here
 
-```jsonl
-{"ts":"<ISO-8601>","session":"<id>","skill":"freeform","event":"<type>","message":"<human-readable>","detail":{}}
-```
-
-For skill invocations, the skill name replaces `"freeform"`. The verbose-progress protocol in `skills/_shared/terse-output.md` has the full specification.
-
-### Reading the Feed
-
-Before starting work, always check recent activity. If another session is actively working on overlapping files, mention it to the user. Format:
-
-```
-Recent activity:
-  [cli-a3f7c1b2] 5m ago — Editing skills/sprint-dev/SKILL.md (freeform)
-  [sprint-dev-b4e8f2a1] 28m ago — Sprint 3 implementation complete (sprint-dev)
-```
-
-If no activity feed exists or is empty, skip the summary silently.
-
-## Skill System
-
-This repo contains **37 development skills** in `skills/` and **11 plugin agents** in `agents/` (`architect`, `backend-dev`, `critic`, `design-critic`, `doc-writer`, `frontend-dev`, `infra-dev`, `orchestrator`, `research-critic`, `reviewer`, `test-writer`). Skills are auto-discovered by Claude Code from `skills/<name>/SKILL.md` (Anthropic-canonical layout — no central registry). Skills are invoked via `/blitz:<skill-name>`.
-
-Every SKILL.md must satisfy the canonical frontmatter contract enforced by `hooks/scripts/skill-frontmatter-validate.sh`: third-person description ≤1024 chars (matches the official platform cap per [platform.claude.com/docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices); enforced to keep the always-loaded skill listing lean — cumulative description budget tracked in `docs/audits/skill-startup-token-budget.md`), body ≤500 lines, required fields (`name`, `description`, `model`, `effort`, `compatibility`, `allowed-tools` when invokable), and the verbatim OUTPUT STYLE snippet from `/_shared/terse-output.md`.
-
-**Holistic-machine entry point**: `agents/orchestrator.md` is activated as the plugin's main-thread agent via `.claude-plugin/settings.json {"agent": "orchestrator"}` (Claude Code ≥2.1.117; plugin floor ≥2.1.271 per `.claude-plugin/compat.json`). Freeform user input lands on the orchestrator; explicit slash commands bypass it. See `skills/_shared/agent-orchestration.md` for the constraint-aware routing protocol (subagents cannot spawn subagents → super-orchestrator skills stay slash-invoked).
-
-## Shared Protocols
-
-All skills follow the protocols in `skills/_shared/` (13 `.md` files + `check-registry.json`). As of the 2026-06-06 consolidation, each file owns one cross-cutting concern (former fragments absorbed; see each file's top-of-file **Absorbs/Consolidates** map):
-
-- **terse-output.md** — output style + canonical exemptions + console verbosity / activity-feed logging (absorbed `verbose-progress.md`). Validator-pinned home of the canonical OUTPUT STYLE snippet.
-- **session-lifecycle.md** — multi-session safety (locks, registration, autonomy), checkpoints, context/compaction handoff, the **state-handoff** resume contract, and loop scheduling (absorbed `session-protocol`, `checkpoint-protocol`, `context-management`, `state-handoff`, `scheduling`).
-- **sprint-contracts.md** — carry-forward registry (Reader Algorithm + writer contracts), story frontmatter schema, Definition of Done, deviation + scope-limit protocols (absorbed `carry-forward-registry`, `story-frontmatter`, `definition-of-done`, `deviation-protocol`, `scope-limit-protocol`).
-- **agent-orchestration.md** — subagent type/weight, HEARTBEAT/PARTIAL/WRAP_UP, timeouts, stuck-loop detection, Agent Output + Token Budget & Reply contract, prompt boilerplate, routing decision tree (+ subagents-cannot-spawn-subagents), the opt-in `Workflow` dispatch contract, and the 60/35/5 model-routing matrix (absorbed `spawn-protocol`, `agent-prompt-boilerplate`, `agent-routing`, `agent-view-dispatch`, `workflow-dispatch`, `token-budget`).
-- **quality-engine.md** — check-registry semantics, the quality-skill decision matrix, the 20-detector anti-shortcut taxonomy (13 reject / 7 advisory), the 8-metric ratchet, and the deterministic verification recipe (absorbed `check-registry.md`, `quality-matrix`, `shortcut-taxonomy`, `ratchet-protocol`, `deterministic-test-recipe`). The `check-registry.json` data file stays separate.
-- **security.md** — Blitz containment posture / threat model (TB-1…TB-4, canonical owner cited by the `block-*.sh` guards), hook-trust boundary, package-install policy (absorbed `threat-model`, `hook-trust`, `package-install-policy`).
-- **project-context.md** — load-time injection block imported verbatim into SKILL.md headers.
-- **skill-cross-references.md** — author-time dedup target for the Additional Resources block.
-- **design-criteria.md** — design-pillar criteria; complemented by `docs/integrations/impeccable/` (framework-adaptive design pillar; supersedes the retired `frontend-design-heuristics.md`).
-- **knowledge-protocol.md** — `.cc-sessions/KNOWLEDGE.md` cross-session lessons format.
-- **session-report-template.md** — session report output template.
-- **worktree-lifecycle.md** — worktree lifecycle, ratchet-linked (`stale_worktree_branch_count`).
-- **html-template-helper.md** — shared-protocol convention + reusable `emit_html()` bash helper for opt-in HTML side-output (E-039); consumed by audit, codebase-map, quality-metrics, research.
-
-## Hooks
-
-45 hook scripts (42 event-wired through `hooks/hooks.json`, 2 sub-invoked, 1 critic-spawned) across 24 events (`SessionStart`, `SessionEnd`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `Stop`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `Notification`, `PermissionRequest`, `PermissionDenied`, `PreModelSwitch`, `CwdChanged`, `DirectoryAdded`, `ConfigChange`, `WorktreeCreate`, `WorktreeRemove`). They handle file protection, auto-formatting, auto-linting, auto-testing, commit validation (frontmatter lint, version sync, link rot, reference compression), context monitoring, activity-feed logging, and **7 anti-shortcut blockers**: 5 P0 (block-no-verify, block-destructive-git, block-destructive-sql, block-test-deletion, post-edit-typecheck-block) plus 2 P1 (block-as-any-insertion, block-test-disabling). See [hooks/scripts/README.md](hooks/scripts/README.md) for the full index grouped by event.
+- Run the validators above before committing; `pre-commit-validate.sh` runs them again and blocks on drift.
+- Counts (skills, agents, hooks, protocols) are asserted against the filesystem. After adding or removing one, run `scripts/check-count-sync.sh --write` and reconcile the prose it flags.
+- Set model and effort once per session (`claude --model opus --effort high`); every skill is `model: inherit`.
+- Quiet flags keep context small: `npx vitest run <file> --reporter=dot`, `git --no-pager`, `--silent` on npm scripts.
+- `.cc-sessions/`, `sprints/`, `docs/_research/`, `docs/roadmap/`, `docs/audits/` are gitignored runtime output. Tracked research and reviews go under `docs/research/` and `docs/reviews/`.
 
 ## Clarification Gate (Karpathy Principle 1)
 
-Before any non-trivial freeform task, **state assumptions explicitly** and **surface tradeoffs**:
+Before any non-trivial freeform task, state assumptions and surface tradeoffs: list 2–3 interpretations and pick one with a one-line rationale; name a simpler approach if one exists; if something is unclear, ask one focused question. `autonomy=high|full` skips the question but still writes a one-line ASSUMPTIONS block before the first edit. Trivial tasks skip the gate. Skill-level scope rules stay authoritative; the more restrictive rule wins. Adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT).
 
-- If multiple interpretations exist, list 2-3 and pick the most likely with one-line rationale — do not silently pick.
-- If a simpler approach exists than what was requested, name it. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask 1 focused question.
+## Quality Gates
 
-**Autonomy override:** `autonomy=high|full` skips the question step. In that mode, still write a one-line ASSUMPTIONS block before the first edit so the user can correct course on read-back.
+`sprint-review` Phase 3.6 enforces 8 invariants (registry consistency, epic completion, OUTPUT STYLE presence, the 8-metric ratchet, critic LGTM, branch hygiene); the verification stack (Stop gate, `/goal`, critic, `/verify`) is defined in `skills/_shared/quality-engine.md`. The 20-detector anti-shortcut taxonomy (13 reject / 7 advisory) lives there too.
 
-**Trivial tasks** (typo fix, single-line tweak, rename within one file): skip the gate. Use judgment.
+## Compaction
 
-**Precedence:** Skill-level scope rules (e.g., `skills/quick/SKILL.md:47`) remain authoritative — this gate adds the upstream "think first" step. If two rules conflict, the more restrictive wins.
-
-Adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). Original principles by Andrej Karpathy.
-
-## Quality Gates (v1.11+)
-
-`sprint-review` Phase 3.6 enforces 8 invariants. Sprint cannot reach PASS while any fails:
-
-1. Carry-forward Reader Algorithm — registry consistency
-2. Reserved (canonical algorithm)
-3. Epic completion — no `done` epics with `incomplete` registry entries
-4. Reserved (canonical algorithm)
-5. OUTPUT STYLE snippet present in every SKILL.md + agent-prompt template
-6. **Ratchet** — 8 monotonic metrics never regress without carry-forward (`type_errors > 0` is absolute floor; `stale_worktree_branch_count` added 2026-05-17 per [worktree-lifecycle.md](skills/_shared/worktree-lifecycle.md))
-7. **Critic** — `agents/critic.md` adversarial review must emit LGTM (it runs the 20-detector shortcut taxonomy)
-8. **Branch hygiene** — sprint-dev Phase 4.4 deleted every `sprint-${N}/{backend,frontend,tests,infra,integration}` branch (per-sprint scope; complements Invariant 6's cross-sprint cumulative metric)
+When compacting, preserve: the sprint id and phase, `${CLAUDE_SESSION_ID}`, the path of any `gate.json` in force, undelivered mailbox lines, the list of modified files, and the exact test/lint commands used. The PreCompact hook writes `.cc-sessions/HANDOFF.json` for the same purpose.
