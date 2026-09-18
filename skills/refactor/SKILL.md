@@ -2,11 +2,11 @@
 name: refactor
 description: "Performs safe, incremental refactoring with test verification after every step. Snapshots test results, refactors one piece at a time, and reverts if any test that was passing starts failing. Use when the user says 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', or 'clean up'. NOT for behavior changes — those go through sprint-dev or fix-issue."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<target-file-or-module> <refactoring-goal>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

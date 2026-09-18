@@ -40,6 +40,7 @@ if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
     if [ "${AHEAD:-0}" -gt 0 ]; then
       CDET=$(jq -n --arg br "$BRANCH" --argjson ah "${AHEAD:-0}" '{branch:$br,ahead:$ah}')
       blitz_log_event "hook" "worktree_collision_blocked" "Refused stale agent branch $BRANCH ($AHEAD commits ahead)" "$CDET"
+      blitz_inbox_append "blocked" "worktree collision: stale agent branch $BRANCH is $AHEAD commits ahead; run /blitz:worktree-prune" || true
       echo "BLITZ: refusing to reuse stale agent branch $BRANCH ($AHEAD commits ahead of origin/HEAD)" >&2
       echo "  -> run /blitz:worktree-prune to inspect, or set BLITZ_ALLOW_WORKTREE_COLLISION=1 to force" >&2
       exit 1

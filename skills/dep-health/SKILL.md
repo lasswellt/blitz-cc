@@ -2,11 +2,11 @@
 name: dep-health
 description: "Audits npm dependencies for known vulnerabilities (npm audit), outdated versions, and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON output). Use when the user says 'check deps', 'dep-health', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', or as a recurring weekly sweep."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<audit|upgrade|report>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `health` qualified). -->
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
@@ -95,6 +95,8 @@ Read `package.json` and extract:
 - **Total package count**: Sum of all dependency groups
 
 ---
+
+**Unattended forms.** Weekly cloud Routine (`/schedule`, fresh clone, no prompts) is the intended cadence for `audit`; `/loop 2h /blitz:dep-health audit` in a dedicated session for shorter windows (CronCreate, 7-day expiry). See [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
 
 ## Phase 1: AUDIT — Security Scan
 

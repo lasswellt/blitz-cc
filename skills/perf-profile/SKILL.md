@@ -2,8 +2,7 @@
 name: perf-profile
 description: "Profiles bundle size, runtime performance (Web Vitals), and Lighthouse scores for Vue/Nuxt apps. Identifies optimization opportunities (large deps, unused exports, render bottlenecks). Use when the user says 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<bundle|runtime|lighthouse|full>"
 paths:
@@ -12,6 +11,7 @@ paths:
   - "**/vite.config.{ts,js}"
   - "**/package.json"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

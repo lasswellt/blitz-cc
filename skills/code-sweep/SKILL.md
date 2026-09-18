@@ -2,11 +2,11 @@
 name: code-sweep
 description: "Iterative code-quality improvement with /loop support. Runs 30 checks across 7 categories with a ratchet ensuring quality only improves. Use when the user says 'sweep', 'code quality pass', 'find TODOs', 'remove dead code', or wants a continuous improvement loop."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<scope> | --fix | --scan-only | --fix-all | --deep | --loop | --discover | --standards-report | --category <list>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
@@ -67,6 +67,8 @@ Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registrat
 | `--category <list>` | Comma-separated category filter |
 | `--checks <list>` | Comma-separated check ID filter |
 | `<scope>` | Directory/file to scan |
+
+**Unattended forms.** Interactive: `/loop 10m /blitz:code-sweep --loop` in a dedicated session (CronCreate-backed, expires after 7 days). Machine-independent: a cloud Routine (`/schedule`, 1-hour minimum, no prompts, set `crossSessionInbound: hold`) or a Desktop scheduled task when the run needs local tools. See [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
 
 When `--loop`: auto-approve all, auto-commit+push, exit after one fix cycle. Tick type: first run → DISCOVERY; `run % 10 == 0` → RE-DISCOVERY; fixable findings → FIX; else → SCAN.
 

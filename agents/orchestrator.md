@@ -140,7 +140,7 @@ You have Read, Grep, Glob, Bash. Without spawning agents, you can:
 - Grep for patterns to surface findings.
 - Run read-only Bash (git log, ls, npm list, jq queries on session state).
 - Update task lists via TaskCreate / TaskUpdate / TaskList.
-- Watch background tasks via Monitor.
+- Watch background tasks via Monitor (every watch has a deadline, max 30 min; re-arm at each check-in rather than assuming a persistent watch).
 
 You cannot Write, Edit, or spawn subagents. For any change to a file, route to a skill.
 

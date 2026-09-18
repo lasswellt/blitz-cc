@@ -3,10 +3,11 @@ name: design-extract
 description: "Extracts design tokens, typography, palette, and component samples from an existing project into a portable DESIGN.md (Google Labs Apache-2.0 spec). Bootstraps brownfield projects so ui-build and design-critic share a common aesthetic source-of-truth. Use when the user says 'extract design system', 'build DESIGN.md', or before the first /blitz:ui-build run."
 argument-hint: "[--from <path>] [--out DESIGN.md]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.117"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+
 <!-- compatibility floor >=2.1.117 (vs project majority >=2.1.71): requires
      holistic-machine orchestrator for the DESIGN.md handoff to ui-build,
      frontend-design, and design-critic. -->

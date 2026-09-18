@@ -107,7 +107,37 @@ if [[ -f "$CONSTANTS_JS" ]]; then
   fi
 fi
 
-# --- 6. Summary ---
+# --- 6. Check Claude Code floor citations against .claude-plugin/compat.json ---
+COMPAT_JSON=".claude-plugin/compat.json"
+if [[ -f "$COMPAT_JSON" ]]; then
+  CC_MIN=$(python3 -c "import json;print(json.load(open('$COMPAT_JSON'))['cc_min'])" 2>/dev/null || true)
+  ALLOWED=$(python3 -c "
+import json; d=json.load(open('$COMPAT_JSON'))
+vals={d['cc_min'], d.get('cc_min_slash','')} | set(d.get('features',{}).values())
+print(' '.join(sorted(v for v in vals if v)))" 2>/dev/null || true)
+  CITED=$(python3 -c "import json;print(' '.join(json.load(open('$COMPAT_JSON')).get('cited_in',[])))" 2>/dev/null || true)
+  for f in $CITED; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r ver; do
+      [[ -z "$ver" ]] && continue
+      case " $ALLOWED " in
+        *" $ver "*) ;;
+        *) log "  drift: $f cites Claude Code $ver — not cc_min ($CC_MIN) nor a feature floor in $COMPAT_JSON"
+           DRIFT=$((DRIFT + 1)) ;;
+      esac
+    done < <(grep -oE '2\.1\.[0-9]{2,3}' "$f" | sort -u)
+  done
+  # The effective floor must be stated verbatim in the consumer-facing files.
+  for f in README.md .claude-plugin/plugin.json installer/README.md; do
+    [[ -f "$f" ]] || continue
+    if ! grep -q "$CC_MIN" "$f"; then
+      log "  drift: $f does not state the effective floor $CC_MIN"
+      DRIFT=$((DRIFT + 1))
+    fi
+  done
+fi
+
+# --- 7. Summary ---
 if [[ "$DRIFT" -gt 0 ]]; then
   log ""
   log "Version drift detected: $DRIFT file(s) out of sync with $PLUGIN_JSON (v$AUTHORITATIVE)."

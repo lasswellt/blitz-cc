@@ -38,6 +38,14 @@ ACTUAL=$(grep -rl "$CANONICAL" skills/ --include="SKILL.md" | wc -l)
 
 ---
 
+## Skill-specific Additional Resources blocks (inline, intentionally NOT extracted)
+
+Blocks that share the heading but diverge in content stay inline (see Anti-pattern below). Listed here so audits can tell "intentional divergence" from "forgot the canonical pair":
+
+- `skills/sessions/SKILL.md` — read-only runtime-state skill (no subagent spawning, so no spawn cross-ref). Its block points to [session-lifecycle.md](session-lifecycle.md) (record schema, `blitz_session_stale`, conflict matrix), `hooks/scripts/_lib/common.sh` (`blitz_agent_view` / `blitz_iso_epoch` / `blitz_session_update`), and [html-template-helper.md](html-template-helper.md) (dashboard `--html` twin via `hooks/scripts/_lib/html.sh`). `/blitz:health` §2.5 delegates runtime detail to it.
+
+---
+
 ## Adding new canonical blocks
 
 When the same multi-line cross-reference block appears in ≥4 SKILL.md files, extract it here:

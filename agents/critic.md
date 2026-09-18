@@ -20,6 +20,9 @@ tools: Read, Grep, Glob, Bash
 # Bash is exec+egress — keep read-only; do NOT add network/MCP egress. Posture: /_shared/security.md §5.
 maxTurns: 30
 model: sonnet
+# Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
+# the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
+omitClaudeMd: true
 memory: project
 ---
 

@@ -19,28 +19,34 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
-### Fixed
-- **Inventory drift (shared 12->13):** `html-template-helper.md` (E-039 HTML side-output) was never folded into inventory; `counts.json` + README + plugin.json + marketplace.json said "12 shared protocol files" while 13 exist. Regenerated `counts.json`, reconciled manifests, indexed the file in CLAUDE.md. `check-count-sync.sh` now exits 0.
-- **sprint-review Workflow `pipeline()` misuse:** sequential reviewer dispatch passed the roster as both items and stages (N×N), so reviewers never received prior findings. Replaced with an explicit sequential accumulator loop.
-- **Model-routing self-contradiction:** §1 routing matrix listed sprint-* orchestrators as `sonnet`, contradicting the weight-class table and deployed `model: opus` frontmatter (required for `[1m]` inheritance). Split the matrix row.
-- **orchestrator agent missing `effort: low`** (contract-mandated) — added.
+_Nothing yet._
+
+## [2.5.0] — 2026-09-18 · Claude Code 2.1.276 alignment (E-040…E-047)
+
+Review: [docs/reviews/2026-09-18_cc-2.1.276-alignment/README.md](docs/reviews/2026-09-18_cc-2.1.276-alignment/README.md). Effective floor moves to **Claude Code ≥2.1.271** (`.claude-plugin/compat.json`).
+
+### Added
+- **Session management v2 (E-041):** hook-owned session records at `.cc-sessions/sessions/<native session_id>.json` (SessionStart/PostToolBatch/Stop/SessionEnd); `blitz_agent_view` single parser for `claude agents --json` (real `state`/`status`/`waitingFor` schema); cross-session messaging in the conflict matrix (`SendMessage` + `notify_when_idle`, `LOOP_DEFER`); mailbox drained at turn end; inbox `.cc-sessions/inbox.jsonl` written by hooks and triaged by `/blitz:next` (`HEARTBEAT_OK`); new skill **`/blitz:sessions list|attention|dashboard --html|prune`** with `scripts/sessions-dashboard.sh`; `_lib/html.sh` holds `emit_html` once. Skills 37→38.
+- **Eight hook events (E-040):** SessionEnd, Stop (non-blocking heartbeat + mailbox drain, then the conditional gate), Notification, PermissionDenied, PreModelSwitch, CwdChanged, DirectoryAdded, ConfigChange. Hook scripts 38→46, events 16→24; exec-form entries with `timeout` + `statusMessage`.
+- **Verification stack (E-042):** `stop-gate.sh` deterministic Stop gate armed by sprint-dev / `next --loop` via `gate.json` (never fights a user `/goal`; stays under the platform's 8-block cap); sprint-dev prints the `/goal` companion line; sprint-review runs the recorded `/verify` recipe first; `/blitz:setup` seeds `.claude/skills/verify/SKILL.md`.
+- **Test impact analysis v0 (E-043):** `scripts/test-listener.sh` (stateless, append-only journal, `runs_started == runs_recorded`), `scripts/test-selector.sh` (sibling + static import graph / jest related + journal recent-fail + co-change, `--full` fallbacks); heartbeat runs the selected set after edits; sprint-review calibrates with one full run (`escaped_failures`); advisory metrics `tia_escaped_failures`, `tia_selection_ratio`; `docs/guides/tia.md`.
+- **Plugin evals + workflows (E-045):** `evals/` suite (5 cases) for `claude plugin eval`, advisory CI job; `workflows/sprint-wave.js`, `review-fanout.js`, `audit-sweep.js` extracted from skill prose.
+- **Cloud posture (E-046):** `docs/guides/cloud-threads.md` (Projects threads, Routines, Desktop tasks, Channels, Remote Control); security TB-5 (cross-session and channel inbound is untrusted).
+- `.claude/rules/skills.md`, `.claude/rules/hooks.md` (path-scoped authoring contracts); `docs/research/README.md`; `docs/EPICS.md`.
 
 ### Changed
-- **Workflow contract doc refreshed** to current tool API: `budget{spent(),remaining()}`, `workflow()` one-level nesting, 4096-item / 1000-agent caps, concurrency `min(16, cores-2)`; added DEFERRED adoption rows for code-sweep, code-doctor, quality-metrics, ui-audit.
-- **Autonomous-loop guard:** `next --loop` forces `BLITZ_DISPATCH=agent` so an unattended loop can't stall on a platform Workflow per-run confirmation.
-- **Prompt-cache mandate reframed** MUST->guidance (markdown system prompts can't set `cache_control`; platform applies caching when static-prefix-first ordering is respected).
-- **Count-sync gate hardened:** adding/removing a file under `skills/_shared`, `skills/*/SKILL.md`, `agents/`, or `hooks/scripts/` now hard-blocks the commit until counts are refreshed.
-- **Frontmatter validator:** added a cumulative-description-chars guard near the 15k load-time budget.
+- **Model economics (E-044):** every model-invokable skill is `model: inherit` with no pinned `effort` (validator-enforced; slash-only migrate/release/ship keep pins) — set model/effort once per session, the `PreModelSwitch` hook warns on cache busts. Builder agents + reviewer get `experimental.cacheTtl: 1h`; critics get `omitClaudeMd: true`. KNOWLEDGE.md / auto-memory / agent-memory division of labor in `knowledge-protocol.md` §8. CLAUDE.md trimmed 103→38 lines; CI guards ≤200.
+- sprint-dev §3.2: `Monitor` re-armed per wave with a deadline (`persistent` was removed in CC 2.1.271); §3.2.2 peer sessions. `next` Phase 0.5 inbox triage; scheduling tiers rewritten (7-day CronCreate expiry, `.claude/loop.md`, Routines 1 h, Channels, `/goal`).
+- Installer floor checks and messaging updated to 2.1.271; agent-teams wording retired.
+- README/CI counts reconciled; `check-count-sync.sh` asserts headings; `check-version-sync.sh` asserts every Claude Code citation against `compat.json`.
 
-### Round 2
+### Fixed
+- `blitz_log_event` dropped every event that carried a detail object (bash `${4:-{}}` parse); `pre-compact-snapshot.sh` emitted invalid `HANDOFF.json` under pipefail; agent-view overlay filtered a field that no longer exists (C2); `test-listener.sh` lock-recovery race on GNU stat.
+- Carried from the pre-release review rounds (previously under `[Unreleased]`): inventory drift (shared 12→13), sprint-review Workflow `pipeline()` misuse, model-routing contradiction, missing `infra-dev` agent (10→11), security-hook bypasses, installer count drift, Workflow contract refresh, autonomous-loop `BLITZ_DISPATCH=agent` guard, prompt-cache guidance reframe, count-sync gate hardening, cumulative-description guard.
 
-#### Fixed
-- **Missing `infra-dev` agent (agents 10->11):** `infra-dev` is a first-class dispatchable sprint-dev role (sprint-dev role table + `sprint-contracts.md` schema/validator regex; sprint-plan assigns it; prompt template lives at `sprint-dev/references/main.md`), but `agents/infra-dev.md` never existed — only 10 agent files. `blitz:infra-dev` dispatched via `agentType: blitz:${a.role}` (and the legacy `subagent_type: blitz:<role>` path) could never resolve, silently breaking any sprint that assigned infra work. Created `agents/infra-dev.md` (sonnet, Infra/CI-CD/deploy/IaC/Firebase scope), regenerated `counts.json` (agents 10->11), and reconciled all prose counts (CLAUDE.md, README.md, plugin.json, marketplace.json; builder sub-count 6->7).
-- **Security-hook bypass fixes:** anti-shortcut blockers hardened against bypass paths.
-- **Installer count drift:** npm-installer manifest advertised stale component counts (hooks 37->38, agents 10->11).
-- **Protocol-logic + scripts/docs fixes:** assorted protocol-logic corrections and script/documentation reconciliation across the round.
-
-No version bump.
+### Verify on a live account (not reproducible in this environment)
+- `model: inherit` on an `opus[1m]` session must not re-trigger the 2.4.4 `sonnet[1m]` credits error.
+- `claude plugin eval .` grader thresholds are advisory until the suite has run once.
 
 ## [2.4.4] — 2026-06-07 · fix [1m] inheritance on invokable skills
 

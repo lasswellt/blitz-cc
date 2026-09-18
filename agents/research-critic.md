@@ -31,6 +31,9 @@ maxTurns: 30
 # `hooks/scripts/critic-gemini.sh --mode research`; BLITZ_DUAL_CRITIC=1 runs both
 # and requires both PASS. See agents/critic.md §5 for the mode matrix.
 model: sonnet
+# Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
+# the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
+omitClaudeMd: true
 background: true
 ---
 

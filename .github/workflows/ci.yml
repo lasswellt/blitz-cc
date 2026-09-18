@@ -21,10 +21,10 @@ jobs:
       - name: Tooling versions
         run: jq --version && python3 --version && node --version && bash --version | head -1
 
-      - name: SKILL.md frontmatter (37)
+      - name: SKILL.md frontmatter
         run: bash hooks/scripts/skill-frontmatter-validate.sh skills/*/SKILL.md
 
-      - name: Agent frontmatter (10)
+      - name: Agent frontmatter
         run: bash hooks/scripts/agent-frontmatter-validate.sh agents/*.md
 
       - name: Check-registry schema
@@ -32,6 +32,9 @@ jobs:
 
       - name: Markdown links + anchors
         run: bash hooks/scripts/markdown-link-validate.sh
+
+      - name: CLAUDE.md size guard (<=200 lines)
+        run: test "$(wc -l < CLAUDE.md)" -le 200
 
       - name: Version-reference sync
         run: bash scripts/check-version-sync.sh
@@ -51,3 +54,75 @@ jobs:
           command -v bats >/dev/null || { echo "bats missing"; exit 1; }   # HTC-4: fail, don't skip vacuously
           bats hooks/tests/
           bash hooks/scripts/tests/test-link-resolver.sh
+
+      - name: TIA scripts (bats)
+        # E-043: listener + selector suites (also covered by the glob above;
+        # listed separately so a test-impact regression is named in the job log).
+        run: bats hooks/tests/test-listener.bats hooks/tests/test-selector.bats
+
+  plugin-eval:
+    # E-045: behavioural eval suite (`claude plugin eval`). ADVISORY — it never fails the
+    # workflow on a grader score, only on a crash (no result document / unexpected exit).
+    # GitHub does not expose the `secrets` context in a job-level `if`, so the gate is a
+    # job-level env flag and every step is skipped when ANTHROPIC_API_KEY is absent (forks).
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      HAS_ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+
+      - name: Install Claude Code + sandbox backend
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          sudo apt-get update && sudo apt-get install -y bubblewrap socat   # Bash grants need the OS sandbox
+          claude --version
+
+      - name: Run eval suite (advisory)
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+        run: |
+          set +e
+          mkdir -p evals/results
+          # Flags per `claude plugin eval --help` (2.1.276). --scaffold runs our own fixture.sh files;
+          # --allow-tools Bash is required by the health/next/sessions cases (sandboxed).
+          claude plugin eval . \
+            --trust-plugin \
+            --scaffold \
+            --allow-tools Bash \
+            --no-publish \
+            --max-cost-usd 20 \
+            --json evals/results/run.json
+          rc=$?
+          echo "claude plugin eval exit code: $rc"
+          if [ ! -s evals/results/run.json ]; then
+            echo "::error::plugin eval produced no result document (crash)"; exit 1
+          fi
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open('evals/results/run.json'))
+          a = d.get('aggregates', {})
+          print(f"suite score={a.get('overallScore')} passed={a.get('casesPassed')}/{a.get('casesTotal')} meanDelta={a.get('meanDelta')} partial={d.get('partial')} ({d.get('partialReason')}) cost=${d.get('costUsd')}")
+          for c in d.get('cases', []):
+              ca = c.get('aggregates', {})
+              print(f"  {c.get('name')}: score={ca.get('score')} delta={ca.get('delta')}")
+          if not a.get('casesTotal'):
+              print('::error::no eval cases ran'); sys.exit(1)
+          if d.get('partial') and d.get('partialReason') == 'auth_failed':
+              print('::error::credential rejected'); sys.exit(1)
+          PY
+          case "$rc" in
+            0|1) echo "advisory: exit $rc (1 = a case scored below threshold; not a build failure)"; exit 0 ;;
+            2)   echo "::warning::partial run (cost ceiling)"; exit 0 ;;
+            *)   echo "::error::claude plugin eval crashed (exit $rc)"; exit 1 ;;
+          esac
+
+      - name: Upload eval results
+        if: env.HAS_ANTHROPIC_KEY == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-eval-results
+          path: evals/results
+          if-no-files-found: warn

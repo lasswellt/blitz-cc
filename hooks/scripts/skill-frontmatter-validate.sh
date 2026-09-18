@@ -148,12 +148,18 @@ validate_one() {
     [ -z "$allowed" ] && fail "$rel" "missing 'allowed-tools:' (required when disable-model-invocation is not true)"
     # 4. model — required when invokable
     [ -z "$model" ] && fail "$rel" "frontmatter missing 'model:' (required when disable-model-invocation is not true)"
-    case "$model" in opus|sonnet|haiku|"") ;; *) fail "$rel" "model '$model' must be opus|sonnet|haiku";; esac
+    case "$model" in inherit|opus|sonnet|haiku|"") ;; *) fail "$rel" "model '$model' must be inherit|opus|sonnet|haiku";; esac
+    # Model-invokable skills MUST inherit the session model: pinning forces a model switch on
+    # every invocation from a non-matching session, which resets the prompt cache (E-044).
+    [ -n "$model" ] && [ "$model" != "inherit" ] && fail "$rel" "model '$model' pins a model on an invokable skill — use 'inherit' (slash-only skills with disable-model-invocation: true may pin)"
   fi
 
-  # 5. effort — required for ALL
-  [ -z "$effort" ] && fail "$rel" "frontmatter missing 'effort:'"
-  case "$effort" in low|medium|high|"") ;; *) fail "$rel" "effort '$effort' must be low|medium|high";; esac
+  # 5. effort — optional. Pinning effort switches it mid-session (cache reset), so it is only
+  # accepted on slash-only skills (disable-model-invocation: true). Others state a recommendation in the body.
+  if [ -n "$effort" ]; then
+    case "$effort" in low|medium|high|xhigh|max) ;; *) fail "$rel" "effort '$effort' must be low|medium|high|xhigh|max";; esac
+    [ "$dmi" != "true" ] && fail "$rel" "effort pinned on an invokable skill — remove 'effort:' and state the recommendation in the body (see E-044)"
+  fi
 
   # 10. compatibility
   [ -z "$compat" ] && fail "$rel" "frontmatter missing 'compatibility:'"

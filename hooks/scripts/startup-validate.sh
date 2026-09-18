@@ -124,6 +124,10 @@ fi
 
 if [ "$FINDINGS" -gt 0 ]; then
   [ "$QUIET" = 1 ] || echo "[startup-validate] $FINDINGS finding(s). Quarantine suspect entries (mv to $QUARANTINE_DIR/) before loading into context." >&2
+  # Inbox (E-041 S4): a quarantine candidate is an attention item until a human triages it.
+  if type blitz_inbox_append >/dev/null 2>&1; then
+    blitz_inbox_append "quarantine" "startup-validate: $FINDINGS persistent-state finding(s) need quarantine review (see $QUARANTINE_DIR/)" || true
+  fi
   [ "$STRICT" = 1 ] && exit 2
 fi
 exit 0

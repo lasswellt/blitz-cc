@@ -268,20 +268,25 @@ Non-monorepo: run all checks at root.
 
 ### Scope Optimization
 
-Run tests only for changed packages:
+Test scope is picked by the impact selector, not by package filters alone (SKILL.md §1.3; guide: `docs/guides/tia.md`):
+
 ```bash
-# pnpm
-pnpm --filter ...[$SPRINT_BASE] run test
+# 1. selected set: sibling + import graph + journal recent-fail / co-change over the sprint diff
+SELECTED=$(git diff --name-only ${SPRINT_BASE}..HEAD | ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh --base ${SPRINT_BASE} | cut -f1)
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-sel"
+npx vitest run --reporter=json --outputFile=$OUT_SEL $SELECTED
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by selector --run-id "$RUN_ID-sel" --changed "$CHANGED_CSV" < $OUT_SEL
 
-# nx
-nx affected --target=test --base=$SPRINT_BASE
+# 2. ONE full run (the calibration point) — package-scoped in monorepos:
+#    pnpm --filter ...[$SPRINT_BASE] run test | nx affected --target=test --base=$SPRINT_BASE | turbo run test --filter=...[${SPRINT_BASE}]
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-full"
+npx vitest run --reporter=json --outputFile=$OUT_FULL
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by full --run-id "$RUN_ID-full" --changed "$CHANGED_CSV" < $OUT_FULL
 
-# turbo
-turbo run test --filter=...[${SPRINT_BASE}]
-
-# fallback: run all tests
-npm run test
+# 3. escaped_failures = failed test files in $OUT_FULL not in $SELECTED -> gates JSON + meta.json escaped_failures_recent (last 10)
 ```
+
+The full run gates PASS. `escaped_failures > 0` in any of the last 3 sprint-review runs makes the selector go `--full` until the streak clears.
 
 ---
 

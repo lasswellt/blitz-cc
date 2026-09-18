@@ -2,11 +2,11 @@
 name: quality-metrics
 description: "Collects, stores, and visualizes code-quality metrics over time (test counts, lint debt, cyclomatic complexity, dependency health, type-error trends). Modes: collect, dashboard, trend, compare. Use when the user says 'quality metrics', 'metrics dashboard', 'show trends', 'compare sprints', 'quality over time', or as a post-sprint observability snapshot in /blitz:ship."
 allowed-tools: Read, Write, Bash, Glob, Grep, Agent
-model: opus
-effort: medium
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<collect|dashboard|trend|compare <date1> <date2>>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
@@ -63,7 +63,7 @@ Metric collection is delegated to 5 parallel collector agents, each running one 
 | `collect-build` | `npm run build` | `${SESSION_TMP_DIR}/metric-build.json` | 100 on exit 0, else 0 |
 | `collect-completeness` | inline `/blitz:review --only completeness` lookup | `${SESSION_TMP_DIR}/metric-completeness.json` | from latest completeness snapshot; null if none |
 
-The 2 lightweight metrics (codebase size, dependency count) stay in the orchestrator — they're simple file reads that don't warrant agent overhead.
+The 2 lightweight metrics (codebase size, dependency count) stay in the orchestrator — they're simple file reads that don't warrant agent overhead. So do the 2 **advisory TIA metrics** (§1.6).
 
 ### 1.2 Spawn Parameters
 
@@ -124,6 +124,20 @@ Calculate test-to-code ratio = test_lines / source_lines.
 **Dependency count:**
 Read `package.json` and count keys in `dependencies` (production) and `devDependencies` (dev).
 
+### 1.6 Advisory TIA Metrics (test-impact journal)
+
+Read-only over `.cc-sessions/test-journal.jsonl` + `test-journal.meta.json` (written by `scripts/test-listener.sh`; see [quality-engine.md](/_shared/quality-engine.md) §Advisory metrics and `docs/guides/tia.md`). Not ratcheted — reported next to the 8 ratchet metrics.
+
+```bash
+META=.cc-sessions/test-journal.meta.json; JOURNAL=.cc-sessions/test-journal.jsonl
+TIA_ESCAPED=$(jq -r '.escaped_failures_recent[-1] // 0' "$META" 2>/dev/null || echo null)
+TIA_RATIO=$(git diff --name-only "${SPRINT_BASE:-HEAD~1}"..HEAD | ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh --json 2>/dev/null | jq '.selection_ratio' || echo null)
+TIA_STARTED=$(jq -r '.runs_started // 0' "$META" 2>/dev/null || echo 0); TIA_RECORDED=$(jq -r '.runs_recorded // 0' "$META" 2>/dev/null || echo 0)
+TIA_LINES=$(wc -l < "$JOURNAL" 2>/dev/null || echo 0); TIA_BYTES=$(wc -c < "$JOURNAL" 2>/dev/null || echo 0)
+```
+
+Store under `details.tia`: `{"escaped_failures": N, "selection_ratio": 0.0-1.0, "runs_started": N, "runs_recorded": N, "delta": started-recorded, "journal_lines": N, "journal_bytes": N}` — all `null` when no journal exists (cold start, not an error). `delta != 0` is the observability signal (listener invariant `runs_started == runs_recorded`); `|delta| > 3` already raises a `hook_failure` inbox item, so surface it in the dashboard's Details block as "TIA journal: N lines (K KB), runs started/recorded S/R" plus the two metrics. When `journal_lines > 5000`, recommend `scripts/test-listener.sh --prune`.
+
 ---
 
 ## Phase 2: STORE — Save Snapshot
@@ -161,7 +175,8 @@ Write to `docs/metrics/YYYY-MM-DD.json` using today's date:
       "test_lines": 0,
       "test_ratio": 0.0
     },
-    "dependencies": { "production": 0, "dev": 0 }
+    "dependencies": { "production": 0, "dev": 0 },
+    "tia": { "escaped_failures": null, "selection_ratio": null, "runs_started": 0, "runs_recorded": 0, "delta": 0, "journal_lines": 0, "journal_bytes": 0 }
   },
   "overall_score": null
 }
@@ -247,6 +262,10 @@ Write `docs/metrics/dashboard.md` with the following structure:
 ### Dependencies
 - Production: N
 - Dev: N
+
+### Test impact (advisory)
+- Escaped failures (last sprint-review): N | Selection ratio: 0.XX
+- Journal: N lines (K KB) | runs started/recorded: S/R (delta D)
 ```
 
 **Status thresholds:**
@@ -259,9 +278,10 @@ Write `docs/metrics/dashboard.md` with the following structure:
 - If previous snapshot exists, show the numeric difference (e.g., +5, -3, =)
 - If no previous snapshot, show "—"
 
-**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `docs/metrics/dashboard.md` Write completes, emit a styled HTML twin via the `/_shared/html-template-helper.md` `emit_html()` helper. The `.json` snapshot path is untouched.
+**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `docs/metrics/dashboard.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). The `.json` snapshot path is untouched.
 
 ```bash
+. "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
 [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html docs/metrics/dashboard.md
 ```
 

@@ -4,10 +4,10 @@ description: "Reviews sprint quality: automated gates (type-check, lint, tests, 
 argument-hint: "[--sprint N]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, Agent
 disable-model-invocation: false
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
@@ -74,9 +74,24 @@ npm run lint 2>&1 || npx eslint . 2>&1
 ```
 Record: Pass/Fail, warning count, error count, error list for auto-fix.
 
-### 1.3 Unit Tests (Changed Packages Only)
+### 1.3 Unit Tests (Selected Set, then ONE Full Run — TIA calibration)
 
-Monorepo: `for pkg in ${CHANGED_PACKAGES}; do (cd "$pkg" && npm run test); done`. Single-package: `npm run test -- --changed`. Record: total tests, passed/failed/skipped, failure details (test name + file + assertion).
+Sprint close is the calibration point for test-impact analysis ([docs/guides/tia.md](/docs/guides/tia.md)). Two runs, both journaled by the listener:
+
+```bash
+RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n'); CHANGED=$(git diff --name-only ${SPRINT_BASE}..HEAD)
+SELECTED=$(printf '%s\n' "$CHANGED" | ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh --base ${SPRINT_BASE} | cut -f1)
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-sel"
+npx vitest run --reporter=json --outputFile=${SESSION_TMP_DIR}/tests-selected.json $SELECTED   # jest: --json --outputFile
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by selector --run-id "$RUN_ID-sel" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < ${SESSION_TMP_DIR}/tests-selected.json
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --start --run-id "$RUN_ID-full"
+npx vitest run --reporter=json --outputFile=${SESSION_TMP_DIR}/tests-full.json                 # monorepo: per changed package
+${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh --trigger sprint-review --selected-by full --run-id "$RUN_ID-full" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < ${SESSION_TMP_DIR}/tests-full.json
+```
+
+`escaped_failures` = failing test files in the full run whose `test_file` was NOT in `$SELECTED` (compare repo-relative paths). Write it into the gates JSON (§1.5 `tests.escaped_failures`) and append it to `.cc-sessions/test-journal.meta.json` `escaped_failures_recent` (keep the last 10: `jq '.escaped_failures_recent = ((.escaped_failures_recent // []) + [$n])[-10:]'`). Any non-zero value flips the selector to `--full` for the next 3 sprint-review runs. The **full-suite** result still gates PASS; the selected run only calibrates. Record: total tests, passed/failed/skipped, failure details (test name + file + assertion), `selection_ratio` = selected / total test files.
 
 ### 1.4 Build Verification
 ```bash
@@ -148,29 +163,13 @@ Default: parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git
 
 Per [agent-orchestration.md](/_shared/agent-orchestration.md) capability gate (`BLITZ_DISPATCH`: `auto`/`workflow`/`agent`). When `USE_WORKFLOW` truthy AND `Workflow` tool available, dispatch reviewers + critic via native primitives; on ANY failure fall back to §2.2.1 (`Agent()`). Never hard-fail. Findings files + report synthesis stay in main-thread Bash (hybrid wrapper boundary); the script touches no filesystem.
 
-```js
-export const meta = { name: 'sprint-review', description: 'Parallel/sequential reviewers + adversarial critic', phases: [{ title: 'Review' }, { title: 'Critic' }] }
-// args: { roster:[{name,prompt}], sequential:bool, criticPrompt, reviewerSchema, criticSchema }
-let reviews
-if (args.sequential) {
-  // sequential: each reviewer receives all prior reviewers' findings (true chain, sequential accumulator)
-  reviews = []
-  let prior = []
-  for (const a of args.roster) {
-    const f = await agent(`${a.prompt}\n\nPrior findings:\n${JSON.stringify(prior)}`,
-      { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })
-    reviews.push(f)
-    if (f) prior = [...prior, f]
-  }
-} else {
-  // parallel (default): all reviewers concurrent
-  reviews = await parallel(args.roster.map(a => () =>
-    agent(a.prompt, { label: a.name, phase: 'Review', model: 'sonnet', schema: args.reviewerSchema })))
-}
-// Invariant 7: adversarial critic, schema-validated (replaces jq parse of LGTM|REJECT)
-const critic = await agent(args.criticPrompt, { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', schema: args.criticSchema })
-return { reviews: reviews.map((f, i) => ({ name: args.roster[i]?.name, ok: f !== null, result: f })), critic }
-```
+**Dispatch:** invoke the plugin workflow `/blitz:review-fanout` (`workflows/review-fanout.js`) with
+`args: { roster: [{ name, prompt }, …], sequential: <bool from §2.2.0>, criticPrompt, reviewerSchema, criticSchema }`.
+It runs the reviewers (parallel by default; a sequential accumulator that threads prior findings when
+`sequential: true`) and then the `blitz:critic` agent, and returns `{ reviews: [{ name, ok, result }], critic }`.
+**On any failure** (tool absent, no `Workflow(<name>)` allow rule in a `-p` run, script error, abort)
+**fall back to §2.2.1 (`Agent()`)** — never hard-fail. Resume semantics + concurrency cap:
+[agent-orchestration.md](/_shared/agent-orchestration.md) §Workflow Dispatch Contract.
 
 - `model: 'sonnet'` per token-budget (explicit — prevents `[1m]` inheritance). Critic uses `agentType: 'blitz:critic'` so its system prompt loads; `schema` forces canonical `{verdict: LGTM|REJECT, ...}` and removes inline jq parsing.
 - Each `a.prompt`/`criticPrompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.

@@ -3,10 +3,10 @@ name: audit
 description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness): 10 parallel agents (2 same-scope passes/pillar, Multi-Review). Findings feed /blitz:roadmap + /blitz:sprint-plan. Use for 'audit codebase', 'full code review', 'find tech debt', 'security audit', or before a release. Object-noun routing for 'audit X': code→audit, dependencies/CVEs→/blitz:dep-health, Firestore/Vue/Pinia→/blitz:code-doctor, cross-page UI→/blitz:ui-audit, sprint→/blitz:sprint-review. Bare 'audit'→/blitz:ask."
 argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
@@ -121,13 +121,13 @@ echo "[audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
 
 Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
 
-```js
-export const meta = { name: 'audit', description: '5-pillar audit, 2 independent same-scope agents/pillar (Multi-Review)', phases: [{ title: 'Audit' }] }
-// ROSTER passed via args (agent name, pillar, scope, fileCap, outputPath, checklist, stack, inventory)
-const findings = await parallel(args.roster.map(a => () =>
-  agent(a.prompt, { label: a.name, phase: 'Audit', model: 'sonnet', schema: args.findingsSchema })))
-return { agents: findings.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f })) }
-```
+**Dispatch:** invoke the plugin workflow `/blitz:audit-sweep` (`workflows/audit-sweep.js`) with
+`args: { roster: [{ name, prompt }, …], findingsSchema }` — the roster is the 10-agent table below with each
+`prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
+inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
+`Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
+hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agent-orchestration.md)
+§Workflow Dispatch Contract.
 
 - Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
 - `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).
@@ -297,9 +297,10 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
-**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `/_shared/html-template-helper.md` `emit_html()` helper. Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
+. "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
 [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html "${REPORT_DIR}/audit-$(date +%Y%m%d).md" untrusted
 ```
 

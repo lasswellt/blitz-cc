@@ -134,6 +134,25 @@ grep -q '^\.cc-sessions/KNOWLEDGE\.md$' .gitignore 2>/dev/null \
 
 ---
 
+## 8. Relationship to auto memory
+
+Claude Code keeps its own cross-session notes ("auto memory") per user and per repository: an index at `<autoMemoryDirectory>/MEMORY.md` (default `~/.claude/projects/<project>/memory/`, first 200 lines / 25 KB loaded every session) plus typed topic files (`user_*`, `feedback_*`, `project_*`, `reference_*`) read on demand. It is machine-local, never committed, and not loaded into subagents. KNOWLEDGE.md is project-local, committed or not per §6, and **is** injected into subagent prompts (§3).
+
+Division of labor:
+
+| Lesson type | Goes to | Why |
+|---|---|---|
+| `user` — role, preferences, working style | auto memory only | Personal; never belongs in a project file |
+| `feedback` — a correction the user gave | auto memory + a KNOWLEDGE.md entry when the correction is about this codebase | The correction must reach subagents on the next sprint |
+| `project` — decisions, constraints, deadlines the code cannot reveal | KNOWLEDGE.md canonical; one pointer line in `MEMORY.md` (`- blitz lessons: .cc-sessions/KNOWLEDGE.md`) | One durable, injectable source |
+| `reference` — where to find things outside the repo | auto memory; mirror into KNOWLEDGE.md only if a skill needs it | Usually personal tooling |
+
+Writers (§4) that record a `project` lesson append it to KNOWLEDGE.md **and**, when auto memory is enabled (`autoMemoryEnabled` not `false`), ensure the pointer line exists in `MEMORY.md`. When auto memory is disabled or the directory is unwritable, KNOWLEDGE.md alone is authoritative. Never copy KNOWLEDGE.md wholesale into `MEMORY.md`: the index is capped and everything past the cap is dropped on the next load.
+
+Subagent-level memory (`memory: project` on `agents/*.md`, stored under `.claude/agent-memory/<agent>/`) is a third store: per-agent working notes, not project lessons. Agents promote a durable lesson to KNOWLEDGE.md through the retrospective, not by editing it directly.
+
+---
+
 ## Related
 
 - [`agent-orchestration.md`](./agent-orchestration.md) §3 — autonomous-loop subagent prompts

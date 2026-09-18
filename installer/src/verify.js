@@ -54,12 +54,12 @@ function verify(projectDir) {
     warn('No permissions configured');
   }
 
-  // 5. Agent teams (GA since v2.1.71 — no experimental flag needed)
+  // 5. Legacy agent-teams flag (blitz does not use agent teams; the flag only adds token cost)
   const env = projectSettings?.env;
   if (env && env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1') {
     warn('Legacy CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS flag still set — run installer to clean up');
   } else {
-    success('Agent teams: GA (no experimental flag)');
+    success('No legacy agent-teams flag');
     passed++;
   }
 

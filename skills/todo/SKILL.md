@@ -2,11 +2,11 @@
 name: todo
 description: "Tracks development ideas, follow-up items, and technical debt discovered mid-task. Modes: add, list, check, resolve. Stores in .cc-sessions/todos.jsonl with file:line context. Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', 'todos for this sprint', or when Claude itself surfaces a follow-up that shouldn't become a stale TODO comment in code."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<add <description> | list | check | resolve <id>>"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.

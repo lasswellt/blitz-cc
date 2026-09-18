@@ -285,6 +285,8 @@ One JSON object per line, append-only:
 {"ts":"<ISO-8601>","session":"<SESSION_ID>","skill":"<skill-name>","event":"<event-type>","message":"<human-readable message>","detail":{}}
 ```
 
+`session` is the **native Claude Code session id** (`${CLAUDE_SESSION_ID}` in a skill body, stdin `session_id` in a hook) — the same id that names `.cc-sessions/sessions/<id>.json`. Legacy `<skill>-<8hex>` and `cli-<8hex>` values are migrated by `/blitz:conform --fix`; `cli-<8hex>` still appears only when a hook receives no `session_id` (fallback `blitz_session_id`).
+
 ### Required Events
 
 Every skill MUST log these events to the activity feed:
@@ -301,6 +303,46 @@ Every skill MUST log these events to the activity feed:
 | `skill_complete` | Skill finishes | `{ "status": "success|partial|failed", "summary": "<result>" }` |
 | `warning` | Non-fatal issue encountered | `{ "message": "<detail>" }` |
 | `error` | Fatal or significant error | `{ "message": "<detail>", "recoverable": true|false }` |
+
+### Hook-emitted events (skills must NOT re-emit these)
+
+Hooks write the following deterministically via `blitz_log_event` (`skill: "hook"`, `session` = stdin `session_id`). A skill that logs its own `session_start`, `session_end` or `idle` creates a duplicate the dashboard counts twice — skills log `skill_start` / `skill_complete` instead.
+
+| Event | Hook (event) | `detail` |
+|---|---|---|
+| `session_start` | `session-start.sh` (SessionStart) — writes/reopens the record | `{"source":"startup\|resume\|clear\|compact\|fork","cwd":"<path>"}` |
+| `session_end` | `session-end.sh` (SessionEnd) | `{"reason":"clear\|resume\|logout\|prompt_input_exit\|other","status":"completed\|suspended\|cleared\|logged_out","locks_released":<n>,"record":true\|false}` |
+| `idle` | `stop-turn.sh` (Stop) — record `state: idle` + `last_activity`. **Record-only transition, no feed line** (one per turn would swamp the feed); readers take idleness from the record / overlay, not the feed |
+| `post_tool_batch` (heartbeat) | `heartbeat.sh` (PostToolBatch) — record `state: working`, `last_activity` bump | `{}` |
+| `mailbox` | `stop-turn.sh` (Stop) — mailbox lines delivered to this session's inbox socket | `{"count":<n>}` |
+| `needs_input` | `notification-log.sh` (Notification: permission / idle prompt / elicitation) — also writes an inbox line | `{"notification_type":"<type>","kind":"needs_input\|permission"}` |
+| `notification` | `notification-log.sh` (any other Notification) | `{"notification_type":"<type>","kind":""}` |
+| `permission_denied` | `permission-denied.sh` (PermissionDenied) — also writes an inbox `permission` line; never retries | `{"tool_name":"<tool>"}` |
+| `permission_request` | `permission-request.sh` (PermissionRequest) | `{"tool_name":"<tool>"}` |
+| `cache_bust` | `model-switch-warn.sh` (PreModelSwitch) | `{"from":"<model>","to":"<model>"}` |
+| `config_change` | `config-change.sh` (ConfigChange) — re-runs `startup-validate.sh --strict` | `{"source":"user_settings\|project_settings\|local_settings\|policy_settings\|skills","validate":"pass\|fail\|skipped"}` |
+| `cwd_changed` | `cwd-changed.sh` (CwdChanged) — record `cwd` | `{"cwd":"<path>"}` |
+| `directory_added` | `cwd-changed.sh` (DirectoryAdded) — record `dirs[]` | `{"path":"<path>","method":"<method>"}` |
+| `warning` (stale cleanup) | `session-start.sh` (SessionStart, `blitz_session_stale`) — record → `status: failed`, `failed_reason: stale_session_cleanup` | `{"session":"<sid>","locks_released":<n>,"record":"<path>","reason":"stale_session_cleanup"}` |
+| `handoff_written` | `pre-compact-snapshot.sh` (PreCompact) | `{"phase":"<phase>","sprint":"sprint-N"\|null}` |
+| `file_change` | `post-edit-activity-log.sh` (PostToolUse Write/Edit, `skill: "freeform"`) | `{"files":["<path>"]}` |
+| `subagent_start` / `subagent_stop` / `teammate_idle` / `task_validated` / `post_tool_failure` / `stop_failure` / `worktree_create` / `worktree_remove` / `worktree_collision_blocked` / `branch_cleanup` / `verification` / `override` | the like-named hook scripts (see `hooks/scripts/README.md`) | per script header |
+
+Skills keep the semantic layer (`skill_start`, `phase_*`, `decision`, `agent_*`, `registry_update`, `warning`, `error`, `skill_complete`). A skill MAY still log `warning` for its own conditions; the stale-cleanup `warning` shape above is hook-only.
+
+### Inbox and mailbox line schemas
+
+Two more JSONL files share the feed's discipline (append-only, ≤200/500-char text, injection-scanned, untrusted on read — [security.md](security.md) TB-2/TB-5):
+
+```json
+// .cc-sessions/inbox.jsonl — attention queue, one line per item needing a human or /blitz:next
+{"ts":"<ISO-8601>","id":"inb-<8hex>","source":"hook|skill|cron","kind":"needs_input|permission|blocked|stale_lock|quarantine|hook_failure|escalation","session":"<session_id>","text":"<≤200 chars>","status":"pending|converted|dismissed"}
+
+// .cc-sessions/mailbox/<target_session_id>.jsonl — hook/script → session; drained by the target's Stop hook
+{"ts":"<ISO-8601>","from":"<session_id>|unknown","to":"<target_session_id>","kind":"note|unblock|halt","text":"<≤500 chars>"}
+```
+
+Hooks write inbox lines with `blitz_inbox_append <kind> <text> [session]` and mailbox lines with `blitz_mailbox_send <target> <kind> <text>` (both in `hooks/scripts/_lib/common.sh`). A skill triaging the inbox rewrites `status` in place (atomic write, one session at a time) and logs a feed `decision` per item. Which one to use when: [session-lifecycle.md](session-lifecycle.md) §Mailbox protocol.
 
 ### Message length (soft rule)
 
@@ -326,8 +368,8 @@ At session start (during the session protocol preamble), skills MUST:
 
 ```
 [<skill-name>] Recent activity (last 30 minutes):
-  ├─ [sprint-dev-a3f7c1b2] sprint-dev: Implementing sprint 3 — 8/12 stories done (15m ago)
-  ├─ [research-b4e8f2a1] research: Completed auth-strategy research (28m ago)
+  ├─ [8c1d…f0a2] sprint-dev: Implementing sprint 3 — 8/12 stories done (15m ago, working)
+  ├─ [3b77…91ce] research: Completed auth-strategy research (28m ago, idle)
   └─ No conflicts detected ✓
 ```
 
@@ -349,6 +391,8 @@ The activity feed is append-only and grows over time. To prevent unbounded growt
 - Skills MAY truncate entries older than 7 days when the file exceeds 500 lines.
 - Truncation should preserve the most recent 200 entries.
 - Only one session should truncate at a time (use a brief lock if needed).
+
+The same rule applies to `.cc-sessions/inbox.jsonl`: keep the most recent 200 `pending|converted` lines, drop `dismissed` lines older than 7 days (`/blitz:next` Phase 0.5 and `/blitz:sessions prune` do this; same single-truncator rule). Mailbox files are truncated by their own `Stop` hook on delivery and need no sweep; `/blitz:sessions prune` removes mailboxes whose target record is closed > 7 d.
 
 ---
 

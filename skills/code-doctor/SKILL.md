@@ -2,8 +2,7 @@
 name: code-doctor
 description: "Framework-API correctness audit for Firestore, VueFire, Vue 3, and Pinia. Detects anti-patterns, misuse, dead exports, and duplication. Read-only by default; --fix applies low-risk fixes. Use when the user says 'code-doctor', 'audit firestore', 'pinia anti-patterns', or sees framework-API warnings in logs."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
-model: opus
-effort: low
+model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "[scope] [--scan|--fix|--fix-all] [--rules firestore,vuefire,vue,pinia,dead,duplication]"
 paths:
@@ -13,6 +12,7 @@ paths:
   - "**/stores/**/*.{ts,js}"
   - "**/*.firestore.{ts,js}"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context

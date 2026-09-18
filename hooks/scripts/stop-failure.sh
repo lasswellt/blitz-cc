@@ -15,5 +15,8 @@ FAILURE_TYPE=$(blitz_extract failure_type)
 
 DETAIL=$(jq -n --arg ft "$FAILURE_TYPE" '{failure_type:$ft}')
 blitz_log_event "hook" "stop_failure" "Turn ended with failure: ${FAILURE_TYPE:-unknown}" "$DETAIL"
+# Inbox (E-041 S4): a turn that died on the API (rate limit, billing, server error) needs a human
+# or a retry decision; billing/auth are non-recoverable for an unattended loop.
+blitz_inbox_append "hook_failure" "turn ended with ${FAILURE_TYPE:-unknown}; unattended loops stall until this clears" || true
 
 exit 0

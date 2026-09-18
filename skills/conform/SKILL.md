@@ -2,12 +2,12 @@
 name: conform
 description: Conforms blitz runtime artifacts to current canonical schemas — detects drift in `.cc-sessions/`, sprint dirs, roadmap JSON, research `scope:` blocks. Schema-version aware; migrates story frontmatter additively (preserves project extensions). Read-only by default; `--fix` applies idempotent migrations; `--scope plugin` targets SKILL.md + hooks. Use after upgrading blitz, when sprint-dev/review complains about schema fields, or when aligning a forked plugin.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
-effort: low
+model: inherit
 argument-hint: "[target-dir] [--fix|--report-only] [--scope project|plugin|all] [--sample-mode]"
 disable-model-invocation: false
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
 OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
@@ -69,7 +69,8 @@ For each artifact, record **presence**, **count**, and **schema version** (where
 | Activity feed | `.cc-sessions/activity-feed.jsonl` | yes | line schema (required fields present) |
 | Carry-forward | `.cc-sessions/carry-forward.jsonl` | **yes** — only flag MISSING if other artifacts reference it | n/a |
 | Developer profile | `.cc-sessions/developer-profile.json` | **yes** — only flag MISSING if a skill body or hook references it | autonomy field present? |
-| Sessions | `.cc-sessions/<id>` (file OR dir) — accept both models | yes | dir vs file (record per session) |
+| Sessions | `.cc-sessions/sessions/<native id>.json` (canonical, hook-owned) · legacy `.cc-sessions/<skill>-<8hex>.json` / `cli-<8hex>.json` files · legacy `.cc-sessions/<id>/` dirs | yes | canonical vs legacy-file vs dir (record per session) |
+| Inbox / mailbox | `.cc-sessions/inbox.jsonl`, `.cc-sessions/mailbox/*.jsonl` | yes | line schema per terse-output.md §Inbox and mailbox line schemas |
 | Orphan locks | `.cc-sessions/*.lock` not paired with active session | n/a | n/a |
 | Sprints | `sprints/sprint-*/` | yes | manifest version field if present |
 | Sprint manifests | `sprints/sprint-N/manifest.{json,md}` | per-sprint | shape |
@@ -109,7 +110,10 @@ Findings classified as:
 | Story frontmatter | shape per sprint-contracts.md | field-presence check on canonical `epic`+`verify`; if `registry_entries` absent AND carry-forward in use → MIGRATE (add `[]`); else conformant |
 | STATE.md required fields | per session-lifecycle.md, with table-form fallback parser | **try both formats** before flagging MANUAL |
 | `wave-plan.json` shape | `jq -e '.waves and .done and .derived_from'` (sprint-dev §1.4 emit) | **skip** if file absent (ephemeral/`SESSION_TMP_DIR`); malformed → INFO only, never MIGRATE (regenerated next run from STATE.md) |
-| Active sessions older than 4h | compare `started`/dir mtime to now | works for both file + dir model |
+| Legacy session records | any `.cc-sessions/*.json` whose stem is not a native session id (`<skill>-<8hex>`, `cli-<8hex>`) or that lacks `harness` | MIGRATE when the feed maps it (below), else MANUAL-lite: mark `legacy: true` |
+| Feed `session` values | `session` ∈ legacy forms | MIGRATE when a mapping exists (same pass) |
+| Stale active sessions | `blitz_session_stale <record> "$(blitz_agent_view)"` (canonical rule) | works for canonical + legacy records; dir model falls back to mtime |
+| Inbox / mailbox lines | line JSON parse + required fields (`ts,id,source,kind,session,text,status` / `ts,from,to,kind,text`) | **skip** if absent; malformed → MANUAL (never rewrite text) |
 | Orphan locks | set diff `*.lock` minus active sessions | works for both models |
 | Roadmap canonical files schema | `jq -e .` + per-file required-fields | only the 6 canonical files; extensions get INFO line |
 | Research docs scope-block ingestion | cross-reference scope IDs vs registry IDs | **skip** if carry-forward.jsonl absent |
@@ -134,6 +138,7 @@ Build a migration plan as a table (sample shape — actual will reflect target):
 | 24 roadmap extension files (`.bak`, `_TRACKER.md`, etc.) | project | NO ACTION | INFO: project-specific extensions, not drift | n/a |
 | 4 sprints below latest 3 + 5 random | project | NO ACTION | INFO: not sampled (--full to override) | n/a |
 | 1 stale active session (>4h) | project | MANUAL | requires user disposition | no |
+| 9 legacy session records (`<skill>-<8hex>.json`), 6 mappable via feed | project | MIGRATE | move 6 to `sessions/<native id>.json` + rewrite feed `session`; mark 3 `legacy: true` in place | yes |
 | 8 SKILL.md missing OUTPUT STYLE snippet | plugin | MECHANICAL | run scripts/maint/v1.9.0/blitz-fix-frontmatter.sh | yes |
 
 Print plan as verbose-progress table. If `--report-only`, skip to Phase 6.
@@ -183,9 +188,19 @@ Create with safe defaults:
 }
 ```
 
+### Legacy session-record migration (E-041)
+
+Records were skill-minted (`.cc-sessions/<skill>-<8hex>.json`, hook fallback `cli-<8hex>.json`) before the SessionStart hook owned them at `.cc-sessions/sessions/<native session_id>.json`. For each legacy record:
+
+1. **Map.** Take the record's `started` and `skill`. Search the feed for a hook `session_start` event (`skill: "hook"`, `event: "session_start"`) whose `ts` is within 60 s of `started`; if the same native `session` id also emitted a `skill_start`/`skill: <skill>` line, the mapping is confirmed. A record with `claude_session_id` already set maps directly. Ambiguous (two candidates in the window) → no mapping.
+2. **Mapped →** write `.cc-sessions/sessions/<native id>.json` = legacy fields + `{session_id: <native id>, harness: "claude", dirs: [], state: (status=="active" ? "idle" : "ended"), migrated_from: "<legacy stem>"}`; carry `skill`, `working_on`, `args`, `locks_held`, `started`, `last_activity`, `status` verbatim; drop `tmp_dir`/`pid`. Delete the legacy file only after the canonical one parses (`jq -e .`). If the canonical file already exists, merge legacy `skill`/`working_on`/`args` into it where they are null and drop the legacy file.
+3. **Rewrite feed `session` values** for every line whose `session` equals the legacy stem → the native id (backup `activity-feed.jsonl.pre-conform.<ts>` first; also rewrite `operations.log`). Also rewrite the `session` field of matching `inbox.jsonl` lines.
+4. **Unmapped →** add `"legacy": true` to the record in place (atomic write) and leave the path; report it as INFO. Never guess a native id.
+5. Idempotent: a record with `migrated_from` or `legacy: true`, and a feed line whose `session` is already a native id, is skipped on rerun. Report counts: `migrated / marked legacy / feed lines rewritten`.
+
 ### Orphan lock cleanup
 
-Delete each confirmed-orphan lock (no live session pid in any active session JSON).
+Delete each confirmed-orphan lock (no active, non-stale session record — canonical or legacy — names it; ownership-guarded per session-lifecycle.md §Stale Lock Detection).
 
 ### STATE.md repair
 
@@ -226,7 +241,8 @@ Sample mode: on (auditing latest 3 + 5 random; <N> sprints not sampled) | off
   Activity feed: <N> entries (<size>)
   Carry-forward: <N> entries  |  not in use (file absent, no consumer)
   Developer profile: present (autonomy=<value>)  |  not in use
-  Sessions: <N> file-style + <M> dir-style (<stale>)
+  Sessions: <N> canonical + <M> legacy-file + <K> dir-style (<stale>)
+  Inbox: <N> pending / <M> converted / <K> dismissed  |  absent
   Sprints: <N> (latest: sprint-<X>)
   Stories: <N> total (<with registry_entries>/<without>)
   Roadmap canonical: <N>/6 present  |  Extensions (INFO): <N>
@@ -242,6 +258,7 @@ Sample mode: on (auditing latest 3 + 5 random; <N> sprints not sampled) | off
   Story registry_entries add: <N> migrated, <N> failed (see migration-failures.log)
   Activity-feed normalization: <N> lines
   Carry-forward dedup: <N> entries  |  skipped (no file)
+  Legacy session records: <N> migrated to sessions/<native id>.json, <M> marked legacy: true, <K> feed lines rewritten
   Orphan lock cleanup: <N>
   STATE.md repair: <N>  |  skipped (table-form left as-is)
 

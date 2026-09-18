@@ -3,10 +3,10 @@ name: research
 description: "Investigates libraries, APIs, frameworks, and architecture patterns via parallel research agents (domain, library, codebase, optional infra). Produces a structured docs/_research/<date>_<topic>.md with scope: YAML for /blitz:roadmap ingestion. Use when the user says 'research X', 'compare options', 'evaluate library Y', or '/blitz:research <topic>'."
 argument-hint: "<topic>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
-model: opus
-effort: high
+model: inherit
 compatibility: ">=2.1.71"
 ---
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 <!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
@@ -374,7 +374,7 @@ Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on for docs des
 
 ### 3.2.6 Opt-in HTML Twin (additive — `.md` stays canonical)
 
-After the `scope:`-bearing `docs/_research/...md` is finalized (§3.1) AND the §3.2 quality + §3.2.5 citation gates pass, before §3.3 cleanup: emit an HTML twin via the `/_shared/html-template-helper.md` `emit_html()` helper. Research docs may quote fetched/untrusted content → pass the `untrusted` trust arg so the body is HTML-escaped into `<pre>` (TB-4, the only complete close — converters + regex scrubbers leak across encodings). The canonical `.md` (with its `scope:` YAML) is never altered or replaced; `roadmap extend` keeps globbing the `.md`. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+After the `scope:`-bearing `docs/_research/...md` is finalized (§3.1) AND the §3.2 quality + §3.2.5 citation gates pass, before §3.3 cleanup: emit an HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Research docs may quote fetched/untrusted content → pass the `untrusted` trust arg so the body is HTML-escaped into `<pre>` (TB-4, the only complete close — converters + regex scrubbers leak across encodings). The canonical `.md` (with its `scope:` YAML) is never altered or replaced; `roadmap extend` keeps globbing the `.md`. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 DOC_PATH="docs/_research/${TIMESTAMP}_${TOPIC_SLUG}.md"

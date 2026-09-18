@@ -42,7 +42,7 @@ echo -e "${DIM}   ╚═════╝ ╚══════╝╚═╝   ╚�
 echo ""
 echo -e "${CYAN}   ──────────────────────────────── ⚡ ───${NC}"
 echo ""
-echo -e "${DIM}     Claude Code Plugin Installer · v2.4.4${NC}"
+echo -e "${DIM}     Claude Code Plugin Installer · v2.5.0${NC}"
 echo -e "${DIM}       37 skills · 11 agents · 38 hooks${NC}"
 echo ""
 
@@ -64,23 +64,24 @@ if ! command -v claude &>/dev/null; then
 fi
 
 # Check minimum Claude Code version.
-#   >=2.1.71  — agent teams GA (required for multi-agent skills)
-#   >=2.1.117 — orchestrator main-thread agent (required for blitz holistic-machine routing)
+#   >=2.1.271 — effective plugin floor (.claude-plugin/compat.json): Stop/SessionEnd hooks,
+#               cross-session messaging, Monitor deadline semantics, omitClaudeMd.
+#   >=2.1.71  — individual /blitz:* slash skills still load (degraded: no messaging/heartbeat)
 CLAUDE_VER=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
 if [ -n "$CLAUDE_VER" ]; then
   IFS='.' read -r CV_MAJOR CV_MINOR CV_PATCH <<< "$CLAUDE_VER"
   if [ "${CV_MAJOR:-0}" -lt 2 ] || \
      { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -lt 1 ]; } || \
      { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -eq 1 ] && [ "${CV_PATCH:-0}" -lt 71 ]; }; then
-    warn "Claude Code v${CLAUDE_VER} — blitz requires >=2.1.71 (agent teams)"
+    warn "Claude Code v${CLAUDE_VER} — blitz slash skills require >=2.1.71; the plugin floor is >=2.1.271"
     warn "Multi-agent skills will not work. Update: npm install -g @anthropic-ai/claude-code@latest"
-  elif { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -eq 1 ] && [ "${CV_PATCH:-0}" -lt 117 ]; }; then
-    info "Claude Code v${CLAUDE_VER} (agent teams supported)"
-    warn "Orchestrator main-thread agent requires >=2.1.117 — your version will install cleanly but freeform"
-    warn "natural-language routing through agents/orchestrator.md will not activate."
+  elif { [ "${CV_MAJOR:-0}" -eq 2 ] && [ "${CV_MINOR:-0}" -eq 1 ] && [ "${CV_PATCH:-0}" -lt 271 ]; }; then
+    info "Claude Code v${CLAUDE_VER} (slash skills supported)"
+    warn "blitz's effective floor is >=2.1.271 — below it the session heartbeat (Stop/SessionEnd hooks),"
+    warn "cross-session messaging, and /blitz:sessions degrade silently."
     warn "Upgrade for full features: npm install -g @anthropic-ai/claude-code@latest"
   else
-    info "Claude Code v${CLAUDE_VER} (orchestrator-ready)"
+    info "Claude Code v${CLAUDE_VER} (full feature set)"
   fi
 fi
 
@@ -200,7 +201,7 @@ if 'enabledPlugins' not in settings:
 
 settings['enabledPlugins']['${PLUGIN_NAME}@${MARKETPLACE_NAME}'] = True
 
-# Agent teams are GA as of Claude Code v2.1.71 (March 2026) — no experimental flag needed.
+# CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is a legacy flag from pre-2.1.71 installs; blitz does not use agent teams.
 # Clean up legacy flag if present from previous install.
 if 'env' in settings and 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' in settings.get('env', {}):
     del settings['env']['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS']

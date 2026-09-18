@@ -1,0 +1,37 @@
+{
+  "$comment": "AUTHORITATIVE Claude Code version floors. scripts/check-version-sync.sh asserts every '2.1.NNN' citation in the files listed under 'cited_in' is either cc_min or one of the feature floors. Individual /blitz:* slash skills declare their own 'compatibility:' and may stay at cc_min_slash.",
+  "cc_min": "2.1.271",
+  "cc_min_slash": "2.1.71",
+  "features": {
+    "agent_view": "2.1.139",
+    "agent_view_json": "2.1.141",
+    "worktree_bg_isolation": "2.1.143",
+    "orchestrator_main_thread_agent": "2.1.117",
+    "agent_dispatch_honors_agent_defs": "2.1.157",
+    "cross_session_messaging": "2.1.224",
+    "notify_when_idle": "2.1.236",
+    "goal_checkins": "2.1.234",
+    "skill_doctor": "2.1.252",
+    "plugin_eval": "2.1.269",
+    "workflow_max_concurrent_agents": "2.1.269",
+    "monitor_deadline_only": "2.1.271",
+    "omit_claude_md": "2.1.271",
+    "workflow_usage_limit_pause": "2.1.271",
+    "post_tool_use_updated_tool_output": "2.1.121",
+    "agent_cache_ttl": "2.1.248",
+    "docs_verified_against": "2.1.276"
+  },
+  "cited_in": [
+    "README.md",
+    "CLAUDE.md",
+    ".claude-plugin/plugin.json",
+    ".claude-plugin/settings.json",
+    "installer/install.sh",
+    "installer/src/index.js",
+    "installer/src/verify.js",
+    "installer/README.md",
+    "skills/_shared/agent-orchestration.md",
+    "skills/_shared/session-lifecycle.md",
+    "skills/_shared/worktree-lifecycle.md"
+  ]
+}
