@@ -19,6 +19,9 @@ Bump these files together on every release. `installer/package.json` and `instal
 
 ## [Unreleased]
 
+### Docs
+- **Sept-2026 alignment review** against Claude Code 2.1.276 with eight epic-ready plans (E-040..E-047): platform floor + hook surface, session management v2 (hook-owned records, cross-session messaging, inbox/heartbeat, `/blitz:sessions` dashboard), verification (`/goal`, Stop gate, `/verify`), test impact analysis v0, memory/context economics, plugin evals + `workflows/`, cloud threads/routines/channels, hygiene drift. See [docs/reviews/2026-09-18_cc-2.1.276-alignment/README.md](docs/reviews/2026-09-18_cc-2.1.276-alignment/README.md).
+
 ### Fixed
 - **Inventory drift (shared 12->13):** `html-template-helper.md` (E-039 HTML side-output) was never folded into inventory; `counts.json` + README + plugin.json + marketplace.json said "12 shared protocol files" while 13 exist. Regenerated `counts.json`, reconciled manifests, indexed the file in CLAUDE.md. `check-count-sync.sh` now exits 0.
 - **sprint-review Workflow `pipeline()` misuse:** sequential reviewer dispatch passed the roster as both items and stages (N×N), so reviewers never received prior findings. Replaced with an explicit sequential accumulator loop.
