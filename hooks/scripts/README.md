@@ -1,6 +1,6 @@
 # Hook Scripts
 
-45 scripts in this directory (42 wired through `hooks/hooks.json` across 24 hook events; `check-registry-validate.sh` and `startup-validate.sh` are sub-invoked; `critic-gemini.sh` is critic-spawned). Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, plus 6 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`) — 7 anti-shortcut hooks counting `post-edit-typecheck-block.sh`. `workflow-guard.sh` is a WARNER (not a blocker — tracks phase execution order and emits warnings).
+46 scripts in this directory (43 wired through `hooks/hooks.json` across 24 hook events; `check-registry-validate.sh` and `startup-validate.sh` are sub-invoked; `critic-gemini.sh` is critic-spawned). Every script reads its trigger from stdin (or runs unconditionally on `SessionStart`/`PreCompact`-style events). All exit non-blocking by default; the BLOCKING scripts (exit 2) are: `pre-commit-validate.sh`, `pre-edit-guard.sh`, `task-completed-validate.sh`, `reference-compression-validate.sh`, `skill-frontmatter-validate.sh`, `agent-frontmatter-validate.sh`, `post-edit-typecheck-block.sh`, `stop-gate.sh` (only when a gate file is armed), plus 6 anti-shortcut blockers (`block-no-verify.sh`, `block-destructive-git.sh`, `block-destructive-sql.sh`, `block-test-deletion.sh`, `block-test-disabling.sh`, `block-as-any-insertion.sh`) — 7 anti-shortcut hooks counting `post-edit-typecheck-block.sh`. `workflow-guard.sh` is a WARNER (not a blocker — tracks phase execution order and emits warnings).
 
 ## By event
 
@@ -8,7 +8,7 @@
 
 | Script | Purpose |
 |---|---|
-| `session-start.sh` | Replays last 10 activity-feed entries, resets per-session context counter, warns on stale (>4h) active sessions |
+| `session-start.sh` | Owns the session record (E-041 S1): creates `.cc-sessions/sessions/<session_id>.json` from stdin (`session_id`, `cwd`, `transcript_path`, `scratchpad_dir`, `permission_mode`, `effort.level`, `agent_type`, `source`), reopens it on `source=resume\|compact` (keeps `skill`/`working_on`/`locks_held`), logs feed `session_start` with `session=<session_id>`; surfaces HANDOFF.json, replays last 10 feed entries (sanitized), resets the context counter; stale cleanup via `blitz_session_stale` (canonical + legacy records → `status: failed`, `failed_reason: stale_session_cleanup`, owned locks released, feed `warning`) |
 
 ### `UserPromptExpansion` — fires before each prompt is sent to the model
 
@@ -40,7 +40,7 @@
 | `post-edit-activity-log.sh` | `Write\|Edit` | Appends a `file_change` event to `.cc-sessions/activity-feed.jsonl` |
 | `post-edit-format.sh` | `Write\|Edit` | Auto-formats edited files via project's formatter (prettier/eslint/biome auto-detect) |
 | `post-edit-lint.sh` | `Write\|Edit` | Runs project linter against the edited file; non-blocking (warnings only) |
-| `post-edit-test.sh` | `Write\|Edit` | Finds and runs matching test files for the edited source |
+| `post-edit-test.sh` | `Write\|Edit` | Records the edited source path in `.cc-sessions/sessions/<sid>/touched.txt`; `heartbeat.sh` (PostToolBatch) runs `scripts/test-selector.sh` over the batch and journals results through `scripts/test-listener.sh` (E-043) |
 | `analysis-paralysis-guard.sh` | `Write\|Edit` `Read\|Glob\|Grep` | Detects long read-heavy phases without writes; nudges toward action |
 | `skill-frontmatter-validate.sh` | `Write\|Edit` | Lints any modified SKILL.md against the Anthropic-canonical frontmatter contract |
 | `agent-frontmatter-validate.sh` | `Write\|Edit` | Lints any modified `agents/*.md` against the canonical agent frontmatter contract |
@@ -101,11 +101,12 @@
 |---|---|
 | `stop-failure.sh` | Logs failure_type to activity feed. Stub — logging only; future: write advisories to KNOWLEDGE.md. |
 
-### `Stop` — wired (non-blocking heartbeat + mailbox drain; blocking gate arrives in E-042)
+### `Stop` — wired (non-blocking heartbeat + mailbox drain, then the conditional verification gate)
 
 | Script | Purpose |
 |---|---|
 | `stop-turn.sh` | Turn-end heartbeat: sets record `state:"idle"` + `last_activity`, then drains `.cc-sessions/mailbox/<session_id>.jsonl` to the Claude Code messaging socket (`$CLAUDE_CODE_MESSAGING_SOCKET`, CC >=2.1.224) via `blitz_inbox_post` — auth line then one message per line; undelivered lines are kept, delivered ones truncated, count logged as feed event `mailbox`. Never emits a decision, never reads `last_assistant_message`. `timeout: 20`, `async: false`. |
+| `stop-gate.sh` | **BLOCKING (conditional)**. Strict no-op unless `.cc-sessions/sessions/<session_id>/gate.json` exists (written by sprint-dev Phase 3 / `next --loop`). Runs each `checks[].cmd` under `timeout`; first failure → exit 2 with the check name + 200-char tail, `blocks++`; all pass → `blocks=0`. Stands down on `stop_hook_active`, on a terminal marker in `last_assistant_message` (`LOOP_DONE\|LOOP_ESCALATE\|LOOP_DEFER\|BLOCKED:\|ESCALATE:`), or when `blocks >= max_blocks` (default 6, clamped ≤7 to stay under the platform's 8-consecutive cap; logs `gate_exhausted`). Contract: `/_shared/quality-engine.md` §Verification stack. `timeout: 600`. |
 
 Rationale: `Stop` is the only event that can deterministically mark a session idle and deliver a mailbox at turn end. The old "would only be a logging stub" argument no longer holds now that session records (E-041) and cross-session messaging exist. The blocking verification gate (`stop-gate.sh`, gate-file driven) lands with E-042 as a separate entry so this script stays a pure heartbeat. A `prompt`-type Stop hook is never used (it would collide with a user `/goal`).
 
@@ -173,6 +174,8 @@ Rationale: `Stop` is the only event that can deterministically mark a session id
 
 - **Stdin contract** — every hook receives one JSON object on stdin. Common fields (CC ≥2.1.271): `session_id`, `prompt_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `permission_mode`, `effort` (`{level}`), `hook_event_name`, plus `agent_id` / `agent_type` in subagent context. Per-event extras: `tool_name` + `tool_input` (`PreToolUse` / `PostToolUse` / `PermissionRequest` / `PermissionDenied`), `reason` (`SessionEnd`: `clear|resume|logout|prompt_input_exit|other`), `stop_hook_active` + `last_assistant_message` (`Stop` — never persisted by blitz), `notification_type` + `message` (`Notification`), `from_model` + `to_model` (`PreModelSwitch`), `new_cwd` (`CwdChanged`), `path` + `method` (`DirectoryAdded`), `source` (`ConfigChange`: `user_settings|project_settings|local_settings|policy_settings|skills`). Read stdin once (`INPUT=$(cat)`) and pull fields with `blitz_extract` from `_lib/common.sh`; scripts must exit 0 on empty stdin.
 - **Entry forms in `hooks.json`** — legacy entries use shell form (`"\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/x.sh --flag"`); new entries use exec form (`command` = unquoted executable path, `args` = literal list) with `timeout` (seconds) and `statusMessage`. `if` (permission-rule filter, e.g. `"Bash(git *)"`) gates the five git-only commit guards so non-git Bash calls never spawn them. `scripts/validate-plugin-structure.sh` validates both forms, the `if` shape and integer timeouts. `once` is skill-only and is not used here.
+- **Agent-view + stale + mailbox helpers (E-041 S1)** — `blitz_agent_view` (normalized `claude agents --json --all`: one `{sessionId,state,status,waitingFor,name,pid,kind,cwd}` per line; empty when unavailable; the only place the upstream jq mapping lives), `blitz_session_stale <record> [overlay]` (30-min idle with no working|blocked overlay row, or 4 h since `started` with no overlay row), `blitz_mailbox_send <sid> <note|unblock|halt> <text>` (`.cc-sessions/mailbox/<sid>.jsonl`, ≤500 chars, injection-scanned), `blitz_iso_epoch`; `blitz_live_worktree_paths` now keeps only `state ∈ {working, blocked}` rows.
+- **HTML side-output library** — `_lib/html.sh` holds the canonical `sanitize_html` / `emit_html` bodies (contract: `skills/_shared/html-template-helper.md`); sourced by `scripts/sessions-dashboard.sh --html` and the four HTML-twin skills.
 - **Session record + inbox helpers** — `blitz_session_record_path` / `blitz_session_record_find` / `blitz_session_update <sid> <jq-filter>` (atomic, no-op when the record is missing), `blitz_inbox_append <kind> <text> [session]` (`.cc-sessions/inbox.jsonl`), `blitz_inbox_post <text>` (messaging socket; socat → python3 → no-op).
 - **Repo root discovery** — every script walks up from `pwd` to the nearest `.claude-plugin/` directory; falls back to `pwd`. Never hardcodes a path.
 - **Non-blocking default** — all scripts `exit 0` on success. Only the BLOCKING scripts listed at the top of this file return exit 2 to block the originating action.

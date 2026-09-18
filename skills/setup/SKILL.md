@@ -99,7 +99,8 @@ Check that blitz skills' required tools are permitted in the user's settings:
 USER_SETTINGS="$HOME/.claude/settings.json"
 PROJECT_SETTINGS="./.claude/settings.json"
 
-REQUIRED_TOOLS=(Agent SendMessage TeamCreate TaskCreate TaskUpdate Write Edit Bash)
+# SendMessage/ListAgents = cross-session messaging (CC >=2.1.224); TeamCreate is not a tool blitz uses.
+REQUIRED_TOOLS=(Agent SendMessage ListAgents TaskCreate TaskUpdate Monitor Write Edit Bash)
 
 for settings_file in "$USER_SETTINGS" "$PROJECT_SETTINGS"; do
   [ -f "$settings_file" ] || continue
@@ -137,6 +138,42 @@ Read `package.json` `scripts` and verify:
 - `lint` script exists → LOW if absent
 
 **Design pillar dependency.** If a UI stack is detected (Tailwind/Vuetify/Quasar/MD3 via `detect-stack.sh`) and `impeccable` is NOT in the project's `devDependencies`, record a LOW finding: "design pillar's semantic lane (`/blitz:review --only design`, `/blitz:audit --pillar design`) needs `impeccable` in **this** project — run `npm i -D impeccable@2.3.2`. Without it the deterministic regex rows still run; the semantic (rendered) lane reports `DESIGN_LANE_UNAVAILABLE`." impeccable is a target-project dependency, never a Blitz plugin dependency.
+
+---
+
+## Phase 4.5: VERIFY RECIPE — Seed `/verify`
+
+Claude Code's bundled `/verify` skill records how to build, run, and check this project in `.claude/skills/verify/SKILL.md` and replays it on later runs (CC >=2.1.200). sprint-review invokes that recipe as its first gate when it exists. If the file is absent, offer to seed it from stack detection (never overwrite an existing one):
+
+```bash
+if [ ! -f .claude/skills/verify/SKILL.md ]; then
+  STACK=$("${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh" 2>/dev/null)
+  PM=$(jq -r '.packageManager // "npm"' package.json 2>/dev/null | cut -d@ -f1)
+  TEST_CMD=$(jq -r '.scripts.test // empty' package.json 2>/dev/null)
+  BUILD_CMD=$(jq -r '.scripts.build // empty' package.json 2>/dev/null)
+  DEV_CMD=$(jq -r '.scripts.dev // .scripts.start // empty' package.json 2>/dev/null)
+  mkdir -p .claude/skills/verify
+  cat > .claude/skills/verify/SKILL.md <<MD
+---
+name: verify
+description: Build, run, and confirm this project's changes work (seeded by /blitz:setup from stack detection; refine as the project changes).
+disable-model-invocation: true
+---
+# Verify recipe
+
+Stack: ${STACK:-unknown}
+
+1. Typecheck: \`${PM:-npm} exec tsc --noEmit\` (skip when no tsconfig.json).
+2. Tests: \`${PM:-npm} run ${TEST_CMD:+test}${TEST_CMD:-test} -- --reporter=dot\` — for a targeted subset use \`\${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh <changed files>\`.
+3. Build: \`${PM:-npm} run ${BUILD_CMD:+build}${BUILD_CMD:-build}\`.
+4. Run: \`${PM:-npm} run ${DEV_CMD:+dev}${DEV_CMD:-dev}\` and open the printed URL; confirm the changed screen renders without console errors (Playwright MCP \`browser_snapshot\` when available).
+5. Report the command outputs verbatim, not a summary.
+MD
+  echo "seeded .claude/skills/verify/SKILL.md — review and commit it"
+fi
+```
+
+Record a LOW finding when the recipe was seeded (the user should refine it) and no finding when it already existed.
 
 ---
 

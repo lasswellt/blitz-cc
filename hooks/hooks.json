@@ -159,7 +159,9 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/heartbeat.sh",
-            "async": true
+            "async": true,
+            "asyncRewake": true,
+            "timeout": 180
           }
         ]
       }
@@ -305,6 +307,14 @@
             "async": false,
             "timeout": 20,
             "statusMessage": "blitz: turn-end heartbeat + mailbox"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/stop-gate.sh",
+            "args": [],
+            "async": false,
+            "timeout": 600,
+            "statusMessage": "blitz: verification gate"
           }
         ]
       }

@@ -9,6 +9,7 @@ Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 5 
 | `shortcut-taxonomy.md` | [Shortcut Taxonomy — 20 Autonomous-Coder Failure Modes (13 reject, 7 advisory)](#shortcut-taxonomy--20-autonomous-coder-failure-modes-13-reject-7-advisory) |
 | `ratchet-protocol.md` | [Quality Ratchet Protocol](#quality-ratchet-protocol) |
 | `deterministic-test-recipe.md` | [Deterministic Test Recipe — patterns for async / timing / mock-heavy specs](#deterministic-test-recipe--patterns-for-async--timing--mock-heavy-specs) |
+| — (new, E-043) | [Verification stack](#verification-stack) — gate / goal / critic / verify layers |
 
 
 ---
@@ -372,6 +373,17 @@ Stored in `docs/sweeps/ratchet.json`, updated by `code-sweep` and `sprint-review
 
 > **Native agent-view interop:** this detector counts blitz-controlled branch refs only. A live `claude agents` background session may transiently inflate the count via its `.claude/worktrees/<id>` worktree — a measurement-timing artifact, not a leak. Do **not** auto-prune to drive the count down: the live-session guard ([worktree-lifecycle.md](worktree-lifecycle.md) §Interop, invariant 6) forbids removing a live session's worktree. Let the count settle after the session completes.
 
+#### Advisory metrics (not yet ratcheted)
+
+Collected and reported next to the 8 ratchet metrics but **not** enforced by Invariant 6 — no `min_allowed`/`max_allowed`, no auto-revert. Source: the test-impact journal written by `scripts/test-listener.sh` (E-043; consumer guide `docs/guides/tia.md`).
+
+| Metric | Direction | Source | Detector |
+|---|---|---|---|
+| `tia_escaped_failures` | ↓ | `.cc-sessions/test-journal.meta.json` `escaped_failures_recent[-1]` — failures in the sprint-review full run whose test file the selector had not picked | `jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json` |
+| `tia_selection_ratio` | informational | `scripts/test-selector.sh --json` `selection_ratio` = selected / total test files at sprint close | `scripts/test-selector.sh --json $(git diff --name-only ${SPRINT_BASE}..HEAD) \| jq .selection_ratio` |
+
+Registry ids: `tia-escaped-failures`, `tia-selection-ratio` (`check-registry.json`, advisory). The 8-metric count above is unchanged; promoting `tia_escaped_failures` to **metric 9** (with floor, `ratchet.json` schema row, and the prose in the six files that state "8 metrics") is a separate future story. Goal state: low ratio, zero escapes. A non-zero escape in any of the last 3 sprint-review runs already has a mechanical consequence — the selector goes `--full` until the streak clears.
+
 ---
 
 ### 2. File Schema
@@ -546,6 +558,21 @@ There is no override for the absolute floor on `type_errors`. Type-clean is non-
 
 ---
 
+## Verification stack
+
+Four layers, each with one owner and one kind of verdict. They compose; none replaces another.
+
+| Layer | Mechanism | Owner | Decides |
+|---|---|---|---|
+| Deterministic gate | `hooks/scripts/stop-gate.sh` + `.cc-sessions/sessions/<sid>/gate.json` | blitz Stop hook | tsc / selected tests / ratchet quick-check pass |
+| Goal evaluator | `/goal <sprint DoD>` (prompt-based Stop hook on the small fast model, check-ins every 30 min doubling during background work) | user; blitz prints the line | condition met / not yet / impossible |
+| Adversarial | `agents/critic.md` | sprint-review Invariant 7 | LGTM / REJECT |
+| App-level | `/verify` recipe recorded at `.claude/skills/verify/SKILL.md` | bundled skill | the app runs and behaves |
+
+The gate is a strict no-op without `gate.json`; `max_blocks` stays under the platform's 8-consecutive-block cap; never wire a prompt-type Stop hook in the plugin (it would collide with a user `/goal`). The gate's test list comes from the TIA selector — `scripts/test-selector.sh` over the session's touched files (post-edit path) or `git diff --name-only ${SPRINT_BASE}..HEAD` (sprint-review §1.3) — so "selected tests pass" means the sibling + import-graph + journal-history set, and the full suite runs once at sprint close to measure what the selector missed (`tia_escaped_failures`, §Advisory metrics above).
+
+---
+
 <!-- ===== Absorbed from deterministic-test-recipe.md ===== -->
 
 ## Deterministic Test Recipe — patterns for async / timing / mock-heavy specs
@@ -575,6 +602,8 @@ Signals in the target code that flag a deterministic-test recipe is warranted:
 | `vi.mock` / `jest.mock` chains | ≥5 in one file | Mock isolation hazards compound |
 
 When any of these are present, prefer the recipe sections below over a default test setup.
+
+To pick **which** specs to run while iterating on a fix, use `scripts/test-selector.sh <changed files>` (sibling + import graph + journal recent-fail / co-change; `--full` on config or lockfile changes) rather than hand-listing files — the selected set is what the heartbeat and the Stop gate run, so a spec that stays green here stays green there.
 
 ---
 
