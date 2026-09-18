@@ -96,6 +96,8 @@ Read `package.json` and extract:
 
 ---
 
+**Unattended forms.** Weekly cloud Routine (`/schedule`, fresh clone, no prompts) is the intended cadence for `audit`; `/loop 2h /blitz:dep-health audit` in a dedicated session for shorter windows (CronCreate, 7-day expiry). See [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
+
 ## Phase 1: AUDIT — Security Scan
 
 ### 1.1 Run Security Audit

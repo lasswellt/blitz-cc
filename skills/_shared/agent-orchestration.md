@@ -1108,7 +1108,7 @@ The platform manages session *processes* but does **not** do semantic conflict d
 
 ### Remote alerts
 
-Native agent view shows a *local* "Needs input" indicator + tab-title count. For **off-screen** alerts (phone), blitz fires `PushNotification` (no-op if Remote Control unconfigured) at genuine human-escalation points only — to avoid notification fatigue:
+Native agent view shows a *local* "Needs input" indicator + tab-title count. For **off-screen** alerts (phone), blitz fires `PushNotification` (a real, deferred Claude Code tool — load it via `ToolSearch` before the first call; no-op if Remote Control is unconfigured; hooks cannot call it, they write an inbox line instead) at genuine human-escalation points only — to avoid notification fatigue:
 - Stuck-loop PAUSE — [spawn-protocol.md](#subagent-spawn-protocol) §Stuck-loop detection step 3.
 - Deviation Tier-3 ESCALATE — [sprint-contracts.md](sprint-contracts.md) §Orchestrator Handling.
 
@@ -1165,7 +1165,27 @@ Live limits/signatures for the `Workflow` runtime (supersedes any earlier fixed-
 - **Batch cap** — a single `parallel()` / `pipeline()` call takes ≤4096 items.
 - **Budget object** — `{ total, spent(), remaining() }`. `spent()` is shared across the main loop + all workflows; `remaining()` = `max(0, total - spent())`, or `Infinity` when no `total` is set.
 - **Nesting** — `workflow(name | {scriptPath}, args)` nests ONE level only; a `workflow()` call from inside a workflow throws.
-- **Resume** — `resumeFromRunId` is same-session only (same script + same args ⇒ full cache hit; cross-session resume must re-derive from external state per the sprint-dev `STATE.md` journal pattern).
+- **Resume** — `resumeFromRunId` is same-session only (same script + same args ⇒ full cache hit; cross-session resume must re-derive from external state per the sprint-dev `STATE.md` journal pattern). Replay semantics: §Plugin workflows below.
+
+### Plugin workflows (`workflows/*.js`, CC ≥2.1.269)
+
+Since E-045 the three adopted scripts ship as **plugin workflows** — files under `workflows/` at the plugin root (the manifest default; no `workflows` field in `plugin.json` is needed), namespaced by plugin name and invoked as `/blitz:<meta.name>` with structured `args`:
+
+| File | Command | Invoked by | `args` |
+|---|---|---|---|
+| `workflows/sprint-wave.js` | `/blitz:sprint-wave` | sprint-dev §2.3-W | `{ wave, agents:[{role,prompt}], storySchema }` |
+| `workflows/review-fanout.js` | `/blitz:review-fanout` | sprint-review §2.2.0-W | `{ roster:[{name,prompt}], sequential, criticPrompt, reviewerSchema, criticSchema }` |
+| `workflows/audit-sweep.js` | `/blitz:audit-sweep` | audit §1.1-W | `{ roster:[{name,prompt}], findingsSchema }` |
+
+Authoring rules (validated by `scripts/validate-plugin-structure.sh` §9): `export const meta = { name, description, phases }` is the first statement and a pure literal (a non-literal drops the command from autocomplete); inputs come only from the `args` global (document the shape in a top comment); no `Date.now()`, `Math.random()`, argless `new Date()`, or `import()` (the runtime throws / refuses to start; timestamps arrive via `args` or are stamped after return); agents may return `null` — filter or mark `ok: false`. Load the bundled `/workflow-authoring` skill before editing a script; `/reload-skills` re-reads `workflows/` in a live session.
+
+**Resume replay.** A relaunch (`resumeFromRunId`, or `p` in `/workflows`) replays agents in start order: every **completed** agent returns its cached result until the **first agent whose prompt differs** from the previous run (script edit, or an earlier agent returned something different) — that agent **and every agent after it re-run**, completed or not. Agents still running at the stop start over; a failed agent re-runs together with everything started after it. Same script + same `args` ⇒ full cache hit. Because prompts are the cache key, keep `args` deterministic (sorted rosters, no clock-derived labels).
+
+**Usage-limit pause (CC ≥2.1.271).** When an agent hits the claude.ai usage limit the run pauses instead of failing that agent (waiting agents resume after the reset; at most two waits per run). Preconditions: interactive session on a subscription, `autoContinueAtUsageLimit` on, reset within 24 h. In `-p`, background, Remote Control, or teammate sessions the agent fails instead → the skill's `Agent()` fallback applies.
+
+**Concurrency + size.** The runtime cap is `min(16, cores-2)`; override with `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS=<1..256>` (CC ≥2.1.269) — blitz honours it implicitly (scripts never set their own cap; excess `parallel()` items queue). `workflowSizeGuideline` (`small|medium|large|unrestricted`, default `medium`, `small` on Pro ≥2.1.271) is *advice to Claude when it writes a script*, not a cap on named workflows — the audit roster's 10 agents run regardless, but the `Large workflow` task-panel warning threshold follows the guideline.
+
+**Headless / loop runs.** `claude -p` and the Agent SDK never show the per-run approval; the launch goes through ordinary permission evaluation, so an unattended run needs a `Workflow(<name>)` allow rule (e.g. `Workflow(blitz:sprint-wave)`), a blanket `Workflow` rule, auto mode, or bypass mode. Where no such rule exists, the skill's fallback is the `Agent()` path — this is why `next --loop` forces `BLITZ_DISPATCH=agent` for dispatched skills (next/SKILL.md §3.1): it is the guaranteed-portable fallback when no `Workflow(<name>)` rule is configured, not a statement that workflows cannot run headless.
 
 ### Hybrid wrapper boundary
 
@@ -1222,14 +1242,16 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 
 ### Adoption status (per skill)
 
+WIRED rows with a `workflows/*.js` pointer run as plugin workflows (§Plugin workflows); the other WIRED rows still carry their script inline in the SKILL.md and are extraction candidates.
+
 | Skill | Status | Notes |
 |---|---|---|
-| `audit` | **WIRED** | 10 flat agents → one `parallel()` + `schema` (Phase 1.0 gate + 1.1-W). Adversarial FP-verify refuter panel wired §2.3.5 (per-finding nested `parallel()`, pipeline-over-findings / barrier-over-lenses). |
+| `audit` | **WIRED** → `workflows/audit-sweep.js` (`/blitz:audit-sweep`) | 10 flat agents → one `parallel()` + `schema` (Phase 1.0 gate + 1.1-W). Adversarial FP-verify refuter panel wired §2.3.5 (per-finding nested `parallel()`, pipeline-over-findings / barrier-over-lenses). |
 | `research` | **WIRED** | 2-4 agent pool (`parallel()`) + conditional gap second-wave (`agent()`). §1.2.6 gate + §1.3-W. |
 | `sprint-plan` | **WIRED** | 3-4 flat research pool → `parallel()` + `schema`. §2.0 gate + §2.1-W. Mirrors `research`/`audit`. |
 | `codebase-map` | **WIRED** | 4 flat dimension agents → `parallel()` + `schema`. §1.0 gate + §1.0-W. |
-| `sprint-review` | **WIRED** (narrow) | reviewers → `parallel()` (default) or a sequential for-loop accumulator (threads prior reviewers' findings; NOT pipeline — pipeline `prev` is same-item prior-stage only); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
-| `sprint-dev` | **WIRED** | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Cross-session durable:** `STATE.md` is the durable journal — resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only. Resume Divergence Gate is the safety interlock before dispatch. |
+| `sprint-review` | **WIRED** (narrow) → `workflows/review-fanout.js` (`/blitz:review-fanout`) | reviewers → `parallel()` (default) or a sequential for-loop accumulator (threads prior reviewers' findings; NOT pipeline — pipeline `prev` is same-item prior-stage only); critic → `agent({agentType:'blitz:critic', schema})`. §2.2.0-W. Critic `null` → `Agent()` fallback (load-bearing). |
+| `sprint-dev` | **WIRED** → `workflows/sprint-wave.js` (`/blitz:sprint-wave`) | per-wave `parallel()` + `isolation: 'worktree'` + `schema` (§2.0 gate + §2.3-W). One wave per `Workflow` call; STATE.md/commit between waves stay main-thread. **Cross-session durable:** `STATE.md` is the durable journal — resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort) and dispatches each via `Workflow`. `resumeFromRunId` in-session-only. Resume Divergence Gate is the safety interlock before dispatch. |
 | `code-sweep` | **DEFERRED** | flat finder pool; same `parallel()` + `schema` shape as `audit`. |
 | `quality-metrics` | **DEFERRED** | flat collector pool; `parallel()` + `schema` candidate. |
 | `code-doctor` | **DEFERRED** | Vue-gated framework audit; lower fan-out `parallel()` + `schema` candidate. |
@@ -1241,12 +1263,14 @@ USE_WORKFLOW is forced ON  when BLITZ_DISPATCH == "workflow"
 | Env var | Default | Effect |
 |---|---|---|
 | `BLITZ_DISPATCH` | `auto` | `workflow` forces `Workflow` (error if absent); `agent` forces legacy `Agent()` path |
+| `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS` | `min(16, cores-2)` | Platform cap on concurrent workflow agents (1–256, CC ≥2.1.269); excess `parallel()` items queue |
+| `CLAUDE_CODE_DISABLE_WORKFLOWS` | unset | `1` disables workflows platform-wide → every adopting skill takes the `Agent()` path |
 
 ### Open risks (gate further adoption)
 
 - **Portability** — `Workflow` preview + Enterprise-disabled. Never remove the `Agent()` fallback while preview. If runtime capability-detection proves unreliable, defer.
 - **API churn** — preview hook signatures may shift before GA. Confine all `Workflow` calls behind this doc's gate so a fix is one-skill-shaped.
-- **Autonomous loops** — **MITIGATED**: `next --loop` forces `BLITZ_DISPATCH=agent` for dispatched skills (see next/SKILL.md §3.1) so an unattended loop can't stall on a platform `Workflow` per-run confirmation; revisit when that confirmation is verified non-blocking under skill-instructed dispatch.
+- **Autonomous loops** — **MITIGATED**: `-p` runs never prompt, but the launch needs a `Workflow(<name>)` allow rule (§Plugin workflows); `next --loop` forces `BLITZ_DISPATCH=agent` for dispatched skills (see next/SKILL.md §3.1) as the portable fallback when no rule is configured. Operators who add `Workflow(blitz:sprint-wave)` / `Workflow(blitz:review-fanout)` / `Workflow(blitz:audit-sweep)` allow rules may lift the forcing.
 - **Resume divergence (sprint-dev)** — RESOLVED by treating `STATE.md` as the durable journal (durable-execution "re-derive from external state" pattern; `docs/_research/2026-06-07_cross-session-resume-plus-workflow.md`). Cross-session resume re-derives remaining waves (§1.4 `wave-plan.json`, pure Kahn sort — control flow serialized at plan time, never LLM-re-derived) and dispatches each via `Workflow`. `resumeFromRunId` is in-session-only. The Resume Divergence Gate runs before any resumed dispatch (guards double-execution + semantic rollback). Per-wave dispatch keeps STATE.md/carry-forward/commit at wave boundaries in main-thread Bash; carry-forward re-apply is idempotent (clamp-at-target + latest-wins).
 
 ### Cross-references

@@ -68,6 +68,8 @@ Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registrat
 | `--checks <list>` | Comma-separated check ID filter |
 | `<scope>` | Directory/file to scan |
 
+**Unattended forms.** Interactive: `/loop 10m /blitz:code-sweep --loop` in a dedicated session (CronCreate-backed, expires after 7 days). Machine-independent: a cloud Routine (`/schedule`, 1-hour minimum, no prompts, set `crossSessionInbound: hold`) or a Desktop scheduled task when the run needs local tools. See [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
+
 When `--loop`: auto-approve all, auto-commit+push, exit after one fix cycle. Tick type: first run → DISCOVERY; `run % 10 == 0` → RE-DISCOVERY; fixable findings → FIX; else → SCAN.
 
 ### 0.2 Load Configuration

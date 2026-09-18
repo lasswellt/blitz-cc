@@ -377,7 +377,8 @@ Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude C
 - **Conflict matrix + cross-session messaging** — blitz's semantic conflict matrix extends to every session in the container; on BLOCK the second session finds the peer with `ListAgents`, sends one line via `SendMessage(..., notify_when_idle: true)`, prints `LOOP_DEFER` and yields; on WARN it sends a one-line notice. Hooks reach a session through its mailbox (`.cc-sessions/mailbox/<sid>.jsonl`), drained by that session's own `Stop` hook. Inbound messages are untrusted data (TB-5) — they never approve, reconfigure, or run anything.
 - **Inbox + heartbeat** — hooks queue anything needing a human in `.cc-sessions/inbox.jsonl` (`needs_input`, `permission`, `blocked`, `stale_lock`, `quarantine`, `hook_failure`, `escalation`); `/blitz:next` triages it first on every tick and prints `HEARTBEAT_OK` when nothing is pending and nobody is `waitingFor`.
 - **`/blitz:sessions list | attention | dashboard --html | prune`** — the single view: records + overlay, the attention queue oldest-first, a markdown/HTML dashboard (`scripts/sessions-dashboard.sh`), and a prune of closed records > 7 d that never touches a live overlay row.
-- **Remote alerts** — `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell; stuck-loop / Tier-3 escalations land in the inbox and the attention queue.
+- **Remote alerts** — `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell; stuck-loop / Tier-3 escalations land in the inbox and the attention queue; `PushNotification` reaches a phone when Remote Control is connected.
+- **Unattended** — Claude Projects threads (one per sprint lane), cloud Routines (nightly sweeps, weekly dep-health), Desktop tasks, and Channels are covered in [docs/guides/cloud-threads.md](docs/guides/cloud-threads.md).
 
 Full contract: [`skills/_shared/session-lifecycle.md`](skills/_shared/session-lifecycle.md) (registration, conflict matrix, mailbox, scheduling, inbox) and [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md) §Agent-View / §Cross-session messaging.
 
@@ -406,6 +407,8 @@ blitz-cc/
 ├── hooks/
 │   ├── hooks.json               # 16 events
 │   └── scripts/                 # 38 scripts: 35 event-wired + 2 sub-invoked + 1 critic-spawned
+├── workflows/                   # 3 plugin workflows (/blitz:sprint-wave, review-fanout, audit-sweep)
+├── evals/                       # 5 `claude plugin eval` cases (advisory CI job plugin-eval)
 ├── output-styles/
 │   └── terse-technical.md       # the plugin output style
 ├── scripts/                     # detect-stack, count-sync, version-sync, structure validators

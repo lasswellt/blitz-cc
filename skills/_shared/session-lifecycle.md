@@ -1018,6 +1018,8 @@ Skills run on a schedule through Claude Code's own scheduling tiers. Every tier 
 
 **Durable loops** = `/loop` in a dedicated session (re-armed after any `--resume`), a Desktop task, or a Routine. A skill's own `ScheduleWakeup` call is per-session and disappears with the session — never the sole keep-alive for unattended work. Monitor watches always carry a deadline (max 30 min, 10 min in `-p`; `persistent` removed in 2.1.271) — re-arm per wave or poll `TaskList` (sprint-dev §3.2).
 
+**Remote Control.** A session connected to Remote Control can list and message your cloud sessions and sessions on other machines. Set `isolatePeerMachines: true` so any cross-machine `SendMessage` needs your approval (even in bypass-permissions mode); `/list-agents` withholds local working directories while connected, `/blitz:sessions list` reads the local records and is unaffected. Cloud threads, Routines, Channels, and the pre-flight checklist for unattended runs: [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
+
 ### Recommended Schedules
 
 | Skill | Interval | Mode | Rationale |
