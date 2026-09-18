@@ -11,7 +11,7 @@
 
 **⚡ A holistic-machine Claude Code plugin for Vue/Nuxt + Firebase ⚡**
 
-**37 skills** · **11 agents** · **38 hook scripts across 16 events** · **13 shared protocol files**
+**37 skills** · **11 agents** · **45 hook scripts across 24 events** · **13 shared protocol files**
 
 Orchestrator main-thread router · 7 anti-shortcut hooks · 8-invariant quality ratchet · optional Cross-Model Critic
 
@@ -58,7 +58,7 @@ Four properties make it a *machine* rather than a pile of prompts:
 |---|---|
 | **Evaluating Blitz** | [What is Blitz?](#what-is-blitz) · [Quick Start](#quick-start) · [The Blitz Cycle](#the-blitz-cycle) |
 | **Installing for daily use** | [Quick Start](#quick-start) · [Supported Stacks](#supported-stacks) · [Skill Catalog](#skill-catalog-37) · [Anti-shortcut blockers](#2-anti-shortcut-blockers) |
-| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-38-scripts-16-events) · [Shared Protocols](#shared-protocols-13) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
+| **Contributing or forking** | [Architecture](#architecture) · [Hook Reference](#hook-reference-45-scripts-24-events) · [Shared Protocols](#shared-protocols-13) · [Sprint-review invariants](#3-sprint-review-invariants-8) |
 
 ---
 
@@ -95,7 +95,7 @@ Or just type freeform — the orchestrator routes for you.
 
 ### Prerequisites
 
-- **Claude Code** ≥ v2.1.117 for the full feature set (orchestrator main-thread activation + recent hook events). Individual `/blitz:*` slash skills run on ≥ v2.1.71; `/blitz:health` needs ≥ v2.1.152.
+- **Claude Code** ≥ v2.1.271 for the full feature set (Stop/SessionEnd session heartbeat, cross-session messaging, Monitor deadline semantics, `omitClaudeMd`). Individual `/blitz:*` slash skills load on ≥ v2.1.71 with messaging and the session dashboard degraded. Floors are recorded in `.claude-plugin/compat.json` and enforced by `scripts/check-version-sync.sh`.
 - **bash**, **Node.js / npx** ≥ 18.0.0, **python3**, **jq**
 - **Optional external tools** (unbundled): Playwright MCP for the UI skills (`browse`, `ui-build`, `ui-audit`, `design-critic`); Gemini CLI for the opt-in Cross-Model Critic.
 
@@ -420,7 +420,7 @@ Everything mutable lives under `.cc-sessions/` (gitignored): `activity-feed.json
 
 ---
 
-## Hook Reference (38 scripts, 16 events)
+## Hook Reference (45 scripts, 24 events)
 
 Hooks are *the* enforcement layer — they fire on tool calls the model can't talk its way around. Of the 38 scripts, 35 are event-wired; the rest are sub-invoked (`check-registry-validate.sh`, `startup-validate.sh`) or critic-spawned (`critic-gemini.sh`). Across 16 events (`SessionStart`, `UserPromptExpansion`, `PreToolUse`, `PostToolUse`, `PreCompact`, `PostCompact`, `TaskCompleted`, `TeammateIdle`, `SubagentStart`, `SubagentStop`, `PostToolBatch`, `PostToolUseFailure`, `StopFailure`, `PermissionRequest`, `WorktreeCreate`, `WorktreeRemove`) they handle file protection, auto-format/lint/test, commit validation (frontmatter lint, version sync, link rot, **registry schema lint**), context monitoring, activity-feed logging, and the **7 anti-shortcut blockers** (5 P0 + 2 P1). Full index grouped by event: [`hooks/scripts/README.md`](hooks/scripts/README.md).
 

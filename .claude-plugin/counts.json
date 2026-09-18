@@ -18,17 +18,17 @@
   "skills": 37,
   "agents": 11,
   "shared": 13,
-  "hook_scripts": 38,
-  "hook_scripts_wired": 35,
+  "hook_scripts": 45,
+  "hook_scripts_wired": 42,
   "hook_scripts_subinvoked": 2,
   "hook_scripts_critic_spawned": 1,
-  "hook_events": 16,
+  "hook_events": 24,
   "detectors": 20,
   "detectors_reject": 13,
   "detectors_advisory": 7,
   "anti_shortcut_hooks": 7,
   "canonical_phrasing": {
-    "hook_scripts": "38 hook scripts (35 event-wired, 2 sub-invoked, 1 critic-spawned) across 16 events",
+    "hook_scripts": "45 hook scripts (42 event-wired, 2 sub-invoked, 1 critic-spawned) across 24 events",
     "shared": "13 shared protocol files",
     "detectors": "20 anti-shortcut detectors (13 reject, 7 advisory)"
   }

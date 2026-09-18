@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/lasswellt/blitz-cc/main/installer/i
 
 ## Requirements
 
-- Claude Code ≥ 2.1.71 (orchestrator main-thread agent requires ≥ 2.1.117)
+- Claude Code ≥ 2.1.271 for the full feature set (session heartbeat hooks, cross-session messaging, `/blitz:sessions`); individual `/blitz:*` slash skills load on ≥ 2.1.71
 - Node.js ≥ 18, bash, python3, jq
 
 ## Links

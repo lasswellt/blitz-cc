@@ -134,34 +134,68 @@ else
   else
     check_pass "hooks.json is valid JSON"
 
-    # Extract script paths, replacing ${CLAUDE_PLUGIN_ROOT} with actual root
-    script_paths=$(python3 -c "
-import json, sys
+    # Walk every hook entry. Emits one tab-separated line per finding:
+    #   CMD\t<command>            — script to resolve (shell form or exec form)
+    #   SKIP\t<event>\t<type>     — non-command entry (prompt/agent), not validated
+    #   BADIF\t<event>\t<value>   — `if` is not permission-rule shaped (Tool(pattern))
+    #   OKIF\t<event>\t<value>
+    #   BADTIMEOUT\t<event>\t<value>
+    #   BADARGS\t<event>\t<value> — exec-form `args` must be an array of strings
+    # Exec form (command = bare executable, args = literal list) must NOT wrap the
+    # command in quotes; shell form ("${CLAUDE_PLUGIN_ROOT}"/... [flags]) may.
+    hook_findings=$(python3 -c "
+import json, re
 data = json.load(open('$HOOKS_JSON'))
 hooks = data.get('hooks', {})
+IF_RX = re.compile(r'^[A-Za-z]+\(.+\)$')
 for event_type in hooks:
     for matcher_block in hooks[event_type]:
         for hook in matcher_block.get('hooks', []):
+            htype = hook.get('type', 'command')
+            if htype != 'command':
+                print('SKIP\t%s\t%s' % (event_type, htype)); continue
             cmd = hook.get('command', '')
+            args = hook.get('args')
+            if args is not None:
+                if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+                    print('BADARGS\t%s\t%r' % (event_type, args))
+                elif cmd.startswith('\"'):
+                    print('BADARGS\t%s\texec-form command must not be quoted: %s' % (event_type, cmd))
             if cmd:
-                print(cmd)
+                print('CMD\t%s' % cmd)
+            cond = hook.get('if')
+            if cond is not None:
+                print(('OKIF' if isinstance(cond, str) and IF_RX.match(cond) else 'BADIF') + '\t%s\t%s' % (event_type, cond))
+            to = hook.get('timeout')
+            if to is not None and (isinstance(to, bool) or not isinstance(to, int) or to <= 0):
+                print('BADTIMEOUT\t%s\t%r' % (event_type, to))
 " 2>/dev/null || true)
 
-    while IFS= read -r script_path; do
-      [[ -z "$script_path" ]] && continue
-      # hooks.json `command` may include args (e.g. `foo.sh --all`); validate only the script token
-      script_only="${script_path%% *}"
-      # shell-form commands quote the var ("${CLAUDE_PLUGIN_ROOT}"/...) per Claude Code docs; strip quotes before resolving
-      script_only="${script_only//\"/}"
-      resolved="${script_only//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
-      if [[ ! -f "$resolved" ]]; then
-        check_fail "hooks.json references missing script: $script_path"
-      elif [[ ! -x "$resolved" ]]; then
-        check_fail "hooks.json references non-executable script: $script_path"
-      else
-        check_pass "hook script exists and is executable: $(basename "$resolved")"
-      fi
-    done <<< "$script_paths"
+    while IFS=$'\t' read -r kind a b; do
+      [[ -z "$kind" ]] && continue
+      case "$kind" in
+        CMD)
+          script_path="$a"
+          # shell-form commands may carry flags (e.g. `foo.sh --all`); validate only the script token
+          script_only="${script_path%% *}"
+          # shell-form commands quote the var ("${CLAUDE_PLUGIN_ROOT}"/...) per Claude Code docs; strip quotes before resolving
+          script_only="${script_only//\"/}"
+          resolved="${script_only//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
+          if [[ ! -f "$resolved" ]]; then
+            check_fail "hooks.json references missing script: $script_path"
+          elif [[ ! -x "$resolved" ]]; then
+            check_fail "hooks.json references non-executable script: $script_path"
+          else
+            check_pass "hook script exists and is executable: $(basename "$resolved")"
+          fi
+          ;;
+        SKIP)       check_pass "hooks.json $a: skipped non-command entry (type=$b)" ;;
+        OKIF)       check_pass "hooks.json $a: if filter is permission-rule shaped ($b)" ;;
+        BADIF)      check_fail "hooks.json $a: malformed if filter (expected Tool(pattern)): $b" ;;
+        BADTIMEOUT) check_fail "hooks.json $a: timeout must be a positive integer (seconds): $b" ;;
+        BADARGS)    check_fail "hooks.json $a: bad exec-form entry: $b" ;;
+      esac
+    done <<< "$hook_findings"
   fi
 fi
 

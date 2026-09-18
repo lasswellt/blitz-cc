@@ -135,8 +135,28 @@ validate_one() {
     case "$color" in cyan|orange|green|red|yellow|magenta|blue|purple|pink|gray) ;; *) fail "$rel" "color '$color' not in {cyan,orange,green,red,yellow,magenta,blue,purple,pink,gray}";; esac
   fi
   if [ -n "$memory" ]; then
-    case "$memory" in project|none) ;; *) fail "$rel" "memory '$memory' must be project|none";; esac
+    case "$memory" in user|project|local|none) ;; *) fail "$rel" "memory '$memory' must be user|project|local|none";; esac
   fi
+  local isolation omitcm cachettl
+  isolation=$(printf '%s\n' "$fm" | awk -F': *' '/^isolation:/{print $2; exit}' | tr -d '"')
+  omitcm=$(printf '%s\n' "$fm" | awk -F': *' '/^omitClaudeMd:/{print $2; exit}' | tr -d '"')
+  cachettl=$(printf '%s\n' "$fm" | awk '/^experimental:/{f=1; next} f && /^  cacheTtl:/{sub(/^  cacheTtl: */,""); gsub(/"/,""); print; exit} f && /^[^ ]/{f=0}')
+  if [ -n "$isolation" ]; then
+    case "$isolation" in worktree) ;; *) fail "$rel" "isolation '$isolation' must be worktree";; esac
+  fi
+  if [ -n "$omitcm" ]; then
+    case "$omitcm" in true|false) ;; *) fail "$rel" "omitClaudeMd '$omitcm' must be true|false";; esac
+  fi
+  if [ -n "$cachettl" ]; then
+    case "$cachettl" in 5m|1h) ;; *) fail "$rel" "experimental.cacheTtl '$cachettl' must be 5m|1h";; esac
+  fi
+  # Tools the platform removes from every subagent (sub-agents reference): listing them is a contract error.
+  local removed_tool
+  for removed_tool in ScheduleWakeup Workflow AskUserQuestion EnterPlanMode ExitPlanMode TaskOutput; do
+    if printf '%s\n' "$tools" | grep -qE "(^|, *)${removed_tool}(,|$)"; then
+      fail "$rel" "tools lists '${removed_tool}', which Claude Code removes from every subagent"
+    fi
+  done
 
   # 9. Body length cap (matches skill cap; references/ overflow not yet a pattern for agents)
   local body_lines

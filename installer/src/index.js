@@ -138,18 +138,18 @@ async function run(argv) {
     process.exit(1);
   }
 
-  // Check minimum Claude Code version (>=2.1.71 for GA agent teams)
+  // Check minimum Claude Code version (>=2.1.271 effective floor; see .claude-plugin/compat.json)
   if (env.claude && env.claude.version) {
     const parts = env.claude.version.split('.').map(Number);
     const [major, minor, patch] = parts;
-    const MIN_MAJOR = 2, MIN_MINOR = 1, MIN_PATCH = 71;
+    const MIN_MAJOR = 2, MIN_MINOR = 1, MIN_PATCH = 271;
     const meetsMinimum = major > MIN_MAJOR ||
       (major === MIN_MAJOR && minor > MIN_MINOR) ||
       (major === MIN_MAJOR && minor === MIN_MINOR && (patch || 0) >= MIN_PATCH);
     if (!meetsMinimum) {
       console.log('');
-      ui.warn(`Claude Code v${env.claude.version} detected — blitz requires >=2.1.71 for full functionality`);
-      ui.info('Multi-agent skills (sprint-dev, research, etc.) may not work correctly.');
+      ui.warn(`Claude Code v${env.claude.version} detected — blitz requires >=2.1.271 for full functionality`);
+      ui.info('Session heartbeat (Stop/SessionEnd hooks), cross-session messaging, and /blitz:sessions degrade below the floor; slash skills need >=2.1.71.');
       ui.info('Update: npm install -g @anthropic-ai/claude-code@latest');
     }
   }
@@ -280,7 +280,7 @@ async function run(argv) {
     envSettings.$schema = 'https://json.schemastore.org/claude-code-settings.json';
   }
 
-  // Agent teams are GA as of Claude Code v2.1.71 (March 2026).
+  // CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is a legacy flag from pre-2.1.71 installs; blitz does not use agent teams.
   // Clean up the experimental flag if it was set by a previous install.
   const currentVal = getNestedValue(envSettings, 'env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
   if (currentVal === '1') {

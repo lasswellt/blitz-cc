@@ -55,3 +55,43 @@ setup_sessions() {
 teardown_sessions() {
   [ -n "${SESSIONS_DIR:-}" ] && rm -rf "$SESSIONS_DIR"
 }
+
+# ---------------------------------------------------------------------------
+# Session-lifecycle hook helpers (E-040 S2). Scripts resolve the repo root via
+# blitz_find_root (nearest .claude-plugin/ above pwd), so tests build a throwaway
+# repo dir, cd into it, and inspect .cc-sessions/ afterwards.
+# ---------------------------------------------------------------------------
+
+# setup_fake_repo — create + enter a temp repo with .claude-plugin/ and
+# .cc-sessions/{sessions,mailbox}/. Exports FAKE_REPO and unsets the live
+# messaging socket so no test ever posts to a real Claude Code session.
+setup_fake_repo() {
+  FAKE_REPO="$(mktemp -d)"
+  export FAKE_REPO
+  mkdir -p "$FAKE_REPO/.claude-plugin" "$FAKE_REPO/.cc-sessions/sessions" "$FAKE_REPO/.cc-sessions/mailbox"
+  unset SESSIONS_DIR CLAUDE_CODE_MESSAGING_SOCKET CLAUDE_CODE_MESSAGING_TOKEN
+  cd "$FAKE_REPO"
+}
+
+teardown_fake_repo() {
+  cd /
+  [ -n "${FAKE_REPO:-}" ] && rm -rf "$FAKE_REPO"
+}
+
+# write_session_record sid [extra_json_fields]
+# Seed .cc-sessions/sessions/<sid>.json (status active).
+write_session_record() {
+  jq -n --arg sid "$1" '{session_id:$sid,status:"active",started:"2026-01-01T00:00:00Z"}' \
+    > "$FAKE_REPO/.cc-sessions/sessions/$1.json"
+}
+
+# run_hook script_name json_input — run a hook in $FAKE_REPO; sets $status/$output.
+run_hook() {
+  local hook="$HOOKS_DIR/$1" input="$2"
+  run bash -c "printf '%s' \"\$1\" | bash \"\$2\"" _ "$input" "$hook"
+}
+
+# feed_events — print the event names logged to the fake repo's activity feed.
+feed_events() {
+  jq -r '.event' "$FAKE_REPO/.cc-sessions/activity-feed.jsonl" 2>/dev/null || true
+}

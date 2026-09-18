@@ -82,7 +82,9 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-test.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-test.sh",
+            "timeout": 60,
+            "statusMessage": "blitz: running matching tests"
           },
           {
             "type": "command",
@@ -100,7 +102,9 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-typecheck-block.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-typecheck-block.sh",
+            "timeout": 90,
+            "statusMessage": "blitz: type-checking edited file"
           }
         ]
       },
@@ -154,7 +158,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-tool-batch.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/heartbeat.sh",
             "async": true
           }
         ]
@@ -274,6 +278,115 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-end.sh",
+            "args": [],
+            "timeout": 15,
+            "statusMessage": "blitz: closing session record"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/stop-turn.sh",
+            "args": [],
+            "async": false,
+            "timeout": 20,
+            "statusMessage": "blitz: turn-end heartbeat + mailbox"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/notification-log.sh",
+            "args": [],
+            "async": true,
+            "timeout": 10,
+            "statusMessage": "blitz: logging notification"
+          }
+        ]
+      }
+    ],
+    "PermissionDenied": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-denied.sh",
+            "args": [],
+            "async": true,
+            "timeout": 10,
+            "statusMessage": "blitz: logging permission denial"
+          }
+        ]
+      }
+    ],
+    "PreModelSwitch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/model-switch-warn.sh",
+            "args": [],
+            "timeout": 5,
+            "statusMessage": "blitz: model-switch advisory"
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cwd-changed.sh",
+            "args": [],
+            "async": true,
+            "timeout": 10,
+            "statusMessage": "blitz: recording cwd"
+          }
+        ]
+      }
+    ],
+    "DirectoryAdded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cwd-changed.sh",
+            "args": [],
+            "async": true,
+            "timeout": 10,
+            "statusMessage": "blitz: recording added directory"
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/config-change.sh",
+            "args": [],
+            "timeout": 60,
+            "statusMessage": "blitz: re-validating .cc-sessions state"
           }
         ]
       }
