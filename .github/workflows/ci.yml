@@ -33,6 +33,9 @@ jobs:
       - name: Markdown links + anchors
         run: bash hooks/scripts/markdown-link-validate.sh
 
+      - name: Section references resolve
+        run: bash scripts/check-section-refs.sh
+
       - name: CLAUDE.md size guard (<=200 lines)
         run: test "$(wc -l < CLAUDE.md)" -le 200
 

@@ -19,7 +19,7 @@ Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 3 
 >
 > Grounded in Anthropic, "How we contain Claude across products" (2026-05-25), cross-checked against OWASP (LLM / Agentic / MCP Top 10), CaMeL (arXiv 2503.18813), the dual-LLM / Spotlighting pattern, the memory-poisoning literature (MINJA / MemoryGraft / Zombie Agents), and NIST's agent identity/authorization direction.
 >
-> Right-sized for a Claude Code-class HITL developer tool — **not** a hosted service or sealed-VM product (§6 Scope).
+> Right-sized for a Claude Code-class HITL developer tool — **not** a hosted service or sealed-VM product (§6 of [security.reference.md](security.reference.md) Scope).
 
 This document organizes Blitz's scattered tactical guards (`block-*.sh`, `pre-edit-guard.sh`, `tasks-guard.sh`, `kill-switch.sh`, the main-thread `[0:200]` caps in [sessions.md](sessions.md)) into one auditable posture: **risk type × defense layer**, ordered by the **environment-first principle**, defended along **five trust boundaries**. New security guards register against it; `/blitz:audit --pillar security` audits against it.
 

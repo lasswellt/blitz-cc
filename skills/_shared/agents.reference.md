@@ -24,6 +24,10 @@ Every `dev` / `test-writer` spawn carries all eleven items. **Items 6, 7, 9, 10 
 | 10 | The canonical OUTPUT STYLE line from [output.md](/_shared/output.md), verbatim | `output.md` |
 | 11 | Stop conditions: reply when `verify[]` passes; reply `BLOCKED` on `ESCALATE:`; stop before a new file when ≤3 tool calls remain | this file |
 
+### 3.1b Preloaded skills
+
+An agent that needs a skill on every run lists it in `skills:` frontmatter. The cost is the skill's full body injected per spawn, so this is deliberate, not a convenience: `test-writer` ← `test-gen` is the only default. Everything else is fetched through the `Skill` tool when the agent actually needs it. The Task tools (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) and `TodoWrite` are off on current models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and v3 never uses them: `docs/plans/<slug>/tasks.json` is the task list.
+
 ### 3.2 Generic preamble (file-producing agents)
 
 ```
@@ -46,7 +50,7 @@ Every spawn is in one class; a task that does not fit is split by file prefix, n
 Budget block, pasted near the top of every Medium/Heavy prompt:
 
 ```
-BUDGET (<Light|Medium|Heavy> — skills/_shared/agents.md §3.3):
+BUDGET (<Light|Medium|Heavy> — agents.reference.md §3.3):
 - Max file reads: <n>
 - Max web searches: <n>
 - Max tool calls: <n> (at <n-5>, finish the current step and reply)
@@ -158,6 +162,9 @@ Under `Workflow`, `schema:` validation plus `null`-on-throw and `.filter(Boolean
 ---
 
 ## 5. Sequential by default; the parallel exception
+
+**Why sequential is the default.** The platform docs put agent teams at roughly 7× the tokens of a single session when teammates run in plan mode, and recommend a single session or subagents for sequential work, same-file edits, or many dependencies. A 33,596-agent-PR study put cross-agent conflicts at 41.7% against 19.8% intra-agent, 42% of them structural. The defenses that worked were file scoping, worktrees, sequential merge and `merge-tree` preflight — which is exactly what `--parallel` requires before it will run.
+
 
 ### 5.1 Default: one `dev` per task, fresh context
 

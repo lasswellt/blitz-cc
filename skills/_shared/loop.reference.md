@@ -21,6 +21,17 @@ Atomic (write to temp, `mv`). Exit 0 ok, 1 verify failed, 2 usage or contract er
 
 `<plan>` is the slug (`docs/plans/<slug>/tasks.json`). Everything else — skills, `critic`, `check`, humans — goes through this script.
 
+#### `tasks.sh verify <plan> --changed <paths>`
+
+Re-runs only the `done` tasks whose `files[]` the given paths touch, matched by exact path or directory prefix in either direction. This is what a parallel wave needs after its sequential merge: a clean textual merge is not a semantic one, two tasks can each pass alone and break each other once combined, and `git merge-tree` cannot see the difference. Re-running every task is the safe answer and the slow one.
+
+```bash
+CHANGED=$(git diff --name-only "$WAVE_BASE"..HEAD)
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" --changed $CHANGED
+```
+
+A failing task is demoted from `done` to `in_progress` with `passes: false` and enters the fix queue; untouched tasks are not re-run. Language-neutral: each task re-runs its own `verify[]`, so a wave mixing a Rust task and a Python task re-verifies each with its own checker. Exit 0 when every re-verified task passes, 1 when any fails, 2 when no path is given.
+
 ### `scripts/next-state.sh`
 
 Prints one JSON object and exits 0; no side effects.

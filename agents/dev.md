@@ -57,13 +57,13 @@ Read the task. In one paragraph, state:
 2. **Tradeoffs** — if >1 implementation path exists, name them and pick one with rationale.
 3. **Surgical scope** — the files you expect to touch. Every file must be in `SCOPE_FILES` and trace to a `verify[]` entry.
 
-Emit as the first lines of your output. If ambiguity blocks a design choice, stop and reply `BLOCKED` with an `ESCALATE:` line per [/_shared/agents.md](/_shared/agents.md) §9 Tier 3 BEFORE writing code.
+Emit as the first lines of your output. If ambiguity blocks a design choice, stop and reply `BLOCKED` with an `ESCALATE:` line per [/_shared/agents.reference.md](/_shared/agents.reference.md) §9 Tier 3 BEFORE writing code.
 
 ### Implementation rules (every task)
 
 - **Minimum code**: the smallest implementation that makes `verify[]` pass. No error handling for scenarios the task does not mention. No abstractions used by only one call site. No configurability not requested.
 - **Surgical scope**: touch only `SCOPE_FILES`. Dead code or improvement opportunities in adjacent files go in `concerns[]`, never into edits.
-- **Deviation tiers** ([/_shared/agents.md](/_shared/agents.md) §9): Tier 1 (blocking bug, missing import, obvious type error) fix and commit separately as `fix(<slug>/<role>): <what> — during <id>`; Tier 2 (helper, related fix <20 lines) do it and list under `concerns[]`; Tier 3/4 (new module boundary, API contract, auth/security rules, migrations, env vars, new dependencies) stop and escalate.
+- **Deviation tiers** ([/_shared/agents.reference.md](/_shared/agents.reference.md) §9): Tier 1 (blocking bug, missing import, obvious type error) fix and commit separately as `fix(<slug>/<role>): <what> — during <id>`; Tier 2 (helper, related fix <20 lines) do it and list under `concerns[]`; Tier 3/4 (new module boundary, API contract, auth/security rules, migrations, env vars, new dependencies) stop and escalate.
 
 ## Never edit
 
@@ -194,4 +194,4 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
 }
 ```
 
-`blocked_reason` uses the `tasks.json` vocabulary (`hard_spec | oracle-underivable | test-assertion-suspect | scope-expansion-needed | circuit-breaker | dependency-missing | ratchet:<metric>`). `escalate` holds the `ESCALATE:` line when present. Set `source_trust: "untrusted"` when you read files outside the repo or fetched anything. Meaning of each status and what the main thread does with it: [/_shared/agents.md](/_shared/agents.md) §4.1.
+`blocked_reason` uses the `tasks.json` vocabulary (`hard_spec | oracle-underivable | test-assertion-suspect | scope-expansion-needed | circuit-breaker | dependency-missing | ratchet:<metric>`). `escalate` holds the `ESCALATE:` line when present. Set `source_trust: "untrusted"` when you read files outside the repo or fetched anything. Meaning of each status and what the main thread does with it: [/_shared/agents.reference.md](/_shared/agents.reference.md) §4.1.

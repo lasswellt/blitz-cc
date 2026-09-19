@@ -254,5 +254,19 @@ for n in loop agents quality sessions security output; do
   fi
 done
 
+# --- Section references resolve (block on drift) ---
+# The head/reference split moves sections between files; a "§N" citation can
+# stop resolving while its link still does, which is why link validation alone
+# missed three rounds of this.
+REFS_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/scripts/check-section-refs.sh"
+if [[ -x "$REFS_SCRIPT" ]]; then
+  REFS_OUT=$("$REFS_SCRIPT" 2>&1) || {
+    echo "" >&2
+    echo "$REFS_OUT" >&2
+    echo "BLOCKED: unresolved section citation(s)." >&2
+    exit 2
+  }
+fi
+
 # No secrets found — allow the commit
 exit 0

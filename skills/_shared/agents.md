@@ -16,7 +16,7 @@ Platform facts cite code.claude.com at Claude Code 2.1.277 (Sept 2026).
 | Agent | Model | Tools | Purpose | Notes |
 |---|---|---|---|---|
 | `blitz:dev` | sonnet; opus on fix rounds 4–5 | Read, Write, Edit, Bash, Glob, Grep, ToolSearch | Implements one task from `tasks.json` | Role passed in the prompt as `ROLE: backend\|frontend\|infra\|test`, with `skills/build/references/<role>.md` inlined below it. `experimental.cacheTtl: 1h`. |
-| `blitz:test-writer` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Writes or fixes tests for one task | Verification-first oracle (§3.6); `ESCALATE: oracle-underivable` maps to `blocked_reason`. Anti-mock guidance from [quality.md](/_shared/quality.md). `experimental.cacheTtl: 1h`. |
+| `blitz:test-writer` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Writes or fixes tests for one task | Verification-first oracle ([agents.reference.md](agents.reference.md) §3.6); `ESCALATE: oracle-underivable` maps to `blocked_reason`. Anti-mock guidance from [quality.md](/_shared/quality.md). `experimental.cacheTtl: 1h`. |
 | `blitz:critic` | `--mode reject`: opus; `--mode survey`: sonnet | Read, Grep, Glob, Bash (read subset) | Fresh-context evaluator | No Write/Edit. `omitClaudeMd: true`, `memory: project`. Runs `tasks[].verify[]` through `scripts/tasks.sh verify`. Reject must emit `LGTM` before `check` reports PASS. Prompted to flag only correctness and requirement gaps; style findings are parked. |
 | `blitz:research-critic` | sonnet | Read, Grep, Glob, Bash, WebFetch | Refutes research claims against sources | The only blitz agent with WebFetch. Every reply is `source_trust: untrusted`. |
 | `blitz:design-critic` | sonnet | Read, Grep, Glob, Bash, Playwright MCP | Evaluates rendered UI against `design-criteria.md` | Browser via Playwright MCP only; no source edits. |
@@ -55,7 +55,7 @@ Cost controls that apply to every spawn:
 
 ### 1.4 What subagents never receive
 
-Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`, or `TodoWrite`. `agent-frontmatter-validate.sh` rejects an agent file that lists any of them. Subagents cannot spawn subagents; every fan-out originates on the main thread. Subagents do not inherit skills; an agent that needs one on every run lists it in `skills:` frontmatter (cost: the full body per spawn — `test-writer` ← `test-gen` is the only default).
+Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, the Task tools, or `TodoWrite`; `agent-frontmatter-validate.sh` rejects an agent file that lists one. Subagents cannot spawn subagents: every fan-out originates on the main thread. Subagents do not inherit skills; one needed on every run goes in `skills:` frontmatter ([agents.reference.md](agents.reference.md) §3).
 
 ---
 
@@ -76,6 +76,6 @@ Rules of thumb:
 1. The main thread owns state. Only it edits `docs/plans/*/tasks.json` (through `scripts/tasks.sh`) and `progress.md`; dev agents carry both in their never-edit list.
 2. If the agent needs Write or Edit, it is `general-purpose` or a blitz role that lists Write. Anything else returns text and the main thread writes the file.
 3. Never retry the same prompt after `error_max_turns`; narrow the scope or stop.
-4. Multi-agent is the exception. The platform docs put agent teams at roughly 7× the tokens of a single session when teammates run in plan mode, and recommend a single session or subagents for sequential work, same-file edits, or many dependencies. Sequential single-agent with fresh context is the default (§5).
+4. Multi-agent is the exception; sequential single-agent with fresh context is the default. The evidence, and the `--parallel` preconditions that override it, are in [agents.reference.md](agents.reference.md) §5.
 
 ---

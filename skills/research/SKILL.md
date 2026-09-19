@@ -237,7 +237,7 @@ EXPECTED_OUTPUTS=(
 )
 [ "$SPAWN_INFRA" = true ] && EXPECTED_OUTPUTS+=("${SESSION_TMP_DIR}/research/infra-analyst.md")
 
-# classify_output() and gate logic from /_shared/agents.md §8
+# classify_output() and gate logic from /_shared/agents.reference.md §8
 classify_output() {
   local f="$1"
   if [ ! -f "$f" ]; then echo MISSING; return; fi

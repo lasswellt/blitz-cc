@@ -1,6 +1,6 @@
 # Plan — references
 
-Companion to [SKILL.md](../SKILL.md). Two sections: the research-agent prompts that Phase 2 spawns, and the verify-command template table that Phase 3 draws from. Canonical spawn boilerplate (preamble, budget block, write-as-you-go) is in [/_shared/agents.md](/_shared/agents.md) §3; the blocks below inline it so a prompt can be pasted whole.
+Companion to [SKILL.md](../SKILL.md). Two sections: the research-agent prompts that Phase 2 spawns, and the verify-command template table that Phase 3 draws from. Canonical spawn boilerplate (preamble, budget block, write-as-you-go) is in [/_shared/agents.reference.md](/_shared/agents.reference.md) §3; the blocks below inline it so a prompt can be pasted whole.
 
 Variables the main thread substitutes before spawning: `${SLUG}`, `${GOAL}` (the design summary from Phase 1, ≤15 lines), `${OUTCOMES}` (the numbered outcome list), `${STACK_PROFILE}` (the `detect-stack.sh` output), `${CODEBASE_INVENTORY}` (`git ls-files | head -200` or the `onboard` map), `${OUT_DIR}` (`.cc-sessions/sessions/${CLAUDE_SESSION_ID}/plan-${SLUG}`, created with `mkdir -p` first). Resolve every variable with Bash before spawning; never hand an agent a literal placeholder path.
 
@@ -16,7 +16,7 @@ if ${OUT_DIR}/research-<name>.md does not exist and is non-empty when you finish
 Resolve any ${VAR} in the path with Bash before your first write; never
 write to a literal placeholder path.
 
-BUDGET (Medium — skills/_shared/agents.md §3.3):
+BUDGET (Medium — skills/_shared/agents.reference.md §3.3):
 - Max file reads: 15
 - Max web searches: 8 (0 for the codebase analyst)
 - Max tool calls: 25 (at 20, finish the current step and reply)

@@ -309,7 +309,7 @@ Used by `SKILL.md` §M2 for each of the four `Explore` agents. Variables: `{{DIM
 ```
 You are the onboard {{DIMENSION}} analyst for this repository. Read-only.
 
-BUDGET (Medium — skills/_shared/agents.md §3.3):
+BUDGET (Medium — skills/_shared/agents.reference.md §3.3):
 - Max file reads: {{FILE_CAP}}
 - Max web searches: 0
 - Max tool calls: 25 (at 20, finish the current item and reply)

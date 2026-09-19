@@ -49,7 +49,7 @@ Lifecycle:
 |---|---|---|---|
 | `SessionStart` | `session-start.sh` | create from stdin; on `source=resume\|compact` reopen (`status: active`, `state: working`, skill/working_on kept, `ended`/`failed_reason` deleted); run stale sweep; surface `HANDOFF.json`; echo sanitized recent feed | `session_start {source,cwd}` |
 | `PostToolBatch` | `heartbeat.sh` | `state: working`, `last_activity` bump; TIA digest ≤10 lines on failure only | none |
-| `Stop` | `stop-turn.sh` | `state: idle`, `last_activity`; drain mailbox (§5) | `mailbox {count}` on delivery only |
+| `Stop` | `stop-turn.sh` | `state: idle`, `last_activity`; drain mailbox (§5 of [sessions.reference.md](sessions.reference.md)) | `mailbox {count}` on delivery only |
 | `SessionEnd` | `session-end.sh` | `status` from `reason` (`prompt_input_exit\|other`→`completed`, `resume`→`suspended`, `clear`→`cleared`, `logout`→`logged_out`), `state: ended`, `ended` | `session_end {reason,status,record}` |
 
 Skill preamble (run before any other work):
@@ -70,19 +70,19 @@ Skill preamble (run before any other work):
 5. bash "${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/startup-validate.sh"   # TB-2 classifier (was 5a-0)
    Flagged entries are already moved to .cc-sessions/quarantine/ and mirrored to the inbox
    (kind: quarantine); surface them, do not load them.
-6. Read .cc-sessions/sessions/*.json, overlay blitz_agent_view (§3), run the conflict matrix (§6).
-7. Print the recent-feed summary (§9).
+6. Read .cc-sessions/sessions/*.json, overlay blitz_agent_view (reference §3), run the conflict matrix (§6).
+7. Print the recent-feed summary (reference §9).
 ```
 
 `blitz_session_update <sid> <jq-filter>`: two positional arguments, atomic write via `blitz_atomic_write`, `$now` pre-bound to the current ISO-8601 UTC timestamp, no-op when the record is absent. Values go through `tojson` so quotes in args cannot break the filter. `blitz_session_record_path <sid>` prints the canonical path; `blitz_session_record_find <sid>` also resolves a legacy `.cc-sessions/<x>.json` whose `.claude_session_id == sid`.
 
-Final phase of every skill: patch `working_on` to the one-line outcome (`blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'`), log `skill_end` (§9), optionally remove `${SESSION_TMP_DIR}`. Never set `status` or `state` from a skill; the hook closes the record even on an abnormal exit.
+Final phase of every skill: patch `working_on` to the one-line outcome (`blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'`), log `skill_end` (§9 of [sessions.reference.md](sessions.reference.md)), optionally remove `${SESSION_TMP_DIR}`. Never set `status` or `state` from a skill; the hook closes the record even on an abnormal exit.
 
 ---
 
 ## 6. Conflict matrix
 
-Run after §3 with the overlay joined to records on `sessionId == session_id`. Only *live* peers count.
+Run after §3 of [sessions.reference.md](sessions.reference.md) with the overlay joined to records on `sessionId == session_id`. Only *live* peers count.
 
 | Session A | Session B | Resolution |
 |---|---|---|
@@ -95,7 +95,7 @@ Run after §3 with the overlay joined to records on `sessionId == session_id`. O
 | `build` (plan P) | `build` (plan Q) | WARN if `files` overlap in `tasks.json`, else OK |
 | read-only skills (`research`, `audit`, `check` without `--fix`, `learn`, `doctor`, `sessions`) | anything | OK |
 
-Resolution actions (messaging per §5; same container required, otherwise text degradation only):
+Resolution actions (messaging per §5 of [sessions.reference.md](sessions.reference.md); same container required, otherwise text degradation only):
 
 | Resolution | Action |
 |---|---|
@@ -115,10 +115,10 @@ Degrade to **WARN-only text** (print the conflict line, no message, no `LOOP_DEF
 ├── sessions/<sid>/gate.json    Stop-gate arming file (loop.md); path preserved through compaction
 ├── sessions/<sid>/touched.txt  files edited this session (heartbeat TIA input)
 ├── sessions/<sid>/tmp/         fallback SESSION_TMP_DIR when scratchpad_dir is absent
-├── activity-feed.jsonl         loop and skill events (§9)
-├── inbox.jsonl                 attention queue (§4)
-├── mailbox/<sid>.jsonl         hook/script → session, drained by stop-turn.sh (§5)
-├── HANDOFF.json                PreCompact snapshot, surfaced ≤24 h (§7)
+├── activity-feed.jsonl         loop and skill events (reference §9)
+├── inbox.jsonl                 attention queue (reference §4)
+├── mailbox/<sid>.jsonl         hook/script → session, drained by stop-turn.sh (reference §5)
+├── HANDOFF.json                PreCompact snapshot, surfaced ≤24 h (reference §7)
 ├── quarantine/                 lines startup-validate.sh refused to load
-└── STOP                        kill switch (§10)
+└── STOP                        kill switch (reference §10)
 ```

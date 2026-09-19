@@ -18,7 +18,7 @@ PROJECT CONVENTIONS (discovered by build T.1; follow them, do not re-derive):
 REUSE THESE — do not recreate:
 - <path> — <what it provides>
 
-BUDGET (Heavy — skills/_shared/agents.md §3.3):                              # item 8
+BUDGET (Heavy — skills/_shared/agents.reference.md §3.3):                              # item 8
 - Max file reads: 25
 - Max web searches: 0
 - Max tool calls: 40 (at 35, finish the current step and reply)

@@ -55,7 +55,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 | Field | Notes |
 |---|---|
 | `files` | the only paths a `dev` may touch for this task; disjointness gates `build --parallel` |
-| `verify[]` | executable checks; `timeout` in seconds; `tasks.sh verify` runs them in order and stops at the first failure. `tasks.sh verify <plan> --changed <paths>` re-runs only the `done` tasks whose `files[]` those paths touch — the post-merge selective re-verify a parallel wave needs, since a clean textual merge is not a semantic one. |
+| `verify[]` | executable checks; `timeout` in seconds; `tasks.sh verify` runs them in order and stops at the first failure. `verify <plan> --changed <paths>` is the post-merge selective re-verify ([loop.reference.md](loop.reference.md) §Scripts). |
 | `passes` | written only by `tasks.sh verify`; mirrors `last_verify.ok` |
 | `last_verify.tail` | ≤200 chars of the failing command's output (evidence, not a summary) |
 | `last_verify.runs[]` | one entry per command that actually ran, in order: `cmd`, `exit`, `duration_ms`, `tail` (≤2 KB, `BLITZ_VERIFY_EVIDENCE_CAP`), `recorded_at`. This is what lets the critic adjudicate from the record instead of re-running the suite, and what makes `cannot_verify` a defensible reviewer answer. The run stops at the first failure, so a command after the failing one has no entry. |

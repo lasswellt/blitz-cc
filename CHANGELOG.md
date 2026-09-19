@@ -10,6 +10,19 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.3.3] — 2026-09-19 · reference integrity + the polyglot eval
+
+A sweep of what none of the earlier passes had looked at.
+
+### Fixed
+- **30 section citations stopped resolving when the protocols split.** The head/reference split moved sections between files, and `agents.md §3`, `security.md §5`, `sessions.md §9` and 27 more kept naming the head after their section had moved. `markdown-link-validate.sh` passed the whole time, because in every case the *link* resolved and only the `§N` beside it was wrong. Retargeted across 10 skills, 5 agents and one workflow, plus 14 bare `(§N)` self-references inside the heads.
+- **Markdown links injected into a fenced ASCII tree** in `sessions.md`, where they do not render and wreck the alignment. Now plain `(reference §9)` prose.
+- Two protocol heads had drifted over their byte caps (`loop.md` 9,559 B, `agents.md` 8,233 B) from content this release cycle added. The cap did its job and blocked the commit; the detail moved to the references rather than the caps moving.
+
+### Added
+- **`scripts/check-section-refs.sh`** — asserts every `§N` citation resolves in the file it names, catches the `)§44.1` / `)§RatchetRatchet` doubling signature, and flags a protocol link inside a fenced block. Wired into CI and `pre-commit-validate.sh`. Three separate rounds of this class of breakage shipped past link validation; it needed its own check. Deliberately narrow on the fenced-link rule: a fence often holds a *template of output a skill writes*, where markdown links are correct, so only `_shared` protocol links are flagged.
+- **`evals/polyglot-ratchet`** — the eval suite's 8th case and the first that is not Node-shaped. A Python + Rust repo with **no `package.json`** and a real type error in each language. Graders assert the toolchain resolver ran, that `npm`/`npx`/`tsc`/`eslint` were **not** run against a repo with no Node project, and that both diagnostics were reported rather than fixed. Every previous eval would have passed while the loop silently regressed to Node-only.
+
 ## [3.3.2] — 2026-09-19 · acceptance-criteria pass
 
 A criterion-by-criterion re-test of the migration plan. Phases 0, 1, 3, 4 and 5 now pass on evidence; Phase 2's numeric targets do not, and the reason is recorded rather than engineered around.
