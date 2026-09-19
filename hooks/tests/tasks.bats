@@ -190,3 +190,55 @@ teardown() { teardown_fake_repo; }
   run jq -r '.checks[] | select(.id=="det-03") | .detection.exit.verdict' "$reg"
   [ "$output" = "stdout" ]
 }
+
+# --- selective post-merge re-verify -----------------------------------------
+
+@test "verify --changed re-verifies only tasks whose files the paths touch" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" add demo --id T-002 --title b --files py/b.py --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" add demo --id T-003 --title c --files docs/c.md --verify-cmd 'true' --origin plan >/dev/null
+  for i in T-001 T-002 T-003; do bash "$TASKS" verify demo "$i" >/dev/null; done
+  run bash "$TASKS" verify demo --changed src/a.rs py/b.py
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"2 task(s) re-verified"* ]]
+  [[ "$output" != *"T-003"* ]]
+}
+
+@test "verify --changed catches a break that survived a clean merge" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs \
+    --verify-cmd 'test -f ok.flag' --origin plan >/dev/null
+  touch ok.flag
+  bash "$TASKS" verify demo T-001 >/dev/null
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "done" ]
+  # A textually clean merge can still break a task semantically.
+  rm ok.flag
+  run bash "$TASKS" verify demo --changed src/a.rs
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"T-001"* ]]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "in_progress" ]
+  [ "$(jq -r '.tasks[0].passes' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "false" ]
+}
+
+@test "verify --changed matches by directory prefix in both directions" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/api --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run bash "$TASKS" verify demo --changed src/api/handler.rs
+  [[ "$output" == *"1 task(s) re-verified"* ]]
+}
+
+@test "verify --changed is a no-op when no done task owns the paths" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run bash "$TASKS" verify demo --changed unrelated/x.txt
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"nothing to re-verify"* ]]
+}
+
+@test "verify --changed with no paths is a usage error" {
+  # The plan must exist first, or require_file exits 3 (not found) before the
+  # path check is ever reached.
+  bash "$TASKS" init demo >/dev/null
+  run bash "$TASKS" verify demo --changed
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"needs at least one path"* ]]
+}

@@ -55,9 +55,9 @@ One skill, three modes. `build` writes `tasks.json` only through `scripts/tasks.
 
 1. The diff is describable in one sentence.
 2. ≤5 files change.
-3. No new dependency, no new directory, no schema/auth/env change (Tier 4 in [agents.reference.md](/_shared/agents.reference.md)§99).
+3. No new dependency, no new directory, no schema/auth/env change (Tier 4 in [agents.reference.md](/_shared/agents.reference.md) §9).
 
-### 0.4 Parallel preconditions ([agents.reference.md](/_shared/agents.reference.md)§55.2)
+### 0.4 Parallel preconditions ([agents.reference.md](/_shared/agents.reference.md) §5.2)
 
 ```bash
 BASE_REF=$(jq -r '.worktree.baseRef // "fresh"' .claude/settings.json 2>/dev/null)
@@ -200,7 +200,7 @@ Per iteration:
 1. **Select.** `TASK_JSON=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" next "$SLUG")`; empty → §T.6. A `<task-id>` argument pins `TASK_JSON` to that task and exits after it. A cycle in `depends_on` (Kahn layering never empties while open tasks remain) is a hard failure: print the cycle, `BLOCKED: dependency cycle`, stop.
 2. **Mark.** `tasks.sh set "$SLUG" "$ID" status=in_progress`; append `## <ISO> build <ID> start (attempt <attempts+1>)` to `progress.md`; feed `task_start {plan, task}`.
 3. **Arm the gate** when `--autonomous` (§Gate).
-4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", prompt: <11-item spec>)`. The spec ([agents.reference.md](/_shared/agents.reference.md)§33.1; template in [references/main.md](references/main.md)):
+4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", prompt: <11-item spec>)`. The spec ([agents.reference.md](/_shared/agents.reference.md) §3.1; template in [references/main.md](references/main.md)):
 
    | # | Item | Source |
    |---|---|---|
@@ -209,7 +209,7 @@ Per iteration:
    | 4 | `SCOPE_FILES:` exact `files[]`; edits outside it are `DONE_WITH_CONCERNS` at best, `ESCALATE: scope-expansion-needed` when >3 | `tasks[].files` |
    | 5 | `verify[]` commands verbatim with timeouts | `tasks[].verify` |
    | 6 | Never-edit: `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `.cc-sessions/**`, test files unless `role: test`, project additions | this skill |
-   | 7 | Reply contract + JSON block ([agents.reference.md](/_shared/agents.reference.md)§44.2) | agents.md |
+   | 7 | Reply contract + JSON block ([agents.reference.md](/_shared/agents.reference.md) §4.2) | agents.md |
    | 8 | `BUDGET (Heavy)`: 25 reads, 0 searches, 40 tool calls (finish at 35), 400 lines, 8 min | agents.md §3.3 |
    | 9 | Commit `feat(<slug>/<role>): <ID> <title>` + trailer `Task: <slug>/<ID>`; one commit; `fix(<slug>/<role>): … — during <ID>` for Tier-1 auto-fixes | this skill |
    | 10 | `Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.` | output.md |
@@ -233,7 +233,7 @@ Per iteration:
 
 Edits `tasks.json` (`tasks-guard.sh` denies it) or `progress.md`; reads another task's files; weakens a test; installs a dependency the task did not name; commits with `--no-verify`. Main thread only writes plan state, on the main branch.
 
-### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md)§88)
+### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md) §8)
 
 | Round | Who | How |
 |---|---|---|
@@ -315,7 +315,7 @@ Blitz removes nothing. The platform locks a worktree while its agent runs and sw
 
 ## Gate
 
-Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BLITZ_AUTONOMOUS=1`); interactive runs never write the file. Contract: [loop.reference.md](/_shared/loop.reference.md)§Stop gateStop gate.
+Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BLITZ_AUTONOMOUS=1`); interactive runs never write the file. Contract: [loop.reference.md](/_shared/loop.reference.md) §Stop gate.
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"

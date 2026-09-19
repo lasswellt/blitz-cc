@@ -10,6 +10,22 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.3.2] — 2026-09-19 · acceptance-criteria pass
+
+A criterion-by-criterion re-test of the migration plan. Phases 0, 1, 3, 4 and 5 now pass on evidence; Phase 2's numeric targets do not, and the reason is recorded rather than engineered around.
+
+### Fixed
+- **37 mangled section citations across 12 files**, shipped in 3.2.0. The mechanical link retarget emitted its capture group twice and swallowed the preceding space, producing `)§44.1` where `) §4.1` was meant, and `)§RatchetRatchet` for `) §Ratchet`. Link validation passed throughout, because the link resolved and only the trailing prose was wrong. `markdown-link-validate.sh` now fails on the pattern, with a mutation test proving the guard fires.
+- **The spawn prompt never actually shrank.** 3.2.0 moved the invariant spec into `SubagentStart` and left the same content pasted in `build/references/main.md`, so every spawn carried it twice. The template now holds only each item's variable half (the project's own never-edit additions, the `--parallel` branch line): **3,928 → 1,917 bytes, a 51% cut**, with the standing 4.7 KB arriving from the hook identically every time. The package-install rule moved into the invariant with it.
+- `security.md` head compacted from 11,286 to 6,108 bytes: one rule row per trust boundary, with each boundary's enforcement detail moved to the reference. Lossless, checked line by line.
+
+### Added
+- **`tasks.sh verify <plan> --changed <paths>`** — selective post-merge re-verify, the Phase 5 acceptance criterion, which did not exist. After a parallel wave merges, it re-runs only the `done` tasks whose `files[]` the merged paths touch. A clean textual merge is not a semantic one, and `git merge-tree` cannot see the difference. A failing task is demoted to `in_progress` and enters the fix queue; untouched tasks are not re-run. Verified end to end on a mixed Rust + Python two-branch wave: both touched tasks re-verified with their own checkers, the third skipped, and a break planted after the merge correctly caught and demoted.
+- 9 tests: 5 for `verify --changed` (selection, prefix matching in both directions, the caught-break case, the no-op case, the usage error) and 4 for whole-project lane behaviour.
+
+### Notes
+- **Phase 2's ≤12K/≤14K targets are not met** (`build` 16,313, `check` 15,036). They were written before the work and conflated the protocol load F-06 measured with the skill body it never touched. On F-06's actual subject the five protocols `build` loads went **32,631 → 9,892 tokens, a 69% cut**; `build/SKILL.md` alone is 6,421 tokens, so ≤12K would leave ~4.5 KB per protocol contract. Hitting the number means cutting contract content skills obey. Recorded in the audit rather than engineered around.
+
 ## [3.3.1] — 2026-09-19 · close the gaps the audit's own implementation left
 
 A completeness pass over 3.0.2–3.3.0 found six things the migration claimed but had not actually wired.

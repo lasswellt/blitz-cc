@@ -25,35 +25,8 @@ BUDGET (Heavy — skills/_shared/agents.md §3.3):                              
 - Max output: 400 lines
 - Wall-clock: 8 minutes
 
-NEVER EDIT:                                                                  # item 6
-- docs/plans/*/tasks.json   (only scripts/tasks.sh on the main thread; the hook denies you)
-- docs/plans/*/progress.md  (build writes it at task boundaries)
-- .cc-sessions/**, gate.json
-- *.test.*, *.spec.*, __tests__/**  (unless ROLE: test); never weaken or skip an assertion —
-  a test that looks wrong is `ESCALATE: test-assertion-suspect`
-- any file outside SCOPE_FILES (see below)
-<project additions>
-
-PACKAGE INSTALLS: never invent a version number from memory. Use bare
-`pnpm add <pkg>` (or the project's package manager) so it resolves to the
-registry latest. Pin only when the task asks for it or a peer constraint forces
-it. A dependency the task did not name is Tier 4: stop and escalate.
-
-COMMIT (one per task):                                                       # item 9
-  feat(<slug>/<role>): <ID> <title>
-
-  Task: <slug>/<ID>
-Tier-1 auto-fixes commit separately: fix(<slug>/<role>): <what> — during <ID> (same trailer).
-Never --no-verify. Never amend history the main thread already has.
-<--parallel only: work on branch build/<slug>/<role> inside your worktree.>
-
-Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.   # item 10
-
-STOP CONDITIONS:                                                             # item 11
-- Reply when every verify[] command passes in your run.
-- Reply BLOCKED on any ESCALATE: line (deviation Tier 3/4, oracle underivable, test suspect).
-- At ≤3 tool calls remaining, stop before starting a new file; reply BLOCKED with
-  blocked_reason: circuit-breaker and files_changed[] listing what landed.
+NEVER EDIT (project additions only — the standing list arrives from the hook):  # item 6
+<project additions; omit this block when the project adds nothing>
 
 TASK <ID>: <title>                                                           # items 1-2
 <tasks[].notes, verbatim, when non-empty>
@@ -71,27 +44,16 @@ VERIFY (run each; paste each ≤200-char tail into the reply):                 #
 - <verify[0].cmd>            (timeout <verify[0].timeout>s)
 - <verify[1].cmd>            (timeout <verify[1].timeout>s)
 
+<--parallel only: work on branch build/<slug>/<role> inside your worktree.>   # item 9 (variable half)
+
 <fix rounds 4-5 only:>
 PRIOR ATTEMPTS (from progress.md; do not repeat them):
 <last 3 verify lines and any Ruling: lines for this task>
-
-REPLY CONTRACT:                                                              # item 7
-Return ONLY this JSON, nothing else (no markdown fence, no preamble):
-{
-  "status": "DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|BLOCKED",
-  "task": "<ID>",
-  "summary": "<one sentence, ≤50 words>",
-  "files_changed": ["src/..."],
-  "verify": [{"cmd": "...", "ok": true, "tail": "<≤200 chars>"}],
-  "concerns": [{"severity": "low|med|high", "where": "path:line", "what": "<≤200 chars>"}],
-  "blocked_reason": null,
-  "escalate": null,
-  "commit": "<sha or null>",
-  "source_trust": "trusted|untrusted"
-}
 ```
 
-Status meanings and main-thread actions: [agents.reference.md](/_shared/agents.reference.md)§44.1. `blocked_reason` uses the `tasks.json` vocabulary. A spawn missing any item is a bug in `build`, not in the agent.
+**Items 6 (standing never-edit list), 7 (reply contract and status enum), 9 (commit format), 10 (output style) and 11 (stop conditions) are NOT in this template.** `hooks/scripts/subagent-context.sh` injects them from [spawn-invariant.md](/_shared/spawn-invariant.md) on `SubagentStart`, byte-identical on every spawn, which is what keeps the subagent's prompt cache intact. Pasting them here as well would duplicate ~2.3 KB into every spawn and defeat the point. Only each item's variable half stays: the project's own never-edit additions, and the `--parallel` branch line.
+
+When the hook cannot run — `BLITZ_DISABLE_SPAWN_INVARIANT=1`, a non-blitz agent type, or a host without bash — inline [spawn-invariant.md](/_shared/spawn-invariant.md) into the prompt instead. Status meanings and main-thread actions: [agents.reference.md](/_shared/agents.reference.md) §4.1. A spawn missing any of items 1–5 or 8 is a bug in `build`, not in the agent.
 
 ### Resume payload (fix rounds 1-3)
 
@@ -148,7 +110,7 @@ Print the plan:
 | Workflow | `Workflow` tool present and `BLITZ_DISPATCH != agent` (`workflow` forces it, error if absent) | `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` | `{ wave, tasks: [{id, ok, result}] }`; `result: null` → `BLOCKED circuit-breaker` |
 | Agent | otherwise, or on any Workflow failure | `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", isolation: "worktree", prompt)` × tasks in wave | JSON reply per agent |
 
-Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and schema validation only; `tasks.sh`, `progress.md`, commits, and `gate.json` stay on the main thread between calls ([agents.reference.md](/_shared/agents.reference.md)§77.4). Log `detail.dispatch` on the feed `task_start` line. Never hard-fail on a Workflow error; fall through to the Agent path for the same wave.
+Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and schema validation only; `tasks.sh`, `progress.md`, commits, and `gate.json` stay on the main thread between calls ([agents.reference.md](/_shared/agents.reference.md) §7.4). Log `detail.dispatch` on the feed `task_start` line. Never hard-fail on a Workflow error; fall through to the Agent path for the same wave.
 
 ### Monitor
 
@@ -177,6 +139,15 @@ fi
 ```
 
 `git merge-tree --write-tree` exits non-zero on conflict without touching the index; a conflicting branch is left in place for a human (or a re-plan of `files[]`) and never auto-resolved — 42% of cross-agent conflicts are structural. Tasks in `FIX_QUEUE` enter the fix loop after the wave's merges finish, agent resumed by name (`dev-<ID>`) when it still exists, fresh spawn otherwise.
+
+**After the wave's merges finish**, re-verify the tasks the merge could have broken. A clean textual merge is not a semantic one: two tasks can each pass alone and break each other once combined, and `merge-tree` cannot see that. Re-running every task is the safe answer and the slow one, so re-verify exactly the tasks whose `files[]` the merged paths touch:
+
+```bash
+CHANGED=$(git diff --name-only "$WAVE_BASE"..HEAD)
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" --changed $CHANGED
+```
+
+A task that fails here is demoted from `done` back to `in_progress` with `passes: false` and enters `FIX_QUEUE`; untouched tasks are not re-run. This is language-neutral: each task re-runs its own `verify[]`, so a wave mixing a Rust task and a Python task re-verifies each with its own checker.
 
 ### Wave boundary
 
@@ -223,7 +194,7 @@ Pre-existing tests that turn red are **Critical** and outrank new-test failures:
 
 ## Cleanup
 
-`build` removes no worktree and deletes no branch. Platform facts ([agents.reference.md](/_shared/agents.reference.md)§66):
+`build` removes no worktree and deletes no branch. Platform facts ([agents.reference.md](/_shared/agents.reference.md) §6):
 
 - `isolation: "worktree"` creates `.claude/worktrees/<id>` from `HEAD` when `worktree.baseRef: "head"` (the §0.4 precondition); the platform locks it while the agent runs and sweeps unlocked worktrees by `cleanupPeriodDays`.
 - Never remove a worktree that `claude agents --json` still lists — it holds uncommitted work.

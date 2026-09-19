@@ -81,6 +81,21 @@ sys.exit(0)
 PY
 PY_EXIT=$?
 
+# --- Malformed section citations ---
+# ")§44.1" (should be ") §4.1") and ")§RatchetRatchet" (should be
+# ") §Ratchet") are what a mechanical link retarget leaves behind when its
+# replacement repeats a capture group and drops the preceding space. The LINK
+# still resolves, so link checking alone never sees it; 37 such lines shipped
+# across 12 files in 3.2.0 before this guard existed.
+CITE_BAD=$(grep -rnE '\)§|§([0-9]+)\1([^0-9.]|$)|§([A-Z][a-zA-Z.]*( [a-z]+)*)\3' \
+  --include='*.md' skills agents 2>/dev/null || true)
+if [[ -n "$CITE_BAD" ]]; then
+  echo "markdown-link-validate: malformed section citation(s):" >&2
+  printf '%s\n' "$CITE_BAD" | head -20 >&2
+  echo "  Expected '<link>) §N' — one space before the section, section named once." >&2
+  [[ "$HOOK_MODE" -eq 1 ]] || PY_EXIT=1
+fi
+
 if [[ "$HOOK_MODE" -eq 1 ]]; then
   # Warn-only in hook mode — never block a commit on link rot
   exit 0

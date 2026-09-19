@@ -9,6 +9,8 @@
 #                   --verify-cmd "cmd"[::timeout] (repeatable) [--test-only-ok] [--notes "..."]
 #   tasks.sh set    <plan> <id> key=value ...   keys: status blocked_reason notes role title attempts (N or +1)
 #   tasks.sh verify <plan> <id> [--dry]         runs verify[] in order; writes passes + last_verify
+#   tasks.sh verify <plan> --changed <paths>    re-verifies only the done tasks whose files[] the
+#                                               paths touch (post-merge selective re-verify)
 #   tasks.sh next   <plan>                      prints the first open task whose depends_on are all done
 #
 # Contract (loop.md §Structural rules):
@@ -204,6 +206,55 @@ cmd_verify() {
   return 1
 }
 
+# cmd_verify_changed PLAN PATH...
+#
+# After merging a parallel wave, a clean textual merge is not a semantic one:
+# two tasks can each pass alone and break each other once combined. Re-running
+# every task's verify[] is the safe answer and the slow one. This re-verifies
+# exactly the tasks whose files[] intersect the merged paths, which is the set
+# a merge can have broken.
+#
+# Paths come from `git diff --name-only <base>..HEAD` and are matched against
+# each task's files[] by exact path or by directory prefix.
+cmd_verify_changed() {
+  local plan="$1"; shift
+  local f; f=$(plan_file "$plan"); require_file "$f"
+  [ "$#" -gt 0 ] || die "verify --changed needs at least one path"
+
+  local paths_json; paths_json=$(printf '%s\n' "$@" | jq -R . | jq -sc .)
+  local ids
+  ids=$(jq -r --argjson paths "$paths_json" '
+    .tasks[]
+    | . as $t
+    | select($t.status == "done")
+    | select(($t.files // []) | any(. as $tf
+        | $paths | any(. as $p
+            | $p == $tf
+            or ($tf | endswith("/")) and ($p | startswith($tf))
+            or ($p | startswith($tf + "/"))
+            or ($tf | startswith($p + "/")))))
+    | $t.id' "$f")
+
+  if [ -z "$ids" ]; then
+    echo "verify --changed $plan: no done task owns any of the $# changed path(s); nothing to re-verify"
+    return 0
+  fi
+
+  local id rc=0 n=0 failed=""
+  while IFS= read -r id; do
+    [ -z "$id" ] && continue
+    n=$((n + 1))
+    if cmd_verify "$plan" "$id"; then :; else rc=1; failed="$failed $id"; fi
+  done <<< "$ids"
+
+  if [ "$rc" -eq 0 ]; then
+    echo "verify --changed $plan: $n task(s) re-verified, all pass"
+  else
+    echo "verify --changed $plan: $n task(s) re-verified, FAILED:$failed" >&2
+  fi
+  return "$rc"
+}
+
 cmd_next() {
   local plan="$1" f; f=$(plan_file "$plan"); require_file "$f"
   jq -c '
@@ -220,7 +271,14 @@ case "$cmd" in
   list)   [ $# -ge 1 ] || usage; cmd_list "$@";;
   add)    [ $# -ge 1 ] || usage; cmd_add "$@";;
   set)    [ $# -ge 3 ] || usage; cmd_set "$@";;
-  verify) [ $# -ge 2 ] || usage; cmd_verify "$@";;
+  verify)
+    [ $# -ge 2 ] || usage
+    if [ "${2:-}" = "--changed" ]; then
+      plan="$1"; shift 2; cmd_verify_changed "$plan" "$@"
+    else
+      cmd_verify "$@"
+    fi
+    ;;
   next)   [ $# -ge 1 ] || usage; cmd_next "$@";;
   -h|--help|help) usage;;
   *) die "unknown command '$cmd'";;

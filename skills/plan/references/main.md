@@ -8,7 +8,7 @@ Variables the main thread substitutes before spawning: `${SLUG}`, `${GOAL}` (the
 
 ## Research-agent prompts
 
-**Workload class for every plan researcher: Medium** ([agents.reference.md](/_shared/agents.reference.md)§33.3). Every prompt below opens with this block:
+**Workload class for every plan researcher: Medium** ([agents.reference.md](/_shared/agents.reference.md) §3.3). Every prompt below opens with this block:
 
 ```
 You are a general-purpose agent with Write access. Your task is INCOMPLETE
@@ -193,7 +193,7 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 | vitest file | `npx vitest run <file.test.ts> --reporter=dot` | 300 | the task adds or changes a unit/integration test (test runner; needs a partner below) |
 | tsc | `npx tsc --noEmit --pretty false` | 180 | any TypeScript change; cheap, deterministic, non-test |
 | grep_present | `grep -qE '<pattern>' <file>` | 10 | the task introduces a symbol: `export (const\|function\|class) <name>`, a route string `'/api/<path>'`, an env key `<KEY>=` in `.env.example`, a rules `match /<collection>/` |
-| grep_absent | `! grep -nE 'TODO\|return \{\}' <file>` | 10 | every task that writes production code (anti-mock rules, [quality.reference.md](/_shared/quality.reference.md)§Definition of DoneDefinition of Done); extend the alternation with `Not implemented\|PLACEHOLDER` when the file is new |
+| grep_absent | `! grep -nE 'TODO\|return \{\}' <file>` | 10 | every task that writes production code (anti-mock rules, [quality.reference.md](/_shared/quality.reference.md) §Definition of Done); extend the alternation with `Not implemented\|PLACEHOLDER` when the file is new |
 | Firestore rules | `firebase emulators:exec --only firestore "npx vitest run <rules.test.ts>"` | 600 | `firestore.rules` changes; the test uses `@firebase/rules-unit-testing` and asserts both allow and deny |
 | Cloud Functions | `firebase emulators:exec --only functions,firestore "npx vitest run <file.test.ts>"` | 600 | a callable/trigger changes; the test invokes it against the emulator, not a `vi.mock` of `firebase-admin` |
 | Playwright | `npx playwright test <spec.ts>` | 600 | a user-visible flow changes; counts as non-test e2e evidence |

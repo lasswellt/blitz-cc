@@ -87,6 +87,14 @@ trailing summary of work already visible in the diff.
 - Stop before starting a new file when you have 3 or fewer tool calls left in
   your budget, and reply with what landed.
 
+## Package installs
+
+Never invent a version number from memory. Use a bare `pnpm add <pkg>` (or the
+project's package manager, or `pip install`, `cargo add`, `go get`) so it
+resolves to the registry's latest. Pin only when the task asks for it or a peer
+constraint forces it. A dependency the task did not name is a Tier-4 deviation:
+stop and escalate rather than adding it.
+
 ## Mock policy (non-negotiable)
 
 - Never `vi.mock` / `jest.mock` / `unittest.mock.patch` / `Mockito.mock` a

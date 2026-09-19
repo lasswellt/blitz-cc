@@ -28,7 +28,7 @@ compatibility: ">=2.1.271"
 
 **No Stop gate.** `ship` never arms `gate.json`; `rm -f .cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json` at start in case a previous skill left one.
 
-**Feed.** Append `skill_start` at Phase 0 and `skill_end` (with the version and tag in `detail`) after Phase 6 to `.cc-sessions/activity-feed.jsonl` ([sessions.reference.md](/_shared/sessions.reference.md)§99).
+**Feed.** Append `skill_start` at Phase 0 and `skill_end` (with the version and tag in `detail`) after Phase 6 to `.cc-sessions/activity-feed.jsonl` ([sessions.reference.md](/_shared/sessions.reference.md) §9).
 
 ---
 
