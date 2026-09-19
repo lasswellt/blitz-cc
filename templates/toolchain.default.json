@@ -693,6 +693,236 @@
         ],
         "counter": "regex:^\\*\\* \\(|error:"
       }
+    ],
+    "test": [
+      {
+        "id": "node-npm-test",
+        "stack": "node",
+        "match": ".*",
+        "when": [
+          "package.json"
+        ],
+        "probe": [
+          "npm",
+          "--version"
+        ],
+        "cmd": [
+          "npm",
+          "test",
+          "--silent"
+        ]
+      },
+      {
+        "id": "deno-test",
+        "stack": "deno",
+        "match": ".*",
+        "probe": [
+          "deno",
+          "--version"
+        ],
+        "cmd": [
+          "deno",
+          "test",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "python-pytest",
+        "stack": "python",
+        "match": ".*",
+        "probe": [
+          "pytest",
+          "--version"
+        ],
+        "cmd": [
+          "pytest",
+          "-q"
+        ]
+      },
+      {
+        "id": "rust-test",
+        "stack": "rust",
+        "match": ".*",
+        "probe": [
+          "cargo",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "test",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "go-test",
+        "stack": "go",
+        "match": ".*",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "test",
+          "./..."
+        ]
+      },
+      {
+        "id": "ruby-rspec",
+        "stack": "ruby",
+        "match": ".*",
+        "probe": [
+          "rspec",
+          "--version"
+        ],
+        "cmd": [
+          "rspec",
+          "--format",
+          "progress"
+        ]
+      },
+      {
+        "id": "jvm-gradle-test",
+        "stack": "jvm",
+        "match": ".*",
+        "when": [
+          "gradlew"
+        ],
+        "probe": [
+          "./gradlew",
+          "--version"
+        ],
+        "cmd": [
+          "./gradlew",
+          "--quiet",
+          "test"
+        ]
+      },
+      {
+        "id": "dotnet-test",
+        "stack": "dotnet",
+        "match": ".*",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "test",
+          "--nologo",
+          "--verbosity",
+          "quiet"
+        ]
+      },
+      {
+        "id": "elixir-test",
+        "stack": "elixir",
+        "match": ".*",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "test"
+        ]
+      }
+    ],
+    "build": [
+      {
+        "id": "node-npm-build",
+        "stack": "node",
+        "match": ".*",
+        "when": [
+          "package.json"
+        ],
+        "probe": [
+          "npm",
+          "--version"
+        ],
+        "cmd": [
+          "npm",
+          "run",
+          "build",
+          "--silent"
+        ]
+      },
+      {
+        "id": "rust-build",
+        "stack": "rust",
+        "match": ".*",
+        "probe": [
+          "cargo",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "build",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "go-build-all",
+        "stack": "go",
+        "match": ".*",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "build",
+          "./..."
+        ]
+      },
+      {
+        "id": "jvm-gradle-build",
+        "stack": "jvm",
+        "match": ".*",
+        "when": [
+          "gradlew"
+        ],
+        "probe": [
+          "./gradlew",
+          "--version"
+        ],
+        "cmd": [
+          "./gradlew",
+          "--quiet",
+          "build",
+          "-x",
+          "test"
+        ]
+      },
+      {
+        "id": "dotnet-build-all",
+        "stack": "dotnet",
+        "match": ".*",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "build",
+          "--nologo",
+          "--verbosity",
+          "quiet"
+        ]
+      },
+      {
+        "id": "elixir-build",
+        "stack": "elixir",
+        "match": ".*",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "compile"
+        ]
+      }
     ]
   }
 }

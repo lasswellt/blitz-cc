@@ -227,6 +227,8 @@ Spawn all four in **a single assistant message** so they run concurrently. `Expl
 
 For each: `Agent({ subagent_type: "Explore", model: "haiku", description: "onboard map <dimension>", prompt })`. The prompt is the dimension template in [references/main.md](references/main.md) §Dimension Agent Prompt, with `{{DIMENSION}}`, `{{INVENTORY_DIR}}`, `{{FILE_CAP}}`, `{{STACK_PROFILE}}` (the Project Context block above), and `{{CHECKLIST}}` (the matching list in §Dimension Checklists) filled in. Medium class: 25 tool calls, ≤250 output lines, 5 minutes. The reply ends with `SCORE: n/5` and one `CONFIRMATION:` line.
 
+Each dimension prompt carries the navigation ladder: **`LSP` first** (workspace symbol search, `goToDefinition`, `findReferences`) for any named symbol, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive — no server for that language, a missing binary, or a cloud session, where Claude Code does not start plugin language servers. Mapping a codebase by grepping and reading whole files is the single largest avoidable context cost in this skill.
+
 Write each reply verbatim to its `map-*.md` as it arrives. If a reply is empty or has no `SCORE:` line, retry that dimension once with the file cap halved.
 
 ### M3 GATE and SYNTHESIZE

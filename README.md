@@ -9,7 +9,7 @@
 ╚═════╝ ╚══════╝╚═╝   ╚═╝   ╚══════╝
 ```
 
-**⚡ An agentic development loop for Claude Code, tuned for Vue/Nuxt + Firebase ⚡**
+**⚡ A language-agnostic agentic development loop for Claude Code ⚡**
 
 research → plan → build → check → ship · structural "done" · anti-shortcut hooks · fresh-context critic
 
@@ -70,16 +70,34 @@ Pin the version you install and leave auto-update off for plugins that run hooks
 
 ## Supported Stacks
 
-| Layer | Supported |
-|---|---|
-| Frameworks | Vue 3 (Vite), Nuxt 3 |
-| UI | Tailwind, Quasar, Vuetify (auto-detected) |
-| Backend | Firebase / GCP, Cloud Functions v2, Firestore rules |
-| State | Pinia, VueFire |
-| Testing | Vitest, Jest, Playwright, Firebase emulators |
-| Workspaces | pnpm, Nx, Turborepo |
+The loop itself is language-neutral: a plan is JSON, a verify command is a shell command, and "done" is an exit code. What varies per language is which formatter, linter and typechecker the hooks run, and that comes from a **data table**, not from code. Adding a language means adding rows to `templates/toolchain.default.json`, never editing a script.
 
-`scripts/detect-stack.sh` runs where a skill needs the stack profile and caches to `.cc-sessions/stack-profile.cache` for an hour.
+| Stack | Detected by | Format | Lint | Typecheck (ratchet) |
+|---|---|---|---|---|
+| Node / TypeScript | `package.json`, `tsconfig.json` | prettier, biome | eslint, biome | `tsc`, `vue-tsc` |
+| Python | `pyproject.toml`, `setup.cfg`, `requirements.txt` | ruff, black | ruff, flake8 | mypy, pyright |
+| Rust | `Cargo.toml` | rustfmt | clippy | `cargo check` |
+| Go | `go.mod` | gofmt | `go vet` | `go build` |
+| JVM | `pom.xml`, `build.gradle` | spotless | — | gradle |
+| Ruby | `Gemfile` | rubocop | rubocop | — |
+| .NET | `*.csproj`, `*.sln` | `dotnet format` | — | `dotnet build` |
+| Deno, PHP, Elixir, Swift | `deno.json`, `composer.json`, `mix.exs`, `Package.swift` | see the table | | |
+
+A row is used only when its stack marker is present, its config exists, and its tool answers a probe, so a missing tool is a silent skip rather than a failure. `scripts/toolchain.sh explain` prints what resolves in the current repo; `/blitz:doctor` flags a stack with no typecheck row, because that stack has no ratchet.
+
+Override with `.blitz-toolchain.json` at your repo root:
+
+```json
+{ "disable": ["python-ruff"], "prefer": { "format": ["python-black"] } }
+```
+
+`disable` drops rows by id; `prefer` reorders preference within a lane. It cannot supply a `cmd`: the checkout is untrusted inbound data ([security.md](skills/_shared/security.md) TB-1), and an argv read from repo content would be arbitrary execution on every edit.
+
+**Code intelligence.** `.lsp.json` configures language servers for TypeScript, Python, Rust and Go, giving Claude `goToDefinition`, `findReferences` and workspace symbol search instead of grep-and-read-the-whole-file. You install the binaries; each one's path is a `/config` option you can repoint or clear. Two caveats: Claude Code does not start plugin language servers in cloud sessions, and when two enabled plugins declare the same extension the first registered wins.
+
+**Framework-specific extras.** Beyond the language lanes, blitz ships deeper support for Vue 3 / Nuxt 3 / Firebase: adapter detection for Tailwind, Quasar and Vuetify, Firestore rules and Cloud Functions conventions, and the design-quality lanes behind `ui-build` and `ui-audit`. Those check-registry rows are tagged `stacks: ["node"]` and are skipped elsewhere, so a Go or Python repo never runs them.
+
+`scripts/detect-stack.sh` reports the language stacks and resolved lanes fresh on every call; the framework profile below that is cached to `.cc-sessions/stack-profile.cache` for an hour.
 
 ---
 

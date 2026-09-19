@@ -10,6 +10,22 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.3.1] — 2026-09-19 · close the gaps the audit's own implementation left
+
+A completeness pass over 3.0.2–3.3.0 found six things the migration claimed but had not actually wired.
+
+### Fixed
+- **`check`'s own gates were still Node-only.** The gate table hardcoded `npm run type-check`/`npx tsc`, `npm run lint`/`npx eslint` and `npm run build`. 3.1.0 made the *hooks* language-agnostic and left the *gate* behind, so a Python or Rust repo ran the full check pipeline with three empty gates. Gates now come from the toolchain table and run once per detected stack. A lane with no row is recorded `skipped` with its reason, never as a pass.
+- **`README.md` still sold the plugin as "tuned for Vue/Nuxt + Firebase"** in its tagline and a `Supported Stacks` table listing only Vue, Quasar, Vuetify, Firebase, Pinia and VueFire. 3.1.0 rewrote `plugin.json` and left the README, which is the larger storefront. Replaced with the real stack matrix, the `.blitz-toolchain.json` override (documented user-facing for the first time), and the LSP section. The Vue/Nuxt/Firebase support is still there and still real; it is now described as the framework-specific extras it is, tagged `stacks: ["node"]` and skipped elsewhere.
+- **The LSP capability was inert.** 3.1.0 shipped `.lsp.json` and the `LSP` tool but no skill told Claude to prefer it. `research` Phase 2 and `onboard`'s map dimensions now carry the preference ladder: workspace symbol search → `goToDefinition` → `findReferences` first, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive, including in cloud sessions where Claude Code does not start plugin language servers at all.
+- **`det-11`/`det-12` referenced `${BLITZ_PROBE_FILE}`, which was set nowhere.** They happened to work by accident: an empty file argument matched any row. A bare `toolchain.sh run <lane>` now explicitly means "every detected stack's tool", which is what a whole-project check wants in a polyglot repo, and a test asserts no registry row references an undefined variable.
+- **Whole-project lanes were attributed to the wrong stack.** `test` and `build` rows match any extension, so without a stack filter the first stack in table order won every lookup and a Rust repo's test lane resolved to `pytest`. `resolve` takes an optional stack, and `lanes`/`run` use it.
+- The deterministic check lane now actually dispatches to `haiku`. 3.2.0 added the routing-matrix row and never wired it into `check` Phase 1, which also now reads each row's verdict through its `detection.exit` contract instead of "non-zero means fail".
+
+### Added
+- `test` and `build` lanes in the toolchain table (15 rows across 9 stacks), so the full gate set is data-driven, not just format/lint/typecheck.
+- Four tests covering stack attribution, the stack filter, whole-project runs, and the undefined-variable regression.
+
 ## [3.3.0] — 2026-09-19 · gate evidence + exit-code contract
 
 Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §7 (F-14).

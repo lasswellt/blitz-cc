@@ -39,7 +39,11 @@ Two modes:
 Answer a question about the current codebase from evidence, not memory. Rules:
 
 1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; if `autonomy=high|full`, skip the question and state the assumption in one line.
-2. **Locate.** `Grep` / `Glob` from the most specific term outward (symbol → import sites → routes/config). For a question wider than ~15 files, spawn one `Explore` subagent (read-only, haiku) with the question and a 150-line reply cap; more than one only when the question has independent halves.
+2. **Locate — semantic first, grep second.** Resolve a symbol in this order, stopping at the first that works:
+   1. **`LSP`** — workspace symbol search → `goToDefinition` → `findReferences`. One call returns the definition and every call site as a location list. Use it whenever the target is a symbol (function, type, class, constant) in a language with a running server.
+   2. **`Grep` / `Glob`** from the most specific term outward (symbol → import sites → routes/config), then `Read` with an `offset` around each hit. Use this when the `LSP` tool is inactive: no language server for the file's language, a binary that is not installed, or a **cloud session**, where Claude Code does not start plugin language servers at all.
+
+   Never read a whole file to find one symbol. For a question wider than ~15 files, spawn one `Explore` subagent (read-only, haiku) with the question and a 150-line reply cap; more than one only when the question has independent halves.
 3. **Read before claiming.** Every statement in the answer cites `path:line` you opened in this turn. Quote the load-bearing line verbatim (≤2 lines per cite). No cite → say "not found" rather than guess.
 4. **Trace, don't summarize.** For "how does Y work": entry point → each hop (call, event, store mutation, rule) → side effects, as a numbered chain with one cite per hop. For "where is X": ranked list of candidates, best first, with why.
 5. **No writes.** No `Write`/`Edit`, no scratch files, no `docs/research/` doc, no session registration or feed lines beyond `task_start`/`task_complete`. If the answer reveals work to do, end with one line: `Next: /blitz:plan <slug>` or `/blitz:build <one-sentence diff>`.

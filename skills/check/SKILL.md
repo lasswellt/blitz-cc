@@ -65,16 +65,30 @@ printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BA
 
 ## Phase 1: DETERMINISTIC LANE
 
-Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is ~98 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`.
+**Dispatch:** running a row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement, so collect this lane in one `Agent({subagent_type: "Explore", model: "haiku"})` given the selected rows and a JSON reply schema ([agents.md](/_shared/agents.md) §1.3). Keep the semantic lane and the PASS/FAIL verdict on the session model. Fall back to running them inline when the lane has ≤5 rows, where the spawn costs more than it saves.
+
+Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is ~98 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`. Read each row's verdict through its `detection.exit` contract ([quality.reference.md](/_shared/quality.reference.md) §Exit-code contract): a grep row **passes on exit 1**, and a row that could not run is `error`, never a pass.
 
 ### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
 
-| Gate | Command | Record |
+Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
+
+```bash
+TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"
+bash "$TC" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
+for lane in typecheck lint build; do
+  bash "$TC" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
+done
+```
+
+| Gate | Source | Record |
 |---|---|---|
-| tsc | `npm run type-check 2>&1 \|\| npx tsc --noEmit --pretty false 2>&1` | pass, error count, `file:line message` list |
-| lint | `npm run lint 2>&1 \|\| npx eslint . 2>&1` | pass, errors, warnings, list |
-| tests | selected run, then one full run (below) | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
-| build | `npm run build 2>&1` | pass, error tail |
+| typecheck | `toolchain.sh run typecheck` | pass, diagnostic count per stack, `file:line message` list |
+| lint | `toolchain.sh run lint` | pass, errors, warnings, list |
+| tests | selected run, then one full run (below); `toolchain.sh run test` outside the JS/TS ecosystems | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
+| build | `toolchain.sh run build` | pass, error tail |
+
+A lane with no resolving row for a stack is **skipped, not passed** — record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
 
 Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md](/docs/guides/tia.md)):
 

@@ -405,7 +405,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -E 'error TS2(307|305|304|339|345)|Cannot find module|unresolved import|undefined: '",
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck 2>/dev/null | grep -E 'error TS2(307|305|304|339|345)|Cannot find module|unresolved import|undefined: '",
         "exit": {
           "pass": [
             1
@@ -441,7 +441,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -cE 'error TS|: error: |^error(\\[|:)|\\.go:[0-9]+:'",
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck 2>/dev/null | grep -cE 'error TS|: error: |^error(\\[|:)|\\.go:[0-9]+:'",
         "exit": {
           "pass": [
             1

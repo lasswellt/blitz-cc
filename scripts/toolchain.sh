@@ -121,9 +121,14 @@ _when_ok() {
 }
 
 cmd_resolve() {
-  local lane="$1" file="${2:-}"
+  local lane="$1" file="${2:-}" only_stack="${3:-}"
   [ -z "$lane" ] && return 0
-  local stacks; stacks=$(cmd_stacks | jq -R . | jq -sc .)
+  local stacks
+  if [ -n "$only_stack" ]; then
+    stacks=$(printf '%s' "$only_stack" | jq -R . | jq -sc .)
+  else
+    stacks=$(cmd_stacks | jq -R . | jq -sc .)
+  fi
   [ -z "$stacks" ] && stacks='[]'
   local disabled; disabled=$(_disabled_ids | jq -R . | jq -sc .); [ -z "$disabled" ] && disabled='[]'
   local prefer;   prefer=$(_preferred_ids "$lane" | jq -R . | jq -sc .); [ -z "$prefer" ] && prefer='[]'
@@ -160,8 +165,32 @@ _argv_from() {
   printf '%s' "$1" | jq -r --arg file "${2:-}" '(.cmd // []) | map(if . == "{file}" then $file else . end) | @tsv'
 }
 
+# cmd_run LANE [FILE]
+#
+# With a FILE, runs the one row that resolves for it. WITHOUT a file, runs the
+# lane once per detected stack: that is what a whole-project check wants in a
+# polyglot repo, where "the typechecker" is mypy AND cargo check AND tsc. The
+# registry's det-11/det-12 rows call it this way. Output is concatenated; the
+# resolution line for each row goes to stderr.
 cmd_run() {
   local lane="$1" file="${2:-}" row argv_tsv out status
+  if [ -z "$file" ]; then
+    local st ext
+    while IFS= read -r st; do
+      [ -z "$st" ] && continue
+      ext=$(_rep_ext "$st")
+      row=$(cmd_resolve "$lane" "$ext" "$st")
+      [ -z "$row" ] && continue
+      argv_tsv=$(_argv_from "$row" "$ext")
+      [ -z "$argv_tsv" ] && continue
+      local -a sargv=(); IFS=$'\t' read -r -a sargv <<< "$argv_tsv"
+      [ "${#sargv[@]}" -eq 0 ] && continue
+      out=$("${sargv[@]}" 2>&1); status=$?
+      printf '%s' "$out"
+      printf '%s\n' "$row" | jq -c --argjson st "$status" '{id:.id, stack:.stack, exit:$st}' >&2
+    done < <(cmd_stacks)
+    return 0
+  fi
   row=$(cmd_resolve "$lane" "$file")
   [ -z "$row" ] && return 0
   argv_tsv=$(_argv_from "$row" "$file")
@@ -190,8 +219,8 @@ cmd_lanes() {
   while IFS= read -r st; do
     [ -z "$st" ] && continue
     ext=$(_rep_ext "$st"); [ -z "$ext" ] && continue
-    for lane in format lint typecheck; do
-      row=$(cmd_resolve "$lane" "$ext")
+    for lane in format lint typecheck test build; do
+      row=$(cmd_resolve "$lane" "$ext" "$st")
       [ -z "$row" ] && continue
       id=$(printf '%s' "$row" | jq -r '.id')
       printf '%s\t%s\t%s\n' "$lane" "$st" "$id"
@@ -202,7 +231,7 @@ cmd_lanes() {
 cmd_explain() {
   local lane f
   printf 'stacks: %s\n' "$(cmd_stacks | paste -sd, - 2>/dev/null)"
-  for lane in format lint typecheck; do
+  for lane in format lint typecheck test build; do
     printf '%s:\n' "$lane"
     for f in a.ts a.vue a.py a.rs a.go a.rb a.cs a.php a.ex a.swift a.java; do
       local row; row=$(cmd_resolve "$lane" "$f")
@@ -215,9 +244,9 @@ case "${1:-}" in
   detect)  shift; cmd_detect "${1:-}" ;;
   lanes)   shift; cmd_lanes ;;
   stacks)  shift; cmd_stacks "${1:-}" ;;
-  resolve) shift; cmd_resolve "${1:-}" "${2:-}" ;;
+  resolve) shift; cmd_resolve "${1:-}" "${2:-}" "${3:-}" ;;
   run)     shift; cmd_run "${1:-}" "${2:-}" ;;
   explain) shift; cmd_explain ;;
-  *) echo "usage: toolchain.sh {detect|stacks|lanes|resolve <lane> <file>|run <lane> <file>|explain}" >&2; exit 2 ;;
+  *) echo "usage: toolchain.sh {detect|stacks|lanes|resolve <lane> <file> [stack]|run <lane> [file]|explain}" >&2; exit 2 ;;
 esac
 exit 0

@@ -2,7 +2,7 @@
 title: "blitz-cc agentic architecture audit — worktree contract, token economics, language agnosticism"
 date: 2026-09-19
 status: implemented
-shipped_in: 3.0.2, 3.1.0, 3.2.0, 3.3.0
+shipped_in: 3.0.2, 3.1.0, 3.2.0, 3.3.0, 3.3.1
 plugin_version_reviewed: 3.0.1
 cc_version_verified_against: 2.1.277
 scope: manifest, concurrency/worktrees, token economics, language agnosticism, quality gates
@@ -492,6 +492,8 @@ All five phases shipped. Outcome per phase:
 | 3 — Cache and routing | 3.2.0 | `spawn-invariant.md` via `SubagentStart`, `cacheTtl: 1h` on all five agents, haiku deterministic lane, model-disclosure rule (which caught `migrate`) |
 | 4 — Semantic intelligence | 3.1.0 | `.lsp.json` + `lspServers` for TypeScript, Python, Rust, Go, each binary a `userConfig` option; `doctor` D-316/D-317 |
 | 5 — Gate hardening | 3.3.0 | `last_verify.runs[]` evidence, `detection.exit` contract per row, `check-report.json`. F-14 closed without change: measured at ~156 ms for all eight guards, a consolidation rewrite is not justified |
+
+A completeness pass after the five phases found six things the migration had claimed but not wired, all closed in 3.3.1: `check`'s own gate table was still hardcoded to `npm`/`npx` (the hooks went polyglot in 3.1.0 and the gate did not, so a Rust repo ran the pipeline with three empty gates); `README.md` still sold the plugin as "tuned for Vue/Nuxt + Firebase"; the LSP capability shipped with no skill telling Claude to prefer it over grep; `det-11`/`det-12` referenced a `BLITZ_PROBE_FILE` variable set nowhere; whole-project lanes resolved to the wrong stack's tool; and the haiku deterministic lane existed in the routing matrix but was never wired into `check`. The lesson is the obvious one: a phase is not done because its headline change landed, and "did we cover everything" deserves a re-read of the acceptance column rather than an answer from memory.
 
 Three bugs surfaced during implementation that the audit had not found, all now fixed: the ratchet blocked the first edit in any repo with pre-existing diagnostics (baseline defaulted to `0` rather than "no floor recorded"); stack markers were newline-joined inside a line-based read loop, so only each stack's first marker was ever tested; and a first pass at the exit-code contract split pipelines on `|` and mis-read the pipes inside grep's own regexes.
 

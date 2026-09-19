@@ -336,3 +336,58 @@ EOF
     grep -q 'cacheTtl' "$f" || { echo "missing cacheTtl: $f" >&2; return 1; }
   done
 }
+
+# --- whole-project lanes ----------------------------------------------------
+
+@test "lanes: attributes each row to its own stack" {
+  # Whole-project lanes (test, build) match any extension, so without a stack
+  # filter the first stack in table order wins every lookup and rows land under
+  # the wrong language.
+  setup_fake_repo
+  touch pyproject.toml Cargo.toml
+  run bash "$TC" lanes
+  [[ "$output" != *"test"$'\t'"rust"$'\t'"python-"* ]]
+  [[ "$output" != *"build"$'\t'"python"$'\t'"rust-"* ]]
+  teardown_fake_repo
+}
+
+@test "resolve: a stack filter restricts to that stack's rows" {
+  setup_fake_repo
+  write_stub_table
+  touch zz.marker
+  run bash "$TC" resolve format a.zz zz
+  [[ "$output" == *'"id":"zz-fmt"'* ]]
+  run bash "$TC" resolve format a.zz nosuchstack
+  [ -z "$output" ]
+  teardown_fake_repo
+}
+
+@test "run: with no file runs the lane once per detected stack" {
+  setup_fake_repo
+  mkdir -p stub
+  printf '#!/bin/sh\n[ "$1" = "--version" ] && exit 0\necho "ran-$0"\n' > stub/tool-a
+  cp stub/tool-a stub/tool-b
+  chmod +x stub/tool-a stub/tool-b
+  export PATH="$PWD/stub:$PATH"
+  cat > two-stack.json <<'EOF'
+{ "$schema": "blitz-toolchain/1.0",
+  "stacks": [ {"id":"aa","markers":["aa.marker"]}, {"id":"bb","markers":["bb.marker"]} ],
+  "lanes": { "test": [
+    {"id":"aa-test","stack":"aa","match":".*","probe":["tool-a","--version"],"cmd":["tool-a"]},
+    {"id":"bb-test","stack":"bb","match":".*","probe":["tool-b","--version"],"cmd":["tool-b"]} ] } }
+EOF
+  export BLITZ_TOOLCHAIN_TABLE="$PWD/two-stack.json"
+  touch aa.marker bb.marker
+  run bash "$TC" run test
+  [[ "$output" == *tool-a* ]]
+  [[ "$output" == *tool-b* ]]
+  teardown_fake_repo
+}
+
+@test "no registry row references an undefined variable" {
+  # det-11/det-12 called toolchain.sh with ${BLITZ_PROBE_FILE}, which was set
+  # nowhere; a bare `run <lane>` now means every detected stack.
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run grep -c 'BLITZ_PROBE_FILE' "$reg"
+  [ "$output" = "0" ]
+}
