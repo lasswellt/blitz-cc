@@ -45,7 +45,7 @@ case "$TOOL" in
     # after a `/`) so a top-level `rm -rf tests/` is caught — the original
     # `/tests/` form required a leading slash and missed bare `tests/`. The
     # boundary class avoids false-matching substrings like `latest/`.
-    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|([[:space:]/]|^)(__tests__|tests?)(/|[[:space:]]|[;&|]|$))'; then
+    if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|_test\.(py|go|rs|exs)|_spec\.rb|Tests?\.(java|kt|cs|php)|([[:space:]/]|^)(test_[^[:space:]]*\.py|__tests__|tests?)(/|[[:space:]]|[;&|]|$))'; then
       # Pull the operand portion (everything after `rm` and its flags) so the
       # exclusions test the actual target path, not the whole command line.
       RM_TARGET="$(printf '%s' "$CMD" | sed -nE 's/.*(^|[;&|])[[:space:]]*rm[[:space:]]+((-[a-zA-Z]+[[:space:]]+)*)([^;&|]*).*/\4/p')"
@@ -74,7 +74,8 @@ case "$TOOL" in
     [[ -z "$FILE_PATH" ]] && exit 0
 
     # Only inspect test/spec files
-    if ! echo "$FILE_PATH" | grep -qE '(\.test\.|\.spec\.|/__tests__/|/tests?/)'; then
+    # Test-file naming differs per ecosystem; see block-test-disabling.sh.
+    if ! echo "$FILE_PATH" | grep -qE '(\.test\.|\.spec\.|/__tests__/|/tests?/|(^|/)test_[^/]*\.py$|_test\.(py|go|rs|exs)$|_spec\.rb$|Test\.(java|kt|php)$|Tests\.cs$)'; then
       exit 0
     fi
 

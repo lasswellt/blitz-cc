@@ -183,6 +183,26 @@ jq -e '.hooks.WorktreeCreate' .claude/settings.json >/dev/null 2>&1 && echo "D-3
 | D-314 | No `worktree-agent-*` / `worktree-build-*` branch is ahead of `origin/HEAD`, and no `WorktreeCreate` hook is configured in project settings | **WARN** (FAIL when `--parallel` is about to run) | A stale agent branch is silently reused by a colliding 8-hex id, carrying a prior session's commits into a new wave. Inspect with `/blitz:sessions worktrees`, remove with `--apply`, or set `BLITZ_ALLOW_WORKTREE_COLLISION=1` to proceed. A foreign `WorktreeCreate` hook must itself create the worktree and print its path, or every worktree in this project fails to create. |
 | D-315 | `.worktreeinclude` exists when the repo has gitignored `.env*` or secrets files | WARN | A worktree is a fresh checkout, so gitignored config does not come with it and the isolated agent starts without credentials. Write `.worktreeinclude` listing the gitignored files found (`fix:auto`, never overwrites). `.gitignore` syntax; only files that match **and** are gitignored are copied. |
 
+### 3.9 Toolchain and code intelligence (D-316, D-317)
+
+```bash
+# D-316 — which lanes actually resolve for this project's languages
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes     # lane<TAB>stack<TAB>row-id
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" stacks
+
+# D-317 — LSP binaries. The plugin configures the connection; the binary is
+# yours to install. A server whose binary is missing shows as
+# "Executable not found in $PATH" in the /plugin Errors tab.
+for b in typescript-language-server pyright-langserver rust-analyzer gopls; do
+  command -v "$b" >/dev/null 2>&1 && echo "D-317 ok $b" || echo "D-317 missing $b"
+done
+```
+
+| Id | Check | Severity | Remediation |
+|---|---|---|---|
+| D-316 | Every detected stack resolves a `typecheck` row | **WARN** | A stack with no typecheck row has no diagnostic ratchet: `post-edit-typecheck-block.sh` cannot block a regression it cannot measure. Install the checker (`mypy`, `cargo`, `go`, `tsc`) or add a row to `templates/toolchain.default.json`. A stack with no `format`/`lint` row is `INFO`. |
+| D-317 | Language-server binaries for the detected stacks are on `PATH` | **INFO** | Without one, the `LSP` tool stays inactive for that language and `research`/`onboard` fall back to grep. Install: `npm i -g typescript-language-server typescript`, `pip install pyright`, `rustup component add rust-analyzer`, `go install golang.org/x/tools/gopls@latest`. Two caveats: in **cloud sessions Claude Code does not start plugin language servers**, so LSP is inactive there whatever is installed; and when another enabled plugin declares the same extension, the first server registered wins and the other never starts (clear the matching `lsp_*` option in `/config` to yield). |
+
 ---
 
 ## Phase 4: WRITERS

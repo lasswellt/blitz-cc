@@ -20,9 +20,14 @@ FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || 
 
 [[ -z "$FILE_PATH" ]] && exit 0
 
-# Only test files are in scope
+# Only test files are in scope. Naming conventions differ per ecosystem:
+# JS/TS uses *.test.*/*.spec.*, Python test_*.py / *_test.py, Go *_test.go,
+# Rust *_test.rs (plus #[cfg(test)] inline), Ruby *_spec.rb, JVM *Test.java,
+# .NET *Tests.cs. Before 3.1.0 only the JS forms were in scope, so this guard
+# was a no-op on every other ecosystem.
 case "$FILE_PATH" in
   *.test.*|*.spec.*|*/__tests__/*|*/test/*|*/tests/*) ;;
+  test_*.py|*/test_*.py|*_test.py|*_test.go|*_test.rs|*_spec.rb|*Test.java|*Tests.cs|*Test.kt|*_test.exs|*Test.php) ;;
   *) exit 0 ;;
 esac
 
@@ -52,9 +57,11 @@ count_disablers() {
   local text="$1"
   # `|| true` on each grep — set -o pipefail otherwise propagates 'no match' (exit 1).
   # `grep -c` always prints the count to stdout (even 0); only the exit code differs.
+  # The escape-hatch marker is accepted behind any of the common single-line
+  # comment openers (// # -- ;) so a Python or Ruby test can pin a skip too.
   echo "$text" \
-    | { grep -vE '//\s*blitz:skip-pinned:' || true; } \
-    | { grep -cE '\.skip\s*\(|\.only\s*\(|\bxit\b|\bxdescribe\b|\bxtest\b|test\.todo\s*\(' || true; }
+    | { grep -vE '(//|#|--|;)\s*blitz:skip-pinned:' || true; } \
+    | { grep -cE '\.skip\s*\(|\.only\s*\(|\bxit\b|\bxdescribe\b|\bxtest\b|test\.todo\s*\(|@pytest\.mark\.skip|@unittest\.skip|pytest\.skip\s*\(|#\[ignore\]|t\.Skip\s*\(|t\.SkipNow\s*\(|@Disabled\b|\[Ignore\]|\bxspecify\b|\bxcontext\b' || true; }
 }
 
 NEW_COUNT=$(count_disablers "$NEW_CONTENT")
@@ -78,13 +85,16 @@ if (( NEW_COUNT > OLD_COUNT )); then
 BLOCKED: $DELTA new test-disabling token(s) without justification.
 
 File: $FILE_PATH
-Patterns matched: .skip( | .only( | xit | xdescribe | xtest | test.todo(
+Patterns matched: .skip( | .only( | xit | xdescribe | xtest | test.todo( |
+@pytest.mark.skip | @unittest.skip | pytest.skip( | #[ignore] | t.Skip( |
+@Disabled | [Ignore] | xspecify | xcontext
 
 Disabling tests to make CI pass is the canonical autonomous-coder shortcut. If a
 test is broken, fix it. If the test pins to a known external issue, mark it with
 the escape hatch:
 
-  it.skip('foo', () => { ... })  // blitz:skip-pinned: #1234
+  it.skip('foo', () => { ... })   // blitz:skip-pinned: #1234
+  @pytest.mark.skip(reason=...)   # blitz:skip-pinned: #1234
 
 The escape hatch is documented in skills/_shared/quality.md §4. Without
 the marker the edit is blocked.

@@ -53,13 +53,16 @@
       "id": "det-01",
       "name": "deleted-failing-tests",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 1.0,
       "severity": "P0",
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git diff --diff-filter=D --name-only HEAD~N..HEAD -- '*.test.*' '*.spec.*' '*.test.tsx' '*.spec.tsx'"
+        "command": "git diff --diff-filter=D --name-only HEAD~N..HEAD -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs' '*.test.tsx' '*.spec.tsx'"
       },
       "enforcement": [
         "hook:block-test-deletion.sh",
@@ -75,6 +78,9 @@
       "id": "det-02",
       "name": "no-verify-bypass",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 1.0,
       "severity": "P0",
@@ -97,13 +103,16 @@
       "id": "det-03",
       "name": "mock-count-grows-in-src",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 0.9,
       "severity": "P2",
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\b(vi\\.mock|jest\\.mock|sinon\\.stub)\\b' src/ --exclude-dir=__tests__ | wc -l"
+        "command": "grep -rEn '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b' src/ --exclude-dir=__tests__ | wc -l"
       },
       "enforcement": [
         "ratchet:mocks_in_src"
@@ -118,6 +127,9 @@
       "id": "det-04",
       "name": "as-any-ts-ignore-proliferation",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "shortcut",
       "base_confidence": 0.92,
       "severity": "P1",
@@ -141,6 +153,9 @@
       "id": "det-05",
       "name": "swallow-and-continue-catch",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 0.7,
       "severity": "P3",
@@ -162,6 +177,9 @@
       "id": "det-06",
       "name": "env-fallback-hiding-config-error",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.75,
       "severity": "P2",
@@ -184,6 +202,9 @@
       "id": "det-07",
       "name": "hardcoded-credentials",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.85,
       "severity": "P2",
@@ -207,6 +228,9 @@
       "id": "det-08",
       "name": "commented-out-assertions",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 0.8,
       "severity": "P3",
@@ -228,13 +252,16 @@
       "id": "det-09",
       "name": "throw-not-implemented",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "completeness",
       "base_confidence": 0.95,
       "severity": "P3",
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn \"throw new Error.*[Nn]ot\\s*[Ii]mplemented\" src/"
+        "command": "grep -rEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" src/"
       },
       "enforcement": [
         "check"
@@ -249,6 +276,9 @@
       "id": "det-10",
       "name": "empty-stub-returns",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "completeness",
       "base_confidence": 0.7,
       "severity": "P3",
@@ -270,13 +300,16 @@
       "id": "det-11",
       "name": "hallucinated-apis-symbols",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "maintainability",
       "base_confidence": 1.0,
       "severity": "P1",
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "npx tsc --noEmit 2>&1 | grep -E 'error TS2(307|305|304|339|345)'"
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -E 'error TS2(307|305|304|339|345)|Cannot find module|unresolved import|undefined: '"
       },
       "enforcement": [
         "hook:post-edit-typecheck-block.sh",
@@ -292,13 +325,16 @@
       "id": "det-12",
       "name": "claiming-done-on-broken-build",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 1.0,
       "severity": "P0",
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "npx tsc --noEmit 2>&1 | grep -cE 'error TS'"
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -cE 'error TS|: error: |^error(\\[|:)|\\.go:[0-9]+:'"
       },
       "enforcement": [
         "hook:post-edit-typecheck-block.sh",
@@ -314,13 +350,16 @@
       "id": "det-13",
       "name": "skip-only-xit-xdescribe",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 1.0,
       "severity": "P1",
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\.(skip|only)\\s*\\(|\\bxit\\b|\\bxdescribe\\b|\\bxtest\\b|test\\.todo\\(' --include='*.test.*' --include='*.spec.*' ."
+        "command": "grep -rEn '\\.(skip|only)\\s*\\(|\\bxit\\b|\\bxdescribe\\b|\\bxtest\\b|test\\.todo\\(|@pytest\\.mark\\.skip|@unittest\\.skip|#\\[ignore\\]|t\\.Skip\\(|@Disabled|xspecify' --include='*.test.*' --include='*.spec.*' --include='test_*.py' --include='*_test.py' --include='*_test.go' --include='*_test.rs' --include='*_spec.rb' --include='*Test.java' --include='*Tests.cs' ."
       },
       "enforcement": [
         "critic:2.1",
@@ -336,13 +375,16 @@
       "id": "det-14",
       "name": "test-file-renamed-away",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 1.0,
       "severity": "P1",
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git log --since='1 day ago' --diff-filter=R --name-status -- '*.test.*' '*.spec.*'"
+        "command": "git log --since='1 day ago' --diff-filter=R --name-status -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs'"
       },
       "enforcement": [
         "critic:2.8"
@@ -357,6 +399,9 @@
       "id": "det-15",
       "name": "hardcoded-localhost-ports",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "security",
       "base_confidence": 0.8,
       "severity": "P2",
@@ -379,6 +424,9 @@
       "id": "det-16",
       "name": "orphaned-files-never-imported",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "maintainability",
       "base_confidence": 0.75,
       "severity": "P3",
@@ -400,6 +448,9 @@
       "id": "det-17",
       "name": "infinite-correction-loop",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 0.9,
       "severity": "P3",
@@ -421,6 +472,9 @@
       "id": "det-18",
       "name": "destructive-sql-outside-migration",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 1.0,
       "severity": "P0",
@@ -442,6 +496,9 @@
       "id": "det-19",
       "name": "git-reset-hard-on-dirty-tree",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 1.0,
       "severity": "P0",
@@ -463,6 +520,9 @@
       "id": "det-20",
       "name": "unverified-pattern-match-claim",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "shortcut",
       "base_confidence": 0.6,
       "severity": "P3",
@@ -484,6 +544,9 @@
       "id": "sem-arch",
       "name": "architecture-pillar",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "architecture",
       "base_confidence": 0.5,
       "severity": "P3",
@@ -506,6 +569,9 @@
       "id": "sem-perf",
       "name": "performance-pillar",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "performance",
       "base_confidence": 0.5,
       "severity": "P3",
@@ -527,6 +593,9 @@
       "id": "sem-sec",
       "name": "security-pillar",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.55,
       "severity": "P2",
@@ -549,6 +618,9 @@
       "id": "sem-maint",
       "name": "maintainability-pillar",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "maintainability",
       "base_confidence": 0.45,
       "severity": "P3",
@@ -570,6 +642,9 @@
       "id": "sem-robust",
       "name": "robustness-pillar",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 0.5,
       "severity": "P3",
@@ -591,6 +666,9 @@
       "id": "check:anti-mock",
       "name": "anti-mock-pattern-set",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "completeness",
       "base_confidence": 0.85,
       "severity": "P3",
@@ -614,6 +692,9 @@
       "id": "check:test-tamper",
       "name": "test-oracle-tamper",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "completeness",
       "base_confidence": 0.9,
       "severity": "P1",
@@ -635,6 +716,9 @@
       "id": "o2-artifact-l1l2",
       "name": "artifact-verification-l1-l2",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "completeness",
       "base_confidence": 0.95,
       "severity": "P3",
@@ -656,6 +740,9 @@
       "id": "build:integration",
       "name": "export-to-import-tracing",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "wiring",
       "base_confidence": 0.9,
       "severity": "P2",
@@ -678,6 +765,9 @@
       "id": "o3-orphan-route",
       "name": "orphan-route-auth-coverage",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "wiring",
       "base_confidence": 0.85,
       "severity": "P2",
@@ -699,6 +789,9 @@
       "id": "fw-firestore-vue-pinia",
       "name": "framework-api-anti-patterns",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "framework",
       "base_confidence": 0.8,
       "severity": "P3",
@@ -721,6 +814,9 @@
       "id": "design-side-tab",
       "name": "Side-tab accent border",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -747,6 +843,9 @@
       "id": "design-border-accent-on-rounded",
       "name": "Border accent on rounded element",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -773,6 +872,9 @@
       "id": "design-overused-font",
       "name": "Overused font",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -799,6 +901,9 @@
       "id": "design-single-font",
       "name": "Single font for everything",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -825,6 +930,9 @@
       "id": "design-flat-type-hierarchy",
       "name": "Flat type hierarchy",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -851,6 +959,9 @@
       "id": "design-gradient-text",
       "name": "Gradient text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -877,6 +988,9 @@
       "id": "design-ai-color-palette",
       "name": "AI color palette",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -903,6 +1017,9 @@
       "id": "design-cream-palette",
       "name": "Cream / beige palette",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -929,6 +1046,9 @@
       "id": "design-nested-cards",
       "name": "Nested cards",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -955,6 +1075,9 @@
       "id": "design-monotonous-spacing",
       "name": "Monotonous spacing",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -981,6 +1104,9 @@
       "id": "design-bounce-easing",
       "name": "Bounce or elastic easing",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -1013,6 +1139,9 @@
       "id": "design-dark-glow",
       "name": "Dark mode with glowing accents",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1039,6 +1168,9 @@
       "id": "design-icon-tile-stack",
       "name": "Icon tile stacked above heading",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1065,6 +1197,9 @@
       "id": "design-italic-serif-display",
       "name": "Italic serif display headline",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1091,6 +1226,9 @@
       "id": "design-hero-eyebrow-chip",
       "name": "Hero eyebrow / pill chip",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1117,6 +1255,9 @@
       "id": "design-repeated-section-kickers",
       "name": "Repeated section kicker labels",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1143,6 +1284,9 @@
       "id": "design-numbered-section-markers",
       "name": "Numbered section markers (01 / 02 / 03)",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1169,6 +1313,9 @@
       "id": "design-em-dash-overuse",
       "name": "Em-dash overuse",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1195,6 +1342,9 @@
       "id": "design-marketing-buzzword",
       "name": "Marketing buzzword",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1221,6 +1371,9 @@
       "id": "design-aphoristic-cadence",
       "name": "Aphoristic-cadence copy",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1247,6 +1400,9 @@
       "id": "design-oversized-h1",
       "name": "Oversized hero headline",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1273,6 +1429,9 @@
       "id": "design-extreme-negative-tracking",
       "name": "Crushed letter spacing",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1299,6 +1458,9 @@
       "id": "design-broken-image",
       "name": "Broken or placeholder image",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1325,6 +1487,9 @@
       "id": "design-gray-on-color",
       "name": "Gray text on colored background",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1351,6 +1516,9 @@
       "id": "design-low-contrast",
       "name": "Low contrast text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1377,6 +1545,9 @@
       "id": "design-layout-transition",
       "name": "Layout property animation",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1403,6 +1574,9 @@
       "id": "design-line-length",
       "name": "Line length too long",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1429,6 +1603,9 @@
       "id": "design-cramped-padding",
       "name": "Cramped padding",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1455,6 +1632,9 @@
       "id": "design-body-text-viewport-edge",
       "name": "Body text touching viewport edge",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1481,6 +1661,9 @@
       "id": "design-tight-leading",
       "name": "Tight line height",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1507,6 +1690,9 @@
       "id": "design-skipped-heading",
       "name": "Skipped heading level",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1533,6 +1719,9 @@
       "id": "design-justified-text",
       "name": "Justified text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1559,6 +1748,9 @@
       "id": "design-tiny-text",
       "name": "Tiny body text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1585,6 +1777,9 @@
       "id": "design-all-caps-body",
       "name": "All-caps body text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1611,6 +1806,9 @@
       "id": "design-wide-tracking",
       "name": "Wide letter spacing on body text",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1637,6 +1835,9 @@
       "id": "design-text-overflow",
       "name": "Content overflowing its container",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1663,6 +1864,9 @@
       "id": "design-clipped-overflow-container",
       "name": "Positioned child clipped by overflow container",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1689,6 +1893,9 @@
       "id": "design-gpt-thin-border-wide-shadow",
       "name": "Hairline border with wide shadow",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -1723,6 +1930,9 @@
       "id": "design-repeating-stripes-gradient",
       "name": "Repeating-gradient stripes",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1749,6 +1959,9 @@
       "id": "design-theater-slop-phrase",
       "name": "Theater framing copy",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1775,6 +1988,9 @@
       "id": "design-image-hover-transform",
       "name": "Image hover transform",
       "lane": "semantic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -1801,6 +2017,9 @@
       "id": "design-raw-color-literal",
       "name": "Raw color literal (use a role token)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -1833,6 +2052,9 @@
       "id": "design-raw-radius",
       "name": "Raw border-radius (use a shape token)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -1858,6 +2080,9 @@
       "id": "design-raw-spacing",
       "name": "Raw spacing literal (use a spacing token)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -1883,6 +2108,9 @@
       "id": "design-tw-legacy-v3-class",
       "name": "Tailwind v3 legacy class",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "tailwind",
@@ -1908,6 +2136,9 @@
       "id": "design-tw-apply-overuse",
       "name": "Tailwind @apply overuse",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "tailwind",
@@ -1933,6 +2164,9 @@
       "id": "design-md3-typescale-conformance",
       "name": "MD3 type-scale conformance",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "tailwind-md3",
@@ -1958,6 +2192,9 @@
       "id": "design-md3-corner-conformance",
       "name": "MD3 corner conformance",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "tailwind-md3",
@@ -1983,6 +2220,9 @@
       "id": "design-md3-elevation-conformance",
       "name": "MD3 elevation conformance",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "tailwind-md3",
@@ -2008,6 +2248,9 @@
       "id": "design-vuetify-important-override",
       "name": "Vuetify !important override",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "vuetify",
@@ -2033,6 +2276,9 @@
       "id": "design-vuetify-v4-rgba-theme-var",
       "name": "Vuetify v4 rgba(var(--v-theme-*)) syntax",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "vuetify",
@@ -2058,6 +2304,9 @@
       "id": "design-quasar-tailwind-coexist",
       "name": "Quasar + Tailwind incompatibility",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 2,
       "adapter": "quasar",
@@ -2083,6 +2332,9 @@
       "id": "design-bounce-easing-static",
       "name": "Bounce/elastic easing (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -2114,6 +2366,9 @@
       "id": "design-thin-border-wide-shadow-static",
       "name": "Hairline border + wide shadow (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 1,
       "adapter": "universal",
@@ -2147,6 +2402,9 @@
       "id": "design-repeating-stripes-static",
       "name": "Repeating-gradient stripes (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2172,6 +2430,9 @@
       "id": "design-gradient-text-static",
       "name": "Gradient text (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2197,6 +2458,9 @@
       "id": "design-extreme-negative-tracking-static",
       "name": "Extreme negative letter-spacing (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2222,6 +2486,9 @@
       "id": "design-tiny-text-static",
       "name": "Tiny body text (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2247,6 +2514,9 @@
       "id": "design-all-caps-body-static",
       "name": "All-caps body text (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2272,6 +2542,9 @@
       "id": "design-overused-font-static",
       "name": "Overused AI-wave font (static)",
       "lane": "deterministic",
+      "stacks": [
+        "node"
+      ],
       "pillar": "design",
       "layer": 0,
       "adapter": "universal",
@@ -2297,6 +2570,9 @@
       "id": "sec-startup-schema",
       "name": "persistent-state-schema-validation",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.9,
       "severity": "P1",
@@ -2319,6 +2595,9 @@
       "id": "sec-startup-injection",
       "name": "persistent-state-injection-scan",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.85,
       "severity": "P1",
@@ -2341,6 +2620,9 @@
       "id": "sec-content-inspection",
       "name": "fetched-content-injection-inspection",
       "lane": "semantic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.6,
       "severity": "P2",
@@ -2364,6 +2646,9 @@
       "id": "sec-capability-grant",
       "name": "tool-grant-capability-audit",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "security",
       "base_confidence": 0.7,
       "severity": "P3",
@@ -2386,6 +2671,9 @@
       "id": "tia-escaped-failures",
       "name": "tia-escaped-failures",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 1.0,
       "severity": "P3",
@@ -2409,6 +2697,9 @@
       "id": "tia-selection-ratio",
       "name": "tia-selection-ratio",
       "lane": "deterministic",
+      "stacks": [
+        "*"
+      ],
       "pillar": "robustness",
       "base_confidence": 1.0,
       "severity": "P3",

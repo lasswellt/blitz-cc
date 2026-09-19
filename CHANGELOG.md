@@ -10,6 +10,29 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.1.0] — 2026-09-19 · language agnosticism + code intelligence
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §6 (F-07…F-11, F-15).
+
+### Fixed
+- **The type-error ratchet was a silent no-op outside TypeScript.** `post-edit-typecheck-block.sh` opened with `[[ -f tsconfig.json ]] || exit 0`, so the plugin's headline anti-regression mechanism did nothing in Python, Rust, Go, JVM, Ruby or .NET repositories. It now resolves the project's checker from the toolchain table and ratchets its diagnostic count. Verified blocking a `mypy` regression and a `cargo check` regression.
+- **Formatting and linting were JS-only.** `post-edit-format.sh` carried the extension allowlist `ts|tsx|js|jsx|vue|css|scss|json|md|html|ya?ml` and hardcoded prettier/biome/eslint detection across 199 lines. It is now 45 lines that ask the toolchain table and run what comes back.
+- **The anti-shortcut test guards only understood JS test names.** `block-test-disabling.sh` and `block-test-deletion.sh` scoped themselves to `*.test.*` / `*.spec.*`, so `@pytest.mark.skip`, `t.Skip(`, `#[ignore]`, `@Disabled` and `[Ignore]` passed unchallenged, as did deleting `test_auth.py` or `auth_test.go`. Both now recognise the naming conventions of Python, Go, Rust, Ruby, JVM, .NET, Elixir and PHP, and the `blitz:skip-pinned:` escape hatch is accepted behind `#`, `--` and `;` comment openers as well as `//`.
+- **The first edit in any repo with pre-existing diagnostics was blocked.** The baseline read defaulted to `0` rather than "no floor recorded", so the ratchet refused work over errors the edit did not cause. It now records the floor on first run and blocks only on a genuine increase.
+- **Only the first marker of each stack was ever tested.** The detector joined a stack's markers with a newline inside a line-based read loop, so a Python project identified by `setup.cfg` rather than `pyproject.toml` went undetected. Detection now iterates one line per (stack, marker) pair.
+- Registry rows carried JS-only patterns under universal ids: `det-11`/`det-12` shelled out to `npx tsc` and now delegate to the toolchain typecheck lane; `det-03` recognises `unittest.mock`/`@patch`/`Mockito`/`mockall`/`gomock`; `det-09` recognises `raise NotImplementedError`/`unimplemented!`/`todo!`; `det-01`, `det-13` and `det-14` scan `test_*.py`, `*_test.go`, `*_test.rs`, `*_spec.rb`, `*Test.java` and `*Tests.cs` alongside the JS globs.
+- `plugin.json` described the plugin as "Agentic development loop for Vue/Nuxt + Firebase" in a 1,421-character block, and led its keywords with `vue`, `nuxt`, `firebase`. Now 506 characters, loop-first, polyglot keywords.
+
+### Added
+- `templates/toolchain.default.json` (schema `blitz-toolchain/1.0`) and `scripts/toolchain.sh`: 11 stacks and 34 rows across the `format`, `lint` and `typecheck` lanes. Rows are data and the script is the only executor, so adding a language means adding rows, never adding a script. A row is used only when its stack marker is present, its `when`/`whenDep` config exists, and its `probe` command succeeds, so a missing tool is a silent skip rather than a failure.
+- `.blitz-toolchain.json` lets a project `disable` rows or `prefer` an order. It may **not** supply a `cmd`: per [security.md](skills/_shared/security.md) TB-1 the checkout is untrusted inbound data, and an argv read from repo content would be arbitrary execution on every edit. A test asserts a `cmd` planted there is ignored.
+- `.cc-sessions/typecheck-baseline.json` is schema 2, keyed by toolchain row id, so a polyglot repo ratchets each language independently and a Python edit cannot reset the TypeScript floor. Schema-1 files migrate on first write.
+- `stacks[]` on all 97 check-registry rows (`["*"]` or `["node"]`), so `check` can select rows that apply to the project instead of running Vue/Firestore and `npx impeccable` detectors everywhere.
+- `detect-stack.sh` reports `Language stacks` and `Toolchain lanes` computed fresh on every call (the 1 h cache covers only the Node design-adapter profile), and recognises Cargo/Go workspaces, Maven, Gradle, uv, poetry, pipenv, bundler, composer, pytest, cargo test and go test.
+- **LSP servers.** `.lsp.json` + `lspServers` in the manifest configure TypeScript, Python, Rust and Go language servers, giving Claude the `LSP` tool: `goToDefinition`, `findReferences`, hover types and workspace symbol search instead of grep-and-read-the-whole-file. Each server's binary is a `userConfig` option, so it can be pointed at a custom path or cleared to yield to another plugin's server. Two caveats are documented in `doctor` D-317: Claude Code does not start plugin language servers in cloud sessions, and when two enabled servers declare the same extension the first registered wins.
+- `doctor` §3.9: **D-316** (every detected stack resolves a `typecheck` row, else it has no ratchet) and **D-317** (language-server binaries on `PATH`).
+- `hooks/tests/toolchain.bats`: 20 tests covering stack detection, row resolution and its gates, the override schema and its security boundary, the per-lane ratchet across first run / regression / recovery, and the test guards under Python, Go and Rust.
+
 ## [3.0.2] — 2026-09-19 · worktree contract fix
 
 Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md).

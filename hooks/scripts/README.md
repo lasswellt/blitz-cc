@@ -54,6 +54,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 |---|---|---|
 | `startup-validate.sh` | `session-start.sh`, `config-change.sh` | shape + injection scan of `.cc-sessions/*.json`, `docs/plans/*/tasks.json` (`done ⇒ passes`, known `origin`, non-empty `verify[]`), `docs/solutions/*.md`, feed tail; quarantine findings to the inbox |
 | `check-registry-validate.sh` | `pre-commit-validate.sh`, CI | schema lint for `skills/_shared/check-registry.json` |
+| `../../scripts/toolchain.sh` | `post-edit-format.sh`, `post-edit-typecheck-block.sh`, `detect-stack.sh`, `doctor` | resolves a lane (`format`/`lint`/`typecheck`) + file extension to an argv from `templates/toolchain.default.json`. The rows are data; this is the only executor. A project may `disable`/`prefer` rows in `.blitz-toolchain.json` but may never supply a `cmd` (TB-1: the checkout is untrusted inbound data). |
 | `critic-gemini.sh` | `agents/critic.md` when `BLITZ_USE_GEMINI_CRITIC=1` or `BLITZ_DUAL_CRITIC=1` | cross-model critic pass via the Gemini CLI (`BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`) |
 
 ## Conventions
