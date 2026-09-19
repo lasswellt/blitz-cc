@@ -1465,7 +1465,7 @@ Overwrite each run. Idempotent modulo timestamp.
 
 ### 6.4 Stdout summary
 
-Print to stdout (captured by orchestrator log):
+Print to stdout (captured by the main-thread log):
 
 ```
 [ui-audit] complete.
@@ -1481,17 +1481,17 @@ Print to stdout (captured by orchestrator log):
 
 Top-3: sort `invariant_fail` by `(severity-rank desc, first-seen-tick asc)`, take 3. If <3, pad with top cross-page divergences.
 
-### 6.5 Activity-feed `skill_complete`
+### 6.5 Activity-feed `skill_end`
 
 ```jsonl
-{"ts":"<ts>","session":"<sid>","skill":"ui-audit","event":"skill_complete","message":"ui-audit <mode> complete","detail":{"mode":"<mode>","findings_critical":<n>,"findings_high":<n>,"findings_med":<n>,"findings_low":<n>,"findings_info":<n>,"invariants_evaluated":<n>,"invariants_failed":<n>,"pages_visited":<n>,"tick_count":<n>,"report_path":"docs/crawls/ui-audit-report.md"}}
+{"ts":"<ts>","session":"<sid>","skill":"ui-audit","event":"skill_end","message":"ui-audit <mode> complete","detail":{"mode":"<mode>","findings_critical":<n>,"findings_high":<n>,"findings_med":<n>,"findings_low":<n>,"findings_info":<n>,"invariants_evaluated":<n>,"invariants_failed":<n>,"pages_visited":<n>,"tick_count":<n>,"report_path":"docs/crawls/ui-audit-report.md"}}
 ```
 
 ### 6.6 Mode exceptions
 
 - `consistency`: no `pages_visited` (no extraction). `tick_count = 0`. Same report shape.
 - `data`: no Phase 3/5 output. Report skipped; stdout shows extraction counts only. Activity-feed event still written with null invariant fields.
-- `--loop`: rolling report per tick (same path, overwritten). `skill_complete` per tick with `mode: "loop-tick"`; final `skill_complete` with `mode: "loop-matrix-complete"` when full (role × page) matrix visited twice.
+- `--loop`: rolling report per tick (same path, overwritten). `skill_end` per tick with `mode: "loop-tick"`; final `skill_end` with `mode: "loop-matrix-complete"` when full (role × page) matrix visited twice.
 
 ### 6.7 Idempotence
 
@@ -1558,7 +1558,7 @@ See `/_shared/output.md`. Every ui-audit event uses the `ui-audit` skill field:
 ```
 
 Common event types:
-- `skill_start`, `skill_complete` — lifecycle (Phase 0 / 6)
+- `skill_start`, `skill_end` — lifecycle (Phase 0 / 6)
 - `invariant_fail`, `invariant_pass` — Phase 3
 - `flapping`, `stale`, `null_transition` — Phase 3 tick-diff
 - `registry_progress` — Phase 2 appended ≥1 line (tick aggregate, not per-line)

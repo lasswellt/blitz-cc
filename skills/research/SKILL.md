@@ -4,7 +4,7 @@ description: "Researches a topic with parallel agents (docs, web, codebase) and 
 argument-hint: "<topic> | --codebase <question>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -28,7 +28,7 @@ All research output must satisfy the [Definition of Done](/_shared/quality.md). 
 
 # Research Skill
 
-Investigate a topic by spawning parallel research agents, collecting findings, and synthesizing a structured research document at `docs/research/<date>_<topic>.md` (tracked; `docs/_research/` is the legacy gitignored location). Its `## Recommendation` is what `/blitz:plan --from-research <doc>` reads. Execute every phase in order. Do NOT skip phases.
+Investigate a topic by spawning parallel research agents, collecting findings, and synthesizing a structured research document at `docs/research/<date>_<topic>.md` (tracked; `docs/research/` is the legacy gitignored location). Its `## Recommendation` is what `/blitz:plan --from-research <doc>` reads. Execute every phase in order. Do NOT skip phases.
 
 Two modes:
 - **Topic research** (default, `$1` = topic): Phases 0–4 below.
@@ -179,14 +179,14 @@ return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, res
 Spawn each agent in **a single assistant message** (so they run concurrently) using the `Agent` tool with:
 
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails the write)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from the Opus orchestrator)
+- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
 - `description: research <agent-name>`
 - `prompt`: the agent prompt template from Section 1.5 below, filled with topic, questions, output path, and stack profile
-- `run_in_background: true` (orchestrator polls output files in Phase 1.7)
+- `run_in_background: true` (the main thread polls output files in Phase 1.7)
 
 Each agent prompt MUST include: research topic + questions; detected stack profile; output file path (`${SESSION_TMP_DIR}/research/<agent-name>.md`); research limits (§1.5); write-as-you-go rule ("Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory.").
 
-Cross-cutting findings synthesized by orchestrator in Phase 2 (not peer-to-peer; per [agents.md](/_shared/agents.md)).
+Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-peer; per [agents.md](/_shared/agents.md)).
 
 ### 1.5 Research Limits Per Agent
 

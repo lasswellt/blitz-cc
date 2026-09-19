@@ -9,7 +9,7 @@ Scope: Vitest and Jest recipes, seeded randomness, MSW, property-based tests, an
 - [trunk.io — How to avoid flaky tests in vitest](https://trunk.io/blog/how-to-avoid-and-detect-flaky-tests-in-vitest)
 - [fast-check.dev — Beyond flaky tests: controlled randomness](https://fast-check.dev/blog/2025/03/28/beyond-flaky-tests-bringing-controlled-randomness-to-vitest/)
 - [Vitest fake timers docs](https://vitest.dev/api/vi.html#vi-usefaketimers)
-- `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 (failure modes and footgun warnings)
+- `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 (failure modes and footgun warnings)
 
 ---
 
@@ -181,7 +181,7 @@ Every failure is reproducible from `seed`. Shipped pattern from `fast-check.dev`
 
 ## Counter-evidence and caveats (must read before adopting)
 
-Per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 + F6:
+Per `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 + F6:
 
 1. **Fake timers deadlock on async chains** (Vitest sync variant) — fix is the `Async` variant; tutorials often skip this.
 2. **Determinism via low temperature is not absolute** — empirical study (arxiv 2509.19185, 39 frameworks, 439 apps) found non-determinism persists even with fixed low temperature and Top-P. This recipe addresses runtime determinism; LLM-generation determinism is a separate concern.

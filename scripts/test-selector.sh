@@ -30,7 +30,7 @@
 # Dependencies: bash, python3, git (optional), npx (jest graph only).
 set -uo pipefail
 
-BASE="${SPRINT_BASE:-HEAD}" FULL=0 JSON=0
+BASE="${BLITZ_BASE:-HEAD}" FULL=0 JSON=0
 FILES=()
 while [ $# -gt 0 ]; do
   case "$1" in

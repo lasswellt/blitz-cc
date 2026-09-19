@@ -7,7 +7,7 @@ This file provides templates, checklists, and schemas used by the audit skill.
 ## Agent Prompt Template
 
 <!-- import: /_shared/agents.md -->
-See [/_shared/agents.md](/_shared/agents.md) for canonical boilerplate (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT, PARTIAL, CONFIRMATION) shared across orchestrator skills. The audit-specific template below remains the byte-stable spawn source — Invariant 5 (OUTPUT STYLE snippet) requires inline preservation. The shared fragment is the canonical reference + extraction target for future runtime splicing.
+See [/_shared/agents.md](/_shared/agents.md) for canonical boilerplate (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT, PARTIAL, CONFIRMATION) shared across fan-out skills. The audit-specific template below remains the byte-stable spawn source — Invariant 5 (OUTPUT STYLE snippet) requires inline preservation. The shared fragment is the canonical reference + extraction target for future runtime splicing.
 
 Use this template for every audit agent. Replace `{PLACEHOLDERS}` with agent-specific values.
 
@@ -57,7 +57,7 @@ Write each finding using this exact format:
    - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading — refine or discard.
    - **Negative** ("X is absent from Y"): `grep -in '<4-char-substring-of-X>' Y`. Any hit means re-evaluate (may be over-strict regex).
    - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
-   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/research/2026-05-16_audit-agent-fp-prevention.md`.
 3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. Orchestrator filters below 80 (tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`).
    - Confidence < 50 after falsification: do NOT record as finding; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`.
    - "No violations found" results: write to a separate `## Verified Clean` section, NOT the findings list. Findings are actionable; clean checks document what was inspected.
@@ -167,7 +167,7 @@ already evident in the diff or tool output. Format: fragments OK.
 Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **capability grants, not toggles** (AP-3 / `sec-capability-grant`):
 - [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion — else flag.
 - [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/`, or CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
-- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the orchestrator cap+scan interpolated reply fields? (`agent-orchestration.md` §8.0)
+- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.md` §3)
 - [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
 - [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or `eval`/`source` a project-controlled file? ([/_shared/security.md](/_shared/security.md))
 

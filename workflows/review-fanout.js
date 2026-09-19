@@ -1,14 +1,14 @@
 export const meta = {
   name: 'review-fanout',
-  description: 'Parallel or sequential critic --mode survey lenses plus the adversarial critic --mode reject (check Phase 3)',
-  whenToUse: 'Only from /blitz:check when Phase 3 selected the Workflow path. Findings files and the check-report stay in the skill (main thread).',
+  description: 'Parallel or sequential critic --mode survey lenses plus the adversarial critic --mode reject (check Phases 2.1 and 4.3)',
+  whenToUse: 'Only from /blitz:check when Phase 2.1 selected the Workflow path. Findings files and the check-report stay in the skill (main thread).',
   phases: [
     { title: 'Review', detail: 'blitz:critic MODE: survey lenses (spec compliance, then code quality)', model: 'sonnet' },
     { title: 'Critic', detail: 'blitz:critic MODE: reject adversarial verdict, schema-validated' },
   ],
 }
 
-// Extracted from skills/check/SKILL.md Phase 3. Plugin workflow: runs as
+// Extracted from skills/check/SKILL.md Phases 2.1 and 4.3. Plugin workflow: runs as
 // /blitz:review-fanout. No filesystem, no clock — the script dispatches and validates only.
 //
 // args shape (required):

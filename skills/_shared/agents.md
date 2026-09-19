@@ -12,7 +12,7 @@ Platform facts cite code.claude.com at Claude Code 2.1.277 (Sept 2026).
 
 | Agent | Model | Tools | Purpose | Notes |
 |---|---|---|---|---|
-| `blitz:dev` | sonnet; opus on fix rounds 4–5 | Read, Write, Edit, Bash, Glob, Grep, ToolSearch | Implements one task from `tasks.json` | Role passed in the prompt as `ROLE: backend\|frontend\|infra`, with `skills/build/references/<role>.md` inlined below it. `experimental.cacheTtl: 1h`. |
+| `blitz:dev` | sonnet; opus on fix rounds 4–5 | Read, Write, Edit, Bash, Glob, Grep, ToolSearch | Implements one task from `tasks.json` | Role passed in the prompt as `ROLE: backend\|frontend\|infra\|test`, with `skills/build/references/<role>.md` inlined below it. `experimental.cacheTtl: 1h`. |
 | `blitz:test-writer` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Writes or fixes tests for one task | Verification-first oracle (§3.6); `ESCALATE: oracle-underivable` maps to `blocked_reason`. Anti-mock guidance from [quality.md](/_shared/quality.md). `experimental.cacheTtl: 1h`. |
 | `blitz:critic` | `--mode reject`: opus; `--mode survey`: sonnet | Read, Grep, Glob, Bash (read subset) | Fresh-context evaluator | No Write/Edit. `omitClaudeMd: true`, `memory: project`. Runs `tasks[].verify[]` through `scripts/tasks.sh verify`. Reject must emit `LGTM` before `check` reports PASS. Prompted to flag only correctness and requirement gaps; style findings are parked. |
 | `blitz:research-critic` | sonnet | Read, Grep, Glob, Bash, WebFetch | Refutes research claims against sources | The only blitz agent with WebFetch. Every reply is `source_trust: untrusted`. |
@@ -71,7 +71,7 @@ Rules of thumb:
 1. The main thread owns state. Only it edits `docs/plans/*/tasks.json` (through `scripts/tasks.sh`) and `progress.md`; dev agents carry both in their never-edit list.
 2. If the agent needs Write or Edit, it is `general-purpose` or a blitz role that lists Write. Anything else returns text and the main thread writes the file.
 3. Never retry the same prompt after `error_max_turns`; narrow the scope or stop.
-4. Multi-agent is the exception. Anthropic's 2026 trends report: it "doesn't make sense for 95% of tasks". Sequential single-agent with fresh context is the default (§5).
+4. Multi-agent is the exception. The platform docs put agent teams at roughly 7× the tokens of a single session when teammates run in plan mode, and recommend a single session or subagents for sequential work, same-file edits, or many dependencies. Sequential single-agent with fresh context is the default (§5).
 
 ---
 
@@ -86,7 +86,7 @@ Every `dev` / `test-writer` spawn prompt carries all eleven items. `build` assem
 | 1 | Task id (`T-003`) | `tasks[].id` |
 | 2 | Title | `tasks[].title` |
 | 3 | `ROLE: <role>` followed by the inlined `skills/build/references/<role>.md` | `tasks[].role` |
-| 4 | `SCOPE_FILES:` the exact `files[]` list; edits outside it are a `DONE_WITH_CONCERNS` at best | `tasks[].files` |
+| 4 | `SCOPE_FILES:` the exact `files[]` list; edits outside it are a `DONE_WITH_CONCERNS` at best; more than 3 files outside it → `ESCALATE: scope-expansion-needed` | `tasks[].files` |
 | 5 | `verify[]` commands, verbatim, with timeouts | `tasks[].verify` |
 | 6 | Never-edit list: `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `.cc-sessions/**`, test files unless `role: test`, plus any project additions | `build` |
 | 7 | Reply contract (§4) with the status enum | this file |
@@ -301,7 +301,7 @@ Files under `workflows/` at the plugin root, invoked as `/blitz:<meta.name>` wit
 |---|---|---|---|
 | `workflows/build-wave.js` | `/blitz:build-wave` | `build --parallel`, one call per wave | `{ plan, wave, tasks:[{id, role, prompt}], replySchema }` |
 | `workflows/review-fanout.js` | `/blitz:review-fanout` | `check` | `{ lenses:[{name, prompt}], sequential, criticPrompt, surveySchema, criticSchema }` |
-| `workflows/audit-sweep.js` | `/blitz:audit-sweep` | `audit` | `{ pillars:[{name, prompt}], findingsSchema }` |
+| `workflows/audit-sweep.js` | `/blitz:audit-sweep` | `audit` | `{ roster:[{name, prompt}], findingsSchema }` |
 
 ### 7.4 Hybrid wrapper boundary
 

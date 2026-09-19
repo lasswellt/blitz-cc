@@ -2,7 +2,7 @@
 
 > **SKELETON — populated in E-009 (CAP-011) — DO NOT treat as shipping checklist.**
 >
-> Sprint-6 ships the flag names + 1-line definitions so CAP-008 AC2 closes and Phase 4 (QUALITY) has a stable reference to link against. Implementation procedures land in E-009.
+> This reference ships the flag names + 1-line definitions so CAP-008 AC2 closes and Phase 4 (QUALITY) has a stable reference to link against. Implementation procedures land in E-009.
 
 Findings produced by this module surface as `page:label:FLAG` in `docs/crawls/ui-audit-report.md` and as `label: "quality_flag"` entries in `docs/crawls/page-data-registry.jsonl`.
 

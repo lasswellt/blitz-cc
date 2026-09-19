@@ -13,7 +13,7 @@ How blitz decides that work is done, what `check` runs, and what can flip a verd
 | `status: done ⇒ passes ∧ last_verify.ok` | `tasks.sh set … status=done` refuses otherwise; `startup-validate.sh` flags a violating row |
 | `verify[]` non-empty; behavior tasks carry ≥1 non-test check | `plan` rejects the task; `tasks.sh add` refuses a task with no `--verify-cmd` and, without `--test-only-ok`, one whose only checks are test runs |
 | Dev agents never edit `tasks.json` or `progress.md` | never-edit list in [agents.md](/_shared/agents.md); `build` writes both at task boundaries on the main branch |
-| A plan reaches PASS only after `critic --mode reject` returns `LGTM` on the diff | `check` Phase 3; fresh context, no Write/Edit, `omitClaudeMd: true` |
+| A plan reaches PASS only after `critic --mode reject` returns `LGTM` on the diff | `check` Phase 4.3; fresh context, no Write/Edit, `omitClaudeMd: true` |
 | Stop is gated on tsc + selected tests while `gate.json` is armed | `hooks/scripts/stop-gate.sh`, contract in [loop.md](/_shared/loop.md) |
 
 `attempts` increments per failed build attempt; `blocked` at 3 or on `ESCALATE:`. A blocked task is not done and `next --loop` escalates it (row 1) rather than retrying forever.
@@ -25,7 +25,7 @@ SpecBench (2026): every frontier model saturates the visible tests while failing
 | Rule | Where |
 |---|---|
 | Every behavior task carries ≥1 non-test check beside its test command: `grep_absent` (`! grep -nE 'TODO\|return \{\}' src/x.ts`), `grep_present` (the new export / route / rule string exists), `shell` (a script that exercises the change), or `e2e` (Playwright / `browse`) | `plan` templates per stack; `tasks.sh verify` runs them all |
-| `check` runs the critic on the **diff**, not only the tests: spec compliance against `plan.md` first, then code quality (two-stage, one survey pass each) | `check` Phase 3; [agents.md](/_shared/agents.md) `critic --mode survey` |
+| `check` runs the critic on the **diff**, not only the tests: spec compliance against `plan.md` first, then code quality (two-stage, one survey pass each) | `check` Phase 2.1; [agents.md](/_shared/agents.md) `critic --mode survey` |
 | Deterministic rows run before any semantic pass; a semantic finding without reproducing evidence is dropped, never a blocker | §Shared check registry |
 | Held-out check: the full suite runs once at `check` time even when TIA selected a subset; escaped failures feed `tia_escaped_failures` | `scripts/test-selector.sh`, `docs/guides/tia.md` |
 | Optional `check --mutation`: `@stryker-mutator/vitest-runner` with `coverageAnalysis: "perTest"` and `incremental: true`; surviving mutants on changed files are P3 findings. Off by default (cost) | `check` flag; results cached in `.stryker-tmp/` (gitignored) |
@@ -348,7 +348,7 @@ Four layers, one owner and one kind of verdict each. They compose; none replaces
 |---|---|---|---|
 | Deterministic gate | `hooks/scripts/stop-gate.sh` + `.cc-sessions/sessions/<sid>/gate.json`; tests from `scripts/test-selector.sh` | blitz Stop hook | tsc / selected tests / ratchet quick-check pass |
 | Goal evaluator | `/goal <plan DoD>` (bundled prompt-type Stop hook: a separate evaluator judges the transcript; counts against the platform's 5-block `stopHookBlockCap`) | user; `next --loop` prints the line once | condition met / not yet / impossible |
-| Adversarial | `agents/critic.md --mode reject` on the diff, fresh context, no Write/Edit | `check` Phase 3 | LGTM / REJECT |
+| Adversarial | `agents/critic.md --mode reject` on the diff, fresh context, no Write/Edit | `check` Phase 4.3 | LGTM / REJECT |
 | App-level | `/verify` recipe recorded at `.claude/skills/verify/SKILL.md` (bundled, user-only); `check` reads and replays it | user | the app runs and behaves |
 
 The gate is a no-op without `gate.json`; `max_blocks` (4) stays under the platform's 5-consecutive-block cap; the plugin never wires a prompt-type Stop hook (it would collide with a user `/goal`). "Selected tests pass" means the sibling + import-graph + journal-history set; the full suite runs once at `check` to measure what the selector missed.

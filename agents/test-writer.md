@@ -230,7 +230,7 @@ Classification dictates strategy:
 - `SIMPLE_SPEC` → proceed with normal Spec Fix Prompt Template (below).
 - `HARD_SPEC` → BEFORE any edit, consult `skills/test-gen/references/deterministic-tests.md` AND emit an `INVESTIGATE:` signal to `build` describing which signals tripped. `build` may route through `research --codebase` (read-only investigation) before retrying.
 
-Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` (pre-flight classifier) + `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3.
+Per `docs/research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` (pre-flight classifier) + `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F3.
 
 ## Spec Fix Prompt Template (verification-first oracle)
 
@@ -256,7 +256,7 @@ Constraint: fix the IMPLEMENTATION. Do NOT modify test assertions, the
 After fix:  Run the test, show it passes (paste runner output), then stop.
 ```
 
-Per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F1 (Anthropic Claude Code best practices: "Claude performs dramatically better when it can verify its own work"). The template is mandatory for every spec-fix attempt — output its filled-in form to your scratchpad before editing.
+Per `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F1 (Anthropic Claude Code best practices: "Claude performs dramatically better when it can verify its own work"). The template is mandatory for every spec-fix attempt — output its filled-in form to your scratchpad before editing.
 
 ## Spec Fix — Per-Spec Turn Cap
 
@@ -270,7 +270,7 @@ Hard budget: **10 tool calls per failing spec**. Counter resets when moving to a
    - The HARD_SPEC signals that tripped (if classifier ran)
 3. Do NOT retry without `build` intervention.
 
-Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to `build` for routing (`research --codebase`, operator pairing, or marking the task `blocked` with a `blocked_reason`). Every `ESCALATE:` line you emit lands in the reply's `escalate` field and, for `ESCALATE: oracle-underivable` / `test-assertion-suspect`, becomes the task's `blocked_reason` (`/_shared/agents.md` §4.1). Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
+Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to `build` for routing (`research --codebase`, operator pairing, or marking the task `blocked` with a `blocked_reason`). Every `ESCALATE:` line you emit lands in the reply's `escalate` field and, for `ESCALATE: oracle-underivable` / `test-assertion-suspect`, becomes the task's `blocked_reason` (`/_shared/agents.md` §4.1). Per `docs/research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
 
 ## Quality Gates
 

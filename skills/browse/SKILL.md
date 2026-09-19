@@ -3,7 +3,7 @@ name: browse
 description: "Tests and crawls a running app through Playwright MCP: visits pages, captures console errors, failed requests and screenshots, classifies Critical/Error/Warning, optionally fixes sources; loop-safe, one page per tick. Use for 'test pages', 'smoke test', 'crawl site', 'click through the app'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "[full|smoke|page <path>|fix|--loop] [target]"
 ---
 

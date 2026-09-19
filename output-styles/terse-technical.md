@@ -52,8 +52,8 @@ Safety rules, root-cause analyses, risks and trade-offs, destructive-op confirma
 
 | Level | Description | When to use |
 |---|---|---|
-| `lite` | Drop fillers + pleasantries; keep full sentences | Default for user-facing orchestrator output |
-| `full` | Fragments allowed; articles dropped; telegraphic | Agent-to-orchestrator reports; verification summaries |
+| `lite` | Drop fillers + pleasantries; keep full sentences | Default for user-facing main-thread output |
+| `full` | Fragments allowed; articles dropped; telegraphic | Agent-to-main-thread reports; verification summaries |
 | `ultra` | Maximum compression; symbol shorthand allowed | Internal checkpoint markers; bulk status lines |
 
 Skills may declare intended intensity via `output_intensity:` SKILL.md frontmatter; default is `lite`. The `BLITZ_OUTPUT_INTENSITY` env var and `.cc-sessions/developer-profile.json` `output_intensity` field override per session/repo.

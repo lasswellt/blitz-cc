@@ -4,7 +4,7 @@ description: "Turns a goal into docs/plans/<slug>/{spec.md, plan.md, tasks.json}
 argument-hint: "<slug or goal> [--autonomous] [--from-research <doc>] [--issues]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

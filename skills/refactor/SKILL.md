@@ -3,7 +3,7 @@ name: refactor
 description: "Refactors a file or module in small verified steps: snapshots the test baseline, changes one thing at a time, type-checks and tests after each, reverts on regression. Use for 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', 'clean up'. Behavior changes go to /blitz:build."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<target-file-or-module> <refactoring-goal>"
 ---
 

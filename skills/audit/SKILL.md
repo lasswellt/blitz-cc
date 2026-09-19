@@ -4,7 +4,7 @@ description: "Runs a 5-pillar recall audit (architecture, performance, security,
 argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual] [--plan]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -141,12 +141,12 @@ Spawn all 10 agents using the `Agent` tool, all in **a single assistant message*
 
 Per-spawn parameters:
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from Opus orchestrator)
+- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
 - `description: audit <agent-name>`
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 
-Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [agents.md](/_shared/agents.md)).
+Cross-pillar findings synthesized on the main thread in Phase 2 from output files (not peer-to-peer, per [agents.md](/_shared/agents.md)).
 
 **Weight class**: Medium (per [agents.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
 
@@ -238,7 +238,7 @@ Group semantic findings by (file, line-range, claim). A finding flagged by **≥
 
 ### 2.1.5 Confidence Threshold Filter
 
-**Recall default (`--min-confidence low`): rank, do not drop.** The threshold only suppresses when precision is explicitly requested. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+**Recall default (`--min-confidence low`): rank, do not drop.** The threshold only suppresses when precision is explicitly requested. Per `docs/research/2026-05-16_audit-agent-fp-prevention.md`.
 
 ```bash
 THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-0}"   # 0 = recall (report all, ranked); raise (e.g. 80) for precision

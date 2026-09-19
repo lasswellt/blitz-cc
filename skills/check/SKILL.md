@@ -136,7 +136,7 @@ Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5`
 
 ### 2.1 Survey fan-out
 
-Spawn N `blitz:critic --mode survey` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.md](/_shared/agents.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
+Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.md](/_shared/agents.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
 
 | Focus | Reads first | Output |
 |---|---|---|
@@ -209,7 +209,7 @@ Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at
 
 ### 4.3 Critic `--mode reject`
 
-Skipped at `repo` scope and under `--only`. Spawn one `blitz:critic` with `--mode reject` (opus, fresh context, never resumed, no Write/Edit, `omitClaudeMd: true`) on `check.patch` plus `spec.md`/`plan.md` at plan scope, the gates JSON, the ratchet delta and the FP-verified survey findings. It runs `tasks[].verify[]` through `tasks.sh` itself. Reply: `{verdict: "LGTM"|"REJECT", findings[]}`, validated with `jq`; a MALFORMED or MISSING critic is a REJECT (the verdict is load-bearing, never skipped). Cross-model: `BLITZ_USE_GEMINI_CRITIC=1` routes through `hooks/scripts/critic-gemini.sh --mode pre-pass`; `BLITZ_DUAL_CRITIC=1` (`--dual`) runs both and requires both `LGTM`. A missing `gemini` binary under `--dual` degrades to in-Claude only with a printed warning; it never silently passes.
+Skipped at `repo` scope and under `--only`. Spawn one `blitz:critic` (opus, fresh context, never resumed, no Write/Edit, `omitClaudeMd: true`) whose prompt opens with `MODE: reject`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`, on `check.patch` plus `spec.md`/`plan.md` at plan scope, the gates JSON, the ratchet delta and the FP-verified survey findings. It runs `tasks[].verify[]` through `tasks.sh` itself. Reply: `{verdict: "LGTM"|"REJECT", findings[]}`, validated with `jq`; a MALFORMED or MISSING critic is a REJECT (the verdict is load-bearing, never skipped). Cross-model: `BLITZ_USE_GEMINI_CRITIC=1` routes through `hooks/scripts/critic-gemini.sh --mode pre-pass`; `BLITZ_DUAL_CRITIC=1` (`--dual`) runs both and requires both `LGTM`. A missing `gemini` binary under `--dual` degrades to in-Claude only with a printed warning; it never silently passes.
 
 ## Phase 5: VERDICT AND REPORT
 

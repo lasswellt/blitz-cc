@@ -254,7 +254,7 @@ If no specific stack detected, use generic Node.js/TypeScript patterns; note whe
 
 ## Agent Prompt Templates
 
-Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the orchestrator can apply `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens.
+Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the main thread can apply `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens.
 
 ### Canonical Preamble (paste verbatim)
 
@@ -280,7 +280,7 @@ CITATION RULES (all agents):
 - Prefer dated sources (publication date ≤12 months old when possible).
 - Per-claim source-grounding: every declarative finding cites at least one URL.
 
-REPLY CONTRACT: At task end, return ONLY this JSON to the orchestrator (no markdown
+REPLY CONTRACT: At task end, return ONLY this JSON to the main thread (no markdown
 fence, no preamble, no postamble):
 {
   "status": "complete|partial|failed",
@@ -423,11 +423,11 @@ Synthesizer MAY strip these from the final doc OR convert to paraphrase. Produci
 
 ### Outcome-based acceptance criteria (preferred over artifact-based)
 
-Per validity research §9, acceptance checks (the `verify[]` a task carries once `plan` derives it) that name implementation files by exact path are forward-coupled to implementation decisions made later. The `precompact-handoff.sh` instance from the 2026-05-01 session illustrated this: criterion referenced a file that landed elsewhere; only an OR-fallback rescued the check.
+Per validity research §9, acceptance checks (the `verify[]` a task carries once `plan` derives it) that name implementation files by exact path are forward-coupled to implementation decisions made later. A hypothetical `precompact-handoff.sh` acceptance check illustrates this: criterion referenced a file that landed elsewhere; only an OR-fallback rescued the check.
 
 Prefer:
 - ✅ Outcome: `when PreCompact fires, .cc-sessions/HANDOFF.json contains the active plan slug`
-- ❌ Artifact: `test -f hooks/scripts/precompact-handoff.sh`
+- ❌ Artifact: `test -f hooks/scripts/precompact-handoff.sh` (hypothetical path; the real script is `pre-compact-snapshot.sh`)
 
 OR-fallbacks (`test -f path-A || test -f path-B`) remain valid for compatibility but should not be the primary form.
 
@@ -435,7 +435,7 @@ OR-fallbacks (`test -f path-A || test -f path-B`) remain valid for compatibility
 
 ## Agent Output Format (legacy — agents now use REPLY CONTRACT JSON)
 
-Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. From v1.11 forward, agents return canonical JSON to the orchestrator AND write Markdown findings (the file uses this format; the JSON references it).
+Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. From v1.11 forward, agents return canonical JSON to the main thread AND write Markdown findings (the file uses this format; the JSON references it).
 
 ```markdown
 # <Agent Name> — Research Findings

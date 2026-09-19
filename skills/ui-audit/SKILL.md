@@ -3,7 +3,7 @@ name: ui-audit
 description: "Audits a running app across pages and roles: builds a labeled value registry, asserts cross-page invariants (same field, same value; no role leaks), flags placeholders and flapping values, runs UI/UX heuristics. Read-only, loop-safe. Use for 'audit consistency', 'role leak', 'placeholder text'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
 ---
 
@@ -139,7 +139,7 @@ The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `des
 
 ## Phase 6: REPORT
 
-See `references/main.md` § **"Phase 6 — REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_complete` event to the activity feed with a detail block containing finding counts.
+See `references/main.md` § **"Phase 6 — REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_end` event to the activity feed with a detail block containing finding counts.
 
 ---
 
@@ -153,7 +153,7 @@ LOAD_AUTH[current_role] → NAVIGATE[current_page] → EXTRACT → QUALITY
   → ADVANCE CURSOR → NEXT
 ```
 
-The reporter emits a rolling report each tick but does not call `skill_complete` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
+The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
 
 Tick state persists in `.cc-sessions/${SESSION_ID}/tmp/loop-state.json` and `docs/crawls/latest-tick.json` gains a `ui_audit_matrix` block (see references/main.md § Phase 6 + § Phase ROLE).
 

@@ -477,7 +477,7 @@
       "owner": "audit",
       "consolidated_target": "audit",
       "escape_hatch": null,
-      "source": "docs/_research/2026-05-16_audit-agent-fp-prevention.md",
+      "source": "audit agent false-positive prevention research (2026-05-16; two independent passes per pillar, refutation panel)",
       "notes": "det-20 is the 20th catalogued detector (appended 2026-05-16). Mechanism deterministic (grep on Evidence field) but it polices the SEMANTIC lane's self-report -> advisory. Honesty-sensitive: down-weighted under Opus 4.8 (catches model under-evidencing its own audit output)."
     },
     {
@@ -2376,13 +2376,13 @@
       "enforcement": [
         "ratchet:advisory:tia_escaped_failures",
         "skill:check",
-        "skill:quality-metrics"
+        "skill:check"
       ],
       "owner": "check",
       "consolidated_target": "orthogonal",
       "escape_hatch": "none needed: advisory (not yet ratcheted); any non-zero value in the last 3 check runs flips scripts/test-selector.sh to --full automatically",
       "source": "Anthropic test-impact-analysis post (2026); E-043 S5",
-      "notes": "Advisory metric, direction down. Promotion to ratchet metric 9 is a separate story (touches the 8-metric prose in six files). Honesty-insensitive: computed from the journal, not self-reported."
+      "notes": "Advisory metric, direction down. Promotion to ratchet metric 9 is a separate change (touches the 8-metric prose in six files). Honesty-insensitive: computed from the journal, not self-reported."
     },
     {
       "id": "tia-selection-ratio",
@@ -2394,11 +2394,11 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "counter",
-        "command": "scripts/test-selector.sh --json $(git diff --name-only ${SPRINT_BASE}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
+        "command": "scripts/test-selector.sh --json $(git diff --name-only ${BLITZ_BASE:-origin/main}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
       },
       "enforcement": [
         "ratchet:advisory:tia_selection_ratio",
-        "skill:quality-metrics"
+        "skill:check"
       ],
       "owner": "check",
       "consolidated_target": "orthogonal",

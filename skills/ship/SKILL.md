@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: opus
 effort: medium
 disable-model-invocation: true
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** slash-only skill; it pins `model: opus`, `effort: medium` because a release is rare and the cache reset is acceptable. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -28,7 +28,7 @@ compatibility: ">=2.1.71"
 
 **No Stop gate.** `ship` never arms `gate.json`; `rm -f .cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json` at start in case a previous skill left one.
 
-**Feed.** Append `skill_start` at Phase 0 and `skill_complete` (with the version and tag in `detail`) after Phase 6 to `.cc-sessions/activity-feed.jsonl` ([sessions.md](/_shared/sessions.md) §9).
+**Feed.** Append `skill_start` at Phase 0 and `skill_end` (with the version and tag in `detail`) after Phase 6 to `.cc-sessions/activity-feed.jsonl` ([sessions.md](/_shared/sessions.md) §9).
 
 ---
 
@@ -239,7 +239,7 @@ Shipped vX.Y.Z (<slug>)
   Changes:   N breaking · N added · N fixed · N changed
 ```
 
-Then `PushNotification(title: "Shipped vX.Y.Z", message: "<N added> · <N fixed> · <url>")` when Remote Control is configured (no-op otherwise), and the `skill_complete` feed line.
+Then `PushNotification(title: "Shipped vX.Y.Z", message: "<N added> · <N fixed> · <url>")` when Remote Control is configured (no-op otherwise), and the `skill_end` feed line.
 
 ---
 

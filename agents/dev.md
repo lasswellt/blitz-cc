@@ -19,7 +19,7 @@ description: |
   user: "/blitz:build user-profiles"
   assistant: "Spawning dev with ROLE: frontend for T-007 — the page component, Pinia store action, and route, with loading/empty/error states."
   </example>
-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
+tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 50
 # Sonnet per /_shared/agents.md §1.3 — build runs fix rounds 4–5 on opus via Agent({model}).

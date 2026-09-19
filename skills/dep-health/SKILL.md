@@ -3,7 +3,7 @@ name: dep-health
 description: "Audits npm dependencies for known vulnerabilities, outdated versions and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON). Use for 'check deps', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', weekly sweeps."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<audit|upgrade|report>"
 ---
 

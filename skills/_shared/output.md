@@ -235,11 +235,11 @@ Examples:
 
 ## Activity Feed (Cross-Instance)
 
-Skills append loop/skill-level events (`skill_start`, `decision`, `verification`, `skill_complete`) to `.cc-sessions/activity-feed.jsonl` so other Claude Code instances can see what is happening. The line schema, `session` id rule, and required event set live in [sessions.md](/_shared/sessions.md); do not restate them here. Per-edit logging is OpenTelemetry's job, not the feed's.
+Skills append loop/skill-level events (`skill_start`, `decision`, `verification`, `skill_end`) to `.cc-sessions/activity-feed.jsonl` so other Claude Code instances can see what is happening. The line schema, `session` id rule, and required event set live in [sessions.md](/_shared/sessions.md); do not restate them here. Per-edit logging is OpenTelemetry's job, not the feed's.
 
 ## Integration with Session Protocol
 
-This protocol extends (not replaces) [sessions.md](/_shared/sessions.md): session registration writes `skill_start`, session cleanup writes `skill_complete`, and conflict detection also reads the feed for recent context. All skills that reference sessions.md should also follow this verbose-progress protocol.
+This protocol extends (not replaces) [sessions.md](/_shared/sessions.md): session registration writes `skill_start`, session cleanup writes `skill_end`, and conflict detection also reads the feed for recent context. All skills that reference sessions.md should also follow this verbose-progress protocol.
 
 ## Related protocols
 

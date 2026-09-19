@@ -17,7 +17,7 @@ description: |
   </example>
 
   <example>
-  Context: check Phase 3 wants a spec-compliance pass over the diff
+  Context: check Phase 2.1 wants a spec-compliance pass over the diff
   user: "/blitz:check --scope plan user-profiles"
   assistant: "Spawning critic with MODE: survey — spec compliance against plan.md first, then code quality — and parking its findings as concerns."
   </example>
@@ -167,7 +167,7 @@ If a test file was renamed to a non-test suffix: REJECT (det-01).
 
 ### 2.9 Audit-finding integrity (det-20, advisory)
 
-When any plan deliverable is an audit findings file (audit pillar outputs, conventions/flow-consistency findings, meta-audit reports under `docs/_research/`), inspect each finding's Evidence field per registry `det-20`:
+When any plan deliverable is an audit findings file (audit pillar outputs, conventions/flow-consistency findings, meta-audit reports under `docs/research/`), inspect each finding's Evidence field per registry `det-20`:
 
 ```bash
 for f in $(git diff --name-only "${BASE:-HEAD~5}"..HEAD | grep -E 'findings.*\.md|review-.*\.md|_research/.*audit.*\.md'); do
@@ -188,7 +188,7 @@ Advisory — does NOT block PASS by itself; findings that fire det-20 are added 
 ## 3. Reject reply (`MODE: reject`)
 
 If LGTM: `summary` = "No reject signals found across the reject checklist." `findings` = []. `verdict` = "LGTM".
-If REJECT: `verdict` = "REJECT", `findings` describes the ONE reject reason (the first failing check) with the registry id, `next_blocked_by` = `["check:phase-3"]`.
+If REJECT: `verdict` = "REJECT", `findings` describes the ONE reject reason (the first failing check) with the registry id, `next_blocked_by` = `["check:4.3"]`.
 
 ---
 
@@ -298,7 +298,7 @@ Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/age
 
 Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-gemini.sh` lifts this agent's body verbatim, pipes it to the Gemini CLI, and emits the same reply contract.
 
-Selection at `check` Phase 3:
+Selection at `check` Phase 4.3:
 
 | Env var | Mode |
 |---|---|

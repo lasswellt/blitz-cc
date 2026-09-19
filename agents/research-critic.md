@@ -1,7 +1,7 @@
 ---
 name: research-critic
 description: |
-  Read-only adversarial reviewer for produced research docs in docs/_research/. Probes
+  Read-only adversarial reviewer for produced research docs in docs/research/. Probes
   every cited URL via WebFetch HEAD-equivalent and classifies each LIVE / DEAD /
   LIKELY_HALLUCINATED / UNKNOWN per Blitz's 4-way scheme (extends arxiv 2604.03173's
   2-way hallucinated/non-resolving distinction). Verifies quoted spans appear in fetched
@@ -13,7 +13,7 @@ description: |
   unverifiable URLs before the findings dir is deleted.
 
   <example>
-  Context: /blitz:research just produced docs/_research/2026-05-01_oauth-options.md
+  Context: /blitz:research just produced docs/research/2026-05-01_oauth-options.md
   user: "research oauth providers"
   assistant: "After synthesis, spawning research-critic to probe every cited URL and
   verify quoted spans before the doc is finalized."

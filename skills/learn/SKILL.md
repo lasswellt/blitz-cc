@@ -4,7 +4,7 @@ description: "Captures what a plan taught into docs/solutions/<slug>.md from pro
 argument-hint: "[<slug>] [--from-diff]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: sonnet, effort low; it reads ledgers and writes one markdown file. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -100,4 +100,4 @@ Rules: ≤80 lines total; `files` and `symptoms` are what `plan` matches on, so 
 learn <slug>: docs/solutions/<slug>.md <written|updated> (<n> lessons, <m> pitfalls)
 ```
 
-Append a `skill_complete` feed line with the path in `detail`. The caller (`ship`, `next --loop`) commits the file; a human run prints `git add docs/solutions/<slug>.md` as the next step and does not commit.
+Append a `skill_end` feed line with the path in `detail`. The caller (`ship`, `next --loop`) commits the file; a human run prints `git add docs/solutions/<slug>.md` as the next step and does not commit.

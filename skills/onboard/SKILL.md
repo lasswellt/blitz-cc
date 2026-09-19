@@ -4,7 +4,7 @@ description: "Sets a project up for blitz: scaffolds a new Vue/Nuxt/Firebase app
 argument-hint: "[--greenfield <name>|--map] [--package <name>]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

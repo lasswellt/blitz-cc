@@ -4,7 +4,7 @@ description: "Migrates frameworks, libraries and tooling one major version at a 
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 model: opus
 effort: high
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
 disable-model-invocation: true
 ---
