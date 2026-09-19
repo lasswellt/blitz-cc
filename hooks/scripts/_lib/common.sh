@@ -28,8 +28,13 @@ BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|p
 # Walk up from start_dir (or pwd) looking for .claude-plugin/.
 # Prints absolute project root. Falls back to pwd on miss; returns 1.
 blitz_find_root() {
-  local dir
-  dir="$(cd "${1:-$(pwd)}" 2>/dev/null && pwd || pwd)"
+  # Nearest .claude-plugin/ above pwd (the plugin repo itself), else the git
+  # toplevel (a consumer project), else pwd. Always returns 0: callers run under
+  # `set -e` and a failing command substitution inside an assignment would abort
+  # the hook with exit 1, which PreToolUse treats as non-blocking (fail-open).
+  local dir start
+  start="$(cd "${1:-$(pwd)}" 2>/dev/null && pwd || pwd)"
+  dir="$start"
   while [ "$dir" != "/" ]; do
     if [ -d "$dir/.claude-plugin" ]; then
       printf '%s\n' "$dir"
@@ -37,8 +42,9 @@ blitz_find_root() {
     fi
     dir="$(dirname "$dir")"
   done
-  printf '%s\n' "$(pwd)"
-  return 1
+  dir="$(git -C "$start" rev-parse --show-toplevel 2>/dev/null || true)"
+  printf '%s\n' "${dir:-$start}"
+  return 0
 }
 
 # blitz_extract field [json_string]

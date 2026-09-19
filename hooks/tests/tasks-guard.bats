@@ -33,3 +33,10 @@ teardown() { teardown_fake_repo; }
 @test "BLITZ_TASKS_GUARD_OFF=1 disables the guard" {
   BLITZ_TASKS_GUARD_OFF=1 assert_allows "tasks-guard.sh" "$(fake_edit_input "docs/plans/demo/tasks.json" Write)"
 }
+
+@test "still blocks in a consumer project without .claude-plugin/ (no fail-open)" {
+  # A consumer repo has no .claude-plugin/; blitz_find_root must not abort the guard.
+  rm -rf "$FAKE_REPO/.claude-plugin"
+  git -C "$FAKE_REPO" init -q .
+  assert_blocks "tasks-guard.sh" "$(fake_edit_input "docs/plans/demo/tasks.json" Edit)"
+}

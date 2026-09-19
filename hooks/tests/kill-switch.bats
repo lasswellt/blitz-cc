@@ -27,3 +27,11 @@ teardown() { teardown_fake_repo; }
   run_hook "kill-switch.sh" '{"session_id":"s1"}'
   [ "$status" -eq 0 ]
 }
+
+@test "still refuses in a consumer project without .claude-plugin/ (no fail-open)" {
+  rm -rf "$FAKE_REPO/.claude-plugin"
+  git -C "$FAKE_REPO" init -q .
+  : > "$FAKE_REPO/.cc-sessions/STOP"
+  run_hook "kill-switch.sh" '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"ls"}}'
+  [ "$status" -eq 2 ]
+}

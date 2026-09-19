@@ -68,7 +68,7 @@ if [ -d "$PLANS_DIR" ]; then
     updated=$(jq -r '.updated // ""' "$d/tasks.json" 2>/dev/null)
     rts=$(fm_field "$d/check-report.md" ts)
     stale=true
-    if [ "$result" = "PASS" ] && [ -n "$rts" ] && [ "$rts" \> "$updated" ]; then stale=false; fi
+    if [ "$result" = "PASS" ] && [ -n "$rts" ] && [ ! "$rts" \< "$updated" ]; then stale=false; fi
     row=$(jq -c --arg slug "$slug" --arg status "$status" --argjson prio "$prio" --arg result "$result" --argjson stale "$stale" '
       {slug:$slug, status:$status, priority:$prio, check_result:$result, check_stale:$stale,
        tasks:.tasks,

@@ -2,24 +2,72 @@
 
 All notable changes to the blitz plugin are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Release Process — Version-Drift Watch
+## Release process
 
-Bump these files together on every release. `installer/package.json` and `installer/src/constants.js` are the npm-installer manifest — out-of-band drift means `npx blitz-cc@latest` advertises stale skill counts:
-
-- `.claude-plugin/plugin.json` — `version`, `description`
-- `.claude-plugin/marketplace.json` — `version` (if pinned)
-- `installer/package.json` — `version`, `description`
-- `installer/src/constants.js` — `VERSION`
-- `installer/install.sh` — version banner (line ~45)
-- `README.md` — version banner / current-feature counts
-- This file — new release section
-
-(`scripts/check-version-sync.sh` enforces this if present; otherwise manual.)
-
+Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin/marketplace.json` (`version`) together, add a section here, and run `scripts/check-version-sync.sh` and `scripts/gen-catalog.sh --check` (no numeric inventory in prose; the catalog is generated). `/blitz:ship` does this.
 
 ## [Unreleased]
 
 _Nothing yet._
+
+## [3.0.0] — 2026-09-19 · agentic restructure
+
+Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/2026-09-19_v3-agentic-restructure/README.md). The plugin drops its sprint layer (sprints, stories, epics, roadmaps, retrospectives, the carry-forward registry, story points, the deviation tiers, LLM-executed locks) and keeps the agentic harness: guards, gates, registry, critics, sessions, the loop. Breaking: no compatibility aliases; `/blitz:doctor --migrate` converts a project's `sprints/` and carry-forward state into `docs/plans/`.
+
+### Added
+- **The loop:** `plan` (spike / bounded / architectural classification, interview unless `--autonomous`, reads `docs/solutions/` and `docs/plans/BACKLOG.md`, verify templates per stack), `build` (inline path for a one-sentence change; one fresh-context `dev` per task; fix rounds ≤3 then a fresh opus agent; circuit breaker at three attempts; `--parallel` waves over disjoint files with a `git merge-tree` pre-check; `--issue N`), `check` (gates, TIA, anti-mock, `tasks.sh verify` per task, critic survey then adversarial reject; `--fix`, `--comment`, `--security`, `--mutation`), `learn` (rulings, check reports, and `Task:` commits → `docs/solutions/`), `next` rewritten over a deterministic `scripts/next-state.sh` with six rows and a headless-safe `--loop`.
+- **Structural done:** `docs/plans/<slug>/tasks.json` (`blitz-tasks/1.0`) written only by `scripts/tasks.sh` (`init|add|list|set|verify|next`; refuses empty or test-only `verify[]`); `hooks/scripts/tasks-guard.sh` denies Write, Edit, and shell writes to it; `startup-validate.sh` schema-checks and injection-scans `tasks.json` and `docs/solutions/` (OWASP ASI06).
+- **Kill switch:** `.cc-sessions/STOP` makes `kill-switch.sh` deny every tool call.
+- **Generated catalog:** `scripts/gen-catalog.sh` writes `docs/CATALOG.md` and `--check` fails CI on a stale catalog, a dead `/blitz:<name>` reference, or a numeric inventory claim. `scripts/gen-review-md.sh` exports registry P0/P1 rows as `REVIEW.md`.
+- **doctor** (health + setup + conform): checks `worktree.baseRef`, Task-tools absence, bash on Windows, `subagentPromptCacheTtl`, `crossSessionInbound`; writers `--loop-md`, `--review-md`, `--ci` (`templates/blitz-check.yml`, a `claude-code-action` workflow that runs `/blitz:check --scope diff --comment`); `--migrate`.
+- Agents `dev` (role by prompt, never-edit list, status enum `DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED`) and `critic --mode reject|survey`. Protocols `loop.md`, `sessions.md`, `agents.md`, `quality.md`, `output.md`. `skills/test-gen/references/deterministic-tests.md` with a mocking policy. Evals `build-inline`, `check-gate`, `tasks-guard`. bats suites `tasks`, `next-state`, `tasks-guard`, `kill-switch`.
+
+### Changed
+- `PreCompact` HANDOFF carries plan, task, gate path, and the never-edit list; `session-start` prints them.
+- Command guards match `Bash|PowerShell`; `post-edit-format.sh` absorbs lint; validators forbid Task tools in `allowed-tools`/`tools`, drop the OUTPUT STYLE snippet check, and cap cumulative skill descriptions at 8 000 chars (descriptions ≤300, triggers first, `name` equals the directory).
+- `check-registry.json`: owners and targets name `check`/`build`; `o2-anti-mock` → `check:anti-mock`, `o3-wiring` → `build:integration`.
+- `workflows/sprint-wave.js` → `build-wave.js` (agent `blitz:dev`); `review-fanout.js` takes `lenses` and `surveySchema`.
+- `.gitignore` no longer lists `sprints/`, `docs/roadmap/`, `docs/retrospective/`, `docs/metrics/`, `docs/sweeps/`.
+- Compaction guidance, CLAUDE.md, README, rules, and guides rewritten without inventory counts.
+
+### Fixed
+- `blitz_find_root` returned non-zero in a project without `.claude-plugin/`, which aborted any hook that logged an event (exit 1 = non-blocking), so the guards failed open in consumer projects. It now falls back to the git toplevel and always returns 0; bats covers the consumer shape for `tasks-guard.sh` and `kill-switch.sh`.
+- `next-state.sh` treated a `check-report.md` written in the same second as `tasks.json` as stale.
+
+### Removed
+- Skills: `sprint`, `sprint-plan`, `sprint-dev`, `sprint-review`, `implement`, `quick`, `fix-issue`, `review`, `code-doctor`, `code-sweep`, `release`, `retrospective`, `roadmap`, `quality-metrics`, `ask`, `bootstrap`, `codebase-map`, `health`, `setup`, `conform`, `worktree-prune`, `compress`, `design-extract`.
+- Agents: `orchestrator` (and `.claude-plugin/settings.json`), `architect`, `doc-writer`, `reviewer`, `backend-dev`, `frontend-dev`, `infra-dev`.
+- Protocols: `sprint-contracts`, `session-lifecycle`, `agent-orchestration`, `quality-engine`, `terse-output`, `worktree-lifecycle`, `knowledge-protocol`, `skill-cross-references`, `project-context`, `session-report-template`, `html-template-helper`.
+- Hooks: `workflow-guard`, `analysis-paralysis-guard`, `task-completed-validate`, `context-monitor`, `pre-edit-backup`, `reference-compression-validate`, `post-edit-lint`, `post-edit-activity-log`, `subagent-start`, `subagent-stop`, `post-tool-failure`, `permission-request`, `teammate-idle`, `post-compact-log`, `cwd-changed`, `model-switch-warn`; events `PostCompact`, `TeammateIdle`, `TaskCompleted`, `SubagentStart`, `SubagentStop`, `PostToolUseFailure`, `PermissionRequest`, `PreModelSwitch`, `CwdChanged`, `DirectoryAdded`.
+- `installer/` and the npm publish workflow (install through the marketplace), `scripts/check-count-sync.sh`, `.claude-plugin/counts.json`, `.claude-plugin/model-profiles.json`, `scripts/maint/`, the registry backfill and scope-parser scripts, `scripts/validate-skill-output.sh`, eval `orchestrator-routing`.
+
+### Rename table
+
+| v2 | v3 |
+|---|---|
+| `/blitz:sprint`, `/blitz:sprint-dev`, `/blitz:implement`, `/blitz:quick` | `/blitz:build` |
+| `/blitz:fix-issue N` | `/blitz:build --issue N` |
+| `/blitz:sprint-plan`, `/blitz:roadmap` | `/blitz:plan` |
+| `/blitz:review`, `/blitz:sprint-review` | `/blitz:check` |
+| `/blitz:code-doctor` | `/blitz:check --only framework` |
+| `/blitz:code-sweep` | `/blitz:check --scope repo` |
+| `/blitz:release` | `/blitz:ship` |
+| `/blitz:retrospective` | `/blitz:learn` |
+| `/blitz:ask` | `/blitz:research --codebase` |
+| `/blitz:bootstrap`, `/blitz:codebase-map` | `/blitz:onboard` |
+| `/blitz:health`, `/blitz:setup` | `/blitz:doctor` |
+| `/blitz:conform` | `/blitz:doctor --migrate` |
+| `/blitz:worktree-prune` | `/blitz:sessions worktrees` |
+| `/blitz:design-extract` | `/blitz:ui-build` (design-extract reference) |
+| `/blitz:quality-metrics`, `/blitz:compress` | removed (`check` ratchet; output style) |
+| `/blitz:sprint-wave` | `/blitz:build-wave` |
+| `agents/backend-dev`, `frontend-dev`, `infra-dev` | `agents/dev` (role by prompt) |
+| `agents/reviewer` | `agents/critic --mode survey` |
+| `sprints/<n>/stories/*.md`, `carry-forward.jsonl` | `docs/plans/<slug>/tasks.json` |
+| `STATE.md` | `docs/plans/<slug>/progress.md` |
+| `todos.jsonl` | `docs/plans/BACKLOG.md` |
+| `docs/_research/` | `docs/research/` |
+| `session-lifecycle.md`, `agent-orchestration.md`, `quality-engine.md`, `terse-output.md`, `sprint-contracts.md` | `sessions.md`, `agents.md`, `quality.md`, `output.md`, `loop.md` |
 
 ## [2.5.0] — 2026-09-18 · Claude Code 2.1.276 alignment (E-040…E-047)
 
