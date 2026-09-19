@@ -6,8 +6,6 @@
     "agent_view": "2.1.139",
     "agent_view_json": "2.1.141",
     "worktree_bg_isolation": "2.1.143",
-    "orchestrator_main_thread_agent": "2.1.117",
-    "agent_dispatch_honors_agent_defs": "2.1.157",
     "cross_session_messaging": "2.1.224",
     "notify_when_idle": "2.1.236",
     "goal_checkins": "2.1.234",
@@ -19,19 +17,25 @@
     "workflow_usage_limit_pause": "2.1.271",
     "post_tool_use_updated_tool_output": "2.1.121",
     "agent_cache_ttl": "2.1.248",
-    "docs_verified_against": "2.1.276"
+    "docs_verified_against": "2.1.277",
+    "agents_md_fallback": "2.1.277",
+    "plugin4shell_fix": "2.1.179",
+    "plugin_accept_command": "2.1.269",
+    "npm_plugin_integrity": "2.1.275",
+    "verify_recipe_record": "2.1.200",
+    "scheduled_fire_respects_dmi": "2.1.196"
   },
   "cited_in": [
     "README.md",
     "CLAUDE.md",
     ".claude-plugin/plugin.json",
-    ".claude-plugin/settings.json",
-    "installer/install.sh",
-    "installer/src/index.js",
-    "installer/src/verify.js",
-    "installer/README.md",
-    "skills/_shared/agent-orchestration.md",
-    "skills/_shared/session-lifecycle.md",
-    "skills/_shared/worktree-lifecycle.md"
+    "skills/_shared/agents.md",
+    "skills/_shared/sessions.md",
+    "skills/_shared/agents.md",
+    "skills/_shared/agents.md",
+    "skills/_shared/sessions.md",
+    "skills/_shared/loop.md",
+    "skills/_shared/quality.md",
+    "skills/_shared/security.md"
   ]
 }

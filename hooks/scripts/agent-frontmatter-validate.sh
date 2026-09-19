@@ -3,7 +3,7 @@
 #
 # Sibling of skill-frontmatter-validate.sh. Validates agents/*.md against the
 # plugin-agent contract. The forbidden-field check enforces a constraint
-# documented in .cc-sessions/KNOWLEDGE.md: Claude Code silently strips
+# documented in skills/_shared/agents.md §1: Claude Code silently strips
 # `hooks:`, `mcpServers:`, and `permissionMode:` from plugin agent frontmatter
 # (they only work in `~/.claude/agents/`), so leaving them in the file produces
 # a silently-broken agent with no warning.
@@ -29,16 +29,13 @@
 #        color: known palette token (cyan|orange|green|red|yellow|magenta|blue|purple)
 #        memory: project|none
 #   9. Body length ≤500 lines (excluding frontmatter) — same cap as SKILL.md
-#  10. Canonical OUTPUT STYLE snippet present verbatim OR `[CANONICAL PREAMBLE]`
-#      inheritance marker (templates that inherit from a referenced preamble)
+#  10. tools never lists Task/Todo tools (off on Claude 5 models) or tools the platform strips
 
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 SCRIPT_NAME="$(basename "$0")"
 BLITZ_ROOT="${BLITZ_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 RC=0
-SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output\.md'
-INHERIT_RE='\[CANONICAL PREAMBLE\]'
 
 # Fast-path scope guard for PostToolUse Write|Edit invocations.
 # When invoked as `--all` with hook JSON on stdin, exit 0 early unless the
@@ -123,7 +120,7 @@ validate_one() {
   local forbidden
   for forbidden in hooks mcpServers permissionMode; do
     if printf '%s\n' "$fm" | grep -qE "^${forbidden}:"; then
-      fail "$rel" "forbidden field '${forbidden}:' — silently stripped by Claude Code in plugin agents (see .cc-sessions/KNOWLEDGE.md). Move to ~/.claude/agents/ if needed."
+      fail "$rel" "forbidden field '${forbidden}:' — silently stripped by Claude Code in plugin agents (see skills/_shared/agents.md §1). Move to ~/.claude/agents/ if needed."
     fi
   done
 
@@ -152,9 +149,9 @@ validate_one() {
   fi
   # Tools the platform removes from every subagent (sub-agents reference): listing them is a contract error.
   local removed_tool
-  for removed_tool in ScheduleWakeup Workflow AskUserQuestion EnterPlanMode ExitPlanMode TaskOutput; do
+  for removed_tool in ScheduleWakeup Workflow AskUserQuestion EnterPlanMode ExitPlanMode TaskOutput TaskCreate TaskUpdate TaskList TaskGet TodoWrite; do
     if printf '%s\n' "$tools" | grep -qE "(^|, *)${removed_tool}(,|$)"; then
-      fail "$rel" "tools lists '${removed_tool}', which Claude Code removes from every subagent"
+      fail "$rel" "tools lists '${removed_tool}', which Claude Code removes from subagents or gates off on current models"
     fi
   done
 
@@ -163,12 +160,7 @@ validate_one() {
   body_lines=$(printf '%s\n' "$body" | wc -l)
   [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500)"
 
-  # 10. OUTPUT STYLE snippet OR canonical-preamble inheritance marker
-  if ! printf '%s\n' "$body" | grep -qE "$SNIPPET_RE"; then
-    if ! printf '%s\n' "$body" | grep -qE "$INHERIT_RE"; then
-      fail "$rel" "missing canonical OUTPUT STYLE snippet (verbatim from /_shared/terse-output.md) or '[CANONICAL PREAMBLE]' inheritance marker"
-    fi
-  fi
+  return 0
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done

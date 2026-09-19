@@ -2,7 +2,7 @@
 
 > **SKELETON — populated in E-009 (CAP-011) — DO NOT treat as shipping checklist.**
 >
-> Sprint-6 ships the flag names + 1-line definitions so CAP-008 AC2 closes and Phase 4 (QUALITY) has a stable reference to link against. Implementation procedures land in E-009.
+> This reference ships the flag names + 1-line definitions so CAP-008 AC2 closes and Phase 4 (QUALITY) has a stable reference to link against. Implementation procedures land in E-009.
 
 Findings produced by this module surface as `page:label:FLAG` in `docs/crawls/ui-audit-report.md` and as `label: "quality_flag"` entries in `docs/crawls/page-data-registry.jsonl`.
 
@@ -12,7 +12,7 @@ Findings produced by this module surface as `page:label:FLAG` in `docs/crawls/ui
 
 The extracted `parsed` value is `null` — the selector matched nothing, or matched an element with empty `.textContent`. Fires once per (role, page, label). Severity: HIGH when the label is declared in `.ui-audit.json` and the page is declared; MED otherwise.
 
-**Detection:** inline in Phase 2 § 2.4 extraction JS — emits when `raw === null || raw === ''` for a declared label. Implemented in sprint-6. See `skills/ui-audit/references/main.md § Phase 2 § 2.4`.
+**Detection:** inline in Phase 2 § 2.4 extraction JS — emits when `raw === null || raw === ''` for a declared label. Implemented in the 2.x ui-audit pass. See `skills/ui-audit/references/main.md § Phase 2 § 2.4`.
 
 ## PLACEHOLDER
 
@@ -42,11 +42,11 @@ Configured parent/child relationship: sum of declared child `parsed` values != p
 
 `parsed < 0` on a label whose type is `count`. Counts should not be negative in a healthy UI. Severity: HIGH.
 
-**Detection:** inline in Phase 2 § 2.4 extraction JS — emitted when `LABEL_TYPE == 'count' && Number.isFinite(parsed) && parsed < 0`. Implemented in sprint-6.
+**Detection:** inline in Phase 2 § 2.4 extraction JS — emitted when `LABEL_TYPE == 'count' && Number.isFinite(parsed) && parsed < 0`. Implemented in the 2.x ui-audit pass.
 
 ---
 
-## Interactive-element checks (CAP-014 / E-010 / sprint-7)
+## Interactive-element checks (CAP-014 / E-010)
 
 These are orthogonal to data-quality flags — they target interactive elements, not labeled values. Findings surface as `button_finding` registry lines. Full detection procedures in `skills/ui-audit/references/main.md` § Phase INTERACTIVE § I.3.
 

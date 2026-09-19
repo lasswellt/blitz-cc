@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: build-inline
+tags: [build, needs-scaffold, needs-bash]
+context:
+  scaffold_script: fixture.sh

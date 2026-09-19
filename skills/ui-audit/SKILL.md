@@ -1,17 +1,13 @@
 ---
 name: ui-audit
-description: "Cross-page semantic consistency + data-quality + UI/UX heuristic audit. Extracts a labeled value registry, asserts cross-page invariants (same field = same value, no role leaks), flags placeholders and flapping values. Read-only, loop-safe. Use when the user says 'audit consistency', 'check cross-page data', 'ui-audit', 'role leak', or 'placeholder text on screen'."
+description: "Audits a running app across pages and roles: builds a labeled value registry, asserts cross-page invariants (same field, same value; no role leaks), flags placeholders and flapping values, runs UI/UX heuristics. Read-only, loop-safe. Use for 'audit consistency', 'role leak', 'placeholder text'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- no-disallowed-tools: not read-only — Writes/Edits the value-registry + audit report artifacts. Excluded from S14-008 disallowed-tools (S14-009 / audit §2 correction). Also excluded for the same reason: review --only wiring (Write+Agent), audit (writes reports), design-extract (writes DESIGN.md). Only `health` qualified. -->
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
+<!-- no-disallowed-tools: not read-only — Writes/Edits the value-registry + audit report artifacts. Excluded from S14-008 disallowed-tools (S14-009 / audit §2 correction). Also excluded for the same reason: check --only wiring (Write+Agent), audit (writes reports), ui-build (writes DESIGN.md). Only `doctor` qualified. -->
 
 ---
 
@@ -23,12 +19,9 @@ You are a cross-page UI/UX auditor. On each run you extract labeled values from 
 - For phase procedures (extraction JS, registry schema, reducer, invariant evaluator, tick-diff taxonomy, reporter), see [references/main.md](references/main.md)
 - For data-quality flag catalog (NULL_VALUE, PLACEHOLDER, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL, NEGATIVE_COUNT), see [references/checks.md](references/checks.md)
 - For UI/UX heuristic rule set (Vercel guidelines + severity tiers + a11y), see [references/patterns.md](references/patterns.md)
-- For session registration + conflict matrix, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
-- For verbose progress + activity-feed events, see [/_shared/terse-output.md](/_shared/terse-output.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
-
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+- For session registration + conflict matrix, see [/_shared/sessions.md](/_shared/sessions.md)
+- For verbose progress + activity-feed events, see [/_shared/output.md](/_shared/output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
 
@@ -49,7 +42,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-**Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
+**Register session.** Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
 ### 0.1 Parse Arguments
 
 | Mode | Argument | Behavior |
@@ -140,13 +133,13 @@ Aggregates the flag catalog from [references/checks.md](references/checks.md). D
 
 Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md) — WCAG 2.1 AA contrast, focus-visible coverage, touch-target sizing, tabular-nums on numeric columns, `prefers-reduced-motion` gates, copy heuristics. Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic_finding` events.
 
-The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `design` pillar rows (`design-low-contrast`, `design-*`) as the canonical detection: ui-audit runs them at **runtime** (rendered, cross-role), while `/blitz:review --only design` runs them **statically** at author-time. Dedupe the pattern, not the tempo (the rule lives once in the registry; the two skills are two enforcement sites).
+The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `design` pillar rows (`design-low-contrast`, `design-*`) as the canonical detection: ui-audit runs them at **runtime** (rendered, cross-role), while `/blitz:check --only design` runs them **statically** at author-time. Dedupe the pattern, not the tempo (the rule lives once in the registry; the two skills are two enforcement sites).
 
 ---
 
 ## Phase 6: REPORT
 
-See `references/main.md` § **"Phase 6 — REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_complete` event to the activity feed with a detail block containing finding counts.
+See `references/main.md` § **"Phase 6 — REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_end` event to the activity feed with a detail block containing finding counts.
 
 ---
 
@@ -160,7 +153,7 @@ LOAD_AUTH[current_role] → NAVIGATE[current_page] → EXTRACT → QUALITY
   → ADVANCE CURSOR → NEXT
 ```
 
-The reporter emits a rolling report each tick but does not call `skill_complete` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
+The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
 
 Tick state persists in `.cc-sessions/${SESSION_ID}/tmp/loop-state.json` and `docs/crawls/latest-tick.json` gains a `ui_audit_matrix` block (see references/main.md § Phase 6 + § Phase ROLE).
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # stop-gate.sh — Conditional deterministic verification gate (Stop event, E-042 S1)
 #
-# Strict no-op unless a sprint or loop has written a gate file:
+# Strict no-op unless build, check, or next --loop has written a gate file:
 #   .cc-sessions/sessions/<session_id>/gate.json
 #   { "checks": [ {"name": "tsc", "cmd": "npx tsc --noEmit", "timeout": 120}, ... ],
 #     "blocks": 0, "max_blocks": 6, "until": "<phase label>" }
@@ -17,12 +17,12 @@
 #   - `last_assistant_message` carries a terminal marker
 #     (LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:)
 #   - blocks >= max_blocks (logged as `gate_exhausted`; the platform's own
-#     cap is 8 consecutive blocks — max_blocks defaults to 6 so blitz never
+#     cap is 5 consecutive blocks (stopHookBlockCap) — max_blocks defaults to 4 so blitz never
 #     reaches it)
 #
 # Never wire a prompt-type Stop hook alongside this one: a user `/goal` is
 # itself a prompt-based Stop hook and the two would fight. Owner of the
-# verification-stack contract: /_shared/quality-engine.md §Verification stack.
+# verification-stack contract: /_shared/quality.md §Verification stack.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
@@ -53,9 +53,9 @@ if printf '%s' "$LAST" | grep -qE 'LOOP_DONE|LOOP_ESCALATE|LOOP_DEFER|BLOCKED:|E
 fi
 
 BLOCKS=$(jq -r '.blocks // 0' "$GATE")
-MAX=$(jq -r '.max_blocks // 6' "$GATE")
+MAX=$(jq -r '.max_blocks // 4' "$GATE")
 case "$BLOCKS$MAX" in *[!0-9]*) BLOCKS=0; MAX=6 ;; esac
-if [ "$MAX" -gt 7 ]; then MAX=7; fi   # stay under the platform's 8-consecutive cap
+if [ "$MAX" -gt 4 ]; then MAX=4; fi   # stay under the platform's 5-consecutive cap (stopHookBlockCap)
 if [ "$BLOCKS" -ge "$MAX" ]; then
   blitz_log_event "hook" "gate_exhausted" "Stop gate exhausted after $BLOCKS blocks; standing down" \
     "$(jq -nc --arg u "$(jq -r '.until // ""' "$GATE")" --argjson b "$BLOCKS" '{until:$u,blocks:$b}')"

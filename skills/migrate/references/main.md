@@ -84,7 +84,7 @@ Cross-reference affected files with breaking-change severity for overall migrati
 | **Low** | Routine upgrade, minimal impact. | Proceed with standard verification gates. |
 | **Medium** | Some breaking changes; codemods or clear paths exist. | Run codemods first, then manual fixes. Extra verification. |
 | **High** | Significant breaking changes across many files. Manual work required. | Split into sub-migrations. Consider feature branch. Allow extra time. |
-| **Critical** | Deep architectural changes or multiple simultaneous major upgrades. | Strongly consider incremental approach (intermediate versions first). May need dedicated sprint. |
+| **Critical** | Deep architectural changes or multiple simultaneous major upgrades. | Strongly consider incremental approach (intermediate versions first). May need a dedicated plan. |
 
 ---
 

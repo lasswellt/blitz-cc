@@ -167,40 +167,6 @@ if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
   fi
 fi
 
-# --- Check PROSE COUNT drift (skills/agents/shared/hooks/detectors) ---
-# Companion to version-sync: validates the hand-maintained counts in README,
-# CLAUDE.md, and the manifests against the filesystem-derived counts.json.
-COUNT_SYNC_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/scripts/check-count-sync.sh"
-if [[ -f "$COUNT_SYNC_SCRIPT" && ! -x "$COUNT_SYNC_SCRIPT" ]]; then
-  echo "[pre-commit] WARN: $COUNT_SYNC_SCRIPT not executable — fix with chmod +x." >&2
-fi
-if [[ -x "$COUNT_SYNC_SCRIPT" ]]; then
-  COUNT_EXIT=0
-  COUNT_OUTPUT=$("$COUNT_SYNC_SCRIPT" 2>&1) || COUNT_EXIT=$?
-  if [[ "$COUNT_EXIT" -ne 0 ]]; then
-    echo "" >&2
-    echo "$COUNT_OUTPUT" >&2
-    # Block only when a count-bearing doc or the inventory is staged; otherwise warn.
-    if echo "$STAGED_FILES" | grep -qE '^(README\.md|CLAUDE\.md|\.claude-plugin/(plugin|marketplace|counts)\.json|CHANGELOG\.md)$'; then
-      echo "" >&2
-      echo "BLOCKED: count drift in a staged count-bearing doc." >&2
-      echo "  Run scripts/check-count-sync.sh --write, reconcile the prose above, re-stage." >&2
-      echo "  Override with --no-verify if intentional." >&2
-      exit 2
-    fi
-    # Also block when a STRUCTURAL inventory file is added/removed/renamed —
-    # a new or deleted file under these globs changes a count, so shipping with
-    # stale counts is exactly the drift that let shared 12->13 escape (the
-    # count-bearing docs weren't staged, so the gate only warned).
-    if echo "$STAGED_FILES" | grep -qE '^(skills/_shared/[^/]+\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md|hooks/scripts/[^/]+\.sh)$'; then
-      echo "" >&2
-      echo "BLOCKED: structural inventory change with stale counts — run scripts/check-count-sync.sh --write and re-stage (override --no-verify if intentional)." >&2
-      exit 2
-    fi
-    echo "  (Warning — commit allowed. Count drift will be re-flagged until fixed.)" >&2
-  fi
-fi
-
 # --- Check SKILL.md frontmatter conformance for staged SKILL.md files ---
 STAGED_SKILLS=$(echo "$STAGED_FILES" | grep -E '^skills/[^/]+/SKILL\.md$' || true)
 if [[ -n "$STAGED_SKILLS" ]]; then
@@ -213,7 +179,7 @@ if [[ -n "$STAGED_SKILLS" ]]; then
       echo "" >&2
       echo "$LINT_OUTPUT" >&2
       echo "BLOCKED: SKILL.md frontmatter violations in staged files." >&2
-      echo "  See /_shared/terse-output.md and /_shared/agent-orchestration.md §7 for canonical conventions." >&2
+      echo "  See .claude/rules/skills.md for the authoring contract." >&2
       exit 2
     fi
   fi
@@ -228,7 +194,7 @@ if echo "$STAGED_FILES" | grep -qE '^skills/_shared/check-registry\.json$'; then
     if [[ "$REG_EXIT" -ne 0 ]]; then
       echo "" >&2
       echo "$REG_OUTPUT" >&2
-      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/quality-engine.md)." >&2
+      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/quality.md)." >&2
       exit 2
     fi
   fi

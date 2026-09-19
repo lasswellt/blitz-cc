@@ -10,7 +10,7 @@
 #
 # Usage:
 #   test-listener.sh --start --run-id <id> [--session <sid>]        # runs_started++
-#   test-listener.sh --trigger post-edit|sprint-review|ci [--changed <f1,f2,…>]
+#   test-listener.sh --trigger post-edit|check|ci [--changed <f1,f2,…>]
 #                    [--selected-by <mode>] [--run-id <id>] [--session <sid>] < runner.json
 #   test-listener.sh --prune                                         # keep 5000 lines / 30 days
 #
@@ -151,7 +151,7 @@ esac
 
 # ---- record mode ----------------------------------------------------------
 if [ -z "$TRIGGER" ]; then
-  echo "test-listener: --trigger post-edit|sprint-review|ci required" >&2
+  echo "test-listener: --trigger post-edit|check|ci required" >&2
   exit 0
 fi
 COMMIT=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo "")

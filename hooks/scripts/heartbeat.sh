@@ -2,7 +2,7 @@
 # heartbeat.sh — PostToolBatch heartbeat (renamed from post-tool-batch.sh, E-040 S2)
 # Fires after a batch of parallel tools resolves, before the next model call.
 # Marks the session record state:"working" + last_activity (liveness signal for
-# stale-session detection, session-lifecycle.md §5a) and logs the batch.
+# stale-session detection, sessions.md §3) and logs the batch.
 # Non-blocking: always exits 0. No-op on the record when none exists.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"

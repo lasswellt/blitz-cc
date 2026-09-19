@@ -1,7 +1,7 @@
 {
   "name": "blitz",
-  "version": "2.5.0",
-  "description": "Holistic-machine Claude Code plugin for Vue/Nuxt + Firebase. 38 skills, 11 agents, 46 hook scripts across 24 events, 13 shared protocol files. Orchestrator main-thread agent routes freeform input; slash commands bypass. Includes sprint workflows, adversarial critic review (in-Claude or Cross-Model via Gemini), 8-invariant ratchet-enforced quality gates, design-quality vision critique, token-budget protocol, autonomous-loop primitives (PreCompact handoff, auto-resume), worktree lifecycle enforcement, and 7 anti-shortcut hooks (no-verify, destructive-git, destructive-sql, test-deletion, as-any insertion, test-disabling, type-error regression). Effective Claude Code minimum: >=2.1.271 (Stop/SessionEnd session heartbeat, cross-session messaging, Monitor deadline semantics, omitClaudeMd; floors in .claude-plugin/compat.json). Individual /blitz:* slash skills load on >=2.1.71 with messaging and the session dashboard degraded. External tools (not bundled, not in dependencies which is plugin-only): Playwright MCP (browse, ui-build, ui-audit, design-critic) and Gemini CLI (optional Cross-Model Critic, opt-in via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC).",
+  "version": "3.0.1",
+  "description": "Agentic development loop for Vue/Nuxt + Firebase: research, plan, build, check, ship. Plans are JSON feature lists with per-task verify commands; a task is done only when scripts/tasks.sh verified it and a hook denies every other write. One fresh-context dev agent per task, opt-in parallel waves over disjoint files, an adversarial read-only critic before PASS, a shared check registry with deterministic and semantic lanes, test impact analysis, anti-shortcut hooks (no-verify, destructive git, destructive SQL, test deletion, as-any insertion, test disabling, type-error regression), a kill switch, and next --loop for unattended ticks under /loop, Routines, or claude -p. Minimum Claude Code >=2.1.271 (floors in .claude-plugin/compat.json). Optional external tools: Playwright MCP (browse, ui-build, ui-audit, design-critic), Gemini CLI (cross-model critic via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC), claude-security plugin.",
   "author": {
     "name": "lasswellt"
   },
@@ -12,13 +12,14 @@
     "vue",
     "nuxt",
     "firebase",
-    "sprint",
     "development-workflow",
-    "quality-metrics",
     "release-management",
     "documentation",
     "migration",
     "performance",
-    "dependency-health"
+    "dependency-health",
+    "agentic-loop",
+    "tasks",
+    "verification"
   ]
 }

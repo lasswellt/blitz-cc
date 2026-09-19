@@ -5,9 +5,9 @@
 #   /_shared/security.md §3 TB-2 (persistent .cc-sessions/ state is untrusted across sessions).
 # Registry: check-registry.json sec-startup-schema + sec-startup-injection.
 #
-# WHY: session-lifecycle.md startup reads ALL .cc-sessions/*.json + activity-feed
-# + carry-forward.jsonl into context. An injection landing there is reloaded each
-# session and (for carry-forward) auto-injected into the next sprint. This is the
+# WHY: sessions.md startup reads ALL .cc-sessions/*.json + activity-feed
+# and docs/plans/*/tasks.json into context. An injection landing there is reloaded each
+# session and (for tasks.json) drives the next unattended build. This is the
 # article's persistent-state poisoning (AP-4) and the memory-poisoning literature's
 # temporally-decoupled attack (MINJA arXiv 2601.05504). Per the env-first principle
 # (§2), the boundary is this deterministic scan, not "the model will notice".
@@ -77,31 +77,44 @@ for f in "$SESSIONS_DIR"/*.json; do
   fi
   # Schema floor: a session file must carry session_id + status.
   case "$base" in
-    developer-profile.json|model-profiles.json|HANDOFF.json) : ;; # known non-session shapes
+    HANDOFF.json) : ;; # known non-session shape
     *) jq -e '.session_id and .status' "$f" >/dev/null 2>&1 || report "SCHEMA: $base missing session_id/status" ;;
   esac
   scan_obj "$(cat "$f")" "$base" || true
 done
 
-# 2. Carry-forward registry — highest blast radius (drives sprint-plan). Per-line.
-CF="$SESSIONS_DIR/carry-forward.jsonl"
-if [ -f "$CF" ]; then
-  n=0
-  while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    n=$((n+1))
-    if ! printf '%s' "$line" | jq empty 2>/dev/null; then
-      report "carry-forward.jsonl line $n MALFORMED"; continue
+# 2. Plans and solutions — highest blast radius: tasks.json drives `next --loop` and
+#    docs/solutions/ is read by `plan` (OWASP ASI06 memory poisoning). Shape floor +
+#    injection scan on the free-text fields; a violating row is a finding, never loaded.
+PLANS_DIR="${BLITZ_PLANS_DIR:-$ROOT/docs/plans}"
+if [ -d "$PLANS_DIR" ]; then
+  for tj in "$PLANS_DIR"/*/tasks.json; do
+    [ -f "$tj" ] || continue
+    rel="docs/plans/$(basename "$(dirname "$tj")")/tasks.json"
+    if ! jq -e '.tasks | type == "array"' "$tj" >/dev/null 2>&1; then
+      report "SCHEMA: $rel has no tasks[] array"; continue
     fi
-    scan_obj "$line" "carry-forward.jsonl:$n" || true
-    # Provenance floor (S-1): a carry-forward entry should declare source. Migration
-    # advisory (pre-S-1 entries lack it) — counted, not a per-line finding, so it
-    # never dominates output or blocks --strict.
-    printf '%s' "$line" | jq -e '.provenance.source // .source' >/dev/null 2>&1 || \
-      PROV_MISSING=$((PROV_MISSING+1))
-  done < "$CF"
-  [ "$PROV_MISSING" -gt 0 ] && [ "$QUIET" != 1 ] && \
-    echo "[startup-validate] $PROV_MISSING carry-forward entr(ies) lack provenance.source (S-1 migration pending; advisory)" >&2 || true
+    bad=$(jq -r '[.tasks[] | select((.id|type)!="string" or (.status|IN("open","in_progress","done","blocked")|not))] | length' "$tj" 2>/dev/null || echo 1)
+    [ "$bad" != "0" ] && report "SCHEMA: $rel has $bad task(s) with a bad id or status"
+    undone=$(jq -r '[.tasks[] | select(.status=="done" and (.passes != true or (.last_verify.ok // false) != true))] | length' "$tj" 2>/dev/null || echo 0)
+    [ "$undone" != "0" ] && report "CONTRACT: $rel has $undone task(s) marked done without passing evidence (done ⇒ passes)"
+    unk=$(jq -r '[.tasks[] | select((.origin // "plan") | test("^(plan|audit|check|learn|issue:[0-9]+)$") | not)] | length' "$tj" 2>/dev/null || echo 0)
+    [ "$unk" != "0" ] && report "PROVENANCE: $rel has $unk task(s) with an unknown origin"
+    noverify=$(jq -r '[.tasks[] | select(((.verify // []) | length) == 0)] | length' "$tj" 2>/dev/null || echo 0)
+    [ "$noverify" != "0" ] && report "CONTRACT: $rel has $noverify task(s) with an empty verify[] (no executable check)"
+    jq -c '.tasks[] | {id, title, notes}' "$tj" 2>/dev/null | while IFS= read -r line; do
+      scan_obj "$line" "$rel:$(printf '%s' "$line" | jq -r .id)" || true
+    done
+  done
+fi
+SOL_DIR="$ROOT/docs/solutions"
+if [ -d "$SOL_DIR" ]; then
+  for sol in "$SOL_DIR"/*.md; do
+    [ -f "$sol" ] || continue
+    if head -c 20000 "$sol" | grep -qiE "$INJECTION_RX"; then
+      report "INJECTION MARKER in docs/solutions/$(basename "$sol") — quarantine before plan reads it"
+    fi
+  done
 fi
 
 # 3. Activity feed — scan last 50 entries (bounded).
@@ -111,7 +124,7 @@ if [ -f "$FEED" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     printf '%s' "$line" | jq empty 2>/dev/null || continue
-    # message is the skill-written free-text field — the injection surface (orchestrator.md:146).
+    # message is the skill-written free-text field — the injection surface (security.md TB-2).
     msg=$(printf '%s' "$line" | jq -r '.message // ""' 2>/dev/null || true)
     if printf '%s' "$msg" | grep -qiE "$INJECTION_RX"; then
       report "INJECTION MARKER in activity-feed message — cap/quarantine before echo"

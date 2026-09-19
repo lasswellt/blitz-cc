@@ -28,8 +28,13 @@ BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|p
 # Walk up from start_dir (or pwd) looking for .claude-plugin/.
 # Prints absolute project root. Falls back to pwd on miss; returns 1.
 blitz_find_root() {
-  local dir
-  dir="$(cd "${1:-$(pwd)}" 2>/dev/null && pwd || pwd)"
+  # Nearest .claude-plugin/ above pwd (the plugin repo itself), else the git
+  # toplevel (a consumer project), else pwd. Always returns 0: callers run under
+  # `set -e` and a failing command substitution inside an assignment would abort
+  # the hook with exit 1, which PreToolUse treats as non-blocking (fail-open).
+  local dir start
+  start="$(cd "${1:-$(pwd)}" 2>/dev/null && pwd || pwd)"
+  dir="$start"
   while [ "$dir" != "/" ]; do
     if [ -d "$dir/.claude-plugin" ]; then
       printf '%s\n' "$dir"
@@ -37,8 +42,9 @@ blitz_find_root() {
     fi
     dir="$(dirname "$dir")"
   done
-  printf '%s\n' "$(pwd)"
-  return 1
+  dir="$(git -C "$start" rev-parse --show-toplevel 2>/dev/null || true)"
+  printf '%s\n' "${dir:-$start}"
+  return 0
 }
 
 # blitz_extract field [json_string]
@@ -110,7 +116,7 @@ blitz_log_event() {
 #
 # Best-effort DATA-LOSS GUARD: a background session edits inside its own
 # `.claude/worktrees/<id>` worktree, where uncommitted work lives. Native agent
-# view auto-isolates background sessions there (see worktree-lifecycle.md
+# view auto-isolates background sessions there (see agents.md §6
 # §Interop), so the same `.claude/worktrees/` dir now holds BOTH blitz
 # `Agent({isolation:"worktree"})` worktrees AND native background-session
 # worktrees. Callers (worktree-prune, cleanup) MUST skip any worktree whose
@@ -282,7 +288,7 @@ blitz_session_record_path() {
 # blitz_session_record_find sid
 # Print the path of the record that belongs to sid: the canonical path when it
 # exists, else the first legacy record `.cc-sessions/<anything>.json` whose
-# `.claude_session_id == sid` (skill-written records, session-lifecycle.md §3).
+# `.claude_session_id == sid` (skill-written records, sessions.md §2).
 # Prints nothing and returns 1 when no record exists.
 blitz_session_record_find() {
   local sid="${1:-}" canonical dir f

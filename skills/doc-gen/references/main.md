@@ -274,48 +274,6 @@ sequenceDiagram
 
 ---
 
-## Changelog Template
-
-Use the [Keep a Changelog](https://keepachangelog.com/) format for `docs/generated/changelog.md`.
-
-```markdown
-# Changelog
-
-All notable changes to this project are documented in this file.
-This changelog is auto-generated from conventional commits.
-
-## [Unreleased]
-
-### Added
-- {feat: commit message} ([{short_hash}]({commit_url})) — {author}
-
-### Fixed
-- {fix: commit message} ([{short_hash}]({commit_url})) — {author}
-
-### Changed
-- {refactor/perf: commit message} ([{short_hash}]({commit_url})) — {author}
-
-### Breaking Changes
-- **BREAKING**: {description} ([{short_hash}]({commit_url})) — {author}
-
-### Other
-- {docs/chore/ci/test: commit message} ([{short_hash}]({commit_url})) — {author}
-
-## [{version_tag}] — {tag_date}
-
-### Added
-- ...
-
-### Fixed
-- ...
-```
-
-### Changelog Template Notes
-
-**Commit-type → section mapping and emit rules (Other fallback, prefix stripping, capitalization, alphabetical sort, hash-linking, scope inclusion, empty-section omission, BREAKING CHANGE handling) are owned by [`skills/release`](../release/SKILL.md) §changelog — canonical O1/O5.** `doc-gen` `changelog` mode delegates to that owner; it does NOT restate the map (the previous inline table had drifted from the canonical one). Edit the mapping in [`skills/release/references/main.md`](../release/references/main.md) §Commit Type Mapping; this consumer cites it.
-
----
-
 ## Vue SFC Parsing Patterns
 
 Regex and AST patterns for extracting component metadata from Vue SFCs.

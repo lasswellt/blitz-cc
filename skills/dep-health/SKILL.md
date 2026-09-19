@@ -1,25 +1,18 @@
 ---
 name: dep-health
-description: "Audits npm dependencies for known vulnerabilities (npm audit), outdated versions, and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON output). Use when the user says 'check deps', 'dep-health', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', or as a recurring weekly sweep."
+description: "Audits npm dependencies for known vulnerabilities, outdated versions and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON). Use for 'check deps', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', weekly sweeps."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<audit|upgrade|report>"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `health` qualified). -->
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
+<!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `doctor` qualified). -->
 
 ## Additional Resources
 - For package manager commands, license tables, and report templates, see [references/main.md](references/main.md)
 - For package install policy (canonical rule for `upgrade` mode resolution), see [/_shared/security.md](/_shared/security.md). dep-health is the periodic enforcer — every flagged outdated dep gets a recommended bump using the latest-resolution rule.
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
-
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
 
@@ -29,7 +22,7 @@ Analyze npm packages for security vulnerabilities, outdated versions, license co
 
 ---
 
-All code produced must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder implementations.
+All code produced must satisfy the [Definition of Done](/_shared/quality.md). No placeholder implementations.
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
@@ -48,7 +41,7 @@ All code produced must satisfy the [Definition of Done](/_shared/sprint-contract
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -123,7 +116,7 @@ Extract from the JSON output:
 | Severity | Description | Action Required |
 |----------|-------------|----------------|
 | **Critical** | Remote code execution, authentication bypass, data exposure | Immediate fix required |
-| **High** | Privilege escalation, XSS, significant data leak potential | Fix within current sprint |
+| **High** | Privilege escalation, XSS, significant data leak potential | Fix within the current plan |
 | **Moderate** | Denial of service, information disclosure under specific conditions | Fix in next maintenance window |
 | **Low** | Theoretical vulnerability, requires unlikely conditions | Track and fix opportunistically |
 
@@ -370,7 +363,7 @@ Run '/dep-health upgrade' to apply safe upgrades.
 | Critical CVEs found | `dep-health upgrade` | Apply security patches immediately |
 | Major versions behind | `research` | Research migration guides for major upgrades |
 | License issues found | Manual review | Legal team should review copyleft dependencies |
-| Post-upgrade test failures | `fix-issue` | Investigate and fix compatibility issues |
+| Post-upgrade test failures | `/blitz:build --issue <n>` | Investigate and fix compatibility issues |
 
 ### 5.5 Session Cleanup
 

@@ -18,7 +18,7 @@
 #   6. allowed-tools: present unless disable-model-invocation: true
 #   7. argument-hint: present if SKILL.md body references "$1"/"$@"/positional args
 #   8. Body length ≤ 500 lines (excluding frontmatter)
-#   9. Canonical OUTPUT STYLE snippet present verbatim
+#   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
 
 set -euo pipefail
@@ -29,41 +29,9 @@ RC=0
 # Cumulative description-char budget (full-scan only). The ~37 skill
 # descriptions load every session into the SLASH_COMMAND_TOOL_CHAR_BUDGET
 # (~15000 hard platform cap; see docs/audits/skill-startup-token-budget.md).
-# We guard at 14500 to leave headroom before the cap.
+# We guard at 8000 to leave headroom before the cap.
 CUMULATIVE_DESC_CHARS=0
-CUMULATIVE_DESC_BUDGET=14500
-SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output\.md'
-
-# Canonical OUTPUT STYLE drift detection.
-# Extracts the canonical line from skills/_shared/terse-output.md (bounded by
-# <!-- canonical-output-style-start --> / <!-- canonical-output-style-end -->)
-# and hashes it. Every file under audit must contain this line verbatim.
-# Computed once per invocation; empty string disables the check (the file may
-# legitimately not have the markers in older checkouts).
-CANONICAL_OS_FILE="${BLITZ_ROOT}/skills/_shared/terse-output.md"
-CANONICAL_OS_HASH=""
-CANONICAL_OS_LINE=""
-# sha256 helper — sha256sum on Linux, shasum -a 256 on macOS (no GNU coreutils).
-sha256_fn() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum | awk '{print $1}'
-  elif command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 | awk '{print $1}'
-  else
-    return 1
-  fi
-}
-if [ -f "$CANONICAL_OS_FILE" ]; then
-  CANONICAL_OS_LINE=$(awk '
-    /<!-- canonical-output-style-start -->/{flag=1; next}
-    /<!-- canonical-output-style-end -->/{flag=0}
-    flag && NF { print; exit }
-  ' "$CANONICAL_OS_FILE")
-  if [ -n "$CANONICAL_OS_LINE" ]; then
-    CANONICAL_OS_HASH=$(printf '%s' "$CANONICAL_OS_LINE" | sha256_fn 2>/dev/null || true)
-  fi
-fi
-
+CUMULATIVE_DESC_BUDGET=8000
 # Fast-path scope guard for PostToolUse Write|Edit invocations.
 # When invoked as `--all` with hook JSON on stdin, exit 0 early unless the
 # edited file is a SKILL.md. Falls through to the existing behavior when
@@ -170,23 +138,14 @@ validate_one() {
   body_lines=$(printf '%s\n' "$body" | wc -l)
   [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500); push overflow to references/"
 
-  # 9. OUTPUT STYLE snippet — presence check
-  printf '%s\n' "$body" | grep -qE "$SNIPPET_RE" || fail "$rel" "missing canonical OUTPUT STYLE snippet (see /_shared/terse-output.md and /_shared/agent-orchestration.md §7)"
-
-  # 9b. OUTPUT STYLE drift check — byte-identical to canonical source.
-  # Skipped when canonical hash unavailable (older terse-output.md without
-  # markers, or sha256sum missing). Skipped for skills explicitly opting out
-  # via a `<!-- output-style-extend -->` marker on the same line (none today).
-  if [ -n "$CANONICAL_OS_HASH" ]; then
-    local file_os_line file_os_hash
-    file_os_line=$(printf '%s\n' "$body" | grep -E "^OUTPUT STYLE:" | head -1 || true)
-    if [ -n "$file_os_line" ]; then
-      file_os_hash=$(printf '%s' "$file_os_line" | sha256_fn 2>/dev/null || echo "")
-      if [ -n "$file_os_hash" ] && [ "$file_os_hash" != "$CANONICAL_OS_HASH" ]; then
-        fail "$rel" "OUTPUT STYLE line drifted from canonical (see /_shared/terse-output.md §Canonical Snippet)"
-      fi
+  # 9. Task/Todo tools are gated off on Claude 5 models and never part of the v3 contract.
+  local gated_tool
+  for gated_tool in TaskCreate TaskUpdate TaskList TaskGet TodoWrite; do
+    if printf '%s\n' "$allowed" | grep -qE "(^|[, ])${gated_tool}([, ]|$)"; then
+      fail "$rel" "allowed-tools lists '${gated_tool}' — Task/Todo tools are off on current models; track work in docs/plans/<slug>/tasks.json"
     fi
-  fi
+  done
+  return 0
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done

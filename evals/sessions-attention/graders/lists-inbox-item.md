@@ -1,4 +1,4 @@
 ---
 type: regex
-pattern: 'sprint-dev-a1b2c3d4|npm publish'
+pattern: 'build-a1b2c3d4|npm publish'
 ---

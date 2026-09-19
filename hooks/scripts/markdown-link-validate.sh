@@ -11,7 +11,7 @@
 # leading-slash links -> repo-root-relative; bare links -> relative to the file.
 # Skips: fenced code blocks, inline code, http(s) URLs, anchor-only refs,
 # mailto, .original backups, _research/ docs, runtime-output paths
-# (docs/generated/, findings/, sprints/sprint-, tmp/).
+# (docs/generated/, findings/, docs/plans/<slug>/, docs/solutions/, tmp/).
 #
 # Why a script and not a hook-only script: the same checker can be invoked
 # manually (`bash hooks/scripts/markdown-link-validate.sh`) or wired into
@@ -45,7 +45,7 @@ checked = 0
 # Runtime-output path prefixes a skill WRITES at runtime — not refs to existing files.
 RUNTIME = ("docs/generated/", "findings/", "tmp/")
 def is_runtime(link):
-    return any(seg in link for seg in RUNTIME) or "/sprint-" in link or link.startswith("sprints/sprint-")
+    return any(seg in link for seg in RUNTIME) or re.search(r"docs/plans/[^/]+/", link) is not None or link.startswith("docs/solutions/")
 files = list(pathlib.Path("skills").rglob("*.md")) + list(pathlib.Path("agents").rglob("*.md"))
 for f in files:
     if ".original" in f.name or "_research" in str(f): continue

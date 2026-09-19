@@ -1,16 +1,11 @@
 ---
 name: browse
-description: "Automated browser testing + site crawling via Playwright MCP. Captures console errors, failed network requests, screenshots; classifies Critical/Error/Warning. Loop-safe (one page per tick). Use for 'test pages', 'smoke test', 'crawl site', 'click through the app'. For cross-page data-consistency/role-leak/placeholder checks use /blitz:ui-audit instead."
+description: "Tests and crawls a running app through Playwright MCP: visits pages, captures console errors, failed requests and screenshots, classifies Critical/Error/Warning, optionally fixes sources; loop-safe, one page per tick. Use for 'test pages', 'smoke test', 'crawl site', 'click through the app'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "[full|smoke|page <path>|fix|--loop] [target]"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ---
 
@@ -20,10 +15,7 @@ You are an automated browser tester, site crawler, and visual design analyst. Yo
 
 ## Additional Resources
 - For error classification taxonomy, fix templates, interaction safety rules, crawl state schemas, URL normalization rules, visual analysis methods, and cross-page comparison techniques, see [references/main.md](references/main.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
-
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
 
@@ -51,7 +43,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 Parse the invocation arguments to determine mode and target.
 
@@ -292,7 +284,7 @@ After applying a fix:
 
 ### 5.5 Fix Quality Gate
 
-Auto-fixes must produce production-ready code. See [Definition of Done](/_shared/sprint-contracts.md).
+Auto-fixes must produce production-ready code. See [Definition of Done](/_shared/quality.md).
 
 **BANNED in auto-fixes:**
 - Replacing a real error with a silent `return` or empty catch block
@@ -374,7 +366,6 @@ If the dev server becomes unreachable:
 1. Wait 5 seconds and retry once
 2. If still unreachable, stop the crawl
 3. Output partial report with note: "Dev server became unreachable after [N] routes"
-
 
 ---
 

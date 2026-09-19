@@ -9,7 +9,7 @@
 #      clear -> cleared, logout -> logged_out), `ended` set to now.
 #   2. Every *.lock under .cc-sessions/ whose body names this session_id is
 #      removed — ownership-guarded (grep -q "$SID"), never a foreign lock
-#      (session-lifecycle.md §5a / Lock Cycle).
+#      (sessions.md §2).
 #   3. Feed event `session_end` (logged even when no record exists).
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"

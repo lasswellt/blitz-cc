@@ -5,7 +5,7 @@
 # loud-failure contract.
 # Spec: docs/integrations/impeccable/improvements/design-pillar-tests.md
 #
-# All epics (DEP-1, LANE-1, FP-1, TEST-1, POLISH-1) are landed: every test below
+# All design-pillar work items (DEP-1, LANE-1, FP-1, TEST-1, POLISH-1) are landed: every test below
 # asserts hard. The only `skip`s are environment guards (jq / preflight.sh
 # absent), never "not yet implemented".
 

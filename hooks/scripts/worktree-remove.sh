@@ -20,7 +20,7 @@ blitz_log_event "hook" "worktree_remove" "Worktree removed" "$DETAIL"
 if [ "${BLITZ_SKIP_BRANCH_CLEANUP:-0}" != "1" ] && [ -n "$WORKTREE_PATH" ]; then
   BRANCH=$(git -C "$ROOT" worktree list --porcelain 2>/dev/null | \
     awk -v p="$WORKTREE_PATH" 'BEGIN{w=""} /^worktree /{w=$2} /^branch /{if(w==p){sub("refs/heads/","",$2); print $2; exit}}')
-  if [[ "$BRANCH" =~ ^(worktree-agent-|worktree-sprint-) ]]; then
+  if [[ "$BRANCH" =~ ^(worktree-agent-|worktree-build-|build/) ]]; then
     if git -C "$ROOT" merge-base --is-ancestor "$BRANCH" origin/HEAD 2>/dev/null; then
       if git -C "$ROOT" branch -d "$BRANCH" 2>/dev/null; then
         BDET=$(jq -n --arg br "$BRANCH" '{branch:$br}')

@@ -1,9 +1,9 @@
 ---
 name: perf-profile
-description: "Profiles bundle size, runtime performance (Web Vitals), and Lighthouse scores for Vue/Nuxt apps. Identifies optimization opportunities (large deps, unused exports, render bottlenecks). Use when the user says 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
+description: "Profiles bundle size, runtime performance (Web Vitals) and Lighthouse scores for Vue/Nuxt apps and ranks optimizations (large deps, unused exports, render bottlenecks) by impact. Use for 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<bundle|runtime|lighthouse|full>"
 paths:
   - "**/*.vue"
@@ -11,18 +11,13 @@ paths:
   - "**/vite.config.{ts,js}"
   - "**/package.json"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For bundle analysis commands, runtime anti-pattern catalog, and Lighthouse thresholds, see [references/main.md](references/main.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
-
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
 
@@ -54,7 +49,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -234,6 +229,8 @@ Determine the best approach:
 2. Playwright MCP for page analysis
 3. CLI-based `npx lighthouse` (fallback)
 
+Chrome DevTools MCP (performance traces, insight analysis, network and console inspection) is the diagnostic alternative to Playwright MCP when debugging why a page is slow; Playwright stays the choice for scripted page flows.
+
 ### 3.2 Start Dev Server
 
 ```bash
@@ -393,8 +390,8 @@ Performance Profile: <stack>
 | Large bundle with code splitting issues | `refactor` | Split large modules, add dynamic imports |
 | Runtime anti-patterns found | `refactor` | Fix performance anti-patterns |
 | Failed Lighthouse audit | `ui-build` | Optimize rendering and layout |
-| Memory leaks detected | `fix-issue` | Fix specific leak patterns |
-| Low completeness score | `/blitz:review --only completeness` | Check for incomplete implementations affecting perf |
+| Memory leaks detected | `/blitz:build --issue <n>` | Fix specific leak patterns |
+| Low completeness score | `/blitz:check --only completeness` | Check for incomplete implementations affecting perf |
 
 ### 4.6 Session Cleanup
 

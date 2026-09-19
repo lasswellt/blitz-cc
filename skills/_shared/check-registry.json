@@ -3,8 +3,8 @@
   "generated": "2026-05-29",
   "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check) + design pillar (47 rows: impeccable@2.3.2 + new L1/L2)",
   "supersedes": [
-    "skills/_shared/quality-engine.md §1 (prose table)",
-    "skills/_shared/quality-engine.md §3 (grep patterns)",
+    "skills/_shared/quality.md §1 (prose table)",
+    "skills/_shared/quality.md §3 (grep patterns)",
     "scattered grep patterns across 7 quality skills"
   ],
   "doc": "registry-design.md",
@@ -38,7 +38,7 @@
     "detection": "{type, command}. type in {git, regex, tsc, ast, import-graph, counter, command, semantic}. command = executable detection (deterministic) OR checklist reference (semantic). THIS is the single source of executable detection logic; skills cite det-NN and run detection.command — no grep pattern lives in any skill/agent body.",
     "enforcement": "where the check runs today (hook / critic section / skill phase)",
     "owner": "the legacy skill that owns the canonical pattern (provenance)",
-    "consolidated_target": "review | audit | both | orthogonal",
+    "consolidated_target": "check | audit | both | orthogonal",
     "escape_hatch": "documented FP override (null if none)",
     "source": "primary-source citation for the failure class",
     "notes": "design notes incl. Opus-4.8-honesty sensitivity and aggregation requirement",
@@ -65,8 +65,8 @@
         "hook:block-test-deletion.sh",
         "critic:2.4"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": "commit msg BREAKING: AND user is committer",
       "source": "TestKube 2026",
       "notes": "Honesty-insensitive artifact. KEEP."
@@ -87,8 +87,8 @@
         "hook:block-no-verify.sh",
         "critic:2.7"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": "env BLITZ_OVERRIDE_NO_VERIFY=1 (user-set)",
       "source": "claude-code#40117 (Mar 2026)",
       "notes": "reflog grep — deterministic artifact. KEEP."
@@ -108,7 +108,7 @@
       "enforcement": [
         "ratchet:mocks_in_src"
       ],
-      "owner": "code-sweep",
+      "owner": "check",
       "consolidated_target": "both",
       "escape_hatch": null,
       "source": "TestKube 2026",
@@ -131,7 +131,7 @@
         "critic:2.1",
         "hook:block-as-any-insertion.sh"
       ],
-      "owner": "code-sweep",
+      "owner": "check",
       "consolidated_target": "both",
       "escape_hatch": "inline // blitz:any-allowed: <reason>",
       "source": "code-sweep Tier 1",
@@ -150,10 +150,10 @@
         "command": "grep -rPzo '(?s)catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}' src/"
       },
       "enforcement": [
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "OWASP A09",
       "notes": "regex-detectable but intent-ambiguous (rethrow vs swallow) -> advisory. Honesty-sensitive (self-report-ish)."
@@ -172,10 +172,10 @@
       },
       "enforcement": [
         "ratchet",
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "autonomous-coding 2026 reports",
       "notes": "reject-authority but base 0.75 < high band -> relies on the reject-bypass rule (confidence_gate.reject_bypass) to surface. FP-verify before blocker."
@@ -194,11 +194,11 @@
       },
       "enforcement": [
         "pre-edit-guard",
-        "review",
+        "check",
         "critic:2.1"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "OWASP A07",
       "notes": "entropy heuristic; FP-verify before blocker."
@@ -218,8 +218,8 @@
       "enforcement": [
         "code-sweep Tier 2"
       ],
-      "owner": "code-sweep",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "autonomous-coding 2026 reports",
       "notes": "diff-grep deterministic but could be legit cleanup -> advisory. Honesty-sensitive."
@@ -237,13 +237,13 @@
         "command": "grep -rEn \"throw new Error.*[Nn]ot\\s*[Ii]mplemented\" src/"
       },
       "enforcement": [
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz baseline",
-      "notes": "string artifact, high base_confidence BUT verdict_authority advisory in the review gate (a WIP stub is not a sprint-blocker mid-sprint); becomes a hard gate in `ship` via `review --only completeness` (>=C/70). The P3/advisory tag reflects review-gate authority, not ship."
+      "notes": "string artifact, high base_confidence BUT verdict_authority advisory in the check gate (a WIP stub is not a blocker mid-plan); becomes a hard gate in `ship` via `check --only completeness` (>=C/70). The P3/advisory tag reflects check-gate authority, not ship."
     },
     {
       "id": "det-10",
@@ -258,10 +258,10 @@
         "command": "grep -rEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' src/"
       },
       "enforcement": [
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz baseline",
       "notes": "return {} / return [] legit in many contexts -> high FP -> FP-verify; advisory."
@@ -282,8 +282,8 @@
         "hook:post-edit-typecheck-block.sh",
         "critic:2.6"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "Arize 2026",
       "notes": "survey called this 'semantic' but it is tsc/import-resolution-anchored = GROUND TRUTH. Classified deterministic. Strongest single check."
@@ -304,8 +304,8 @@
         "hook:post-edit-typecheck-block.sh",
         "critic:2.3"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "dev.to Feb 2026",
       "notes": "tsc-count anchored; honesty-insensitive."
@@ -326,8 +326,8 @@
         "critic:2.1",
         "hook:block-test-disabling.sh"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": "inline // blitz:skip-pinned: #<issue>",
       "source": "blitz baseline",
       "notes": "KEEP."
@@ -347,8 +347,8 @@
       "enforcement": [
         "critic:2.8"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "autonomous-coding 2026 reports",
       "notes": "RENAME (diff-filter=R), distinct from det-01 DELETE. KEEP."
@@ -366,11 +366,11 @@
         "command": "grep -rEn '(https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)|:[0-9]{4,5}\\b)' src/ --include='*.ts' --include='*.tsx' --include='*.vue'"
       },
       "enforcement": [
-        "review",
+        "check",
         "ratchet"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "OWASP A08",
       "notes": "FP-verify (config files legitimately contain these)."
@@ -388,10 +388,9 @@
         "command": "semantic: trace orphan files by reading the import graph — list src/ modules never imported by any reachable entrypoint (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
-        "review",
-        "review"
+        "check"
       ],
-      "owner": "review",
+      "owner": "check",
       "consolidated_target": "both",
       "escape_hatch": "entrypoint/config allowlist",
       "source": "blitz baseline",
@@ -412,7 +411,7 @@
       "enforcement": [
         "code-sweep circuit-breaker"
       ],
-      "owner": "code-sweep",
+      "owner": "check",
       "consolidated_target": "both",
       "escape_hatch": null,
       "source": "blitz baseline",
@@ -433,8 +432,8 @@
       "enforcement": [
         "hook:block-destructive-sql.sh"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": "path contains migrations/ OR migrate up|down",
       "source": "Cursor+Railway, Replit Rogue",
       "notes": "PreToolUse command-parse, not a repo grep. KEEP."
@@ -454,8 +453,8 @@
       "enforcement": [
         "hook:block-destructive-git.sh"
       ],
-      "owner": "sprint-review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": "working tree clean OR user-invoked",
       "source": "autonomous-coding 2026 reports",
       "notes": "KEEP."
@@ -478,7 +477,7 @@
       "owner": "audit",
       "consolidated_target": "audit",
       "escape_hatch": null,
-      "source": "docs/_research/2026-05-16_audit-agent-fp-prevention.md",
+      "source": "audit agent false-positive prevention research (2026-05-16; two independent passes per pillar, refutation panel)",
       "notes": "det-20 is the 20th catalogued detector (appended 2026-05-16). Mechanism deterministic (grep on Evidence field) but it polices the SEMANTIC lane's self-report -> advisory. Honesty-sensitive: down-weighted under Opus 4.8 (catches model under-evidencing its own audit output)."
     },
     {
@@ -534,11 +533,11 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Security checklist + review:security-reviewer — agent-judged"
+        "command": "references/main.md §Security checklist + check --security (critic --mode survey) — agent-judged"
       },
       "enforcement": [
         "audit:pillar-agents",
-        "review:security-reviewer"
+        "check:security"
       ],
       "owner": "audit",
       "consolidated_target": "both",
@@ -589,7 +588,7 @@
       "notes": "semantic-only bug class per 38-task study."
     },
     {
-      "id": "o2-anti-mock",
+      "id": "check:anti-mock",
       "name": "anti-mock-pattern-set",
       "lane": "deterministic",
       "pillar": "completeness",
@@ -598,18 +597,39 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "O2 canonical anti-mock pattern set, run via review --only completeness (vi.mock/jest.mock/sinon.stub in src + stub-return patterns)"
+        "command": "O2 canonical anti-mock pattern set, run via check --only completeness (vi.mock/jest.mock/sinon.stub in src + stub-return patterns)"
       },
       "enforcement": [
-        "review",
-        "sprint-review:1.5",
+        "check",
+        "check:tasks-verify",
         "code-sweep"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz O2 canonical set",
-      "notes": "Folded into review Phase 1.5."
+      "notes": "Folded into check (tasks verify + anti-mock)."
+    },
+    {
+      "id": "check:test-tamper",
+      "name": "test-oracle-tamper",
+      "lane": "deterministic",
+      "pillar": "completeness",
+      "base_confidence": 0.9,
+      "severity": "P1",
+      "verdict_authority": "reject",
+      "detection": {
+        "type": "git",
+        "command": "git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\(' ; assertions_before=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); assertions_after=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$assertions_after\" -lt \"$assertions_before\" ] && echo \"assertions fell $assertions_before -> $assertions_after\""
+      },
+      "enforcement": [
+        "check"
+      ],
+      "owner": "check",
+      "consolidated_target": "check",
+      "escape_hatch": "a deleted test file that a `Ruling:` line in progress.md names as intentionally removed",
+      "source": "Building to the Test (arXiv 2606.28430), SpecPath (2608.09799), Hacker-Fixer Loops (2606.08960): models saturate the visible oracle by editing it",
+      "notes": "Runs at check §1.7 over test files in scope only. Deleted expect() lines, trivial assertions, snapshot rewrites, skip/only insertions, and a falling assertion count while source grew are P1. Complements block-test-deletion.sh and block-test-disabling.sh, which stop the same moves at the tool boundary but cannot see a rebased or worktree-merged diff."
     },
     {
       "id": "o2-artifact-l1l2",
@@ -621,19 +641,19 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "command",
-        "command": "L1: test -s <artifact>  ;  L2: grep substantive-content <artifact>  (L3 wiring delegates to o3-wiring)"
+        "command": "L1: test -s <artifact>  ;  L2: grep substantive-content <artifact>  (L3 wiring delegates to build:integration)"
       },
       "enforcement": [
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz O2",
       "notes": "L1 existence + L2 substantive."
     },
     {
-      "id": "o3-wiring",
+      "id": "build:integration",
       "name": "export-to-import-tracing",
       "lane": "semantic",
       "pillar": "wiring",
@@ -645,14 +665,14 @@
         "command": "semantic: trace export-to-import reachability by reading the import graph — flag new modules whose exports are never imported (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
-        "review",
-        "sprint-dev:3.5.0"
+        "check",
+        "build:integration"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz O3",
-      "notes": "folded into review Phase 1.6 (conditional on new modules)."
+      "notes": "folded into build integration wiring (conditional on new modules)."
     },
     {
       "id": "o3-orphan-route",
@@ -667,10 +687,10 @@
         "command": "semantic: map route nav reachability + auth-guard coverage by reading the import graph — flag orphan routes and guards missing on protected routes (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
-        "review"
+        "check"
       ],
-      "owner": "review",
-      "consolidated_target": "review",
+      "owner": "check",
+      "consolidated_target": "check",
       "escape_hatch": null,
       "source": "blitz O3",
       "notes": "security reviewer cross-checks."
@@ -689,13 +709,13 @@
       },
       "enforcement": [
         "code-doctor",
-        "review:1.7-conditional"
+        "check:framework-conditional"
       ],
-      "owner": "code-doctor",
+      "owner": "check",
       "consolidated_target": "both",
       "escape_hatch": null,
       "source": "code-doctor F/V/P/G rule packs",
-      "notes": "Stays invokable standalone; review embeds when framework detected."
+      "notes": "Stays invokable standalone; check embeds it when a framework is detected."
     },
     {
       "id": "design-side-tab",
@@ -713,7 +733,7 @@
         "filter": "side-tab"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -739,7 +759,7 @@
         "filter": "border-accent-on-rounded"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -765,7 +785,7 @@
         "filter": "overused-font"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -791,7 +811,7 @@
         "filter": "single-font"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -817,7 +837,7 @@
         "filter": "flat-type-hierarchy"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -843,7 +863,7 @@
         "filter": "gradient-text"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -869,7 +889,7 @@
         "filter": "ai-color-palette"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -895,7 +915,7 @@
         "filter": "cream-palette"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -921,7 +941,7 @@
         "filter": "nested-cards"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -947,7 +967,7 @@
         "filter": "monotonous-spacing"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -973,7 +993,7 @@
         "filter": "bounce-easing"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1005,7 +1025,7 @@
         "filter": "dark-glow"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1031,7 +1051,7 @@
         "filter": "icon-tile-stack"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1057,7 +1077,7 @@
         "filter": "italic-serif-display"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1083,7 +1103,7 @@
         "filter": "hero-eyebrow-chip"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1109,7 +1129,7 @@
         "filter": "repeated-section-kickers"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1135,7 +1155,7 @@
         "filter": "numbered-section-markers"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1161,7 +1181,7 @@
         "filter": "em-dash-overuse"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1187,7 +1207,7 @@
         "filter": "marketing-buzzword"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1213,7 +1233,7 @@
         "filter": "aphoristic-cadence"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1239,7 +1259,7 @@
         "filter": "oversized-h1"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1265,7 +1285,7 @@
         "filter": "extreme-negative-tracking"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1291,7 +1311,7 @@
         "filter": "broken-image"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1317,7 +1337,7 @@
         "filter": "gray-on-color"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1343,7 +1363,7 @@
         "filter": "low-contrast"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1369,7 +1389,7 @@
         "filter": "layout-transition"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1395,7 +1415,7 @@
         "filter": "line-length"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1421,7 +1441,7 @@
         "filter": "cramped-padding"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1447,7 +1467,7 @@
         "filter": "body-text-viewport-edge"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1473,7 +1493,7 @@
         "filter": "tight-leading"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1499,7 +1519,7 @@
         "filter": "skipped-heading"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1525,7 +1545,7 @@
         "filter": "justified-text"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1551,7 +1571,7 @@
         "filter": "tiny-text"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1577,7 +1597,7 @@
         "filter": "all-caps-body"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1603,7 +1623,7 @@
         "filter": "wide-tracking"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1629,7 +1649,7 @@
         "filter": "text-overflow"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1655,7 +1675,7 @@
         "filter": "clipped-overflow-container"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1681,7 +1701,7 @@
         "filter": "gpt-thin-border-wide-shadow"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1715,7 +1735,7 @@
         "filter": "repeating-stripes-gradient"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1741,7 +1761,7 @@
         "filter": "theater-slop-phrase"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1767,7 +1787,7 @@
         "filter": "image-hover-transform"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "impeccable",
@@ -1799,7 +1819,7 @@
         "quasar": "use a Quasar brand color / $primary, not an inline or CSS hex"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1824,7 +1844,7 @@
         "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1849,7 +1869,7 @@
         "command": "grep -rnE '(margin|padding|gap):[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1874,7 +1894,7 @@
         "command": "grep -rnE 'bg-gradient-to-|bg-\\[--|@tailwind[[:space:]]+base' ${TARGETS} --include=*.vue --include=*.html --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1899,7 +1919,7 @@
         "command": "grep -rnc '@apply' ${TARGETS} --include=*.css --include=*.vue"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1924,7 +1944,7 @@
         "command": "grep -rnE 'font-size:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1949,7 +1969,7 @@
         "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1974,7 +1994,7 @@
         "command": "grep -rnE 'box-shadow:' ${TARGETS} --include=*.vue --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -1999,7 +2019,7 @@
         "command": "grep -rnE '!important' ${TARGETS} --include=*.vue --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2024,7 +2044,7 @@
         "command": "grep -rnE 'rgba\\([[:space:]]*var\\(--v-theme-' ${TARGETS} --include=*.vue --include=*.css"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2049,7 +2069,7 @@
         "command": "scripts/detect-stack.sh | grep -q \"incompat=quasar+tailwind\""
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2074,7 +2094,7 @@
         "command": "grep -rnE '(cubic-bezier\\([^)]*,[[:space:]]*-[0-9.])|timing-function:[^;]*(bounce|elastic|back)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2105,7 +2125,7 @@
         "command": "grep -rnE 'box-shadow:[^;]*[[:space:]]([3-9][0-9]|[1-9][0-9]{2,})px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2138,7 +2158,7 @@
         "command": "grep -rnE 'background(-image)?:[^;]*repeating-(linear|radial)-gradient' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2163,7 +2183,7 @@
         "command": "grep -rnE '(-webkit-)?background-clip:[[:space:]]*text' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2188,7 +2208,7 @@
         "command": "grep -rnE 'letter-spacing:[[:space:]]*-(0?\\.0[5-9]|[0-9])' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2213,7 +2233,7 @@
         "command": "grep -rnE 'font-size:[[:space:]]*([0-9]|1[01])px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2238,7 +2258,7 @@
         "command": "grep -rnE 'text-transform:[[:space:]]*uppercase' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2263,7 +2283,7 @@
         "command": "grep -rnE 'font-family:[^;]*(Inter|Roboto|Geist|Fraunces|Plus Jakarta|Space Grotesk)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
       },
       "enforcement": [
-        "skill:review --only design",
+        "skill:check --only design",
         "skill:audit --pillar design"
       ],
       "owner": "blitz",
@@ -2283,7 +2303,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "hooks/scripts/startup-validate.sh — schema-conform every .cc-sessions/*.json + carry-forward.jsonl entry; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded"
+        "command": "hooks/scripts/startup-validate.sh — schema-conform every .cc-sessions/*.json entry and docs/plans/*/tasks.json; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded"
       },
       "enforcement": [
         "hook:startup-validate.sh",
@@ -2315,7 +2335,7 @@
       "consolidated_target": "audit",
       "escape_hatch": "field provenance.source==blitz-internal AND length<=200",
       "source": "Anthropic containment 2026-05-25 (AP-4); CaMeL arXiv 2503.18813 (provenance tags)",
-      "notes": "TB-1/TB-2. Extends orchestrator [0:200] cap (orchestrator.md:146) to the startup path. Adds provenance tag {source,write_session,first_seen_sprint}."
+      "notes": "TB-1/TB-2. Applies the 200-char echo cap (security.md TB-2) to the startup path. Adds provenance tag {source,write_session,first_seen}."
     },
     {
       "id": "sec-content-inspection",
@@ -2372,18 +2392,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "counter",
-        "command": "jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json  # failures in the sprint-review full run whose test_file was NOT in the selected set (scripts/test-selector.sh); written by sprint-review §1.3 via scripts/test-listener.sh"
+        "command": "jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json  # failures in the check full run whose test_file was NOT in the selected set (scripts/test-selector.sh); written by check via scripts/test-listener.sh"
       },
       "enforcement": [
         "ratchet:advisory:tia_escaped_failures",
-        "skill:sprint-review §1.3",
-        "skill:quality-metrics"
+        "skill:check",
+        "skill:check"
       ],
-      "owner": "sprint-review",
+      "owner": "check",
       "consolidated_target": "orthogonal",
-      "escape_hatch": "none needed: advisory (not yet ratcheted); any non-zero value in the last 3 sprint-review runs flips scripts/test-selector.sh to --full automatically",
+      "escape_hatch": "none needed: advisory (not yet ratcheted); any non-zero value in the last 3 check runs flips scripts/test-selector.sh to --full automatically",
       "source": "Anthropic test-impact-analysis post (2026); E-043 S5",
-      "notes": "Advisory metric, direction down. Promotion to ratchet metric 9 is a separate story (touches the 8-metric prose in six files). Honesty-insensitive: computed from the journal, not self-reported."
+      "notes": "Advisory metric, direction down. Promotion to ratchet metric 9 is a separate change (touches the 8-metric prose in six files). Honesty-insensitive: computed from the journal, not self-reported."
     },
     {
       "id": "tia-selection-ratio",
@@ -2395,13 +2415,13 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "counter",
-        "command": "scripts/test-selector.sh --json $(git diff --name-only ${SPRINT_BASE}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
+        "command": "scripts/test-selector.sh --json $(git diff --name-only ${BLITZ_BASE:-origin/main}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
       },
       "enforcement": [
         "ratchet:advisory:tia_selection_ratio",
-        "skill:quality-metrics"
+        "skill:check"
       ],
-      "owner": "sprint-review",
+      "owner": "check",
       "consolidated_target": "orthogonal",
       "escape_hatch": null,
       "source": "Anthropic test-impact-analysis post (2026); E-043 S5",
@@ -2429,7 +2449,7 @@
         "^[0-9]+:[[:space:]]*(/\\*|//|\\*)",
         "<(svg|path|rect|circle|polygon|stop)[^>]*(fill|stroke)="
       ],
-      "appliesTo": "every lane:deterministic pillar:design detection.type:regex row. review/audit run a two-step scoped grep: drop files matching files OR containing any contentGuard, then drop lines matching any lineGuard, before reporting. FP-verify is the backstop.",
+      "appliesTo": "every lane:deterministic pillar:design detection.type:regex row. check/audit run a two-step scoped grep: drop files matching files OR containing any contentGuard, then drop lines matching any lineGuard, before reporting. FP-verify is the backstop.",
       "note": "Adapter-gating prevents cross-stack FPs; these exclusions prevent within-stack FPs on token-definition surfaces (the v2.0.0 inflated-count failure mode)."
     }
   },

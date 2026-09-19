@@ -13,7 +13,7 @@ Top-level keys:
 ```yaml
 baseUrl: string              # Base URL for the target app, e.g. "http://localhost:3000"
 pages: object                # Label map: path -> { label -> {selector, type} }
-invariants: array            # Cross-page numeric/text invariants (this sprint: equal/gte/lte)
+invariants: array            # Cross-page numeric/text invariants (currently: equal/gte/lte)
 event_invariants: array      # Analytics event schemas — skeleton, populated in E-011
 role_invariants: array       # Per-role invariants — skeleton, populated in E-012
 role_leak_patterns: array    # Regex strings for role-leak scan — skeleton, populated in E-012
@@ -115,7 +115,7 @@ fi
 
 ## Phase 2 — DATA EXTRACTION
 
-Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in sprint-6 (multi-role in E-012).
+Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in the baseline (multi-role in E-012).
 
 ### 2.1 Navigate + settle
 
@@ -665,7 +665,7 @@ Reads `.ui-audit.json[role_invariants][]`:
 | `viewer_null` | First source (admin) non-null AND every non-first null (privilege boundary — "viewer must not see admin-only data") | CRITICAL on breach |
 | `gte` | First source `parsed` ≥ every other within tolerance (partial-visibility — "admin sees ≥ viewer") | HIGH |
 
-**Evaluator jq script.** Mirrors Phase 3 invariant evaluator (§ 3I.1). `$src` variable-binding is load-bearing — don't re-introduce sprint-6 filter-arg bug.
+**Evaluator jq script.** Mirrors Phase 3 invariant evaluator (§ 3I.1). `$src` variable-binding is load-bearing — don't re-introduce the earlier filter-arg bug.
 
 ```bash
 jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.json" -n '
@@ -964,7 +964,7 @@ NULL_TRANSITION detectable at `len(hist) >= 2`.
 
 Runs in `full`, `smoke`, `data`, `role <name>`, `--loop`. Skipped in `consistency`-only + `heuristics`-only.
 
-Per-flag catalog in `references/checks.md`. This section = coordinator + reporter handoff. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) already written by Phase 2 (sprint-6). Three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
+Per-flag catalog in `references/checks.md`. This section = coordinator + reporter handoff. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) already written by Phase 2 (baseline). Three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
 
 ### 4.1 Inline flag collection
 
@@ -1067,7 +1067,7 @@ jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.js
 
 Each failed total → BROKEN_TOTAL HIGH with `{total_id, parent_value: parent.parsed, children_sum, delta, tolerance}`.
 
-**Repeat-per-row note.** `children[].key` may resolve to multiple observations (extraction emitted one registry line per row with `label: "row_total"` at different `selector`s). Lookup collects all matches; sum across all. Per-row label extraction is known-gap — current single-selector-per-label means all rows share one selector (e.g., `.row-total`) and matched elements get summed in one `browser_evaluate` call. If insufficient, carve follow-up story for `"selector": "...", "all": true`.
+**Repeat-per-row note.** `children[].key` may resolve to multiple observations (extraction emitted one registry line per row with `label: "row_total"` at different `selector`s). Lookup collects all matches; sum across all. Per-row label extraction is known-gap — current single-selector-per-label means all rows share one selector (e.g., `.row-total`) and matched elements get summed in one `browser_evaluate` call. If insufficient, carve a follow-up task for `"selector": "...", "all": true`.
 
 ### 4.5 Aggregation + reporter handoff
 
@@ -1131,7 +1131,6 @@ Agent(
   subagent_type: "general-purpose",
   model: "sonnet",
   prompt: <<PROMPT
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers,
 pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths,
 commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version
 numbers. No preamble. No trailing summary of work already evident in the diff or tool
@@ -1170,7 +1169,7 @@ if ! jq -c '.' "$WORKER_OUT" >/dev/null 2>&1; then
 fi
 ```
 
-Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — sprint-review must state the skip.
+Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — `/blitz:check --scope plan <slug>` must state the skip.
 
 ### 5.3 Category 9 — URL reflects filter/tab/pagination state (`nav_state`)
 
@@ -1263,7 +1262,7 @@ Each match → `heuristic` JSONL LOW with `detail.rule_id: "vercel-cat-16-numera
 
 ### 5.5 Severity tier table
 
-| Tier | When | Blocks sprint-review? |
+| Tier | When | Blocks `/blitz:check --scope plan <slug>`? |
 |---|---|---|
 | CRITICAL | WCAG 2.1 AA blockers (contrast < 4.5:1, touch target < 44×44pt) — reserved for future categories | Yes — fails heuristics pass |
 | HIGH | STATE_NOT_IN_URL (Cat 9), NO_LABEL / NO_FOCUS_STATE (Phase INTERACTIVE) | Yes |
@@ -1393,7 +1392,7 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/findings-by-severity.json"
 ```
 
-### 6.2 Compute severity defaults (sprint-6 baseline)
+### 6.2 Compute severity defaults (baseline)
 
 Findings without `detail.severity` mapped per table. Producers may override.
 
@@ -1466,7 +1465,7 @@ Overwrite each run. Idempotent modulo timestamp.
 
 ### 6.4 Stdout summary
 
-Print to stdout (captured by orchestrator log):
+Print to stdout (captured by the main-thread log):
 
 ```
 [ui-audit] complete.
@@ -1482,17 +1481,17 @@ Print to stdout (captured by orchestrator log):
 
 Top-3: sort `invariant_fail` by `(severity-rank desc, first-seen-tick asc)`, take 3. If <3, pad with top cross-page divergences.
 
-### 6.5 Activity-feed `skill_complete`
+### 6.5 Activity-feed `skill_end`
 
 ```jsonl
-{"ts":"<ts>","session":"<sid>","skill":"ui-audit","event":"skill_complete","message":"ui-audit <mode> complete","detail":{"mode":"<mode>","findings_critical":<n>,"findings_high":<n>,"findings_med":<n>,"findings_low":<n>,"findings_info":<n>,"invariants_evaluated":<n>,"invariants_failed":<n>,"pages_visited":<n>,"tick_count":<n>,"report_path":"docs/crawls/ui-audit-report.md"}}
+{"ts":"<ts>","session":"<sid>","skill":"ui-audit","event":"skill_end","message":"ui-audit <mode> complete","detail":{"mode":"<mode>","findings_critical":<n>,"findings_high":<n>,"findings_med":<n>,"findings_low":<n>,"findings_info":<n>,"invariants_evaluated":<n>,"invariants_failed":<n>,"pages_visited":<n>,"tick_count":<n>,"report_path":"docs/crawls/ui-audit-report.md"}}
 ```
 
 ### 6.6 Mode exceptions
 
 - `consistency`: no `pages_visited` (no extraction). `tick_count = 0`. Same report shape.
 - `data`: no Phase 3/5 output. Report skipped; stdout shows extraction counts only. Activity-feed event still written with null invariant fields.
-- `--loop`: rolling report per tick (same path, overwritten). `skill_complete` per tick with `mode: "loop-tick"`; final `skill_complete` with `mode: "loop-matrix-complete"` when full (role × page) matrix visited twice.
+- `--loop`: rolling report per tick (same path, overwritten). `skill_end` per tick with `mode: "loop-tick"`; final `skill_end` with `mode: "loop-matrix-complete"` when full (role × page) matrix visited twice.
 
 ### 6.7 Idempotence
 
@@ -1531,7 +1530,7 @@ Passed verbatim to `browser_evaluate`. Built per-page from `.ui-audit.json[pages
 
 ### JSONL append (single-session safe)
 
-`>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/session-lifecycle.md`).
+`>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/sessions.md`).
 
 ### Latest-wins reducer
 
@@ -1552,14 +1551,14 @@ Null-guards on `.ts` + `.label` protect against partial-write rows from a crash 
 
 ### Activity-feed event format
 
-See `/_shared/terse-output.md`. Every ui-audit event uses the `ui-audit` skill field:
+See `/_shared/output.md`. Every ui-audit event uses the `ui-audit` skill field:
 
 ```jsonl
 {"ts":"<ISO-8601>","session":"<SESSION_ID>","skill":"ui-audit","event":"<event-type>","message":"<short>","detail":{<phase-specific>}}
 ```
 
 Common event types:
-- `skill_start`, `skill_complete` — lifecycle (Phase 0 / 6)
+- `skill_start`, `skill_end` — lifecycle (Phase 0 / 6)
 - `invariant_fail`, `invariant_pass` — Phase 3
 - `flapping`, `stale`, `null_transition` — Phase 3 tick-diff
 - `registry_progress` — Phase 2 appended ≥1 line (tick aggregate, not per-line)

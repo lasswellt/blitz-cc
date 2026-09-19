@@ -1,22 +1,14 @@
 ---
 name: refactor
-description: "Performs safe, incremental refactoring with test verification after every step. Snapshots test results, refactors one piece at a time, and reverts if any test that was passing starts failing. Use when the user says 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', or 'clean up'. NOT for behavior changes — those go through sprint-dev or fix-issue."
+description: "Refactors a file or module in small verified steps: snapshots the test baseline, changes one thing at a time, type-checks and tests after each, reverts on regression. Use for 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', 'clean up'. Behavior changes go to /blitz:build."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 argument-hint: "<target-file-or-module> <refactoring-goal>"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-
-
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
 
@@ -44,7 +36,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **ABORT on regression.** If a step introduces test failures that you cannot resolve by reverting the step, stop and report the issue to the user.
 
-8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [Definition of Done](/_shared/sprint-contracts.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [Definition of Done](/_shared/quality.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
@@ -52,7 +44,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Invocation
 

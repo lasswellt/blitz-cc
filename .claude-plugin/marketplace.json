@@ -10,8 +10,8 @@
     {
       "name": "blitz",
       "source": "./",
-      "description": "Holistic-machine plugin for Vue/Nuxt + Firebase. 38 skills, 11 agents, 46 hook scripts across 16 events, 13 shared protocol files. Orchestrator main-thread routing, 8-invariant quality ratchet, 7 anti-shortcut hooks, optional Cross-Model Critic.",
-      "version": "2.5.0"
+      "description": "Agentic development loop for Vue/Nuxt + Firebase: plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs.",
+      "version": "3.0.1"
     }
   ]
 }

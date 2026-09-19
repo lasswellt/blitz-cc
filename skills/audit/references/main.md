@@ -6,8 +6,8 @@ This file provides templates, checklists, and schemas used by the audit skill.
 
 ## Agent Prompt Template
 
-<!-- import: /_shared/agent-orchestration.md -->
-See [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md) for canonical boilerplate (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT, PARTIAL, CONFIRMATION) shared across orchestrator skills. The audit-specific template below remains the byte-stable spawn source — Invariant 5 (OUTPUT STYLE snippet) requires inline preservation. The shared fragment is the canonical reference + extraction target for future runtime splicing.
+<!-- import: /_shared/agents.md -->
+See [/_shared/agents.md](/_shared/agents.md) for canonical boilerplate (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT, PARTIAL, CONFIRMATION) shared across fan-out skills. The audit-specific template below remains the byte-stable spawn source — Invariant 5 (OUTPUT STYLE snippet) requires inline preservation. The shared fragment is the canonical reference + extraction target for future runtime splicing.
 
 Use this template for every audit agent. Replace `{PLACEHOLDERS}` with agent-specific values.
 
@@ -57,7 +57,7 @@ Write each finding using this exact format:
    - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading — refine or discard.
    - **Negative** ("X is absent from Y"): `grep -in '<4-char-substring-of-X>' Y`. Any hit means re-evaluate (may be over-strict regex).
    - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
-   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/_research/2026-05-16_audit-agent-fp-prevention.md`.
+   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/research/2026-05-16_audit-agent-fp-prevention.md`.
 3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. Orchestrator filters below 80 (tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`).
    - Confidence < 50 after falsification: do NOT record as finding; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`.
    - "No violations found" results: write to a separate `## Verified Clean` section, NOT the findings list. Findings are actionable; clean checks document what was inspected.
@@ -77,7 +77,6 @@ Write each finding using this exact format:
 - **Top Concern**: <one-sentence summary of the most important finding>
 - **Overall Assessment**: <one-sentence pillar health assessment>
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles,
 fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code,
 URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows,
 error codes, dates, version numbers. No preamble. No trailing summary of work
@@ -167,8 +166,8 @@ already evident in the diff or tool output. Format: fragments OK.
 #### Containment Scope (sec-containment) — applies to agent/plugin codebases (blitz-self-audit)
 Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **capability grants, not toggles** (AP-3 / `sec-capability-grant`):
 - [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion — else flag.
-- [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`/carry-forward/CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
-- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the orchestrator cap+scan interpolated reply fields? (`agent-orchestration.md` §8.0)
+- [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/`, or CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
+- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.md` §3)
 - [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
 - [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or `eval`/`source` a project-controlled file? ([/_shared/security.md](/_shared/security.md))
 
@@ -239,13 +238,13 @@ Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **cap
 ### High
 **Definition**: Significant quality issue that will cause user-facing problems or major technical debt.
 **Examples**: N+1 queries on paginated lists, missing error boundaries on critical flows, permissive CORS in production, components over 500 lines.
-**Action**: Fix within current sprint or next sprint.
+**Action**: Fix in the audit plan's first tasks (`T-001…`).
 **Score weight**: 5
 
 ### Medium
 **Definition**: Code quality concern that increases maintenance burden or degrades experience over time.
 **Examples**: Inconsistent naming, moderate code duplication, missing loading states on secondary views, untyped function parameters.
-**Action**: Address in dedicated cleanup epic.
+**Action**: Address as a lower-priority task in the audit plan, or a note in `spec.md`.
 **Score weight**: 2
 
 ### Low
@@ -389,113 +388,34 @@ Prioritized list of remediation actions:
 
 ---
 
-## Proposed Epics
+## Plan
 
-See companion file: `audit-YYYYMMDD-epics.md`
+`docs/plans/audit-YYYY-MM-DD/` — spec.md (paused), tasks.json (N tasks), M findings kept as notes.
 ```
 
 ---
 
-## Proposed Epic Format
+## Task Emission (Phase 3)
 
-Use this format for each proposed epic generated from audit findings:
+Each theme becomes one `tasks.sh add` call; the schema is `blitz-tasks/1.0` ([/_shared/loop.md](/_shared/loop.md) §Schemas). Fields the audit fills:
 
-```markdown
-## PROPOSED EPIC: <theme-name>
+| Field | Source |
+|---|---|
+| `id` | `T-00N` in impact order (Critical 10, High 5, Medium 2, Low 1, summed per theme) |
+| `title` | `<Pillar>: <theme>` |
+| `role` | from `files` (backend / frontend / infra / test) |
+| `files` | union of cited paths, ≤12 |
+| `verify[]` | registry `detection.command` for deterministic findings; `! grep -rnE '<pattern>' <files>` (`grep_absent`) or `grep -qE` for semantic ones; `::60` timeout (`::300` for tsc / import-graph) |
+| `origin` | `audit` |
+| `notes` | registry ids that fired, agreement (`sec-a/sec-b agreed`), severity, report section |
 
-**ID**: AUDIT-<NNN>
-**Pillar**: <Architecture|Performance|Security|Maintainability|Robustness>
-**Priority Score**: <impact/effort ratio>
-**Impact Score**: <sum of severity weights>
-**Effort Estimate**: <Small (1-3 files) | Medium (4-8 files) | Large (9+ files)>
-**Finding Count**: N (Nc Critical / Nh High / Nm Medium / Nl Low)
+A finding with no executable check is a note under `spec.md` §Out of scope, never a task. Run each verify command once on the unfixed tree: it must fail now (otherwise it proves nothing).
 
-### Description
-
-<2-3 sentences describing the problem domain and why this epic matters.>
-
-### Key Findings
-
-- **[SEVERITY]** <finding-title> — <file-path> — <one-line description>
-- ...
-
-### Proposed Stories
-
-1. <story-title> — <1-sentence description> (Effort: S/M/L)
-2. ...
-
-### Success Criteria
-
-- [ ] <measurable criterion>
-- [ ] <measurable criterion>
-- ...
-
-### Dependencies
-
-- Depends on: <other-epic-ids or "None">
-- Blocks: <other-epic-ids or "None">
-
-### Recommended Phase
-
-<early | mid | late> — Based on dependency depth and priority score.
-```
+`spec.md` frontmatter: `status: paused` (`active` with `--plan`), `priority: P2` (`next-state.sh` orders active plans P0 → P1 → P2; a bare integer is also accepted), `created`, `ship: manual`. Sections: Goal, Findings summary (table by task with `file:line`), Out of scope (notes + coverage boundary).
 
 ---
 
-## Epic Index JSON Schema
-
-```json
-{
-  "audit_date": "YYYY-MM-DD",
-  "overall_health_score": 0,
-  "pillar_scores": {
-    "architecture": 0,
-    "performance": 0,
-    "security": 0,
-    "maintainability": 0,
-    "robustness": 0
-  },
-  "total_findings": 0,
-  "severity_totals": {
-    "critical": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0
-  },
-  "proposed_epics": [
-    {
-      "id": "AUDIT-001",
-      "theme": "<theme-name>",
-      "pillar": "<pillar>",
-      "priority_score": 0.0,
-      "impact_score": 0,
-      "effort": "Small|Medium|Large",
-      "finding_count": 0,
-      "severity_breakdown": {
-        "critical": 0,
-        "high": 0,
-        "medium": 0,
-        "low": 0
-      },
-      "proposed_stories": [
-        {
-          "title": "<story-title>",
-          "description": "<one-sentence>",
-          "effort": "S|M|L"
-        }
-      ],
-      "success_criteria": ["<criterion>"],
-      "dependencies": [],
-      "blocks": [],
-      "recommended_phase": "early|mid|late"
-    }
-  ]
-}
-```
-
----
-
-## Recall hardening (sprint-19) — aggregation, FP-verify panel, deterministic lane, recall instrumentation
+## Recall hardening — aggregation, FP-verify panel, deterministic lane, recall instrumentation
 
 Detail for the SKILL.md §"Phase 1.D / 2.0 / 2.5 / 3.5" contract. Source specs: `docs/consolidation/review-audit/audit-spec.md`, `flaw-finding-proof.md`.
 
@@ -601,42 +521,6 @@ Write `${AUDIT_RUN}/reports/audit-report.md` using the report template from `ref
 <prioritized list of what to fix first>
 ```
 
-## Machine-Readable Index Schema (Phase 3.5)
+## Plan Emission (Phase 3)
 
-Write a JSON index for consumption by the roadmap skill:
-```
-${REPORT_DIR}/audit-$(date +%Y%m%d)-index.json
-```
-Schema:
-```json
-{
-  "audit_date": "<ISO-8601>",
-  "proposed_epics": [
-    {
-      "id": "<EPIC-A...>",
-      "theme": "<theme-name>",
-      "pillar": "<pillar>",
-      "priority": 0,
-      "impact": 0,
-      "effort": "<Small|Medium|Large>",
-      "finding_count": 0,
-      "severity_breakdown": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
-      "proposed_stories": ["<story descriptions>"],
-      "success_criteria": ["<criteria>"],
-      "status": "proposed",
-      "defer_reason": null,
-      "multi_sprint": false,
-      "sprint_estimate": null,
-      "ingested_at": null
-    }
-  ]
-}
-```
-
-**Backward-compat defaults** (consumers MUST tolerate omitted fields by defaulting):
-- `id` — stable string key, format `EPIC-A<NN>`. Required for `/blitz:next` Phase 0.9b cross-reference.
-- `status` — defaults to `"proposed"`. Enum: `proposed | deferred | active | complete`. Drives `/blitz:next` row 6e detection.
-- `defer_reason` — defaults to `null`. Free-form string when `status: "deferred"`.
-- `multi_sprint` — defaults to `false`. Operator-set boolean; signals work spans multiple sprints (orthogonal to `effort` — a 6-file refactor across 3 sprints sets `multi_sprint: true` + `sprint_estimate: 3` even when `effort: Medium`).
-- `sprint_estimate` — defaults to `null`. Integer count of sprints the operator expects to complete this epic.
-- `ingested_at` — defaults to `null`. ISO-8601 timestamp set by `/blitz:roadmap extend` after registry ingestion.
+No JSON index. The machine-readable output is `docs/plans/audit-<date>/tasks.json`, written only by `scripts/tasks.sh` (see §Task Emission above); `next-state.sh` reads it once `spec.md` says `status: active`. Rerun on the same day appends tasks for new themes (title match skips duplicates) and never rewrites the `spec.md` frontmatter.

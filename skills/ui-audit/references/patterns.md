@@ -2,7 +2,7 @@
 
 > **SKELETON — populated in E-009 (CAP-012) — DO NOT treat as shipping checklist.**
 >
-> Sprint-6 ships the heading structure + pointers to upstream rule sources so CAP-008 AC2 closes and Phase 5 (HEURISTICS) has a stable reference. Full rule implementations land in E-009.
+> This reference ships the heading structure + pointers to upstream rule sources so CAP-008 AC2 closes and Phase 5 (HEURISTICS) has a stable reference. Full rule implementations land in E-009.
 
 Findings produced by this module surface as `file:line` (when the rule applies to source code) or `page:heuristic` (when the rule applies to rendered DOM) in `docs/crawls/ui-audit-report.md`.
 
@@ -64,7 +64,7 @@ Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3
 
 ---
 
-## Role-leak patterns (CAP-016 / E-012 / sprint-7)
+## Role-leak patterns (CAP-016 / E-012)
 
 Regex patterns that trigger a `ROLE_LEAK` finding (always CRITICAL) when they match rendered HTML while logged in as a non-admin role. Full procedure in `skills/ui-audit/references/main.md` § Phase ROLE § R.8.
 

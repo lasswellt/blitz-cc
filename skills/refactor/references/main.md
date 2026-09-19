@@ -156,7 +156,7 @@ Before starting, assess refactoring risk:
 | Callers | <5 files import the module | >20 files import the module |
 | Type safety | Strict TypeScript, no `any` | Many `any` casts, weak types |
 | Public API | Internal module only | Exported/consumed by external code |
-| Timing | Before a sprint, no deadline | During active sprint, tight deadline |
+| Timing | Before a plan starts, no deadline | During an active plan, tight deadline |
 
 If risk high, consider:
 1. Writing tests first (increase coverage to >80%)

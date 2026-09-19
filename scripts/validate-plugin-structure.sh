@@ -200,49 +200,6 @@ for event_type in hooks:
 fi
 
 # ---------------------------------------------------------------
-# 6. README cross-reference — compare counts
-# ---------------------------------------------------------------
-echo "Checking README cross-references..."
-README="$PLUGIN_ROOT/README.md"
-if [[ -f "$README" ]]; then
-  # Count actual skill dirs (excluding _shared)
-  actual_skills=0
-  if [[ -d "$SKILLS_DIR" ]]; then
-    for d in "$SKILLS_DIR"/*/; do
-      name=$(basename "$d")
-      [[ "$name" == "_shared" ]] && continue
-      actual_skills=$((actual_skills + 1))
-    done
-  fi
-
-  # Count actual agent files
-  actual_agents=0
-  if [[ -d "$AGENTS_DIR" ]]; then
-    for f in "$AGENTS_DIR"/*.md; do
-      [[ -f "$f" ]] && actual_agents=$((actual_agents + 1))
-    done
-  fi
-
-  # Check README for "**N skills**" pattern (README.md:14 format)
-  readme_skills=$(grep -oP '\*\*\K\d+(?= skills\*\*)' "$README" 2>/dev/null | head -1 || echo "")
-  if [[ -n "$readme_skills" && "$readme_skills" -ne "$actual_skills" ]]; then
-    check_fail "README says $readme_skills skills but found $actual_skills skill directories"
-  elif [[ -n "$readme_skills" ]]; then
-    check_pass "README skill count matches ($actual_skills)"
-  fi
-
-  # Check README for "**N agents**" pattern (README.md:14 format)
-  readme_agents=$(grep -oP '\*\*\K\d+(?= agents\*\*)' "$README" 2>/dev/null | head -1 || echo "")
-  if [[ -n "$readme_agents" && "$readme_agents" -ne "$actual_agents" ]]; then
-    check_fail "README says $readme_agents agents but found $actual_agents agent files"
-  elif [[ -n "$readme_agents" ]]; then
-    check_pass "README agent count matches ($actual_agents)"
-  fi
-else
-  check_warn "README.md not found, skipping cross-reference check"
-fi
-
-# ---------------------------------------------------------------
 # 7. Version consistency — marketplace.json vs plugin.json
 # ---------------------------------------------------------------
 echo "Checking version consistency..."
@@ -296,7 +253,7 @@ done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/n
 # ---------------------------------------------------------------
 # 9. Plugin workflows — workflows/*.js parse, meta literal first, no
 #    resume-breaking calls (Date.now / Math.random / new Date() / import()).
-#    Contract: skills/_shared/agent-orchestration.md §Plugin workflows (E-045).
+#    Contract: skills/_shared/agents.md §Plugin workflows (E-045).
 # ---------------------------------------------------------------
 echo "Checking plugin workflows..."
 WORKFLOWS_DIR="$PLUGIN_ROOT/workflows"
@@ -373,6 +330,20 @@ assert 'schema_version' in d and 'name' in d, 'missing schema_version or name'
       check_pass "$rel_path has a prompt body"
     else
       check_fail "$rel_path has an empty prompt body"
+    fi
+    # frontmatter must parse: an unquoted "key: value: more" description makes the
+    # runner refuse the whole suite ("invalid YAML frontmatter"), not just the case.
+    if head -1 "$pm" | grep -qx -- '---'; then
+      fm=$(awk 'NR==1 && /^---$/ {fm=1; next} fm==1 && /^---$/ {exit} fm==1 {print}' "$pm")
+      if [[ "$HAVE_PYYAML" -eq 1 ]]; then
+        if printf '%s\n' "$fm" | python3 -c "import sys, yaml; d = yaml.safe_load(sys.stdin); assert isinstance(d, dict)" >/dev/null 2>&1; then
+          check_pass "$rel_path frontmatter parses"
+        else
+          check_fail "$rel_path frontmatter does not parse as YAML (quote descriptions that contain ': ')"
+        fi
+      elif printf '%s\n' "$fm" | grep -qE '^description: [^"'"'"'].*: '; then
+        check_fail "$rel_path description contains ': ' and is unquoted (YAML parse error at run time)"
+      fi
     fi
   done < <(find "$EVALS_DIR" -name prompt.md -not -path "*/results/*" -print0 2>/dev/null)
 
