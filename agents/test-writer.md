@@ -3,7 +3,7 @@ name: test-writer
 description: |
   Test specialist for unit tests, integration tests, and E2E tests. Generates
   tests following AAA pattern with factory functions. Adapts to project's test
-  framework (Vitest or Jest). Worker agent spawned by /blitz:test-gen and sprint-dev — for a freeform 'write tests' request invoke the test-gen skill, which orchestrates this agent.
+  framework (Vitest or Jest). Worker agent spawned by /blitz:test-gen and /blitz:build — for a freeform 'write tests' request invoke the test-gen skill, which orchestrates this agent.
 
   <example>
   Context: User needs tests for a newly implemented store
@@ -17,7 +17,7 @@ maxTurns: 35
 # AND reason about edge cases. Haiku is too coarse for the latter.
 model: sonnet
 memory: project
-# Spawned several times per sprint: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
+# Spawned several times per plan: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
 experimental:
   cacheTtl: 1h
 ---
@@ -206,7 +206,11 @@ describe("Firestore Rules", () => {
 
 ## Deterministic Test Recipe (for async / timing / mock-heavy targets)
 
-When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`/_shared/quality.md`](/_shared/quality.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
+When the target code uses `setTimeout`/`setInterval`, `Math.random`, network calls, ≥3-await chains, singletons, or ≥5 `vi.mock`/`jest.mock` calls, consult [`skills/test-gen/references/deterministic-tests.md`](../skills/test-gen/references/deterministic-tests.md) before generating tests. Covers fake-timer async variants (Vitest `advanceTimersByTimeAsync` vs the sync footgun), seeded randomness, MSW vs `vi.mock` trade-offs, and property-based recipes. Reference-only — not auto-enforced; the agent decides when to apply.
+
+## Mocking Policy
+
+Mock the network, clocks, randomness, and third-party SaaS at the wire; never the module under test, its `src/` collaborators, Firestore rules (use the emulator), or the store a test exercises. A `vi.mock` of a path under `src/` raises the `mocks_in_src` ratchet (registry `det-03`). Full policy and emulator-backed alternatives: [`deterministic-tests.md`](../skills/test-gen/references/deterministic-tests.md) §Mocking policy.
 
 ## Spec Fix Mode — Pre-Flight Complexity Classifier
 
@@ -224,7 +228,7 @@ When invoked to **fix a failing spec** (not generate new tests), classify the sp
 Classification dictates strategy:
 
 - `SIMPLE_SPEC` → proceed with normal Spec Fix Prompt Template (below).
-- `HARD_SPEC` → BEFORE any edit, consult `/_shared/quality.md` AND emit an `INVESTIGATE:` signal to the orchestrator describing which signals tripped. The orchestrator may route through ask-before-code (read-only investigation) per `agents/orchestrator.md` §2 routing matrix.
+- `HARD_SPEC` → BEFORE any edit, consult `skills/test-gen/references/deterministic-tests.md` AND emit an `INVESTIGATE:` signal to `build` describing which signals tripped. `build` may route through `research --codebase` (read-only investigation) before retrying.
 
 Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` (pre-flight classifier) + `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F3.
 
@@ -243,7 +247,8 @@ Current actual output:
   <captured from `npx vitest run <spec>` or `npx jest <spec>`>
 Expected output:
   <derived from spec assertions; if not derivable, state UNKNOWN explicitly
-   and STOP — emit ESCALATE: oracle-underivable instead of guessing>
+   and STOP — emit ESCALATE: oracle-underivable instead of guessing;
+   build maps it to blocked_reason: oracle-underivable on the task>
 Constraint: fix the IMPLEMENTATION. Do NOT modify test assertions, the
             `describe`/`it` block names, or the `expect(...)` lines. If the
             test itself looks wrong, emit ESCALATE: test-assertion-suspect
@@ -263,9 +268,9 @@ Hard budget: **10 tool calls per failing spec**. Counter resets when moving to a
    - Last 3 hypotheses tried (one-line each)
    - The current actual-vs-expected diff
    - The HARD_SPEC signals that tripped (if classifier ran)
-3. Do NOT retry without orchestrator intervention.
+3. Do NOT retry without `build` intervention.
 
-Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to the orchestrator for routing (ask-before-code, operator pairing, or skip-with-block_reason). Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
+Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to `build` for routing (`research --codebase`, operator pairing, or marking the task `blocked` with a `blocked_reason`). Every `ESCALATE:` line you emit lands in the reply's `escalate` field and, for `ESCALATE: oracle-underivable` / `test-assertion-suspect`, becomes the task's `blocked_reason` (`/_shared/agents.md` §4.1). Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
 
 ## Quality Gates
 

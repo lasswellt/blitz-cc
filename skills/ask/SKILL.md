@@ -21,7 +21,7 @@ underspecified request and route it to the correct skill(s) with a clear plan.
 
 ## Phase 1: Classify
 
-**Canonical routing map: [`agents/orchestrator.md`](../../agents/orchestrator.md) §2.** That table is the single source of truth for intent→skill routing. Read it at runtime and match the user's request against it:
+**Canonical routing map: [`skills/_shared/agents.md`](../_shared/agents.md) §2.** That table is the single source of truth for intent→skill routing. Read it at runtime and match the user's request against it:
 
 ```bash
 sed -n '/## 2. Skill routing matrix/,/## 3\./p' agents/orchestrator.md

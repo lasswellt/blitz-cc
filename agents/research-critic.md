@@ -197,9 +197,9 @@ For each such claim, grade:
 | `UNKNOWN` | cited source inaccessible (4xx / timeout / paywall) | neither pass nor reject; counts toward `unknown_rate` (§3) |
 | `UNCITED` | quantified claim with NO citation at all | **blocker** if `scope:`; `major` otherwise |
 
-**Refuse-without-evidence for `scope:` claims.** A quantified `scope:` claim drives the
-carry-forward registry and real sprints — an ungrounded one is the most expensive false
-PASS in the suite (it sprintifies phantom work). So for any claim inside a `scope:` block:
+**Refuse-without-evidence for `scope:` claims.** A quantified `scope:` claim drives
+`plan` and real tasks — an ungrounded one is the most expensive false
+PASS in the suite (it turns phantom work into tasks). So for any claim inside a `scope:` block:
 `UNCITED` or `UNGROUNDED` → **CITATIONS_MISSING** (blocker); inaccessible cite → `UNKNOWN`
 (block cleanup via UNVERIFIED, do NOT auto-pass). Body claims (non-`scope:`) grade to
 `major`/advisory, never the sole reject reason.
@@ -207,26 +207,6 @@ PASS in the suite (it sprintifies phantom work). So for any claim inside a `scop
 **Cross-model recommended here.** The attribution judgment (does this source actually
 support this claim) is the 4–18% weak task — `BLITZ_DUAL_CRITIC=1 --mode research` is
 high-value, not theater, specifically for §2.5 on docs with `scope:` claims.
-
-### 2.7 Carry-forward citation drift re-verification
-
-Citations mutate 29–86% across turns on a fixed topic (Ram 2025, ACL 2025.wasp-main.20;
-up to 85.6% fabrication). A `scope:` claim cited correctly in sprint-3 can rot by sprint-6.
-When a `scope:` claim is **re-cited across sprints** (carry-forward registry propagation)
-OR when invoked with `--reverify-carryforward`, re-run §2.1 (liveness) + §2.5 (grounding)
-on that claim's source. A once-LIVE/GROUNDED citation that now resolves DEAD or UNGROUNDED
-→ flag `drift_detected` (`major`) and surface in the carry-forward escalation. This is a
-cheap re-probe of existing citations, not a re-research. Cadence: `/blitz:next` triggers it
-when an active carry-forward entry's `scope:` citation is older than 2 sprints.
-
-**S-1 extension (TB-2 persistent-state).** The same 2-sprint re-verification cadence applies to
-**every** carry-forward entry, not only those with citations — keyed on `provenance.first_seen_sprint`
-([sprint-contracts.md](../skills/_shared/quality.md) provenance field). Memory-poisoning
-attacks are temporally decoupled (MINJA arXiv 2601.05504; Zombie Agents 2602.15654): a poisoned entry can
-sit dormant then trigger a later sprint. On re-verification, re-run the deterministic injection scan
-(`hooks/scripts/startup-validate.sh`) on the entry and confirm its `scope.acceptance` checks still
-parse; a once-clean entry that now trips the scan → `drift_detected` (`major`) + quarantine. See
-[threat-model.md](../skills/_shared/security.md) §3 TB-2.
 
 ### 2.6 Frontmatter `citations:` schema present
 
@@ -272,7 +252,7 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
 ```
 
 `citation_health` array MUST contain one entry per unique URL, regardless of verdict.
-`unknown_rate` = fraction of citations classified UNKNOWN (inaccessible). Orchestrator
+`unknown_rate` = fraction of citations classified UNKNOWN (inaccessible). `research`
 writes both to the doc's `## Citation Health` section.
 
 Three verdict states (UNKNOWN is first-class — inaccessible ≠ verified; verification
@@ -291,11 +271,11 @@ accuracy drops to ~66–80% on inaccessible sources, CiteAudit arxiv 2602.23452)
 - **Evidence over judgment + verdict-flip asymmetry**: §§2.1-2.4 are deterministic (HTTP
   status, substring match, domain count, date arithmetic) and may flip the verdict. §2.5
   is LLM-judged attribution: it flips the verdict ONLY for `scope:` claims (UNCITED/UNGROUNDED
-  → CITATIONS_MISSING — high blast radius, they drive sprints); for body claims it is
+  → CITATIONS_MISSING — high blast radius, they drive plans); for body claims it is
   `major`-advisory and never the sole reject reason. Inaccessible sources never reject —
   they raise `unknown_rate` and, past 0.3, yield UNVERIFIED (not PASS, not REJECT).
 - **Bias toward rejection on hallucination**: the cost of one false PASS (downstream
-  /blitz:roadmap ingests a phantom citation) is much higher than one false REJECT (user
+  /blitz:plan ingests a phantom citation) is much higher than one false REJECT (user
   re-runs the research). Default to CITATIONS_MISSING when in doubt about §2.1.
 - **Be patient with WebFetch**: rate limits and slow servers are normal. Classify slow
   responses as UNKNOWN, not LIKELY_HALLUCINATED.

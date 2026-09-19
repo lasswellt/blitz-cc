@@ -83,13 +83,13 @@ if [ -f "$HANDOFF" ]; then
   # Surface only if HANDOFF.json is fresh (≤24h). Older = stale, ignore.
   if [ "$HANDOFF_AGE_SEC" -le 86400 ]; then
     HANDOFF_PHASE=$(jq -r '.phase // "unknown"' "$HANDOFF" 2>/dev/null | sanitize || echo "unknown")
-    HANDOFF_SPRINT=$(jq -r '.sprint // "none"' "$HANDOFF" 2>/dev/null | sanitize || echo "none")
+    HANDOFF_PLAN=$(jq -r '(.plan // "none") + (if .task then "/" + .task else "" end)' "$HANDOFF" 2>/dev/null | sanitize || echo "none")
     HANDOFF_BRANCH=$(jq -r '.branch // "unknown"' "$HANDOFF" 2>/dev/null | sanitize || echo "unknown")
     HANDOFF_UNCOMMITTED_COUNT=$(jq -r '.uncommitted | length' "$HANDOFF" 2>/dev/null || echo 0)
     HANDOFF_LAST=$(jq -r '.last_activity // ""' "$HANDOFF" 2>/dev/null | sanitize || echo "")
     cat <<EOF
 [blitz] HANDOFF detected (compaction-resume artifact):
-  sprint:      $HANDOFF_SPRINT
+  plan/task:   $HANDOFF_PLAN
   phase:       $HANDOFF_PHASE
   branch:      $HANDOFF_BRANCH
   uncommitted: $HANDOFF_UNCOMMITTED_COUNT files

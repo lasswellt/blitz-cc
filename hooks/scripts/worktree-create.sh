@@ -24,8 +24,8 @@ BRANCH=$(blitz_extract branch)
 # Collision guard — GH#51596: the 8-hex agentId prefix in `worktree-agent-<8hex>`
 # can collide with a branch from a prior session, silently reusing stale commits
 # + stashes. This is the root cause of dual-implementation merge conflicts like
-# blitz's sprint-289/CAP-148. Refuse re-use when the existing branch is ahead of
-# origin/HEAD; user runs /blitz:worktree-prune to inspect, or sets
+# earlier dual-implementation conflicts. Refuse re-use when the existing branch is ahead of
+# origin/HEAD; user runs /blitz:sessions worktrees to inspect, or sets
 # BLITZ_ALLOW_WORKTREE_COLLISION=1 to force-proceed.
 #
 # INTEROP (native agent view, CC >=2.1.139): this guard is scoped to the
@@ -40,9 +40,9 @@ if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
     if [ "${AHEAD:-0}" -gt 0 ]; then
       CDET=$(jq -n --arg br "$BRANCH" --argjson ah "${AHEAD:-0}" '{branch:$br,ahead:$ah}')
       blitz_log_event "hook" "worktree_collision_blocked" "Refused stale agent branch $BRANCH ($AHEAD commits ahead)" "$CDET"
-      blitz_inbox_append "blocked" "worktree collision: stale agent branch $BRANCH is $AHEAD commits ahead; run /blitz:worktree-prune" || true
+      blitz_inbox_append "blocked" "worktree collision: stale agent branch $BRANCH is $AHEAD commits ahead; run /blitz:sessions worktrees" || true
       echo "BLITZ: refusing to reuse stale agent branch $BRANCH ($AHEAD commits ahead of origin/HEAD)" >&2
-      echo "  -> run /blitz:worktree-prune to inspect, or set BLITZ_ALLOW_WORKTREE_COLLISION=1 to force" >&2
+      echo "  -> run /blitz:sessions worktrees to inspect, or set BLITZ_ALLOW_WORKTREE_COLLISION=1 to force" >&2
       exit 1
     fi
   fi

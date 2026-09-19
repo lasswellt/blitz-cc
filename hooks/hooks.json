@@ -11,18 +11,6 @@
         ]
       }
     ],
-    "PostCompact": [
-      {
-        "matcher": "auto|manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-compact-log.sh",
-            "async": true
-          }
-        ]
-      }
-    ],
     "UserPromptExpansion": [
       {
         "matcher": "blitz:.*",
@@ -44,51 +32,19 @@
         ]
       }
     ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/teammate-idle.sh"
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/task-completed-validate.sh"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-activity-log.sh"
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-format.sh"
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-lint.sh"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-edit-test.sh",
             "timeout": 60,
             "statusMessage": "blitz: running matching tests"
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/analysis-paralysis-guard.sh"
           },
           {
             "type": "command",
@@ -107,50 +63,6 @@
             "statusMessage": "blitz: type-checking edited file"
           }
         ]
-      },
-      {
-        "matcher": "Read|Glob|Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/analysis-paralysis-guard.sh"
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/context-monitor.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/context-monitor.sh"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/subagent-start.sh",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/subagent-stop.sh",
-            "async": true
-          }
-        ]
       }
     ],
     "PostToolBatch": [
@@ -166,34 +78,12 @@
         ]
       }
     ],
-    "PostToolUseFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/post-tool-failure.sh",
-            "async": true
-          }
-        ]
-      }
-    ],
     "StopFailure": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/stop-failure.sh",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/permission-request.sh",
             "async": true
           }
         ]
@@ -265,10 +155,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-edit-backup.sh"
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
           },
           {
@@ -282,7 +168,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
@@ -290,15 +176,7 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/reference-compression-validate.sh"
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/markdown-link-validate.sh"
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/workflow-guard.sh"
           },
           {
             "type": "command",
@@ -378,47 +256,6 @@
             "async": true,
             "timeout": 10,
             "statusMessage": "blitz: logging permission denial"
-          }
-        ]
-      }
-    ],
-    "PreModelSwitch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/model-switch-warn.sh",
-            "args": [],
-            "timeout": 5,
-            "statusMessage": "blitz: model-switch advisory"
-          }
-        ]
-      }
-    ],
-    "CwdChanged": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cwd-changed.sh",
-            "args": [],
-            "async": true,
-            "timeout": 10,
-            "statusMessage": "blitz: recording cwd"
-          }
-        ]
-      }
-    ],
-    "DirectoryAdded": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cwd-changed.sh",
-            "args": [],
-            "async": true,
-            "timeout": 10,
-            "statusMessage": "blitz: recording added directory"
           }
         ]
       }
