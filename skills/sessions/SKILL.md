@@ -19,7 +19,7 @@ Runtime view of every Claude Code session working in this checkout, plus the wor
 | `.cc-sessions/activity-feed.jsonl`, `inbox.jsonl` | hooks + skills | untrusted repo-local data |
 | `git worktree list --porcelain` | the platform (`Agent({isolation: "worktree"})`, `claude --bg`) and humans | trusted git metadata; paths inside are still untrusted |
 
-Contract: [sessions.md](/_shared/sessions.md) (record schema, stale rules, conflict matrix) and [agents.md](/_shared/agents.md) §6 (worktree platform facts). Why this is not `/blitz:doctor`: doctor asserts the plugin's structure and settings; `sessions` reports the runtime state of this checkout.
+Contract: [sessions.md](/_shared/sessions.md) (record schema, stale rules, conflict matrix) and [agents.reference.md](/_shared/agents.reference.md)§66 (worktree platform facts). Why this is not `/blitz:doctor`: doctor asserts the plugin's structure and settings; `sessions` reports the runtime state of this checkout.
 
 **Read-only** except `prune --apply` (deletes closed records older than 7 days) and `worktrees --apply` (removes merged, unlocked, non-live worktrees and their branches). Default mode: `list`.
 
@@ -111,11 +111,11 @@ for f in .cc-sessions/sessions/*.json; do
 done
 ```
 
-Without `--apply`: list only, then print `Run with --apply to delete N record(s). No changes made.` Also remove (with `--apply`) mailboxes whose target record is closed > 7 d, `HANDOFF.json` older than 24 h and reviewed `quarantine/` entries ([sessions.md](/_shared/sessions.md) §10); list mailboxes whose `<sid>` has no record at all — `/blitz:doctor --migrate` owns those. Log each deletion: `blitz_log_event sessions record_pruned "<sid>"`.
+Without `--apply`: list only, then print `Run with --apply to delete N record(s). No changes made.` Also remove (with `--apply`) mailboxes whose target record is closed > 7 d, `HANDOFF.json` older than 24 h and reviewed `quarantine/` entries ([sessions.reference.md](/_shared/sessions.reference.md)§1010); list mailboxes whose `<sid>` has no record at all — `/blitz:doctor --migrate` owns those. Log each deletion: `blitz_log_event sessions record_pruned "<sid>"`.
 
 ### 1.5 `worktrees [--prune] [--apply] [--merged-only]` — what the platform left behind
 
-Blitz manages no worktree lifecycle. The platform creates subagent and background-session worktrees under `.claude/worktrees/<id>` (branching from `origin/<default>` unless `worktree.baseRef: "head"`), locks each one while its agent runs, and sweeps unlocked ones by `cleanupPeriodDays` ([agents.md](/_shared/agents.md) §6). This mode reports what exists and **why the sweep kept it**; `--apply` removes only what is provably safe.
+Blitz manages no worktree lifecycle. The platform creates subagent and background-session worktrees under `.claude/worktrees/<id>` (branching from `origin/<default>` unless `worktree.baseRef: "head"`), locks each one while its agent runs, and sweeps unlocked ones by `cleanupPeriodDays` ([agents.reference.md](/_shared/agents.reference.md)§66). This mode reports what exists and **why the sweep kept it**; `--apply` removes only what is provably safe.
 
 | Flag | Behavior |
 |---|---|
@@ -197,6 +197,6 @@ One line per mode: `sessions <mode>: N records (A active, B closed), M overlay r
 
 ## Additional Resources
 - Record schema, stale rules (`blitz_session_stale`), conflict matrix, mailbox, cleanup: [sessions.md](/_shared/sessions.md)
-- Worktree platform facts (location, locks, `cleanupPeriodDays`, `worktree.baseRef`): [agents.md](/_shared/agents.md) §6
+- Worktree platform facts (location, locks, `cleanupPeriodDays`, `worktree.baseRef`): [agents.reference.md](/_shared/agents.reference.md)§66
 - Helpers used here (`blitz_agent_view`, `blitz_live_worktree_paths`, `blitz_iso_epoch`, `blitz_session_update`): `hooks/scripts/_lib/common.sh`
 - HTML twin: header of `hooks/scripts/_lib/html.sh`; structural plugin and settings checks: `/blitz:doctor`

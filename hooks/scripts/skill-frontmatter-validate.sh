@@ -20,6 +20,7 @@
 #   8. Body length ≤ 500 lines (excluding frontmatter)
 #   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
+#  11. a pinned model: discloses its cache cost in the body
 
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
@@ -127,6 +128,17 @@ validate_one() {
   if [ -n "$effort" ]; then
     case "$effort" in low|medium|high|xhigh|max) ;; *) fail "$rel" "effort '$effort' must be low|medium|high|xhigh|max";; esac
     [ "$dmi" != "true" ] && fail "$rel" "effort pinned on an invokable skill — remove 'effort:' and state the recommendation in the body (see E-044)"
+  fi
+
+  # 11. A pinned model must disclose its cost. A skill whose frontmatter names a
+  # model other than the session's makes that turn a full model switch: the next
+  # request reads the entire conversation history with no cache hits. That can be
+  # the right trade for a rare slash-only skill, but it must be a stated decision,
+  # not an accident, so the body has to say so.
+  if [ -n "$model" ] && [ "$model" != "inherit" ]; then
+    if ! printf '%s' "$body" | grep -qiE 'cache reset|cache miss|uncached|full re-read'; then
+      fail "$rel" "pins 'model: $model' without disclosing the cost — a pinned model makes the turn a model switch with zero cache hits; say so in the body (see skills/ship/SKILL.md)"
+    fi
   fi
 
   # 10. compatibility

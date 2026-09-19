@@ -91,7 +91,7 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
 }
 ```
 
-Status meanings and main-thread actions: [agents.md](/_shared/agents.md) §4.1. `blocked_reason` uses the `tasks.json` vocabulary. A spawn missing any item is a bug in `build`, not in the agent.
+Status meanings and main-thread actions: [agents.reference.md](/_shared/agents.reference.md)§44.1. `blocked_reason` uses the `tasks.json` vocabulary. A spawn missing any item is a bug in `build`, not in the agent.
 
 ### Resume payload (fix rounds 1-3)
 
@@ -148,7 +148,7 @@ Print the plan:
 | Workflow | `Workflow` tool present and `BLITZ_DISPATCH != agent` (`workflow` forces it, error if absent) | `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` | `{ wave, tasks: [{id, ok, result}] }`; `result: null` → `BLOCKED circuit-breaker` |
 | Agent | otherwise, or on any Workflow failure | `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", isolation: "worktree", prompt)` × tasks in wave | JSON reply per agent |
 
-Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and schema validation only; `tasks.sh`, `progress.md`, commits, and `gate.json` stay on the main thread between calls ([agents.md](/_shared/agents.md) §7.4). Log `detail.dispatch` on the feed `task_start` line. Never hard-fail on a Workflow error; fall through to the Agent path for the same wave.
+Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and schema validation only; `tasks.sh`, `progress.md`, commits, and `gate.json` stay on the main thread between calls ([agents.reference.md](/_shared/agents.reference.md)§77.4). Log `detail.dispatch` on the feed `task_start` line. Never hard-fail on a Workflow error; fall through to the Agent path for the same wave.
 
 ### Monitor
 
@@ -223,7 +223,7 @@ Pre-existing tests that turn red are **Critical** and outrank new-test failures:
 
 ## Cleanup
 
-`build` removes no worktree and deletes no branch. Platform facts ([agents.md](/_shared/agents.md) §6):
+`build` removes no worktree and deletes no branch. Platform facts ([agents.reference.md](/_shared/agents.reference.md)§66):
 
 - `isolation: "worktree"` creates `.claude/worktrees/<id>` from `HEAD` when `worktree.baseRef: "head"` (the §0.4 precondition); the platform locks it while the agent runs and sweeps unlocked worktrees by `cleanupPeriodDays`.
 - Never remove a worktree that `claude agents --json` still lists — it holds uncommitted work.

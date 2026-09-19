@@ -27,7 +27,7 @@ The loop is `research → plan → build → check → ship`, with `learn` feedi
 - `--loop`: one autonomous tick. Reads state, triages the inbox, dispatches one row, commits/pushes, exits. Sets autonomy `full` — all sub-skill confirmation prompts auto-approved. Designed for `/loop <interval> /blitz:next --loop` **in a dedicated session**, a Routine, or a `claude -p` shell loop.
 - `--plan <slug>`: restrict rows 2–4 to that plan (still evaluates rows 0 and 1 globally). Default: the plan `next-state.sh` selects (first `status: active` by `priority`, then `created`).
 
-**Scheduling tiers for `--loop`** (facts per [loop.md](/_shared/loop.md) §Running the loop):
+**Scheduling tiers for `--loop`** (facts per [loop.reference.md](/_shared/loop.reference.md)§Running the loopRunning the loop):
 
 | Tier | How | Persistence | Min interval | Use case |
 |------|-----|-------------|--------------|----------|
@@ -78,7 +78,7 @@ echo "$STATE" | jq -c '{row, reason, active_plan, next_task: (.next_task.id // n
 
 ## Phase 0.5: INBOX TRIAGE
 
-`.cc-sessions/inbox.jsonl` is the attention queue hooks feed ([sessions.md](/_shared/sessions.md) §4 Inbox). Triage it first so a stuck session never hides behind a "next phase" recommendation:
+`.cc-sessions/inbox.jsonl` is the attention queue hooks feed ([sessions.reference.md](/_shared/sessions.reference.md)§44 Inbox). Triage it first so a stuck session never hides behind a "next phase" recommendation:
 
 ```bash
 jq -c 'select(.status=="pending")' .cc-sessions/inbox.jsonl 2>/dev/null
@@ -107,7 +107,7 @@ Outer monitors (a Routine, `/blitz:sessions attention`, a Channel) treat that li
 
 ## Phase 1: DECIDE
 
-Pick the lowest matching row; `next-state.sh` already computed it, this phase only maps it to an action ([loop.md](/_shared/loop.md) §`next` decision rows).
+Pick the lowest matching row; `next-state.sh` already computed it, this phase only maps it to an action ([loop.reference.md](/_shared/loop.reference.md)§`next` decision rows`next` decision rows).
 
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
@@ -157,7 +157,7 @@ Loop-only: interactive `/blitz:next` leaves `BLITZ_DISPATCH` at its default (`au
 
 ### 3.2 Arm the Stop gate for this tick
 
-Write a row-specific gate so the turn cannot end red ([loop.md](/_shared/loop.md) §Stop gate; ladder in [quality.md](/_shared/quality.md) §Verification stack). The hook is a no-op when the file is absent and stands down on the markers in Phase 4:
+Write a row-specific gate so the turn cannot end red ([loop.reference.md](/_shared/loop.reference.md)§Stop gateStop gate; ladder in [quality.reference.md](/_shared/quality.reference.md)§Verification stackVerification stack). The hook is a no-op when the file is absent and stands down on the markers in Phase 4:
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
@@ -175,7 +175,7 @@ Drop the `tests` check when the selector returns nothing (no runner, cold start 
 
 ### 3.3 Session-conflict pre-check (soft fail)
 
-`ListAgents` (rows per [sessions.md](/_shared/sessions.md) §3). If another live `build` / `check` session (overlay `state ∈ {working, blocked}`, not stale) holds the same plan, do NOT abort — message it and defer per §5 (`SendMessage(to, "blitz: next --loop deferring to your build <slug>", notify_when_idle: true)` when the tool is available; WARN-only text otherwise). A peer with `waitingFor ≠ null` is never messaged — that is row 0.
+`ListAgents` (rows per [sessions.reference.md](/_shared/sessions.reference.md)§33). If another live `build` / `check` session (overlay `state ∈ {working, blocked}`, not stale) holds the same plan, do NOT abort — message it and defer per §5 (`SendMessage(to, "blitz: next --loop deferring to your build <slug>", notify_when_idle: true)` when the tool is available; WARN-only text otherwise). A peer with `waitingFor ≠ null` is never messaged — that is row 0.
 
 ```
 [next --loop] tick:
@@ -271,7 +271,7 @@ Never notify twice for the same task in one tick; a re-fire re-prints, it does n
 - Never `AskUserQuestion` (declared in `disallowed-tools`; `-p` disables it anyway). A question becomes a `blocked_reason` on the task via `scripts/tasks.sh set` and surfaces as row 1 or in the report.
 - No Task tools (`TaskCreate/Update/List`, `TodoWrite`); `tasks.json` is the task list and `scripts/tasks.sh` is its only writer.
 - Every tick commits and pushes before printing its marker, so a killed session loses nothing.
-- `-p` workers set `crossSessionInbound: accept`; Routines set `hold` ([sessions.md](/_shared/sessions.md) §5, [security.md](/_shared/security.md) TB-5).
+- `-p` workers set `crossSessionInbound: accept`; Routines set `hold` ([sessions.reference.md](/_shared/sessions.reference.md)§55, [security.md](/_shared/security.md) TB-5).
 - `/blitz:doctor --loop-md` writes `.claude/loop.md` so a bare `/loop` runs `/blitz:next --loop`; `doctor` also checks the messaging settings above.
 
 ---

@@ -34,6 +34,9 @@ model: opus
 # the verdict (Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true
 memory: project
+# Re-spawned once per fix round (up to 5) and once per check; keep the warmed prefix for 1h (Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 # Critic — fresh-context evaluator

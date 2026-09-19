@@ -266,3 +266,73 @@ EOF
   [ "$status" -eq 0 ]
   teardown_fake_repo
 }
+
+# --- spawn invariant (SubagentStart) ---------------------------------------
+
+@test "spawn invariant: injected for blitz:dev" {
+  setup_fake_repo
+  run_hook "subagent-context.sh" \
+    "$(jq -nc '{hook_event_name:"SubagentStart",agent_id:"a1",agent_type:"blitz:dev",session_id:"t"}')"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"hookEventName":"SubagentStart"'* ]]
+  [[ "$output" == *"Never-edit list"* ]]
+  teardown_fake_repo
+}
+
+@test "spawn invariant: injected for blitz:test-writer" {
+  setup_fake_repo
+  run_hook "subagent-context.sh" \
+    "$(jq -nc '{hook_event_name:"SubagentStart",agent_id:"a1",agent_type:"blitz:test-writer",session_id:"t"}')"
+  [[ "$output" == *"additionalContext"* ]]
+  teardown_fake_repo
+}
+
+@test "spawn invariant: not injected for other agent types" {
+  setup_fake_repo
+  for t in Explore general-purpose blitz:critic blitz:research-critic; do
+    run_hook "subagent-context.sh" \
+      "$(jq -nc --arg t "$t" '{hook_event_name:"SubagentStart",agent_id:"a1",agent_type:$t,session_id:"t"}')"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+  done
+  teardown_fake_repo
+}
+
+@test "spawn invariant: the injected block is byte-identical across spawns" {
+  # The whole point of moving this out of the prompt is that it does not vary.
+  # A timestamp, session id or command output in here would defeat it.
+  setup_fake_repo
+  run_hook "subagent-context.sh" \
+    "$(jq -nc '{hook_event_name:"SubagentStart",agent_id:"a1",agent_type:"blitz:dev",session_id:"s1"}')"
+  local first="$output"
+  sleep 1
+  run_hook "subagent-context.sh" \
+    "$(jq -nc '{hook_event_name:"SubagentStart",agent_id:"a2",agent_type:"blitz:dev",session_id:"s2"}')"
+  [ "$first" = "$output" ]
+  teardown_fake_repo
+}
+
+@test "spawn invariant: BLITZ_DISABLE_SPAWN_INVARIANT=1 opts out" {
+  setup_fake_repo
+  BLITZ_DISABLE_SPAWN_INVARIANT=1 run_hook "subagent-context.sh" \
+    "$(jq -nc '{hook_event_name:"SubagentStart",agent_id:"a1",agent_type:"blitz:dev",session_id:"t"}')"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  teardown_fake_repo
+}
+
+@test "spawn invariant: hooks.json registers it with an anchored plugin-scoped matcher" {
+  # A plugin-scoped agent type contains ':', which puts the matcher on the
+  # regex path; an unanchored matcher would also catch blitz:dev-something.
+  run jq -r '.hooks.SubagentStart[0].matcher' "$(cd "$HOOKS_DIR/.." && pwd)/hooks.json"
+  [ "$output" = '^blitz:(dev|test-writer)$' ]
+}
+
+@test "every blitz agent sets experimental.cacheTtl" {
+  # Subagents fall outside the main-conversation TTL bucket and get 5 minutes
+  # by default, so a critic re-spawned in a fix loop pays a cold prefix.
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  for f in "$root"/agents/*.md; do
+    grep -q 'cacheTtl' "$f" || { echo "missing cacheTtl: $f" >&2; return 1; }
+  done
+}

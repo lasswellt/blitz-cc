@@ -250,6 +250,6 @@ Append `task_complete` to the activity feed with `detail.summary = "plan <slug>:
 
 - Write `tasks.json` with `Write`/`Edit`; the hook denies it.
 - Accept a task without a non-test check unless it is `role: test` with `--test-only-ok` and a note.
-- Add tasks for work no outcome needs (scope discipline in [quality.md](/_shared/quality.md) §Definition of Done).
+- Add tasks for work no outcome needs (scope discipline in [quality.reference.md](/_shared/quality.reference.md)§Definition of DoneDefinition of Done).
 - Spawn `Explore` for a file-producing researcher.
 - Arm `gate.json`.

@@ -33,7 +33,7 @@ Preamble: claim the session record (`skill: onboard`, `working_on: "<mode> <name
 ## SAFETY RULES (NON-NEGOTIABLE)
 
 1. **Never overwrite an existing file without explicit confirmation.** `[ -f "<path>" ]` before every Write; on a hit, ask skip or overwrite.
-2. **Never generate placeholder code.** No `TODO`, `FIXME`, empty bodies, `throw new Error('not implemented')`. Every scaffolded file compiles and its test passes ([quality.md](/_shared/quality.md) §Definition of Done).
+2. **Never generate placeholder code.** No `TODO`, `FIXME`, empty bodies, `throw new Error('not implemented')`. Every scaffolded file compiles and its test passes ([quality.reference.md](/_shared/quality.reference.md)§Definition of DoneDefinition of Done).
 3. **Never install a framework or large library without confirmation.** Small dev deps (types, test utils) are fine.
 4. **Existing conventions win** over best practice when they conflict.
 5. **TypeScript always**, unless the project is JS-only.

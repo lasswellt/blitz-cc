@@ -9,6 +9,8 @@ argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
 disable-model-invocation: true
 ---
 
+> **Session:** slash-only skill; it pins `model: opus`, `effort: high` because a framework migration is rare, long-running and unforgiving, and the one-time cache reset the pin costs (the turn is a model switch, so the next request re-reads the whole conversation uncached) is worth the depth. Run it at a natural break, not mid-task.
+
 ## Additional Resources
 - For codemod registry, risk assessment matrix, and rollback procedures, see [references/main.md](references/main.md)
 - For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.

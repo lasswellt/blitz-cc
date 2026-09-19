@@ -10,6 +10,28 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.2.0] — 2026-09-19 · token economics + cache routing
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §5 (F-06, F-12, F-13, F-15).
+
+### Changed
+- **The six shared protocols split into a contract head and an on-demand reference.** They totalled 141 KB, and one `/blitz:build` that followed its own cross-references pulled ~41.5K tokens of protocol before reading a line of project code — 20% of the window. Each `skills/_shared/<name>.md` now holds only what every consumer must obey and links `<name>.reference.md` for the rest. The split is verbatim: no content was rewritten or dropped, and a line-level check confirms every original line still exists.
+
+  | Path | Before | After |
+  |---|---|---|
+  | `/blitz:build` protocol load | 41,571 tok | **19,154 tok** |
+  | `/blitz:check` protocol load | 47,296 tok | **14,138 tok** |
+  | Six protocol heads | 141,238 B | **50,925 B** |
+
+- `check-registry.json` is queried, never read. The selection contract in [quality.reference.md](skills/_shared/quality.reference.md) now carries a `jq` selector returning only the ids and commands a run needs, instead of pulling 98 KB (~24K tokens) into context to obtain a handful of rows. The selector also drops rows whose `stacks[]` does not match the project, so a Go repository runs 34 of 97 rows rather than all of them.
+- `pre-commit-validate.sh` enforces a byte cap per protocol head and blocks a commit that regrows one, with the remedy in the message. Without it the heads drift back.
+
+### Added
+- `skills/_shared/spawn-invariant.md` and `hooks/scripts/subagent-context.sh`: the invariant half of the `dev`/`test-writer` spawn spec (never-edit list, reply contract and status enum, commit format, output style, stop conditions, mock policy) now arrives through `SubagentStart.additionalContext` instead of being pasted into every prompt. The platform states the injected copy stays in place and leaves the subagent's prompt cache intact, re-injecting only after the subagent's own auto-compaction. The rule it encodes: anything that varies per call goes in the prompt, anything that does not goes in `additionalContext`. A test asserts the block is byte-identical across spawns, because a timestamp or session id in there would defeat the point.
+- `experimental.cacheTtl: 1h` on `critic`, `design-critic` and `research-critic`. Subagents fall outside the main-conversation TTL bucket and get five minutes by default, so a critic re-spawned per fix round paid a cold prefix from round 2 on. All five blitz agents now set it, and a test keeps it that way.
+- Model routing gains a deterministic-lane row: running a registry row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, so it routes to `haiku`; the semantic lane and the verdict stay on the session model.
+- `skill-frontmatter-validate.sh` rule 11: a skill that pins `model:` must disclose the cost in its body. A pinned model makes that turn a model switch with zero cache hits across the whole conversation, which can be the right trade for a rare slash-only skill but must be a stated decision. `ship` already disclosed it; `migrate` did not, and now does.
+
 ## [3.1.0] — 2026-09-19 · language agnosticism + code intelligence
 
 Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §6 (F-07…F-11, F-15).

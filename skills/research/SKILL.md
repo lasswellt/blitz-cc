@@ -16,7 +16,7 @@ compatibility: ">=2.1.271"
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
 - For context window hygiene, see [sessions.md](/_shared/sessions.md)
 - For how `plan --from-research <doc>` consumes the Recommendation, see [loop.md](/_shared/loop.md) and `skills/plan/SKILL.md`
-- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.md](/_shared/agents.md) §7
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.reference.md](/_shared/agents.reference.md)§77
 <!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)

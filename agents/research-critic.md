@@ -35,6 +35,9 @@ model: sonnet
 # the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true
 background: true
+# Re-spawned per research round; keep the warmed prefix for 1h (Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 # Research-Critic — Adversarial Citation + Claim Reviewer

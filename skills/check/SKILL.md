@@ -65,7 +65,7 @@ printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BA
 
 ## Phase 1: DETERMINISTIC LANE
 
-Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json).
+Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is ~98 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`.
 
 ### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
 
@@ -138,7 +138,7 @@ Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5`
 
 ### 2.1 Survey fan-out
 
-Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.md](/_shared/agents.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
+Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md)§77.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
 
 | Focus | Reads first | Output |
 |---|---|---|
@@ -147,11 +147,11 @@ Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only)
 | frontend | components, loading/empty/error states, a11y, store wiring | `…-frontend.json` |
 | patterns | consistency, DRY, architecture, meaningful tests | `…-patterns.json` |
 
-Every prompt states the order: **spec compliance first** (does the diff do what `plan.md` and the task's `verify[]` say, nothing more, nothing less), **then code quality**. Agents flag only correctness and requirement gaps; style is parked. Reply is the survey JSON from [agents.md](/_shared/agents.md) §4.2: `findings[] {severity, where, what, evidence, confidence}`. Drop the frontend agent when no UI file changed; drop backend when only UI changed; N is then 3.
+Every prompt states the order: **spec compliance first** (does the diff do what `plan.md` and the task's `verify[]` say, nothing more, nothing less), **then code quality**. Agents flag only correctness and requirement gaps; style is parked. Reply is the survey JSON from [agents.reference.md](/_shared/agents.reference.md)§44.2: `findings[] {severity, where, what, evidence, confidence}`. Drop the frontend agent when no UI file changed; drop backend when only UI changed; N is then 3.
 
 ### 2.2 Collect
 
-Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.md](/_shared/agents.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
+Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md)§44.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
 
 ### 2.3 App-level verification
 
@@ -163,7 +163,7 @@ Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavail
 
 ## Phase 3: `--fix`
 
-Arm the Stop gate first, disarm before the report ([loop.md](/_shared/loop.md) §Arming table):
+Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md)§Arming tableArming table):
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
@@ -188,7 +188,7 @@ Order: imports/exports → types → lint → framework → naming → unused. L
 
 ### 4.1 Ratchet (`docs/sweeps/ratchet.json`)
 
-Compute the eight metrics with the detectors in [quality.md](/_shared/quality.md) §Ratchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
+Compute the eight metrics with the detectors in [quality.reference.md](/_shared/quality.reference.md)§RatchetRatchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \

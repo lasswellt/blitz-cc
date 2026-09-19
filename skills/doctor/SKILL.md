@@ -128,7 +128,7 @@ Read `.claude/settings.json` (project) with `.claude/settings.local.json` overla
 |---|---|---|---|---|
 | D-304 | `worktree.baseRef` | `"head"` | **FAIL** when absent or `"fresh"` | `build --parallel` spawns `isolation: worktree` agents; the platform default branches them from `origin/<default>`, so every wave starts without the plan's own commits and the sequential merge conflicts. Add to `.claude/settings.json`: `{"worktree": {"baseRef": "head"}}` (`fix:auto`, merged with `jq -s '.[0] * .[1]'`). |
 | D-305 | `subagentPromptCacheTtl` | `"1h"` | WARN | `build` and `check` spawn `dev` and `critic` repeatedly; the 1 h TTL keeps their system prompt cached across tasks. Add `{"subagentPromptCacheTtl": "1h"}` (`fix:auto`). |
-| D-306 | `crossSessionInbound` | `accept` when `claude -p` loop workers are used; `hold` for Routines | WARN when a shell-loop script, a Routine prompt or `.claude/loop.md` exists and the key is absent | `-p` workers cannot read a held message before `dialogExpiry`, so a BLOCK from the conflict matrix never reaches them. Add `{"crossSessionInbound": "accept"}` for shell-loop workers, `"hold"` for Routine sessions ([sessions.md](/_shared/sessions.md) §5). Not auto-fixed: the right value depends on the runtime. |
+| D-306 | `crossSessionInbound` | `accept` when `claude -p` loop workers are used; `hold` for Routines | WARN when a shell-loop script, a Routine prompt or `.claude/loop.md` exists and the key is absent | `-p` workers cannot read a held message before `dialogExpiry`, so a BLOCK from the conflict matrix never reaches them. Add `{"crossSessionInbound": "accept"}` for shell-loop workers, `"hold"` for Routine sessions ([sessions.reference.md](/_shared/sessions.reference.md)§55). Not auto-fixed: the right value depends on the runtime. |
 
 ### 3.5 Platform facts (D-307, D-308)
 
@@ -139,7 +139,7 @@ Read `.claude/settings.json` (project) with `.claude/settings.local.json` overla
 
 | Id | Check | Severity | Remediation |
 |---|---|---|---|
-| D-309 | `docs/sweeps/` is ignored (`git check-ignore -q docs/sweeps/ratchet.json`) | FAIL | `ratchet.json` is memory that compounds across plans and must be tracked. Remove the `docs/sweeps/` line from `.gitignore` (`fix:auto`), then `git add docs/sweeps/ratchet.json`. Missing `ratchet.json` is WARN → `/blitz:onboard` or the bootstrap snippet in [quality.md](/_shared/quality.md) §Ratchet. |
+| D-309 | `docs/sweeps/` is ignored (`git check-ignore -q docs/sweeps/ratchet.json`) | FAIL | `ratchet.json` is memory that compounds across plans and must be tracked. Remove the `docs/sweeps/` line from `.gitignore` (`fix:auto`), then `git add docs/sweeps/ratchet.json`. Missing `ratchet.json` is WARN → `/blitz:onboard` or the bootstrap snippet in [quality.reference.md](/_shared/quality.reference.md)§RatchetRatchet. |
 | D-310 | `docs/plans/` and `docs/solutions/` exist | WARN | `mkdir -p docs/plans docs/solutions` (`fix:auto`). `plan` creates them too; `next-state.sh` treats an absent `docs/plans/` as "nothing open". |
 | D-311 | `.gitignore` covers `.cc-sessions/` | FAIL | Runtime state and session records would be committed. Append `.cc-sessions/` (`fix:auto`). |
 
@@ -160,7 +160,7 @@ done
 
 ### 3.8 Worktree readiness (D-314, D-315)
 
-`build --parallel` and `claude --worktree` both depend on platform-owned worktree creation. Blitz registers no `WorktreeCreate` hook ([agents.md](/_shared/agents.md) §6); a registered one replaces git creation entirely and skips `.worktreeinclude`.
+`build --parallel` and `claude --worktree` both depend on platform-owned worktree creation. Blitz registers no `WorktreeCreate` hook ([agents.reference.md](/_shared/agents.reference.md)§66); a registered one replaces git creation entirely and skips `.worktreeinclude`.
 
 ```bash
 # D-314 — stale agent branches ahead of origin/HEAD (GH#51596 collision source)
@@ -211,8 +211,8 @@ Each flag writes exactly one file, never overwrites without saying so, and print
 
 | Flag | Writes | Source | Overwrite |
 |---|---|---|---|
-| `--loop-md` | `.claude/loop.md` | `cp "${CLAUDE_PLUGIN_ROOT}/templates/loop.md" .claude/loop.md` | Replaces an existing file only if it already contains `/blitz:next --loop`; otherwise prints the diff and asks. Bare `/loop` then runs the blitz tick ([loop.md](/_shared/loop.md) §Running the loop); a user-level `~/.claude/loop.md` loses to the project file. |
-| `--review-md` | `REVIEW.md` | `bash "${CLAUDE_PLUGIN_ROOT}/scripts/gen-review-md.sh" --write REVIEW.md` | Always: the file is derived from `check-registry.json` P0/P1 rows ([quality.md](/_shared/quality.md) §REVIEW.md export); commit it. |
+| `--loop-md` | `.claude/loop.md` | `cp "${CLAUDE_PLUGIN_ROOT}/templates/loop.md" .claude/loop.md` | Replaces an existing file only if it already contains `/blitz:next --loop`; otherwise prints the diff and asks. Bare `/loop` then runs the blitz tick ([loop.reference.md](/_shared/loop.reference.md)§Running the loopRunning the loop); a user-level `~/.claude/loop.md` loses to the project file. |
+| `--review-md` | `REVIEW.md` | `bash "${CLAUDE_PLUGIN_ROOT}/scripts/gen-review-md.sh" --write REVIEW.md` | Always: the file is derived from `check-registry.json` P0/P1 rows ([quality.reference.md](/_shared/quality.reference.md)§REVIEW.md exportREVIEW.md export); commit it. |
 | `--ci` | `.github/workflows/blitz-check.yml` | `mkdir -p .github/workflows && cp "${CLAUDE_PLUGIN_ROOT}/templates/blitz-check.yml" .github/workflows/blitz-check.yml` | Never overwrites; prints a diff when present. Then remind: add the `ANTHROPIC_API_KEY` secret (or swap in the OAuth token line per the file's comments); fork PRs get no secrets. |
 | `--verify-recipe` | `.claude/skills/verify/SKILL.md` | the seeding snippet in [references/main.md](references/main.md) §Verify recipe, filled from stack detection and `package.json` | Never overwrites. The bundled `/verify` records its own recipe on its first run, so seed only when the user asks for it before running `/verify`; `check` reads whichever exists. |
 
