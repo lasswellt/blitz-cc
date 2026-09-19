@@ -1,6 +1,6 @@
 {
   "name": "blitz",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Agentic development loop for Vue/Nuxt + Firebase: research, plan, build, check, ship. Plans are JSON feature lists with per-task verify commands; a task is done only when scripts/tasks.sh verified it and a hook denies every other write. One fresh-context dev agent per task, opt-in parallel waves over disjoint files, an adversarial read-only critic before PASS, a shared check registry with deterministic and semantic lanes, test impact analysis, anti-shortcut hooks (no-verify, destructive git, destructive SQL, test deletion, as-any insertion, test disabling, type-error regression), a kill switch, and next --loop for unattended ticks under /loop, Routines, or claude -p. Minimum Claude Code >=2.1.271 (floors in .claude-plugin/compat.json). Optional external tools: Playwright MCP (browse, ui-build, ui-audit, design-critic), Gemini CLI (cross-model critic via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC), claude-security plugin.",
   "author": {
     "name": "lasswellt"

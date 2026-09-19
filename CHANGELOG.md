@@ -10,6 +10,29 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.0.1] — 2026-09-19 · validation round
+
+Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/2026-09-19_v3-agentic-restructure/README.md) §7. Platform claims re-fetched from code.claude.com (2.1.277), field evidence from June to September 2026 re-checked, and a contract audit across scripts, skills, agents, workflows, and evals.
+
+### Fixed
+- **The loop did not run as documented.** `workflows/build-wave.js` required `{agents, storySchema}` while every caller passes `{plan, wave, tasks, replySchema}`, so every `build --parallel` Workflow dispatch threw; `next --loop` never set `BLITZ_AUTONOMOUS` or passed `--autonomous`, so `build` stopped at the first task boundary. Both fixed; `hooks/tests/workflows.bats` loads every workflow against the documented args shape.
+- The Stop-hook block cap is 5 (`stopHookBlockCap`), not 8: `max_blocks` defaults to 4 and is clamped there, so the gate exhausts and logs before the platform stops honoring it.
+- `tasks.sh set … status=open` was re-blocked by the circuit breaker; the breaker is skipped when the same call sets `status` or `blocked_reason`, and the documented recipe is `status=open attempts=0`. `add` validates `--origin`.
+- `next-state.sh` orders active plans by `priority`, then `created`, then slug (the prose said so; the code sorted by slug) and emits `plan_priority` on every row. `loop.md` names `sessions_waiting`, an object `next_task`, `init`/`next`/`list --json`, `cmd::<seconds>`, `attempts=+1`, and the kill switch on row 0, matching the scripts.
+- `startup-validate.sh` flags an empty `verify[]`; `session-start.sh` re-pins the gate path, never-edit list, and mock policy on compaction resume (Governance Decay: constraints dropped by summarization are violated 30–59% of the time).
+- `check --fix` arms lint with `--max-warnings=0` in both sites; `check` states the `MODE:`/`PLAN:`/`TASKS:`/`BASE:` header lines the critic requires; the registry no longer targets `quality-metrics` or `SPRINT_BASE`; every skill declares `compatibility: ">=2.1.271"`; feed events use `skill_end`; research citations point at `docs/research/`.
+- Eval suite: an unquoted `description:` containing `": "` made the runner refuse the whole suite (now caught by `validate-plugin-structure.sh`); `tool_used: Skill` graders removed from slash-prompt cases.
+
+### Added
+- `critic --mode reject` authors one held-out check per task from `spec.md` (never from `verify[]`), runs it, and REJECTs on failure; `check-report.md` records them. Registry row `check:test-tamper` (deterministic, P1) flags deleted or trivialized assertions, snapshot rewrites, `.skip`/`.only` insertions, and a falling assertion count in the diff's test files.
+- `critic --mode survey` may answer `cannot_verify[]`; `check` runs the command or records a `Ruling:` before the gate.
+- `onboard` writes a `## Testing` block into `CLAUDE.md` (or `AGENTS.md`, which 2.1.277 reads when `CLAUDE.md` is absent): mock only true externals, never `src/`, emulators for Firebase, done means `tasks.sh verify`.
+- `security.md` names Plugin4Shell (disclosed 2026-09-18, fixed in 2.1.179), the GitHub-hosted marketplace, `--accept-command`, and npm integrity verification; `compat.json` records the floors.
+
+### Changed
+- Review doc: contradiction register corrected (skill listing truncates `description` + `when_to_use` at 1,536 chars per skill; `/init` and `/security-review` are Skill-tool invokable; `/verify` is slash-only and replaced at the repo root by its recorded recipe; `.claude/loop.md` confirmed with its 25 KB cap); the unverifiable "95% of tasks" quote is withdrawn in favor of the docs' qualified 7× figure; evidence table carries the June to September 2026 sources; a "not adopted" list records what was considered.
+- First live eval run: `tasks-guard` 1.0. Bash-granting cases need the OS sandbox.
+
 ## [3.0.0] — 2026-09-19 · agentic restructure
 
 Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/2026-09-19_v3-agentic-restructure/README.md). The plugin drops its sprint layer (sprints, stories, epics, roadmaps, retrospectives, the carry-forward registry, story points, the deviation tiers, LLM-executed locks) and keeps the agentic harness: guards, gates, registry, critics, sessions, the loop. Breaking: no compatibility aliases; `/blitz:doctor --migrate` converts a project's `sprints/` and carry-forward state into `docs/plans/`.
