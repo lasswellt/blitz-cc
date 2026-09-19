@@ -38,9 +38,15 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 | `notification-log.sh` | `Notification` | routes `needs_input` / `permission` notifications to `inbox.jsonl` |
 | `permission-denied.sh` | `PermissionDenied` | inbox `permission_denied` line; never emits `retry` |
 | `config-change.sh` | `ConfigChange` | re-runs `startup-validate.sh --strict --quiet` |
-| `worktree-create.sh` | `WorktreeCreate` | logs; refuses to reuse a stale `worktree-agent-<hex>` branch (exit 1; `BLITZ_ALLOW_WORKTREE_COLLISION=1`) |
-| `worktree-remove.sh` | `WorktreeRemove` | logs; deletes a merged agent branch (`BLITZ_SKIP_BRANCH_CLEANUP=1`) |
+| `worktree-remove.sh` | `WorktreeRemove` | logs; deletes a merged agent branch (`BLITZ_SKIP_BRANCH_CLEANUP=1`). Always exits 0: a non-zero exit **fails the removal** when the directory still exists. |
 | `markdown-link-validate.sh` | `PreToolUse` on `git commit` | warns on broken relative `.md` links and anchors under `skills/` and `agents/`; CI runs it blocking |
+
+### Events blitz deliberately does not register
+
+| Event | Why not |
+|---|---|
+| `WorktreeCreate` | Configuring it **replaces** the platform's `git worktree` creation entirely. The hook owns the checkout, must print the created directory as the last non-empty line of stdout, and "if the hook fails or produces no path, worktree creation fails with an error". A configured hook also makes the platform skip `.worktreeinclude`. There is no observe-only mode, and its only event-specific input field is `name` (a slug), not `worktree_path` or `branch`. blitz registered a logging-only handler through 3.0.1, which broke `claude --worktree`, every `isolation: worktree` subagent, and background-session isolation in consumer projects. The stale-branch collision guard moved to `doctor` D-314 and `build` Phase 0.4. `hooks/tests/worktree.bats` keeps it deregistered. |
+| `SubagentStart` | Cannot block subagent creation; useful only for `additionalContext` injection. Reserved for the spawn-invariant block (see `docs/reviews/2026-09-19_agentic-architecture-audit/`). |
 
 ## Sub-invoked and spawned
 

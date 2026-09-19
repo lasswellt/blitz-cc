@@ -158,6 +158,31 @@ done
 
 `D-312` is `FAIL`: a `done` task without `passes ∧ last_verify.ok` means something bypassed `tasks.sh` (`tasks-guard.sh` disabled, or a hand edit under `BLITZ_TASKS_GUARD_OFF=1`). Remediation: `scripts/tasks.sh set <plan> <id> status=open attempts=0` then `scripts/tasks.sh verify <plan> <id>`; doctor never rewrites `tasks.json` directly. `D-313` is `WARN`: `startup-validate.sh` rejects unknown `origin` values, so the task will be quarantined at the next start; set it with `tasks.sh set <plan> <id> notes="origin was <x>"` and re-add with a known origin.
 
+### 3.8 Worktree readiness (D-314, D-315)
+
+`build --parallel` and `claude --worktree` both depend on platform-owned worktree creation. Blitz registers no `WorktreeCreate` hook ([agents.md](/_shared/agents.md) §6); a registered one replaces git creation entirely and skips `.worktreeinclude`.
+
+```bash
+# D-314 — stale agent branches ahead of origin/HEAD (GH#51596 collision source)
+git for-each-ref --format='%(refname:short)' 'refs/heads/worktree-agent-*' 'refs/heads/worktree-build-*' |
+  while read -r b; do
+    n=$(git rev-list --count "origin/HEAD..$b" 2>/dev/null || echo 0)
+    [ "${n:-0}" -gt 0 ] && echo "D-314 stale $b ($n ahead)"
+  done
+
+# D-315 — gitignored env files with no .worktreeinclude to carry them
+git ls-files --others --ignored --exclude-standard -- '.env*' 'config/secrets*' 2>/dev/null | head -20
+[ -f .worktreeinclude ] && echo "D-315 present"
+
+# D-314b — a third-party WorktreeCreate hook in project settings takes over creation
+jq -e '.hooks.WorktreeCreate' .claude/settings.json >/dev/null 2>&1 && echo "D-314 foreign WorktreeCreate hook"
+```
+
+| Id | Check | Severity | Remediation |
+|---|---|---|---|
+| D-314 | No `worktree-agent-*` / `worktree-build-*` branch is ahead of `origin/HEAD`, and no `WorktreeCreate` hook is configured in project settings | **WARN** (FAIL when `--parallel` is about to run) | A stale agent branch is silently reused by a colliding 8-hex id, carrying a prior session's commits into a new wave. Inspect with `/blitz:sessions worktrees`, remove with `--apply`, or set `BLITZ_ALLOW_WORKTREE_COLLISION=1` to proceed. A foreign `WorktreeCreate` hook must itself create the worktree and print its path, or every worktree in this project fails to create. |
+| D-315 | `.worktreeinclude` exists when the repo has gitignored `.env*` or secrets files | WARN | A worktree is a fresh checkout, so gitignored config does not come with it and the isolated agent starts without credentials. Write `.worktreeinclude` listing the gitignored files found (`fix:auto`, never overwrites). `.gitignore` syntax; only files that match **and** are gitignored are copied. |
+
 ---
 
 ## Phase 4: WRITERS
@@ -194,7 +219,7 @@ Before writing anything, print the plan of record: N stories → `docs/plans/spr
 
 ## Phase 6: `--fix`
 
-Applies only remediations tagged `fix:auto` above (D-103 chmod, D-203 orphan gates, D-304/D-305 settings keys, D-309/D-311 `.gitignore`, D-310 mkdir) and D-202 stale records. Each fix: backup where a file is rewritten (`<file>.pre-doctor.<ts>`), apply, re-run the check, log a feed `decision` `{choice: "fix D-nnn", reason}`. Settings edits merge with `jq` and preserve unknown keys; never touch `permissions`. Anything not tagged `fix:auto` stays a printed remediation.
+Applies only remediations tagged `fix:auto` above (D-103 chmod, D-203 orphan gates, D-304/D-305 settings keys, D-309/D-311 `.gitignore`, D-310 mkdir, D-315 `.worktreeinclude`) and D-202 stale records. Each fix: backup where a file is rewritten (`<file>.pre-doctor.<ts>`), apply, re-run the check, log a feed `decision` `{choice: "fix D-nnn", reason}`. Settings edits merge with `jq` and preserve unknown keys; never touch `permissions`. Anything not tagged `fix:auto` stays a printed remediation.
 
 ---
 

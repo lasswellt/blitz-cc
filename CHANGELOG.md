@@ -10,6 +10,21 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.0.2] — 2026-09-19 · worktree contract fix
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md).
+
+### Fixed
+- **Installing blitz broke git worktrees in the consumer's project (P0).** `hooks.json` registered a `WorktreeCreate` hook whose handler only logged. Per the platform contract, configuring `WorktreeCreate` *replaces* git worktree creation entirely, the hook must print the created directory to stdout, and "if the hook fails or produces no path, worktree creation fails with an error". The handler printed nothing and created nothing, so `claude --worktree`, every `isolation: worktree` subagent (including `build --parallel` waves), and background-session isolation all failed wherever blitz was installed. A registered hook also made the platform skip `.worktreeinclude`, so gitignored `.env` files stopped reaching worktrees. The registration and `hooks/scripts/worktree-create.sh` are removed; blitz registers no `WorktreeCreate` hook.
+- The removed handler read `worktree_path` and `branch` from the event payload. Neither field exists on `WorktreeCreate` (its only event-specific field is `name`), so the stale-branch collision guard was unreachable and had never fired.
+- `agents.md` §6 documented the contract inverted on both events: it claimed `WorktreeCreate` hooks merely "abort creation or override the path", and that `WorktreeRemove` exit codes are ignored. A non-zero `WorktreeRemove` exit fails the removal when the directory still exists; `worktree-remove.sh` always exits 0 and its branch cleanup is best-effort.
+
+### Added
+- `doctor` §3.8: **D-314** (no `worktree-agent-*` / `worktree-build-*` branch ahead of `origin/HEAD`, no foreign `WorktreeCreate` hook in project settings) and **D-315** (`.worktreeinclude` present when the repo has gitignored `.env*` or secrets files, `fix:auto`). This is where the removed collision guard now runs, as a pre-flight rather than a creation veto.
+- `build` Phase 0.4 refuses `--parallel` on a stale agent branch or a foreign `WorktreeCreate` hook and falls back to sequential with the reason printed.
+- `hooks/tests/worktree.bats`: 7 tests keeping `WorktreeCreate` deregistered, asserting `worktree-remove.sh` never exits non-zero, and failing if any hook script reads a `WorktreeCreate` payload. The event had no test coverage before, which is how the P0 shipped.
+- `hooks/scripts/README.md` records the events blitz deliberately does not register, with the contract that makes each one unsafe to observe.
+
 ## [3.0.1] — 2026-09-19 · validation round
 
 Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/2026-09-19_v3-agentic-restructure/README.md) §7. Platform claims re-fetched from code.claude.com (2.1.277), field evidence from June to September 2026 re-checked, and a contract audit across scripts, skills, agents, workflows, and evals.

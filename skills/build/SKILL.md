@@ -60,10 +60,26 @@ One skill, three modes. `build` writes `tasks.json` only through `scripts/tasks.
 ```bash
 BASE_REF=$(jq -r '.worktree.baseRef // "fresh"' .claude/settings.json 2>/dev/null)
 [ "$BASE_REF" = "head" ] || echo "REFUSE --parallel: worktree.baseRef is '$BASE_REF' (needs \"head\"); run /blitz:doctor and set it in .claude/settings.json"
+
+# D-314 pre-flight: a stale worktree-agent-<8hex> branch is silently reused by a
+# colliding id and carries a prior session's commits into this wave (GH#51596).
+# This is the only place the collision can be caught; WorktreeCreate is not a
+# hook blitz may register (agents.md §6).
+git for-each-ref --format='%(refname:short)' 'refs/heads/worktree-agent-*' 'refs/heads/worktree-build-*' |
+  while read -r b; do
+    n=$(git rev-list --count "origin/HEAD..$b" 2>/dev/null || echo 0)
+    [ "${n:-0}" -gt 0 ] && echo "REFUSE --parallel: stale agent branch $b is $n commit(s) ahead of origin/HEAD; run /blitz:sessions worktrees --apply, or set BLITZ_ALLOW_WORKTREE_COLLISION=1"
+  done
+
+# A foreign WorktreeCreate hook owns worktree creation outright; if it does not
+# print a path, every isolation: worktree agent fails to launch.
+jq -e '.hooks.WorktreeCreate' .claude/settings.json >/dev/null 2>&1 &&
+  echo "REFUSE --parallel: a WorktreeCreate hook in .claude/settings.json replaces git worktree creation; verify it prints the worktree path before using waves"
+
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --status open --json | jq -r '.[] | .id + " " + (.files | join(","))'
 ```
 
-Fall back to sequential, with the reason printed, when any of these fails: `worktree.baseRef ≠ "head"`; fewer than 3 open ready tasks with pairwise-disjoint `files` (exact path match; a shared barrel or config file disqualifies both); another live session on the plan; `--parallel` absent. Cap is 4 concurrent agents per wave.
+Fall back to sequential, with the reason printed, when any of these fails: `worktree.baseRef ≠ "head"`; a stale agent branch ahead of `origin/HEAD` (unless `BLITZ_ALLOW_WORKTREE_COLLISION=1`); a `WorktreeCreate` hook in project settings; fewer than 3 open ready tasks with pairwise-disjoint `files` (exact path match; a shared barrel or config file disqualifies both); another live session on the plan; `--parallel` absent. Cap is 4 concurrent agents per wave.
 
 ---
 

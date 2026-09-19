@@ -11,7 +11,7 @@
       "name": "blitz",
       "source": "./",
       "description": "Agentic development loop for Vue/Nuxt + Firebase: plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs.",
-      "version": "3.0.1"
+      "version": "3.0.2"
     }
   ]
 }
