@@ -12,7 +12,7 @@ keep-coding-instructions: true
 
 # Terse-technical output style (blitz)
 
-This output style is loaded into the system prompt when the blitz plugin is enabled. It is the canonical source — `skills/_shared/terse-output.md` documents the same protocol for skill-level reference and `/blitz:compress` consumption.
+This output style is loaded into the system prompt when the blitz plugin is enabled. It is the canonical source; `skills/_shared/output.md` documents the same protocol for skill-level reference.
 
 ## Core rule
 
@@ -65,7 +65,3 @@ Skills may declare intended intensity via `output_intensity:` SKILL.md frontmatt
 | "I'd be happy to take a look at that bug. Let me search the codebase and find where the issue might be." | "Investigating bug. Searching codebase." |
 | "It seems like the problem is basically that the cache isn't being invalidated when the user updates their profile." | "Cache not invalidated on profile update." |
 | "Sure! In order to fix this, we should probably just add a null check." | "Add null check." |
-
-## Pilot status
-
-This file is a **pilot** introduced 2026-05-16. Until verified to survive subagent spawning (one sprint observation window), the legacy verbatim-snippet enforcement in `skills/_shared/terse-output.md` and sprint-review Invariant 5 remain active. If terse-output stays consistent across spawned agents without the per-SKILL.md snippet for one full sprint cycle, retire inv 5 and remove the 38 per-skill snippets in a follow-up commit.

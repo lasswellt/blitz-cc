@@ -77,7 +77,7 @@ for f in "$SESSIONS_DIR"/*.json; do
   fi
   # Schema floor: a session file must carry session_id + status.
   case "$base" in
-    developer-profile.json|model-profiles.json|HANDOFF.json) : ;; # known non-session shapes
+    developer-profile.json|HANDOFF.json) : ;; # known non-session shapes
     *) jq -e '.session_id and .status' "$f" >/dev/null 2>&1 || report "SCHEMA: $base missing session_id/status" ;;
   esac
   scan_obj "$(cat "$f")" "$base" || true

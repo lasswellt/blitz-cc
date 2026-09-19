@@ -7,7 +7,7 @@ blitz ships a two-script test-impact layer (E-043): a **listener** that journals
 | `scripts/test-listener.sh` | stdin = Vitest (`--reporter=json`) or Jest (`--json`) report → one journal line per test file; bumps `runs_recorded` |
 | `scripts/test-selector.sh` | changed files → impacted test files (`<path>\t<reason>`); `--full` when selection would be unsafe |
 
-Inside a blitz session the wiring is automatic: `post-edit-test.sh` records every edited file, `heartbeat.sh` (PostToolBatch, async) runs selector → runner → listener once per tool batch and re-wakes the model with a ≤10-line failure digest, and `/blitz:sprint-review` §1.3 runs the selected set and then ONE full run to measure what the selector missed. This guide covers the part you wire yourself: CI.
+Inside a blitz session the wiring is automatic: `post-edit-test.sh` records every edited file, `heartbeat.sh` (PostToolBatch, async) runs selector → runner → listener once per tool batch and re-wakes the model with a ≤10-line failure digest, and `/blitz:check` runs the selected set and then ONE full run to measure what the selector missed. This guide covers the part you wire yourself: CI.
 
 ## The journal
 
@@ -23,9 +23,9 @@ Inside a blitz session the wiring is automatic: `post-edit-test.sh` records ever
 {"runs_started":12,"runs_recorded":12,"last_run_id":"67554bae","escaped_failures_recent":[0,0,1,0]}
 ```
 
-- `trigger`: `post-edit` (heartbeat), `sprint-review`, `ci`.
+- `trigger`: `post-edit` (heartbeat), `check`, `ci`.
 - `selected_by`: `selector` or `full` — lets you compare the two populations later.
-- `runs_started == runs_recorded` is the health invariant. Every caller bumps `runs_started` (`--start`) before the runner and the listener bumps `runs_recorded` after parsing. Drift > 3 raises a `hook_failure` inbox item; `/blitz:quality-metrics` reports the delta.
+- `runs_started == runs_recorded` is the health invariant. Every caller bumps `runs_started` (`--start`) before the runner and the listener bumps `runs_recorded` after parsing. Drift > 3 raises a `hook_failure` inbox item; `/blitz:doctor` reports the delta.
 - Writers take a `noclobber` lock (5 s spin, stale after 60 s), so parallel CI shards can append to a shared journal without interleaving.
 - Maintenance: `scripts/test-listener.sh --prune` keeps the last 5 000 lines / 30 days.
 - A malformed or empty report never fails the caller: the listener logs a `warning` to the activity feed and exits 0 — the run shows up as started-but-not-recorded, which is the point.
@@ -40,7 +40,7 @@ Inside a blitz session the wiring is automatic: `post-edit-test.sh` records ever
 | `graph` | reverse import closure changed → test files | Vitest: static resolver (relative imports, `tsconfig` `paths`, Nuxt `~/` `@/` `~~/` `@@/`). Jest: `npx jest --findRelatedTests --listTests` |
 | `recent-fail` | journal: test files that failed in the last 5 runs | |
 | `co-change` | journal: test files that failed in any run whose `changed` intersects the current change | learns coupling the graph cannot see (fixtures, env, generated code) |
-| `full` | every `**/*.{test,spec}.*` + `__tests__/**` | `--full`, or automatically when the change touches `package.json` / lockfiles / `vitest|vite|jest` config / `tsconfig*` / test setup files, exceeds 40 files, or `escaped_failures_recent` has a non-zero entry in the last 3 sprint-review runs |
+| `full` | every `**/*.{test,spec}.*` + `__tests__/**` | `--full`, or automatically when the change touches `package.json` / lockfiles / `vitest|vite|jest` config / `tsconfig*` / test setup files, exceeds 40 files, or `escaped_failures_recent` has a non-zero entry in the last 3 check runs |
 
 Cold start (no journal) = sibling + graph. The selector never fails: any resolver error prints the `--full` set and a note on stderr. `--json` adds `selection_ratio` (selected / total) and the graph mode used.
 
@@ -109,4 +109,4 @@ Adapted from Anthropic's account of running CI once agents write most of the cod
 - **Runner's own graph.** Import analysis is the test runner's problem (or, here, a 60-line static resolver with the same resolution rules); we do not add a second module system.
 - **Calibration is mandatory.** Selection without a periodic full run drifts toward false confidence. Sprint close and the nightly job are the two points where the full population is measured and `escaped_failures` is written back into the selector's own inputs.
 
-Related: `skills/_shared/quality.md` §Advisory metrics and §Verification stack; `skills/sprint-review/SKILL.md` §1.3; `hooks/scripts/heartbeat.sh`.
+Related: `skills/_shared/quality.md` §Advisory metrics and §Verification stack; `skills/check/SKILL.md` §Tests; `hooks/scripts/heartbeat.sh`.
