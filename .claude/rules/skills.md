@@ -13,8 +13,9 @@ Enforced by `hooks/scripts/skill-frontmatter-validate.sh` and `hooks/scripts/age
 - Required: `name` (lowercase, digits, hyphens, ≤64), third-person `description` ≤1024 chars (cumulative budget 14 500 across all skills), `compatibility: ">=X.Y.Z"`, `allowed-tools` when invokable.
 - `model: inherit` on every model-invokable skill. Pinning a model or `effort` forces a switch on invocation and resets the prompt cache; only skills with `disable-model-invocation: true` may pin. State the recommendation in the body line that starts `> **Session:**`.
 - Body ≤500 lines; overflow goes to `references/main.md`.
-- The OUTPUT STYLE snippet must be byte-identical to the canonical block in `skills/_shared/terse-output.md`.
-- Import the Project Context block from `skills/_shared/project-context.md` verbatim.
+- Output style is enforced by `output-styles/terse-technical.md` (force-for-plugin). Skills do not repeat an OUTPUT STYLE snippet.
+- Skills that need stack detection include the one-line injection `!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`` under a `## Project Context` heading.
+- `allowed-tools` never lists `TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet`, or `TodoWrite`: those tools are off on current models. Work is tracked in `docs/plans/<slug>/tasks.json`.
 - Optional fields the validator shape-checks: `context: fork` (+ `agent`, `background`), `when_to_use`, `arguments`, `user-invocable`, `paths`, `argument-hint`, `disallowed-tools`.
 - Every skill claims the hook-created session record (`skills/_shared/session-lifecycle.md` §Session Registration); it never mints its own session id.
 
@@ -25,6 +26,6 @@ Enforced by `hooks/scripts/skill-frontmatter-validate.sh` and `hooks/scripts/age
 - Forbidden (silently stripped for plugin agents): `hooks`, `mcpServers`, `permissionMode`. Never list tools the platform removes from subagents: `ScheduleWakeup`, `Workflow`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`, `TaskOutput`.
 - Read-only roles (architect, critic, design-critic, research-critic, reviewer) keep Bash to a read subset and never gain network egress beyond what `security.md` §5 grants.
 
-## Counts
+## Catalog
 
-Adding or removing a skill, agent, or shared protocol changes asserted counts. Run `scripts/check-count-sync.sh --write`, then fix the prose it flags in `README.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `CLAUDE.md`.
+No numeric inventory ("N skills", "N hooks") in prose anywhere. `docs/CATALOG.md` is generated from frontmatter by `scripts/gen-catalog.sh`; run it after adding, removing, or renaming a skill or agent, and `scripts/gen-catalog.sh --check` fails CI on a stale catalog, a dead `/blitz:<name>` reference, or a numeric inventory claim.

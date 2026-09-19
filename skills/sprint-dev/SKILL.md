@@ -2,7 +2,7 @@
 name: sprint-dev
 description: "Implements planned sprints with coordinated agent teams — spawns backend-dev/frontend-dev/test-writer in isolated worktrees, distributes stories as dependency-ordered waves, monitors via Monitor. Use for 'implement sprint', 'develop stories', 'start coding', 'work the sprint', 'resume sprint'. Hard-fails at Phase 0.0 if the manifest or stories are missing."
 argument-hint: "[--sprint N | --resume] [--stories ID,ID] [--mode autonomous|checkpoint|interactive]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, ListAgents, Monitor, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, ListAgents, Monitor
 disable-model-invocation: false
 model: inherit
 compatibility: ">=2.1.271"
@@ -24,7 +24,6 @@ compatibility: ">=2.1.271"
 - For package install policy (every dep added by backend-dev / frontend-dev / test-writer agents resolves to registry latest, no invented versions), see [security.md](/_shared/security.md). Sprint-dev injects this into every dev-agent prompt via the Dev Agent Prompt Specification in references/main.md.
 - For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
 
 ---
 

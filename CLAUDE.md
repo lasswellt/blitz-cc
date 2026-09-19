@@ -15,12 +15,12 @@ The `SessionStart` hook prints recent activity from other sessions and the hooks
 - Skill and agent authoring contract (frontmatter, OUTPUT STYLE snippet, model inheritance): `.claude/rules/skills.md` (loads when you touch `skills/**` or `agents/**`).
 - Hook authoring contract (stdin fields, exit codes, helpers, bats): `.claude/rules/hooks.md` (loads when you touch `hooks/**`).
 - Shared protocols: `skills/_shared/` — one file per concern; `session-lifecycle.md` (sessions, locks, context), `sprint-contracts.md` (registry, DoD), `agent-orchestration.md` (spawning, routing, Workflow), `quality-engine.md` (checks, ratchet, verification stack), `security.md` (TB-1…TB-5), `terse-output.md` (output style, feed).
-- Hook index: `hooks/scripts/README.md`. Validators: `scripts/validate-plugin-structure.sh`, `scripts/check-count-sync.sh`, `scripts/check-version-sync.sh`, `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `bats hooks/tests/`.
+- Hook index: `hooks/scripts/README.md`. Validators: `scripts/validate-plugin-structure.sh`, `scripts/check-version-sync.sh`, `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `bats hooks/tests/`.
 
 ## Working here
 
 - Run the validators above before committing; `pre-commit-validate.sh` runs them again and blocks on drift.
-- Counts (skills, agents, hooks, protocols) are asserted against the filesystem. After adding or removing one, run `scripts/check-count-sync.sh --write` and reconcile the prose it flags.
+- No numeric inventory in prose. `docs/CATALOG.md` is generated from frontmatter (`scripts/gen-catalog.sh`); regenerate it after adding, removing, or renaming a skill or agent.
 - Set model and effort once per session (`claude --model opus --effort high`); every skill is `model: inherit`.
 - Quiet flags keep context small: `npx vitest run <file> --reporter=dot`, `git --no-pager`, `--silent` on npm scripts.
 - `.cc-sessions/`, `sprints/`, `docs/_research/`, `docs/roadmap/`, `docs/audits/` are gitignored runtime output. Tracked research and reviews go under `docs/research/` and `docs/reviews/`.

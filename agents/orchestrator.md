@@ -15,7 +15,7 @@ description: |
   assistant: "Orchestrator routes to the research skill / spawns the research-class
   specialist depending on whether the parent context already has Agent() access."
   </example>
-tools: Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor
+tools: Read, Grep, Glob, Bash, Monitor
 maxTurns: 30
 # Model rationale (reconciles audit-20260517 maint-skill-md MED finding):
 #   The user's memory note prefers `model: opus + effort: low` for orchestrators.
@@ -213,4 +213,3 @@ Per `docs/_research/2026-05-16_agent-success-recipes-spec-fixing.md` F5 (Aider /
 
 ## 7. Output style snippet (Invariant 5 compliance)
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.

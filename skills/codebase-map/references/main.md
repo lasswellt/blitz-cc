@@ -52,7 +52,6 @@ heading — the orchestrator adds `## {{DIMENSION}}` when assembling CODEBASE-MA
 CONFIRMATION: When done, emit one line: "{{DIMENSION}}: <N sections, K lines>"
 Do NOT echo findings in your response.
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles,
 fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code,
 URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows,
 error codes, dates, version numbers. No preamble. No trailing summary of work

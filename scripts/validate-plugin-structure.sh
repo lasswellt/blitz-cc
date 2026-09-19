@@ -200,49 +200,6 @@ for event_type in hooks:
 fi
 
 # ---------------------------------------------------------------
-# 6. README cross-reference — compare counts
-# ---------------------------------------------------------------
-echo "Checking README cross-references..."
-README="$PLUGIN_ROOT/README.md"
-if [[ -f "$README" ]]; then
-  # Count actual skill dirs (excluding _shared)
-  actual_skills=0
-  if [[ -d "$SKILLS_DIR" ]]; then
-    for d in "$SKILLS_DIR"/*/; do
-      name=$(basename "$d")
-      [[ "$name" == "_shared" ]] && continue
-      actual_skills=$((actual_skills + 1))
-    done
-  fi
-
-  # Count actual agent files
-  actual_agents=0
-  if [[ -d "$AGENTS_DIR" ]]; then
-    for f in "$AGENTS_DIR"/*.md; do
-      [[ -f "$f" ]] && actual_agents=$((actual_agents + 1))
-    done
-  fi
-
-  # Check README for "**N skills**" pattern (README.md:14 format)
-  readme_skills=$(grep -oP '\*\*\K\d+(?= skills\*\*)' "$README" 2>/dev/null | head -1 || echo "")
-  if [[ -n "$readme_skills" && "$readme_skills" -ne "$actual_skills" ]]; then
-    check_fail "README says $readme_skills skills but found $actual_skills skill directories"
-  elif [[ -n "$readme_skills" ]]; then
-    check_pass "README skill count matches ($actual_skills)"
-  fi
-
-  # Check README for "**N agents**" pattern (README.md:14 format)
-  readme_agents=$(grep -oP '\*\*\K\d+(?= agents\*\*)' "$README" 2>/dev/null | head -1 || echo "")
-  if [[ -n "$readme_agents" && "$readme_agents" -ne "$actual_agents" ]]; then
-    check_fail "README says $readme_agents agents but found $actual_agents agent files"
-  elif [[ -n "$readme_agents" ]]; then
-    check_pass "README agent count matches ($actual_agents)"
-  fi
-else
-  check_warn "README.md not found, skipping cross-reference check"
-fi
-
-# ---------------------------------------------------------------
 # 7. Version consistency — marketplace.json vs plugin.json
 # ---------------------------------------------------------------
 echo "Checking version consistency..."

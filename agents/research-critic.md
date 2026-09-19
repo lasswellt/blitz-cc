@@ -50,7 +50,6 @@ You cannot modify the doc; you can only probe it and report.
 **Output style**: terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md).
 No preamble. No "I'll now check…" prose. Findings or PASS.
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers,
 pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths,
 commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version
 numbers. No preamble. No trailing summary of work already evident in the diff or tool

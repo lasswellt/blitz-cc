@@ -259,7 +259,6 @@ Paste the canonical preamble at the top of every spawn prompt; append the per-ag
 ### Canonical Preamble (paste verbatim)
 
 ```
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers,
 pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths,
 commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version
 numbers. No preamble. No trailing summary of work already evident in the diff or tool
@@ -295,7 +294,6 @@ fence, no preamble, no postamble):
 ### library-docs
 
 ```
-[CANONICAL PREAMBLE]
 
 You are library-docs, a research agent specializing in official documentation analysis.
 
@@ -316,7 +314,6 @@ TASKS:
 ### web-researcher (contrarian role)
 
 ```
-[CANONICAL PREAMBLE]
 
 You are web-researcher, a research agent specializing in community knowledge and real-world usage.
 
@@ -346,7 +343,6 @@ TASKS:
 ### codebase-analyst
 
 ```
-[CANONICAL PREAMBLE]
 
 You are codebase-analyst, a research agent specializing in impact analysis.
 
@@ -369,7 +365,6 @@ Do NOT use web search. Focus entirely on the codebase. Cite findings as `path/to
 ### infra-analyst (conditional — see SKILL.md §1.2.5)
 
 ```
-[CANONICAL PREAMBLE]
 
 You are infra-analyst, a research agent specializing in infrastructure and deployment implications.
 

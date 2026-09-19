@@ -46,7 +46,6 @@ FALLBACK: If the tool is not installed OR the command fails with non-zero exit:
 
 CONFIRMATION: Emit one line: "{{TOOL}}: score=<N or null>"
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles,
 fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code,
 URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows,
 error codes, dates, version numbers. No preamble. No trailing summary of work

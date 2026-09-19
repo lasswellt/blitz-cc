@@ -13,7 +13,6 @@ compatibility: ">=2.1.71"
 - For the structural validator (run after compression), see `hooks/scripts/reference-compression-validate.sh`
 
 
-OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No trailing summary of work already evident in the diff or tool output. Format: fragments OK.
 
 ---
 
