@@ -15,7 +15,7 @@ Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 3 
 
 ## Threat Model — Blitz Containment Posture (canonical owner)
 
-> **Canonical owner (O-style)** for Blitz's security posture. Promoted from the containment research pass — see [`docs/security/containment/`](../../docs/security/containment/) for the surviving derivation artifacts: the surface map ([`blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md), the risk × layer matrix) and the sequenced integration plan ([`SYNTHESIS.md`](../../docs/security/containment/SYNTHESIS.md), which folds the gap analysis and self-audit into blast-radius-ordered epics).
+> **Canonical owner (O-style)** for Blitz's security posture. Promoted from the containment research pass — see [`docs/security/containment/`](../../docs/security/containment/) for the surviving derivation artifacts: the surface map ([`blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md), the risk × layer matrix) and the sequenced integration plan ([`SYNTHESIS.md`](../../docs/security/containment/SYNTHESIS.md), which folds the gap analysis and self-audit into blast-radius-ordered work items).
 >
 > Grounded in Anthropic, "How we contain Claude across products" (2026-05-25), cross-checked against OWASP (LLM / Agentic / MCP Top 10), CaMeL (arXiv 2503.18813), the dual-LLM / Spotlighting pattern, the memory-poisoning literature (MINJA / MemoryGraft / Zombie Agents), and NIST's agent identity/authorization direction.
 >

@@ -1,7 +1,7 @@
 ---
 name: audit
-description: "Comprehensive 5-pillar code-quality audit (Architecture, Performance, Security, Maintainability, Robustness): 10 parallel agents (2 same-scope passes/pillar, Multi-Review). Findings feed /blitz:roadmap + /blitz:sprint-plan. Use for 'audit codebase', 'full code review', 'find tech debt', 'security audit', or before a release. Object-noun routing for 'audit X': code→audit, dependencies/CVEs→/blitz:dep-health, Firestore/Vue/Pinia→/blitz:code-doctor, cross-page UI→/blitz:ui-audit, sprint→/blitz:sprint-review. Bare 'audit'→/blitz:ask."
-argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual]"
+description: "Runs a 5-pillar recall audit (architecture, performance, security, maintainability, robustness) with paired agents plus registry checks, then writes docs/plans/audit-<date>/ as a paused task plan. Use for 'audit codebase', 'find tech debt', 'security audit', 'full code review', or before a release."
+argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual] [--plan]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: inherit
 compatibility: ">=2.1.71"
@@ -14,10 +14,12 @@ compatibility: ">=2.1.71"
 
 ## Additional Resources
 - For agent prompt templates, pillar checklists, severity schema, and report templates, see [references/main.md](references/main.md)
-- For context window hygiene (10 parallel agents), see [session-lifecycle.md](/_shared/sessions.md)
-- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agent-orchestration.md](/_shared/agents.md)
+- For context window hygiene (10 parallel agents), see [sessions.md](/_shared/sessions.md)
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.md](/_shared/agents.md) §7
+- For the plan artifacts Phase 3 writes (`spec.md` frontmatter, `tasks.json`, `scripts/tasks.sh`), see [loop.md](/_shared/loop.md)
+- For the check registry the deterministic lane and the security pillar select from, see [quality.md](/_shared/quality.md) §Shared check registry
 <!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
@@ -28,7 +30,7 @@ compatibility: ">=2.1.71"
 
 # Codebase Audit Skill
 
-Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents. Execute every phase in order. Do NOT skip phases. ultrathink across pillar synthesis — the value of this audit is cross-pillar reasoning (e.g., security × performance trade-offs, maintainability × robustness tension) that single-pillar tools miss.
+Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents (8 when claude-security covers the security pillar, §1.2) and emit the findings as a paused plan under `docs/plans/audit-<date>/`. Execute every phase in order. Do NOT skip phases. ultrathink across pillar synthesis — the value of this audit is cross-pillar reasoning (e.g., security × performance trade-offs, maintainability × robustness tension) that single-pillar tools miss.
 
 **Pillars**: Architecture, Performance, Security, Maintainability, Robustness
 
@@ -38,7 +40,7 @@ Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents. 
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Create Working Directories
 
@@ -100,7 +102,7 @@ If found, note the date and key findings for comparison.
 
 ### 1.0 Select Dispatch Mode (capability gate)
 
-Per [agent-orchestration.md](/_shared/agents.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
+Per [agents.md](/_shared/agents.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -125,7 +127,7 @@ Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The
 `prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
 inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
 `Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
-hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agents.md)
+hard-fail. Resume semantics + concurrency cap: [agents.md](/_shared/agents.md)
 §Workflow Dispatch Contract.
 
 - Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
@@ -144,9 +146,9 @@ Per-spawn parameters:
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 
-Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [agent-orchestration.md](/_shared/agents.md)).
+Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [agents.md](/_shared/agents.md)).
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
+**Weight class**: Medium (per [agents.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
 
 Every agent receives:
 1. The inventory JSON (inline, not a file path).
@@ -174,6 +176,21 @@ Every agent receives:
 | 10 | `robust-b` | Robustness | (same scope as `robust-a` — independent pass) | 12 | `findings/10-robust-b.md` |
 
 `--dual` adds cross-model agreers for the Security pillar (highest-stakes; self-critique-paradox mitigation).
+
+### 1.2 Security pillar: registry rows first, claude-security when installed
+
+The pillar's authoritative checks are the registry `sec-*` rows ([`/_shared/check-registry.json`](/_shared/check-registry.json), `pillar == security`); they run in the deterministic lane (§1.5) on every audit and keep reject authority. Deep semantic scanning is delegated when the `claude-security` plugin is present:
+
+```bash
+SEC_PLUGIN=0
+{ claude plugin list 2>/dev/null | grep -q 'claude-security'; } \
+  || grep -qs 'claude-security' "${HOME}/.claude/plugins/installed_plugins.json" && SEC_PLUGIN=1
+echo "[audit] security: registry sec-* rows$( [ "$SEC_PLUGIN" = 1 ] && echo ' + claude-security scan' || echo ' + sec-a/sec-b passes')" >&2
+```
+
+- **`SEC_PLUGIN=1`** → do not spawn `sec-a`/`sec-b` (roster shrinks to 8). Invoke the plugin's scan skill on the audit scope, write its verified findings (SARIF → severity schema, one `FINDING:` per result, `Confidence: 90`) to `findings/05-sec-external.md` tagged `lane: external`. External findings skip §2.1.4 aggregation and §2.3.5 refutation (already verified by the plugin) and stay `advisory`.
+- **`SEC_PLUGIN=0`** → spawn `sec-a`/`sec-b` as listed; the report's Security section and the Phase 3 spec carry one line: `Recommendation: install the claude-security plugin (verified SARIF findings) or run /security-review before release; blitz audit covers registry sec-* rows only.`
+- `--dual` applies only when `SEC_PLUGIN=0` (cross-model agreers for the two passes).
 
 ### 1.3 Agent Prompt Construction
 
@@ -205,7 +222,7 @@ done
 
 Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP — and write to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. The deterministic and semantic lanes catch **disjoint** bug classes (ianlpaterson 38-task) — a deleted test has no semantic signature; a wrong answer-key has no structural one — so run both. Detail: [references/main.md](references/main.md) §Recall hardening.
 
-**Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:review --only design`). Vendored rows share one **key-free** `npx impeccable detect --json` run (filter by `detection.filter`); the provider-gated tells route through `agents/design-critic.md`'s gemini CLI (`BLITZ_GEMINI_BIN`), the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: [references/main.md](references/main.md) §Phase 1.D2.
+**Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:check --only design`). Vendored rows share one **key-free** `npx impeccable detect --json` run (filter by `detection.filter`); the provider-gated tells route through `agents/design-critic.md`'s gemini CLI (`BLITZ_GEMINI_BIN`), the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: [references/main.md](references/main.md) §Phase 1.D2.
 
 ## Phase 2: COMPILE RESULTS — Consolidate Findings
 
@@ -249,7 +266,7 @@ Cross-agent deduplication:
 
 ### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
 
-Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agent-orchestration.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
+Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agents.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
 
 When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
 
@@ -296,7 +313,7 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
-**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
@@ -309,111 +326,89 @@ cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).m
 
 Emit a required `coverage_boundary` block in the report — agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is labeled "passed what we checked," never "passed everything." Detail: [references/main.md](references/main.md) §Recall hardening.
 
-## Phase 3: ROADMAP INTEGRATION — Convert Findings to Epics
+## Phase 3: EMIT TASKS — Findings Become a Paused Plan
+
+Audit output the loop can execute: `docs/plans/audit-<YYYY-MM-DD>/{spec.md, tasks.json}` ([loop.md](/_shared/loop.md) §Artifacts). No separate index or registry file. `tasks.json` is written only through `scripts/tasks.sh` (a PreToolUse hook denies `Edit`/`Write` on it). Never arm `gate.json` here: `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"`. Flag: `--plan` sets `AUDIT_PLAN_FLAG=1` (the plan is written `status: active` and `next --loop` picks it up on the next tick); default is `paused`.
 
 ### 3.1 Group Findings into Themes
 
-Cluster related findings into themes. A theme maps to a potential epic:
-- Group by: pillar + affected domain (e.g., "Security: Auth Middleware" or "Performance: Database Queries")
-- A theme needs at least 2 findings to justify an epic.
-- Singleton critical findings get their own theme.
+Cluster surviving findings (post §2.3.5) into themes = one task each:
+- Group by pillar + affected domain (e.g. "Security: auth middleware", "Performance: Firestore queries in `stores/`").
+- A theme needs ≥2 findings, or 1 Critical finding.
+- Order themes by impact = Σ(Critical 10, High 5, Medium 2, Low 1) descending; that order becomes `T-001…T-00N`.
+- `files` = the union of every finding's cited paths in the theme (≤12; split the theme when larger).
+- `role` from the files: `**/functions/**|**/server/**|**/api/**` → `backend`; `**/pages/**|**/components/**|**/stores/**` → `frontend`; rules/config/CI → `infra`; test-only → `test`.
 
-### 3.2 Score and Prioritize Themes
+### 3.2 Derive the Executable Check per Theme
 
-For each theme, calculate:
-- **Impact score** = sum of (Critical: 10, High: 5, Medium: 2, Low: 1) across findings
-- **Effort estimate** = Small (1-3 files), Medium (4-8 files), Large (9+ files)
-- **Priority** = Impact / Effort (higher = do first)
+Every task carries a `verify[]` check the loop can run without a human (tasks.sh refuses a task without one):
 
-Sort themes by priority descending.
+| Finding source | `--verify-cmd` |
+|---|---|
+| Deterministic lane (`det-NN`, `sec-*`, `fw-*`, `design-*`) | the registry row's `detection.command`, scoped to `files` |
+| Semantic finding whose fix is the absence of a pattern | `grep_absent`: `! grep -rnE '<pattern>' <files>` |
+| Semantic finding whose fix is the presence of a pattern | `grep -qE '<pattern>' <file>` (add `--test-only-ok` only when a test is the sole check) |
+| Semantic finding with no pattern (design smell, "consider splitting", naming) | **no task** → note in `spec.md` §Out of scope |
 
-### 3.3 Generate Proposed Epics
+Timeout suffix `::60` (`::300` for `tsc`/import-graph rows). Run each candidate command once before emitting: a check that already passes on the unfixed tree is not a check — pick another pattern or demote the theme to a note.
 
-For each theme, write a proposed epic using the format from `references/main.md`:
+### 3.3 Write the Plan
 
-```markdown
-## PROPOSED EPIC: <theme-name>
-
-**Pillar**: <pillar>
-**Priority**: <priority-score>
-**Impact**: <impact-score>
-**Effort**: <Small|Medium|Large>
-**Findings**: <count> (<critical>C / <high>H / <medium>M / <low>L)
-
-### Description
-<2-3 sentences describing what this epic addresses>
-
-### Key Findings
-<bulleted list of the most important findings in this theme>
-
-### Proposed Stories
-<numbered list of implementation stories that would resolve the findings>
-
-### Success Criteria
-<measurable criteria for when this epic is "done">
-
-### Dependencies
-<other epics or external factors this depends on>
-```
-
-### 3.3a Emit `scope:` YAML frontmatter on `-epics.md`
-
-Every `audit-YYYYMMDD-epics.md` file MUST open with a `scope:` YAML frontmatter block above the `# Proposed Epics` heading. One entry per non-`complete` `proposed_epics[]` item. This is the canonical contract for `/blitz:roadmap extend` ingestion — see [/_shared/quality.md](/_shared/quality.md) §Writers.
-
-Skip emission for any epic whose `status: "complete"` (idempotent reruns of `audit` MUST NOT duplicate registry entries on already-shipped work).
-
-Per-entry shape:
-- `id`: `cf-${AUDIT_DATE}-${EPIC_ID_LOWER}` (e.g., `cf-2026-05-18-epic-a01`)
-- `unit`: `epics`
-- `target`: `1`
-- `description`: theme + pillar + finding_count + effort. If `defer_reason` is set, prepend it. If `multi_sprint: true`, append "Multi-sprint (estimate: ${sprint_estimate})."
-- `acceptance`: each entry in the epic's `success_criteria` becomes one `shell:` acceptance check, OR `grep_absent:` / `grep_present:` when the criterion clearly maps to a grep pattern.
-
-Sample:
-
-```yaml
+```bash
+AUDIT_DATE=$(date +%Y-%m-%d); PLAN="audit-${AUDIT_DATE}"; PLAN_DIR="docs/plans/${PLAN}"
+mkdir -p "$PLAN_DIR"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" init "$PLAN"
+STATUS=paused; [ "${AUDIT_PLAN_FLAG:-0}" = 1 ] && STATUS=active     # --plan activates immediately
+cat > "${PLAN_DIR}/spec.md" <<EOS
 ---
-scope:
-  - id: cf-2026-05-18-epic-a01
-    unit: epics
-    target: 1
-    description: |
-      Hook performance — async + scope guards.
-      Performance (primary), Robustness (secondary). 8 findings. Effort: Small.
-    acceptance:
-      - shell: "grep -q '\"async\": true' hooks/hooks.json"
-      - shell: "test -x hooks/scripts/post-edit-typecheck-block.sh"
+status: ${STATUS}
+priority: P2
+created: ${AUDIT_DATE}
+ship: manual
 ---
-# Proposed Epics — Audit 2026-05-18
+# Audit ${AUDIT_DATE}
 
-Source: `docs/audits/audit-2026-05-18.md`. ...
+## Goal
+Resolve the ${THEME_COUNT} themes found by /blitz:audit (${TOTAL} findings: ${C}C/${H}H/${M}M/${L}L; agents ${OK}/${N}). Report: docs/audits/audit-$(date +%Y%m%d).md (gitignored; this file is the tracked summary).
+
+## Findings summary
+| Task | Pillar | Impact | Findings (file:line) |
+|---|---|---|---|
+| T-001 | … | … | … |
+
+Health: Architecture NN · Performance NN · Security NN · Maintainability NN · Robustness NN. Coverage boundary: <§2.8 block, one line>.
+Security: <registry sec-* rows run; claude-security delegated | one-line recommendation from §1.2>.
+
+## Out of scope
+- Findings with no executable check (notes, not tasks): <finding — file:line — why no check>
+- Pillars/lanes not run: <from coverage_boundary>
+EOS
 ```
 
-After ingestion via `/blitz:roadmap extend`, set each epic's `ingested_at` field in the companion `audit-YYYYMMDD-index.json` to the current ISO-8601. This signals to subsequent audit runs (and `/blitz:next` Phase 0.9b) that the epic has been registered.
+Then one `tasks.sh add` per theme, in impact order:
 
-### 3.4 Write Epic Proposals
-
-Write all proposed epics to:
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$PLAN" --id T-001 \
+  --title "Security: validate input in auth middleware" --role backend \
+  --files "functions/src/middleware/auth.ts,functions/src/schemas/user.ts" --origin audit \
+  --verify-cmd "! grep -rnE 'req\.body\.[a-zA-Z]+ *(as|!)' functions/src/middleware/auth.ts::60" \
+  --notes "det-17 + sec-a/sec-b agreed; Critical; report §Security #3"
 ```
-${REPORT_DIR}/audit-$(date +%Y%m%d)-epics.md
-```
 
-The emitter MUST populate every field documented in Phase 3.5 schema on EVERY epic, including the 6 backward-compat fields: `id` (carried verbatim from the epic generated in Phase 3.3), `status: "proposed"`, `defer_reason: null`, `multi_sprint: false`, `sprint_estimate: null`, `ingested_at: null`. The operator may hand-edit `status: "deferred"` + `defer_reason: "..."` post-emission to signal items not to sprintify; consumers (`/blitz:roadmap extend`, `/blitz:next` Phase 0.9b) MUST tolerate older index files missing these fields by defaulting to the values above.
+- `--depends` only for a real ordering (a schema task before the handler that consumes it); default none so `build --parallel` can fan out on disjoint `files`.
+- Same-day rerun: `tasks.sh list "$PLAN"` first; skip a theme whose title already exists, continue ids from max+1, never rewrite `spec.md` frontmatter (a human may have flipped `status`).
+- Append to `docs/plans/BACKLOG.md` nothing; the notes in `spec.md` are the parking lot.
 
-### 3.5 Write Machine-Readable Index
+### 3.4 Final Output
 
-Write a JSON index for consumption by the roadmap skill at `${REPORT_DIR}/audit-$(date +%Y%m%d)-index.json`. Full index schema + backward-compat defaults: [references/main.md](references/main.md#machine-readable-index-schema-phase-35).
-
-### 3.6 Final Output
-
-Print a summary to the user:
+Append `task_complete` to the activity feed (`skill: audit`, `detail.summary`), then print:
 
 ```
 Codebase Audit Complete.
 ========================
-Agents: <succeeded>/10 succeeded
-Findings: <total> (Critical: N, High: N, Medium: N, Low: N)
-Proposed Epics: <count>
+Agents: <succeeded>/<N> succeeded (security: registry | claude-security)
+Findings: <total> (Critical: N, High: N, Medium: N, Low: N) · unscored: N · below threshold: N
+Coverage boundary: <one line>
 
 Health Scorecard:
   Architecture:    XX/100
@@ -423,9 +418,11 @@ Health Scorecard:
   Robustness:      XX/100
 
 Report: docs/audits/audit-YYYYMMDD.md
-Epics:  docs/audits/audit-YYYYMMDD-epics.md
-Index:  docs/audits/audit-YYYYMMDD-index.json
+Plan:   docs/plans/audit-YYYY-MM-DD/  (spec.md status: paused|active, tasks.json: N tasks, M findings kept as notes)
+Activate with: edit status: active in spec.md, then /blitz:next
 ```
+
+With `--plan` the last line reads `Activated: /blitz:next` instead.
 
 ---
 
@@ -436,10 +433,12 @@ Index:  docs/audits/audit-YYYYMMDD-index.json
 - **Agent timeout**: Mark as failed, proceed with available findings. Note gaps in report.
 - **All agents failed**: Abort and report the failure. Suggest checking stack detection and file permissions.
 - **Existing audit found**: Load previous findings for comparison. Include a "Delta" section in the report showing improvements and regressions.
+- **`tasks.sh add` refuses a task** (no non-test check, bad role, duplicate id): fix the command, never hand-edit `tasks.json`; if no executable check exists, demote the theme to a note.
+- **No theme has an executable check**: still write `spec.md` (findings + notes) and an empty `tasks.json`; say so in the final output.
 
 ## Gotchas
 
-- Spawns 10 parallel agents (2 same-scope passes/pillar); MISSING_COUNT ≥ threshold aborts (spawn-protocol §8 gate) — don't pass blank outputs as SUCCESS.
+- Spawns 10 parallel agents (8 when claude-security handles the security pillar); MISSING_COUNT ≥ threshold aborts (spawn-protocol §8 gate) — don't pass blank outputs as SUCCESS.
 - Findings without 2-pass Multi-Review agreement are FP-prone; require convergence before reporting.
-- Object-noun routing for "audit X": code→audit, deps→`/blitz:dep-health`, Firestore/Vue/Pinia→`/blitz:code-doctor`, cross-page UI→`/blitz:ui-audit`, sprint→`/blitz:sprint-review`. Bare "audit"→`/blitz:ask`.
-- Quantified findings without a `scope:` block silently drop at `/blitz:roadmap` ingestion — emit `scope:` or a `<!-- no-registry -->` waiver.
+- Object-noun routing for "audit X": code→audit, deps/CVEs→`/blitz:dep-health`, Vue/Firestore/Pinia misuse→`/blitz:check --only framework`, cross-page UI→`/blitz:ui-audit`, a change or plan→`/blitz:check`. Registry entry-point table: [quality.md](/_shared/quality.md) §Which entry point.
+- The plan is `paused` by default: `next --loop` ignores it until a human flips `status: active` (or the run used `--plan`). A finding without an executable check is a note, never a task — `tasks.sh` enforces it.

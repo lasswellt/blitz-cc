@@ -1,10 +1,10 @@
 ---
 name: ui-build
-description: "Researches the codebase's design patterns (component library, layout system, design tokens, accessibility conventions) then generates production-grade Vue 3 UI that feels native to the project. Runs a 5-phase workflow (Discover → Analyze → Design → Implement → Refine). Use when the user says 'build a page', 'create UI', 'add a form', 'design component', 'build UI for X', 'add a screen for Y'."
+description: "Use when the user says 'build a page', 'create UI', 'add a form', 'build UI for X', 'add a screen', or 'extract design system' / 'build DESIGN.md'. Discovers the project's components, tokens, and conventions (extracting DESIGN.md when absent), then builds production-grade Vue 3 UI native to it."
 argument-hint: "<feature description>"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch, AskUserQuestion
 model: inherit
-compatibility: ">=2.1.71"
+compatibility: ">=2.1.271"
 paths:
   - "**/*.vue"
   - "**/*.nuxt.{ts,js}"
@@ -12,9 +12,6 @@ paths:
   - "**/pages/**/*.{vue,ts,js}"
   - "**/layouts/**/*.{vue,ts,js}"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -26,6 +23,7 @@ Build production-grade Vue 3 UI native to the project. Follow the 5-phase workfl
 
 ## Additional Resources
 - UX principles, wireframe templates, accessibility checklist: [references/main.md](references/main.md)
+- Design-system extraction → `DESIGN.md` (run when none exists): [references/design-extract.md](references/design-extract.md)
 - Output style: [/_shared/output.md](/_shared/output.md)
 
 
@@ -33,13 +31,15 @@ Build production-grade Vue 3 UI native to the project. Follow the 5-phase workfl
 
 ## Phase 0: SESSION — Register and Check for Conflicts
 
-Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (claim the hook-created record, run the conflict matrix) and [output.md](/_shared/output.md). Print progress at every phase transition, decision point, and agent dispatch.
 
 ---
 
 ## Phase 1: DISCOVER
 
 **Goal**: Build a mental model of how this project constructs UI.
+
+**Rule: when no `DESIGN.md` exists at the repo root, run the extraction in [references/design-extract.md](references/design-extract.md) first** (also when the user asks to "extract design system"). It emits `DESIGN.md` from the project's tokens, fonts, and palette; steps 1–5 below then read it instead of re-discovering. With an existing `DESIGN.md`, read it and only note drift.
 
 1. **Design Tokens** — Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
 2. **Component Inventory** — Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
@@ -108,9 +108,9 @@ Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** as 
 
 #### 3.0.2 Document choices to DESIGN.md
 
-Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — see `skills/design-extract/SKILL.md`) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md)); inline aesthetic greps in the Implementation Gate are superseded by `/blitz:review --only design`.
+Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — template in [references/design-extract.md](references/design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../docs/integrations/impeccable/references-regrounded.md)); inline aesthetic greps in the Implementation Gate are superseded by `/blitz:check --only design`.
 
-For brownfield without DESIGN.md, run `/blitz:design-extract` first.
+Brownfield without `DESIGN.md` never reaches this step: Phase 1 already ran the extraction.
 
 ### 3.1 Requirements Clarification
 
@@ -251,7 +251,7 @@ File creation pattern: create `.vue` file → add TypeScript types → export fr
 ```bash
 CHANGED_FILES=$(git diff --name-only HEAD~1 -- '*.vue' '*.ts')
 ```
-Invoke: `/blitz:review --only completeness` scoped to changed files. Three-state coverage (check 2.10) must pass for all new data views. Critical/high findings must be resolved before proceeding.
+Invoke: `/blitz:check --only completeness` scoped to changed files. Three-state coverage (check 2.10) must pass for all new data views. Critical/high findings must be resolved before proceeding.
 
 ### 5.2 Accessibility Audit
 
@@ -279,7 +279,7 @@ Navigate to new page/component. Screenshot at 375 / 768 / 1440 widths. Verify: n
 
 #### 5.4.2 Design-quality critique (vision agent)
 
-**Capability-relative trigger (E4).** Story frontmatter `design_quality:` is the coarse tier, but the evaluator is worth its cost only when the page sits beyond what the model does reliably solo. Trigger:
+**Capability-relative trigger (E4).** The task's `notes` field in `docs/plans/<slug>/tasks.json` (`design_quality: skip|standard|high`; default `standard` when absent or when running without a plan) is the coarse tier, but the evaluator is worth its cost only when the page sits beyond what the model does reliably solo. Trigger:
 
 - `skip` (internal admin pages) — never evaluate.
 - `high` (marketing, landing, customer-facing) — **always** evaluate. Run the bounded refine-vs-pivot loop below.
@@ -295,7 +295,7 @@ Agent({
 })
 ```
 
-**Bounded refine-vs-pivot loop (E2/E3, `design_quality: high`).** After each evaluation, decide strategically — refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
+**Bounded refine-vs-pivot loop (E2/E3, task notes `design_quality: high`).** After each evaluation, decide strategically — refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
 
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
@@ -315,7 +315,7 @@ exit: PASS | ceiling reached | all reasonable tones tried → escalate to user (
 
 Track tried tones so each PIVOT picks an untried tone. The escalate exit is the **bound**, not a flat 3.
 
-For `design_quality: standard` (when trigger fires): report scores; run at most one revision; do not auto-pivot. User decides.
+For task notes `design_quality: standard` (when the trigger fires): report scores; run at most one revision; do not auto-pivot. User decides.
 
 ---
 

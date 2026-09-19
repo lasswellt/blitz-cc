@@ -10,7 +10,7 @@ Enforced by `hooks/scripts/skill-frontmatter-validate.sh` and `hooks/scripts/age
 
 ## SKILL.md
 
-- Required: `name` (lowercase, digits, hyphens, ≤64), third-person `description` ≤1024 chars (cumulative budget 14 500 across all skills), `compatibility: ">=X.Y.Z"`, `allowed-tools` when invokable.
+- Required: `name` (lowercase, digits, hyphens, ≤64), third-person `description` ≤300 chars, triggers first (cumulative budget 8 000 across all skills); `name` equals the directory name, `compatibility: ">=X.Y.Z"`, `allowed-tools` when invokable.
 - `model: inherit` on every model-invokable skill. Pinning a model or `effort` forces a switch on invocation and resets the prompt cache; only skills with `disable-model-invocation: true` may pin. State the recommendation in the body line that starts `> **Session:**`.
 - Body ≤500 lines; overflow goes to `references/main.md`.
 - Output style is enforced by `output-styles/terse-technical.md` (force-for-plugin). Skills do not repeat an OUTPUT STYLE snippet.

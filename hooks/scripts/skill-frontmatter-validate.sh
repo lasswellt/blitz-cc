@@ -29,9 +29,9 @@ RC=0
 # Cumulative description-char budget (full-scan only). The ~37 skill
 # descriptions load every session into the SLASH_COMMAND_TOOL_CHAR_BUDGET
 # (~15000 hard platform cap; see docs/audits/skill-startup-token-budget.md).
-# We guard at 14500 to leave headroom before the cap.
+# We guard at 8000 to leave headroom before the cap.
 CUMULATIVE_DESC_CHARS=0
-CUMULATIVE_DESC_BUDGET=14500
+CUMULATIVE_DESC_BUDGET=8000
 # Fast-path scope guard for PostToolUse Write|Edit invocations.
 # When invoked as `--all` with hook JSON on stdin, exit 0 early unless the
 # edited file is a SKILL.md. Falls through to the existing behavior when

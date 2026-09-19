@@ -24,7 +24,7 @@
 # --full (or auto-full): every test file, tagged `full`. Auto-full when the
 # changed set touches package.json / lockfiles / vitest|vite|jest config /
 # tsconfig* / test setup files, exceeds 40 files, or meta.json
-# escaped_failures_recent has a non-zero entry in the last 3 sprint-review runs.
+# escaped_failures_recent has a non-zero entry in the last 3 check runs.
 # Cold start (no journal) -> sibling + graph only. Never fails: on any error the
 # --full set is printed and a note goes to stderr.
 # Dependencies: bash, python3, git (optional), npx (jest graph only).
@@ -125,7 +125,7 @@ def _esc(e):
     except Exception: return 0
 recent_esc = [_esc(e) for e in (meta.get("escaped_failures_recent") or [])[-3:]]
 if not full_reason and any(recent_esc):
-    full_reason = "escaped failures in last 3 sprint-review runs"
+    full_reason = "escaped failures in last 3 check runs"
 
 selected = {}  # file -> [reasons]
 def add(f, why):

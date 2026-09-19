@@ -1,128 +1,71 @@
 ---
 name: todo
-description: "Tracks development ideas, follow-up items, and technical debt discovered mid-task. Modes: add, list, check, resolve. Stores in .cc-sessions/todos.jsonl with file:line context. Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', 'todos for this sprint', or when Claude itself surfaces a follow-up that shouldn't become a stale TODO comment in code."
+description: "Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', or when Claude surfaces a follow-up that should not become a stale TODO comment. Tracks ideas, follow-ups, and tech debt in docs/plans/BACKLOG.md (markdown checklist). Modes: add, list, check, resolve."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.71"
-argument-hint: "<add <description> | list | check | resolve <id>>"
----
-> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-
-
-# Todo Management
-
-Track development ideas, follow-up items, and technical debt discovered during work. Prevents items from being lost or becoming stale TODO comments in code.
-
-**No session protocol required.** This skill is lightweight.
-
-**Verbose progress exemption:** This skill intentionally skips verbose output. Freeform activity-feed logging from CLAUDE.md still applies.
-
+compatibility: ">=2.1.271"
+argument-hint: "<add <text> [#tag] | list [#tag] | check | resolve <n|substring>>"
 ---
 
-## Mode Routing
+# Todo — the backlog
 
-Parse the first argument:
-
-| Argument | Mode | Description |
-|---|---|---|
-| `add <description>` | ADD | Create a new tracked todo |
-| `list` | LIST | Show all open todos grouped by area |
-| `check` | CHECK | Scan code for TODO/FIXME comments and cross-reference with tracked todos |
-| `resolve <id>` | RESOLVE | Mark a todo as resolved |
-
-If no argument, default to `list`.
-
----
-
-## Mode: ADD
-
-1. **Parse description.** Extract the todo description from the arguments.
-2. **Infer area.** Based on keywords in the description, assign an area:
-   - `backend` — API, server, functions, database, store
-   - `frontend` — component, page, UI, style, layout
-   - `testing` — test, coverage, assertion, mock
-   - `infra` — deploy, CI, config, environment
-   - `docs` — documentation, README, changelog
-   - `general` — anything else
-3. **Generate ID.** Read `.cc-sessions/todos.jsonl` to find the highest existing ID number. New ID = `TODO-<next-number>`.
-4. **Check for duplicates.** Scan existing open todos for similar descriptions (>60% word overlap). If found, warn but still create.
-5. **Append entry:**
-   ```bash
-   echo '{"id":"TODO-NNN","created":"<ISO-8601>","session":"<current-session-or-cli>","description":"<text>","area":"<area>","status":"open","resolved_by":null}' >> .cc-sessions/todos.jsonl
-   ```
-6. **Confirm:** Print `Added: TODO-NNN — <description> [<area>]`
-
----
-
-## Mode: LIST
-
-1. **Read all todos** from `.cc-sessions/todos.jsonl`.
-2. **Group by status** (open first, then resolved).
-3. **Within open, group by area.**
-4. **Print:**
-
-```
-Open Todos (N):
-  backend:
-    TODO-003 — Add rate limiting to API endpoints (2026-03-15)
-    TODO-007 — Migrate user schema to v2 (2026-03-17)
-  frontend:
-    TODO-005 — Add loading skeleton to dashboard (2026-03-16)
-  testing:
-    TODO-008 — Integration tests for auth flow (2026-03-18)
-
-Resolved (N):
-  TODO-001 — Fix login redirect (resolved by fix-issue session)
-  TODO-002 — Update deps (resolved by dep-health session)
-```
-
----
-
-## Mode: CHECK
-
-1. **Scan codebase** for TODO/FIXME/HACK/XXX comments:
-   ```bash
-   grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.ts" --include="*.vue" --include="*.js" . | grep -v node_modules | grep -v .cc-sessions
-   ```
-2. **Read tracked todos** from `.cc-sessions/todos.jsonl`.
-3. **Cross-reference:** For each code comment, check if it matches a tracked todo (keyword overlap).
-4. **Report:**
-
-```
-Code TODOs found: N
-  Tracked (matched to a todo): M
-  Untracked (no matching todo): K
-
-Untracked TODOs in code:
-  src/api/users.ts:42 — TODO: add pagination
-  src/components/Dashboard.vue:88 — FIXME: handle empty state
-
-Tracked todos not in code (ideas/follow-ups):
-  TODO-003 — Add rate limiting to API endpoints
-  TODO-008 — Integration tests for auth flow
-```
-
-5. **Offer to track** untracked code TODOs: "Would you like me to add these N untracked TODOs to the tracker?"
-
----
-
-## Mode: RESOLVE
-
-1. **Parse the ID** from arguments (e.g., `TODO-003`).
-2. **Read `.cc-sessions/todos.jsonl`** and find the matching entry.
-3. **If not found**, print error and list similar IDs.
-4. **Update the entry:** Read all lines, modify the matching line to set `"status":"resolved"` and `"resolved_by":"<context>"`, write back.
-5. **Confirm:** Print `Resolved: TODO-003 — <description>`
-
----
+Track development ideas, follow-up items, and technical debt discovered during work so they are not lost or left as stale TODO comments in code. Lightweight: no session preamble, no verbose progress. Freeform activity-feed logging from `CLAUDE.md` still applies.
 
 ## Storage
 
-```
-.cc-sessions/todos.jsonl
+`docs/plans/BACKLOG.md` — tracked in git, one checklist line per item ([loop.md](/_shared/loop.md) §Files). `/blitz:plan` reads the open lines when it brainstorms a plan; a line that became a plan task is checked off with the plan slug.
+
+```markdown
+# Backlog
+
+- [ ] 2026-09-19 Add rate limiting to API endpoints #backend
+- [ ] 2026-09-19 Loading skeleton on dashboard (src/pages/Dashboard.vue:88) #frontend
+- [x] 2026-09-12 Fix login redirect #backend → plan auth-redirect
 ```
 
-One JSON object per line, append-only for adds. Resolves require a rewrite of the matching line.
+Line shape: `- [ ] <ISO date> <text> #tag` — one `#tag` from `#backend #frontend #testing #infra #docs #general`, optional `(file:line)` context inside the text, and a trailing ` → <resolution>` once checked. Create the file with the `# Backlog` heading when it is absent. Never rewrite lines you are not resolving; append new items at the end.
 
-Todos are preserved indefinitely. They can be pruned by manually editing the file or by running `check` and resolving completed items.
+## Mode routing
+
+First argument: `add`, `list` (default), `check`, `resolve`.
+
+### add `<text> [#tag]`
+
+1. Take the text verbatim; infer the tag from keywords when none is given (API/server/store → `#backend`; component/page/UI/style → `#frontend`; test/coverage/mock → `#testing`; deploy/CI/config → `#infra`; README/changelog → `#docs`; else `#general`). Append `(file:line)` when the item came from a specific location.
+2. Duplicate guard: if an open line shares >60 % of its words, print `similar: <line>` and still add unless the user declines.
+3. Append `- [ ] $(date -u +%F) <text> #tag` and confirm: `Added #<n>: <text> #tag` (`n` = 1-based position among open lines).
+
+### list `[#tag]`
+
+Print open lines grouped by tag, numbered by position among open lines (that number is what `resolve` accepts), then a one-line count of checked items:
+
+```
+Open (3):
+  #backend   1. 2026-09-19 Add rate limiting to API endpoints
+  #frontend  2. 2026-09-19 Loading skeleton on dashboard (src/pages/Dashboard.vue:88)
+  #testing   3. 2026-09-18 Integration tests for auth flow
+Done: 5 (git log docs/plans/BACKLOG.md for history)
+```
+
+### check
+
+Cross-reference code comments with the backlog:
+
+```bash
+grep -rnE "\b(TODO|FIXME|HACK|XXX)\b" --include='*.ts' --include='*.tsx' --include='*.vue' --include='*.js' --include='*.py' . \
+  | grep -vE "node_modules|\.cc-sessions|docs/plans/BACKLOG\.md"
+```
+
+Match each hit against open lines by keyword overlap or a matching `(file:line)`. Report `Code TODOs: N — tracked M, untracked K`, list the untracked ones as `path:line — comment`, and list open backlog lines with no code counterpart (ideas / follow-ups). Offer to `add` the untracked ones (one line each, `(file:line)` context filled in); never edit the source comments.
+
+### resolve `<n|substring>`
+
+1. Resolve the target: `n` is the position from `list`; a substring must match exactly one open line (else print the matches and stop).
+2. Edit that line only: `- [ ]` → `- [x]`, append ` → <resolution>` (a plan slug, PR number, commit, or `done`).
+3. Confirm: `Resolved: <text>`.
+
+## Rules
+
+- The file is the source of truth; no ids, no JSON, no sidecar state. Position numbers are recomputed on every `list`.
+- Checked lines stay in the file; prune them by hand or in `/blitz:learn` when a plan is archived. Git history is the audit trail.
+- Never turn a backlog line into a plan task here — that is `/blitz:plan`'s job; `todo` only records and resolves.

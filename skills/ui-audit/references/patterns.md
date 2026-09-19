@@ -64,7 +64,7 @@ Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3
 
 ---
 
-## Role-leak patterns (CAP-016 / E-012 / sprint-7)
+## Role-leak patterns (CAP-016 / E-012)
 
 Regex patterns that trigger a `ROLE_LEAK` finding (always CRITICAL) when they match rendered HTML while logged in as a non-admin role. Full procedure in `skills/ui-audit/references/main.md` § Phase ROLE § R.8.
 

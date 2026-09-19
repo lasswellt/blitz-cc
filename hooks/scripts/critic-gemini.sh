@@ -2,7 +2,7 @@
 # critic-gemini.sh — Cross-Model Critic (CMC) wrapper.
 #
 # Invokes the Gemini CLI as an alternative or paired adversarial reviewer
-# for sprint-review Invariant 7, research-critic, or design-critic. Per
+# for check (critic pre-pass), research-critic, or design-critic. Per
 # arxiv 2604.19049, a critic from a different model family catches
 # blindspots the home model has on its own work — research-critic.md flagged
 # this as future work; this script implements it.
@@ -12,7 +12,7 @@
 #   echo "<prompt>" | critic-gemini.sh --mode pre-pass --stdin
 #
 # Modes:
-#   pre-pass — sprint-review Invariant 7 (replaces or pairs with agents/critic.md)
+#   pre-pass — check critic pre-pass (replaces or pairs with agents/critic.md)
 #   research — research-skill Phase 3.2.5 (replaces or pairs with agents/research-critic.md)
 #   design   — ui-build Phase 5.4.2 (vision; requires gemini multimodal support)
 #
@@ -27,7 +27,7 @@
 #
 # Exit:
 #   0   — verdict LGTM | PASS
-#   2   — verdict REJECT | CITATIONS_MISSING (sprint-review treats as block)
+#   2   — verdict REJECT | CITATIONS_MISSING (check treats as block)
 #   1   — invocation failure (gemini missing, malformed reply, parse error)
 
 set -euo pipefail
@@ -120,7 +120,7 @@ $(cat "$TARGET_PATH")
 
 ## Target
 
-Branch / sprint root: $TARGET_PATH
+Branch / plan root: $TARGET_PATH
 "
       ;;
   esac

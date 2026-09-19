@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# PreCompact hook — snapshot sprint state AND write HANDOFF.json for cross-compaction
+# PreCompact hook — snapshot loop state and write HANDOFF.json for cross-compaction
 # auto-resume. Inspired by GSD's PreCompact→HANDOFF→SessionStart auto-resume loop.
 #
 # Two artifacts written:
-#   .cc-sessions/compact-state.json — sprint-specific snapshot (legacy)
+#   .cc-sessions/compact-state.json — legacy snapshot (kept for older consumers)
 #   .cc-sessions/HANDOFF.json       — generic resume artifact for any in-flight work
 #
 # session-start.sh consumes HANDOFF.json on next session boot.

@@ -1,24 +1,22 @@
 ---
 name: test-gen
-description: "Generates tests for target files matching the project's existing test conventions (Vitest/Jest, AAA/BDD style, factory patterns). Analyzes untested functions, edge cases, and error paths. Runs each generated test to verify it passes. Use when the user says 'add tests', 'generate tests for', 'test coverage', 'write tests', 'cover this file with tests'. Especially valuable after sprint-dev completes if test coverage gaps remain."
+description: "Generates tests for a target file in the project's conventions (Vitest/Jest, AAA, factories): untested exports, edge cases, error paths; mocks only true externals; runs each test until it passes. Use for 'add tests', 'generate tests for', 'write tests', 'cover this file', 'test coverage'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<file-path>"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For Vitest/Jest patterns, Vue component testing, and Firestore rules testing, see [references/main.md](references/main.md)
-- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`), see [/_shared/quality.md](/_shared/quality.md)
+- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`) and the mocking policy, see [references/deterministic-tests.md](references/deterministic-tests.md)
+- For the Definition of Done (anti-mock rows, ratchet metrics), see [/_shared/quality.md](/_shared/quality.md)
 - For Spec Fix Mode (HARD_SPEC classifier, verification-first oracle template, per-spec turn cap) when fixing failing specs, see [`agents/test-writer.md`](/agents/test-writer.md) §Spec Fix Mode
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
+## Mocking policy
 
+Mock only true externals (network, clocks, randomness, third-party SaaS); never the module under test, its collaborators under `src/`, Firestore rules or component internals. Prefer emulator-backed tests (`firebase emulators:exec`, `@firebase/rules-unit-testing`) over mocks for Firebase code; a `vi.mock` of a `src/` path raises the `mocks_in_src` ratchet and `check` flags it. Full table and rules: [references/deterministic-tests.md](references/deterministic-tests.md) §Mocking policy.
 
 ---
 
@@ -30,7 +28,7 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ## Phase 0: PARSE TARGET — Identify What to Test
 
-Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 Extract target file path from `$ARGUMENTS`. If not provided, ask the user. Validate:
 ```bash
@@ -148,7 +146,7 @@ For each exported function/component/composable, generate test cases following t
 
 Order: happy path → error paths → edge cases → boundary conditions.
 
-Mock strategy per dependency type: API calls → mock HTTP client/fetch; stores → mock or provide with test data; router → mock `useRouter`/`useRoute`; external services → mock client; file system → mock fs; time-dependent → mock `Date.now()`, timers.
+Mock strategy per dependency type, within the [Mocking policy](#mocking-policy): network → MSW or a mocked HTTP client; router → mock `useRouter`/`useRoute`; third-party services → recorded handlers; file system → mock fs; time-dependent → fake timers, seeded RNG. Stores, composables and other modules under `src/` are exercised for real (`createTestingPinia` with real actions, emulator-backed Firebase).
 
 ---
 
@@ -337,7 +335,7 @@ Follow-up suggestions:
 |---|---|---|
 | Target is a Vue component | `browse` | Visual regression test in the browser |
 | Low branch coverage | `test-gen` on related files | Increase overall coverage |
-| Source bugs discovered by tests | `fix-issue` | Fix the bugs the tests revealed |
+| Source bugs discovered by tests | `/blitz:build --issue <n>` | Fix the bugs the tests revealed |
 | Component has complex UI interactions | `browse` | E2E interaction testing |
 
 ---

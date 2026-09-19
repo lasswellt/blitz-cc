@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: "Handles framework, library, and tooling migrations with incremental safety. Researches breaking changes, plans atomic migration steps, and verifies after each step (type-check + tests). Use when the user says 'migrate to', 'upgrade to Vue 3', 'Pinia from Vuex', 'Nuxt 2→3', 'replace X with Y', 'breaking change upgrade'. Refuses to proceed if any verification step fails."
+description: "Migrates frameworks, libraries and tooling one major version at a time: researches breaking changes, plans atomic steps, verifies type-check, tests and build after each, aborts on repeated failure. Use for 'migrate to', 'upgrade to Vue 3', 'Vuex to Pinia', 'Nuxt 2 to 3', 'replace X with Y'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 model: opus
 effort: high
@@ -9,16 +9,10 @@ argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
 disable-model-invocation: true
 ---
 
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
-
 ## Additional Resources
 - For codemod registry, risk assessment matrix, and rollback procedures, see [references/main.md](references/main.md)
 - For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
-
-
 
 ---
 
@@ -54,7 +48,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ## Phase 0: PARSE — Understand Migration Target
 
-1. Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
+1. Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
 2. Extract migration target from `$ARGUMENTS`. Ambiguous target → ask for clarification. Full examples: [references/main.md](references/main.md#target-interpretation-examples).
 3. Read `package.json` (all workspace files) for current target version, related peer packages, and lock file format:
    ```bash
@@ -203,14 +197,14 @@ Migration Progress: <current> → <target>
   [ ] Step 6: Clean up deprecations — PENDING
 ```
 
-### 4.2 Output Artifacts (canonical, per [/_shared/sessions.md](/_shared/sessions.md) §migrate)
+### 4.2 Output Artifacts
 
 Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
 - `plan.md` — incremental step plan + per-step verification commands.
-- `STATE.md` — checkpoint (steps completed/failed); enables `--resume`.
+- `progress.md` — checkpoint (steps completed/failed); enables `--resume`.
 - `report.md` — applied-change summary + type-check/test gate result per step.
 
-After each step (pass or fail), update `STATE.md`:
+After each step (pass or fail), update `progress.md`:
 ```json
 { "target":"<from>-<to>", "started":"<ISO-8601>", "rollback_branch":"<branch>",
   "current_step":4, "total_steps":8,
@@ -220,9 +214,9 @@ After each step (pass or fail), update `STATE.md`:
 
 ### 4.3 Resume Contract (`--resume`)
 
-At Phase 0, if `docs/migrations/<from>-<to>/STATE.md` exists:
-- **without `--resume`** — refuse to clobber: print `BLOCK: migration STATE.md exists; pass --resume to continue, or move STATE.md aside to restart.` and exit 1.
-- **with `--resume`** — read STATE.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
+At Phase 0, if `docs/migrations/<from>-<to>/progress.md` exists:
+- **without `--resume`** — refuse to clobber: print `BLOCK: migration progress.md exists; pass --resume to continue, or move progress.md aside to restart.` and exit 1.
+- **with `--resume`** — read progress.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
 
 ### 4.4 Consecutive Failure Check
 
@@ -296,7 +290,7 @@ Follow-up suggestions:
 
 | Condition | Suggested Skill | Rationale |
 |---|---|---|
-| Tests fail after migration | `fix-issue` | Debug and fix the specific test failures |
+| Tests fail after migration | `/blitz:build --issue <n>` | Debug and fix the specific test failures |
 | Deprecation warnings remain | `migrate` (re-run) | Address remaining deprecations |
 | Large refactoring needed | `refactor` | Clean up migration artifacts |
 | Test coverage dropped | `test-gen` | Generate tests for new API usage |

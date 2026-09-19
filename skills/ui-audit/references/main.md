@@ -13,7 +13,7 @@ Top-level keys:
 ```yaml
 baseUrl: string              # Base URL for the target app, e.g. "http://localhost:3000"
 pages: object                # Label map: path -> { label -> {selector, type} }
-invariants: array            # Cross-page numeric/text invariants (this sprint: equal/gte/lte)
+invariants: array            # Cross-page numeric/text invariants (currently: equal/gte/lte)
 event_invariants: array      # Analytics event schemas — skeleton, populated in E-011
 role_invariants: array       # Per-role invariants — skeleton, populated in E-012
 role_leak_patterns: array    # Regex strings for role-leak scan — skeleton, populated in E-012
@@ -115,7 +115,7 @@ fi
 
 ## Phase 2 — DATA EXTRACTION
 
-Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in sprint-6 (multi-role in E-012).
+Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in the baseline (multi-role in E-012).
 
 ### 2.1 Navigate + settle
 
@@ -665,7 +665,7 @@ Reads `.ui-audit.json[role_invariants][]`:
 | `viewer_null` | First source (admin) non-null AND every non-first null (privilege boundary — "viewer must not see admin-only data") | CRITICAL on breach |
 | `gte` | First source `parsed` ≥ every other within tolerance (partial-visibility — "admin sees ≥ viewer") | HIGH |
 
-**Evaluator jq script.** Mirrors Phase 3 invariant evaluator (§ 3I.1). `$src` variable-binding is load-bearing — don't re-introduce sprint-6 filter-arg bug.
+**Evaluator jq script.** Mirrors Phase 3 invariant evaluator (§ 3I.1). `$src` variable-binding is load-bearing — don't re-introduce the earlier filter-arg bug.
 
 ```bash
 jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.json" -n '
@@ -964,7 +964,7 @@ NULL_TRANSITION detectable at `len(hist) >= 2`.
 
 Runs in `full`, `smoke`, `data`, `role <name>`, `--loop`. Skipped in `consistency`-only + `heuristics`-only.
 
-Per-flag catalog in `references/checks.md`. This section = coordinator + reporter handoff. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) already written by Phase 2 (sprint-6). Three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
+Per-flag catalog in `references/checks.md`. This section = coordinator + reporter handoff. Three inline flags (NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT) already written by Phase 2 (baseline). Three reducer flags (FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL) run here.
 
 ### 4.1 Inline flag collection
 
@@ -1067,7 +1067,7 @@ jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.js
 
 Each failed total → BROKEN_TOTAL HIGH with `{total_id, parent_value: parent.parsed, children_sum, delta, tolerance}`.
 
-**Repeat-per-row note.** `children[].key` may resolve to multiple observations (extraction emitted one registry line per row with `label: "row_total"` at different `selector`s). Lookup collects all matches; sum across all. Per-row label extraction is known-gap — current single-selector-per-label means all rows share one selector (e.g., `.row-total`) and matched elements get summed in one `browser_evaluate` call. If insufficient, carve follow-up story for `"selector": "...", "all": true`.
+**Repeat-per-row note.** `children[].key` may resolve to multiple observations (extraction emitted one registry line per row with `label: "row_total"` at different `selector`s). Lookup collects all matches; sum across all. Per-row label extraction is known-gap — current single-selector-per-label means all rows share one selector (e.g., `.row-total`) and matched elements get summed in one `browser_evaluate` call. If insufficient, carve a follow-up task for `"selector": "...", "all": true`.
 
 ### 4.5 Aggregation + reporter handoff
 
@@ -1169,7 +1169,7 @@ if ! jq -c '.' "$WORKER_OUT" >/dev/null 2>&1; then
 fi
 ```
 
-Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — sprint-review must state the skip.
+Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — `/blitz:check --scope plan <slug>` must state the skip.
 
 ### 5.3 Category 9 — URL reflects filter/tab/pagination state (`nav_state`)
 
@@ -1262,7 +1262,7 @@ Each match → `heuristic` JSONL LOW with `detail.rule_id: "vercel-cat-16-numera
 
 ### 5.5 Severity tier table
 
-| Tier | When | Blocks sprint-review? |
+| Tier | When | Blocks `/blitz:check --scope plan <slug>`? |
 |---|---|---|
 | CRITICAL | WCAG 2.1 AA blockers (contrast < 4.5:1, touch target < 44×44pt) — reserved for future categories | Yes — fails heuristics pass |
 | HIGH | STATE_NOT_IN_URL (Cat 9), NO_LABEL / NO_FOCUS_STATE (Phase INTERACTIVE) | Yes |
@@ -1392,7 +1392,7 @@ jq -s '
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/findings-by-severity.json"
 ```
 
-### 6.2 Compute severity defaults (sprint-6 baseline)
+### 6.2 Compute severity defaults (baseline)
 
 Findings without `detail.severity` mapped per table. Producers may override.
 

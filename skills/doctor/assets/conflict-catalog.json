@@ -1,0 +1,171 @@
+{
+  "version": "3.0.0",
+  "conflicts": [
+    {
+      "id": "no-auto-commit",
+      "patterns": [
+        "\\bnever\\b.*\\bcommit",
+        "\\bdon'?t\\b.*\\bauto.?commit",
+        "\\balways\\s+ask\\b.*\\bcommit",
+        "\\balways\\b.*(show|review).*\\bdiff\\b.*\\bbefore\\b.*\\bcommit"
+      ],
+      "skills": [
+        "build",
+        "audit",
+        "next",
+        "ship"
+      ],
+      "severity": "HIGH",
+      "description": "User rule forbids automatic commits",
+      "fix": "build commits at task boundaries and next --loop commits every tick with a Task: trailer. Run /blitz:build interactively and review before each commit, do not run next --loop, and skip /blitz:ship."
+    },
+    {
+      "id": "no-auto-push",
+      "patterns": [
+        "\\bnever\\b.*\\bpush\\b",
+        "\\bdon'?t\\b.*\\bauto.?push\\b",
+        "\\bdon'?t\\b.*\\bpush\\b.*\\bwithout\\b",
+        "\\balways\\s+ask\\b.*\\bpush\\b",
+        "\\balways\\b.*review.*\\bbefore\\b.*\\bpush\\b"
+      ],
+      "skills": [
+        "next",
+        "ship"
+      ],
+      "severity": "HIGH",
+      "description": "User rule forbids automatic pushes to remote",
+      "fix": "next --loop pushes after every tick and ship pushes the release branch. Run the loop only in a session you watch, or drive build and check by hand and push manually."
+    },
+    {
+      "id": "no-unprompted-tests",
+      "patterns": [
+        "\\bnever\\s+run\\s+(tests?|npm\\s+scripts?|commands?)\\b",
+        "\\balways\\s+ask\\b.*\\b(run|execute)\\b.*\\b(tests?|commands?)\\b",
+        "\\bdon'?t\\s+run\\s+(tests?|npm)\\b.*\\basking\\b"
+      ],
+      "skills": [
+        "build",
+        "check",
+        "next",
+        "ship"
+      ],
+      "severity": "HIGH",
+      "description": "User rule forbids running tests or build scripts without explicit approval",
+      "fix": "tasks.sh verify, the Stop gate (gate.json) and check all execute verify[] commands unattended. Either relax the rule for the listed commands or stay off next --loop and run /blitz:check yourself."
+    },
+    {
+      "id": "custom-branch-naming",
+      "patterns": [
+        "\\bbranches?\\b.*\\b(must|should)\\b.*\\b(feature|fix|chore)/",
+        "\\bfollow\\b.*\\bfeature/.*<.*>",
+        "\\buse\\b.*\\bfeature/.*ticket\\b"
+      ],
+      "skills": [
+        "build",
+        "ship"
+      ],
+      "severity": "MEDIUM",
+      "description": "User rule requires a specific branch-naming convention",
+      "fix": "build --parallel worktrees branch as the platform names them; ship uses release/vX.Y.Z. Rename the branch before opening a PR, or run build without --parallel on your own branch."
+    },
+    {
+      "id": "no-auto-branch",
+      "patterns": [
+        "\\bnever\\s+create\\s+branches?\\s+automatically\\b",
+        "\\bdon'?t\\s+auto.?create\\s+branches?\\b",
+        "\\bi'?ll\\s+create\\s+the\\s+branch\\b"
+      ],
+      "skills": [
+        "build",
+        "ship"
+      ],
+      "severity": "MEDIUM",
+      "description": "User rule forbids automatic branch creation",
+      "fix": "Only build --parallel (worktree isolation) and ship create branches. Use the default sequential /blitz:build, which works on the current branch."
+    },
+    {
+      "id": "always-pr",
+      "patterns": [
+        "\\balways\\s+create\\s+a\\s+pr\\b",
+        "\\bnever\\s+merge\\b.*\\bdirectly\\s+to\\s+main\\b",
+        "\\ball\\s+changes\\b.*\\bvia\\s+pr\\b"
+      ],
+      "skills": [
+        "ship"
+      ],
+      "severity": "HIGH",
+      "description": "User rule requires all changes go through a pull request",
+      "fix": "ship merges the release branch back. Stop before its merge step and open a PR from the release branch instead; next --loop only prints Ready: /blitz:ship and never merges."
+    },
+    {
+      "id": "no-auto-fix",
+      "patterns": [
+        "\\bnever\\s+auto.?fix\\b",
+        "\\bonly\\s+report\\b.*\\bfindings\\b",
+        "\\bdon'?t\\s+(automatically\\s+)?fix\\b"
+      ],
+      "skills": [
+        "check",
+        "audit",
+        "next"
+      ],
+      "severity": "MEDIUM",
+      "description": "User rule forbids automatic code fixes",
+      "fix": "Run /blitz:check without --fix (report only). next --loop row 3 dispatches check --fix, so do not run the loop unattended."
+    },
+    {
+      "id": "non-npm-package-manager",
+      "patterns": [
+        "\\buse\\s+pnpm\\b",
+        "\\buse\\s+bun\\b",
+        "\\buse\\s+yarn\\b",
+        "\\bpnpm\\s+(is\\s+)?(our|the)\\s+package\\s+manager\\b",
+        "\\bprefer\\s+(pnpm|bun|yarn)\\b"
+      ],
+      "skills": [
+        "build",
+        "check",
+        "ship",
+        "dep-health"
+      ],
+      "severity": "MEDIUM",
+      "description": "User uses a non-npm package manager; blitz default commands use npm",
+      "fix": "Ensure package.json scripts work with your package manager and write verify[] commands with it (plan reads the packageManager field). Most skills invoke npm run <script>, which the pnpm/bun/yarn shims accept."
+    },
+    {
+      "id": "custom-commit-format",
+      "patterns": [
+        "\\bcommits?\\b.*\\bmust\\b.*\\b(reference|include)\\b.*\\b(jira|ticket)\\b",
+        "\\bcommit\\s+messages?\\b.*\\bformat\\b",
+        "\\buse\\s+conventional\\s+commits?\\s+with\\s+scope\\b"
+      ],
+      "skills": [
+        "build",
+        "next",
+        "ship"
+      ],
+      "severity": "MEDIUM",
+      "description": "User rule requires a specific commit message format",
+      "fix": "blitz writes conventional-commit subjects plus a Task: <slug>/T-nnn trailer; the trailer is load-bearing for check --scope plan and learn. Add your ticket reference to the subject or body, keep the trailer."
+    },
+    {
+      "id": "model-preference",
+      "patterns": [
+        "\\buse\\s+haiku\\b.*\\bcost\\b",
+        "\\bonly\\s+use\\s+haiku\\b",
+        "\\bavoid\\s+opus\\b",
+        "\\buse\\s+sonnet\\s+for\\s+everything\\b"
+      ],
+      "skills": [
+        "build",
+        "check",
+        "audit",
+        "research",
+        "ship"
+      ],
+      "severity": "LOW",
+      "description": "User rule prefers cheaper models than blitz defaults",
+      "fix": "Every skill is model: inherit, so the session model wins. Set CLAUDE_CODE_SUBAGENT_MODEL=sonnet to force subagents; critic --mode reject and ship pin opus and are the only exceptions."
+    }
+  ]
+}

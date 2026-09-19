@@ -62,7 +62,8 @@ if [ -d "$PLANS_DIR" ]; then
     [ "$slug" = "archive" ] && continue
     [ -f "$d/tasks.json" ] || continue
     status=$(fm_field "$d/spec.md" status); [ -n "$status" ] || status="active"
-    prio=$(fm_field "$d/spec.md" priority); case "$prio" in ''|*[!0-9]*) prio=100;; esac
+    prio=$(fm_field "$d/spec.md" priority)
+    case "$prio" in P0|p0) prio=0;; P1|p1) prio=1;; P2|p2) prio=2;; ''|*[!0-9]*) prio=100;; esac
     result=$(report_result "$d")
     updated=$(jq -r '.updated // ""' "$d/tasks.json" 2>/dev/null)
     rts=$(fm_field "$d/check-report.md" ts)

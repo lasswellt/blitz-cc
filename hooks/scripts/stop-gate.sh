@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # stop-gate.sh — Conditional deterministic verification gate (Stop event, E-042 S1)
 #
-# Strict no-op unless a sprint or loop has written a gate file:
+# Strict no-op unless build, check, or next --loop has written a gate file:
 #   .cc-sessions/sessions/<session_id>/gate.json
 #   { "checks": [ {"name": "tsc", "cmd": "npx tsc --noEmit", "timeout": 120}, ... ],
 #     "blocks": 0, "max_blocks": 6, "until": "<phase label>" }

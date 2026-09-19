@@ -72,7 +72,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 ```yaml
 ---
 status: active      # active | paused | done
-priority: P1        # P0 | P1 | P2
+priority: P1        # P0 | P1 | P2 (next-state.sh sorts P0 first; a bare integer is also accepted)
 created: 2026-09-19
 ship: manual        # auto | manual — auto lets ship run without a confirmation prompt; the loop still never dispatches ship
 ---

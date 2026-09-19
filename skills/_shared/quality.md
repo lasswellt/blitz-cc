@@ -199,7 +199,7 @@ Advisory (collected, not ratcheted): `tia_escaped_failures` (`jq '.escaped_failu
 
 | Field | Rule |
 |---|---|
-| `ref`, `plan` | commit sha and plan slug of the run that wrote `current` (replaces the v2 `sprint` field) |
+| `ref`, `plan` | commit sha and plan slug of the run that wrote `current` (the v2 record carried a sprint id here) |
 | `baseline` | value at the previous PASS; frozen reference |
 | `current` | value at the last `check` run |
 | `min_allowed` / `max_allowed` | enforcement threshold; = baseline by default, tightens when `current` beats it |
@@ -282,15 +282,15 @@ Banned in production code; any hit means the work is not done.
 
 | # | Banned pattern | Why | Registry |
 |---|---|---|---|
-| 1 | `return {}` / `return []` / `return null` as placeholder returns | silent wrong behavior in production | det-10, o2-anti-mock |
-| 2 | `throw new Error('Not implemented')` / `throw new Error('TODO')` | crash in production | det-09, o2-anti-mock |
-| 3 | Empty function bodies that should have logic | feature silently does nothing | o2-anti-mock |
-| 4 | Hardcoded sample data posing as real data | users see fake data | o2-anti-mock |
-| 5 | `// TODO: implement` / `// FIXME` / `// PLACEHOLDER` / `// STUB` where code belongs | incomplete delivery | o2-anti-mock, ratchet `todo_count` |
+| 1 | `return {}` / `return []` / `return null` as placeholder returns | silent wrong behavior in production | det-10, check:anti-mock |
+| 2 | `throw new Error('Not implemented')` / `throw new Error('TODO')` | crash in production | det-09, check:anti-mock |
+| 3 | Empty function bodies that should have logic | feature silently does nothing | check:anti-mock |
+| 4 | Hardcoded sample data posing as real data | users see fake data | check:anti-mock |
+| 5 | `// TODO: implement` / `// FIXME` / `// PLACEHOLDER` / `// STUB` where code belongs | incomplete delivery | check:anti-mock, ratchet `todo_count` |
 | 6 | Empty catch blocks that swallow errors | hides failures | det-05 |
-| 7 | Functions that only log and return | feature silently does nothing | o2-anti-mock |
-| 8 | No-op event handlers (`() => {}`) | interactions do nothing | o2-anti-mock |
-| 9 | Store actions returning hardcoded data instead of calling real APIs | stale or fake data | o2-anti-mock, o3-wiring |
+| 7 | Functions that only log and return | feature silently does nothing | check:anti-mock |
+| 8 | No-op event handlers (`() => {}`) | interactions do nothing | check:anti-mock |
+| 9 | Store actions returning hardcoded data instead of calling real APIs | stale or fake data | check:anti-mock, build:integration |
 | 10 | `vi.mock` / `jest.mock` of a module under `src/` in a new test | test passes while the product fails | det-03, ratchet `mocks_in_src` |
 
 Self-check for every function written: "if this ran in production right now, would it work?" No ⇒ not done.

@@ -1,31 +1,26 @@
 ---
 name: doc-gen
-description: "Generates API docs, component docs, architecture diagrams (Mermaid), and CHANGELOG entries from source code and conventional commits. Modes: api, components, architecture, changelog, full. Use when the user says 'generate docs', 'doc-gen', 'API documentation', 'component docs', 'architecture diagram', 'auto-changelog', or when source code is ahead of docs/."
+description: "Generates API docs, component docs and Mermaid architecture diagrams from source code into docs/generated/. Modes: api, components, architecture, full (parallel agents). Use for 'generate docs', 'API documentation', 'component docs', 'architecture diagram', or when source is ahead of docs/."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
 model: inherit
 compatibility: ">=2.1.71"
-argument-hint: "<api|components|architecture|changelog|full>"
+argument-hint: "<api|components|architecture|full>"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For documentation templates, Vue SFC parsing patterns, and Mermaid diagram examples, see:
 !cat skills/doc-gen/references/main.md
-<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
-
-
 
 ---
 
 # Documentation Generator
 
-Analyze source code and produce comprehensive, accurate documentation. In `full` mode, spawn 4 parallel agents (api, components, architecture, changelog) for concurrent documentation generation. Execute every phase in order. Do NOT skip phases.
+Analyze source code and produce comprehensive, accurate documentation. In `full` mode, spawn 3 parallel agents (api, components, architecture) for concurrent documentation generation. Changelog generation belongs to `/blitz:ship`. Execute every phase in order. Do NOT skip phases.
 
 All generated documentation must satisfy the [Definition of Done](/_shared/quality.md). No placeholder sections, no TODO stubs.
 
@@ -35,7 +30,7 @@ All generated documentation must satisfy the [Definition of Done](/_shared/quali
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -46,7 +41,6 @@ Extract mode from `$ARGUMENTS`. If not specified, ask the user.
 | `api` | Generate API documentation for exported functions/classes | `docs/generated/api.md` |
 | `components` | Generate Vue component documentation (props, emits, slots) | `docs/generated/components.md` |
 | `architecture` | Generate architecture overview with Mermaid diagrams | `docs/generated/architecture.md` |
-| `changelog` | Generate changelog from conventional commits | `docs/generated/changelog.md` |
 | `full` | Run all modes (spawns parallel agents) | All of the above + `docs/generated/index.md` |
 
 ---
@@ -62,7 +56,6 @@ Glob for relevant files based on mode:
 | api | `src/**/*.ts` (excluding `*.test.*`, `*.spec.*`, `*.d.ts`) |
 | components | `src/**/*.vue`, `components/**/*.vue` |
 | architecture | `package.json`, `*config*`, directory structure |
-| changelog | Git log (no file glob needed) |
 | full | All of the above |
 
 ```bash
@@ -160,27 +153,6 @@ For each `.vue` file, extract:
 4. **Key flows**: Identify 3-5 important data flows through the layers
 5. **Mermaid diagrams**: Generate flowcharts and dependency graphs
 
-### 2.4 Changelog Mode
-
-Parse git log with conventional commit format:
-
-```bash
-# Get commits since last tag or last 3 months
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -n "${LAST_TAG}" ]; then
-  git log "${LAST_TAG}..HEAD" --pretty=format:"%H|%s|%an|%ai" 2>&1
-else
-  git log --since="3 months ago" --pretty=format:"%H|%s|%an|%ai" 2>&1
-fi
-```
-
-Group commits by type. **The commit-type → changelog-section map is owned by [`skills/release`](../release/SKILL.md) (O1).** Use release's canonical map; the summary below is for quick reference only — do not let it diverge:
-- **Added** (`feat:`): New features
-- **Fixed** (`fix:`): Bug fixes
-- **Changed** (`refactor:`, `perf:`): Code changes
-- **Breaking Changes** (`BREAKING CHANGE:` or `!:` suffix): Breaking changes
-- **Other** (`docs:`, `chore:`, `ci:`, `test:`, `style:`): Miscellaneous
-
 ---
 
 ## Phase 3: GENERATE — Write Documentation
@@ -195,21 +167,20 @@ mkdir -p docs/generated
 
 If mode is `full`, create a team and spawn agents for parallel documentation generation.
 
-Spawn 4 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: <agent-name>, prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`, `doc-changelog`).
+Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: <agent-name>, prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`).
 
-> **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [agent-orchestration.md](/_shared/agents.md).
+> **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [agents.md](/_shared/agents.md).
 
 | Agent | Mode | Output File | Description |
 |-------|------|-------------|-------------|
 | `doc-api` | api | `docs/generated/api.md` | API reference documentation |
 | `doc-components` | components | `docs/generated/components.md` | Component documentation |
 | `doc-architecture` | architecture | `docs/generated/architecture.md` | Architecture overview |
-| `doc-changelog` | changelog | `docs/generated/changelog.md` | Changelog |
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)). Each agent prompt MUST declare:
+**Weight class**: Medium (per [agents.md](/_shared/agents.md)). Each agent prompt MUST declare:
 - Max 20 file reads (of source files to document)
 - Max 25 tool calls
-- Max 400-line output (doc-api, doc-components, doc-architecture) / 100-line (doc-changelog)
+- Max 400-line output
 - 5-minute wall-clock budget
 
 Each agent receives:
@@ -245,7 +216,7 @@ Poll for agent completion by checking output files:
 ```bash
 MISSING_COUNT=0
 PARTIAL_COUNT=0
-for f in docs/generated/api.md docs/generated/components.md docs/generated/architecture.md docs/generated/changelog.md; do
+for f in docs/generated/api.md docs/generated/components.md docs/generated/architecture.md; do
   if [ ! -s "$f" ]; then
     echo "MISSING: $f" >&2
     MISSING_COUNT=$((MISSING_COUNT+1))
@@ -288,7 +259,6 @@ Create `docs/generated/index.md`:
 - [API Reference](api.md) — Exported functions, types, and schemas
 - [Components](components.md) — Vue component props, events, and slots
 - [Architecture](architecture.md) — System overview and dependency diagrams
-- [Changelog](changelog.md) — Recent changes grouped by type
 ```
 
 Only link documents that were successfully generated.
@@ -326,7 +296,6 @@ Stack: <detected stack>
   API docs:      N functions documented (M% JSDoc coverage)
   Components:    N components documented
   Architecture:  N diagrams generated
-  Changelog:     N entries since last release
 
 Output: docs/generated/
 Index:  docs/generated/index.md
@@ -341,7 +310,6 @@ Adjust the summary to show only the modes that were run.
 | JSDoc coverage < 50% | "Consider adding JSDoc comments to improve API documentation quality" |
 | Components have no descriptions | "Add top-level comments to Vue SFCs for better component docs" |
 | Circular dependencies found | "Run `refactor` to untangle circular imports" |
-| Changelog has no conventional commits | "Adopt conventional commits for automatic changelog generation" |
 
 ### 5.3 Session Cleanup
 
@@ -364,11 +332,9 @@ Adjust the summary to show only the modes that were run.
 ## Error Recovery
 
 - **Source file parse failure**: Skip the file, note it in the output summary. Do not abort the entire mode.
-- **Git log fails (no commits)**: Skip changelog generation. Report "No commit history available."
 - **Full mode agent failure**: Collect partial results from successful agents. Note which modes failed in the index.
 - **docs/generated/ has manual edits**: Warn the user before overwriting. List the files that lack the auto-generated footer and suggest backing them up.
 - **No exports found in API mode**: Report "No public API surface detected. Check that functions are exported."
 - **No .vue files found in components mode**: Report "No Vue components found. Check the glob patterns."
-- **No conventional commits for changelog**: Generate a plain commit list grouped by date instead of by type.
 - **Import graph too large**: Limit architecture diagrams to the top 30 most-connected modules. Note the truncation.
 - **Mermaid diagram too complex**: Simplify by grouping related modules into subgraphs. Limit nodes to 50 per diagram.

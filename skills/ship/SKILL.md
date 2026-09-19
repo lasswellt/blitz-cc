@@ -1,272 +1,248 @@
 ---
 name: ship
-description: "Chains the full release workflow (sprint-review → review --only completeness → quality-metrics → release) with quality gates between each step. Use for the full gated release chain from a finished sprint: 'ship it', 'cut a release', 'release v1.X', 'ready to ship'. Refuses to publish if any gate fails. For the versioning/changelog/tag/publish/rollback step in isolation (no preceding quality chain), use /blitz:release directly."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+description: "Releases finished work: checks the plan's gate, computes semver from commits, writes CHANGELOG, tags, publishes, archives the plan, runs learn. Slash-only. Use for 'ship it', 'cut a release', 'publish', 'release vX.Y.Z', 'tag this'. Refuses when any task is open or the check report is not PASS."
+argument-hint: "[--plan <slug>] [<version>] [--dry-run] [--no-publish]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: opus
-effort: low
-compatibility: ">=2.1.71"
-argument-hint: "[version]"
+effort: medium
 disable-model-invocation: true
+compatibility: ">=2.1.71"
 ---
+> **Session:** slash-only skill; it pins `model: opus`, `effort: medium` because a release is rare and the cache reset is acceptable. Current effort: `${CLAUDE_EFFORT}`.
 
+## Project Context
+!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
-
-# Ship Workflow
-
-You are the shipping orchestrator. You chain quality gates and release preparation into a single, safe workflow. Each step must pass before proceeding to the next. Execute every phase in order. Do NOT skip phases.
-
-**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/output.md) throughout. Print `[ship]` prefixed status lines at every phase transition, gate result, and dispatch. Log `skill_start` and `skill_complete` events to the activity feed (`.cc-sessions/activity-feed.jsonl`).
-
-**Pipeline artifacts.** Ship consumes the upstream sprint chain — see [/_shared/sessions.md](/_shared/sessions.md) for the producer/consumer matrix (`STATE.md`, `carry-forward.jsonl`, `review-report.md`). A clean ship requires the most recent sprint to be in a `complete` state per the handoff contract.
-
----
-
-## SAFETY RULES (NON-NEGOTIABLE)
-
-These rules override ALL other instructions. Violating any of these is a critical failure.
-
-1. **NEVER push to remote without explicit user confirmation.** All push operations require a "Proceed? [y/n]" prompt.
-
-2. **NEVER skip quality gates.** If any gate fails, STOP. Do not proceed to subsequent phases.
-
-3. **NEVER proceed to release if completeness score is below C (70).** The completeness gate must pass before release preparation begins.
-
-4. **NEVER auto-merge.** Always create a PR or ask user to confirm merge explicitly.
-
-5. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/quality.md).
+## Additional Resources
+- Artifacts, `next` rows, archive path, `check-report.md` freshness: [/_shared/loop.md](/_shared/loop.md)
+- PASS / CONDITIONAL / FAIL verdict criteria: [/_shared/quality.md](/_shared/quality.md) §PASS / CONDITIONAL / FAIL
+- Rollback recipe, merge-back, publish per stack, changelog template: [references/main.md](references/main.md)
 
 ---
 
-## Phase 0: PARSE — Determine Version
+# Ship
 
-### 0.0 Parse Version Argument
+`ship` is the last step of the loop (`research → plan → build → check → ship`). It turns a plan whose every task is `done` and whose last check is `PASS` into a tagged, published release, then archives the plan and runs `learn`. Execute every phase in order; never skip one.
+
+**Slash-only.** `disable-model-invocation: true` means the Skill tool and scheduled fires cannot invoke this skill. `next --loop` never dispatches `ship`: row 4 marks the plan `done`, runs `learn`, archives, and prints `Ready: /blitz:ship --plan <slug>`. A human types the command. `spec.md` `ship: auto` only removes the confirmation prompt in Phase 4; it never makes the loop ship.
+
+**No Stop gate.** `ship` never arms `gate.json`; `rm -f .cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json` at start in case a previous skill left one.
+
+**Feed.** Append `skill_start` at Phase 0 and `skill_complete` (with the version and tag in `detail`) after Phase 6 to `.cc-sessions/activity-feed.jsonl` ([sessions.md](/_shared/sessions.md) §9).
+
+---
+
+## Safety rules (non-negotiable)
+
+These override every other instruction in this file.
+
+1. **Never push, tag on the remote, publish a package, or create a GitHub release without explicit confirmation** (`Proceed? [y/n]`), unless `spec.md` carries `ship: auto` or the user wrote `--yes`. `--dry-run` never reaches a push.
+2. **Never skip the gate.** Open, blocked, or `in_progress` tasks, or a check report that is not `PASS`, stop the skill at Phase 1. Do not "ship anyway".
+3. **Never force-push tags.** An existing tag means: suggest the next patch version, never overwrite.
+4. **Never modify a published release.** Fix forward with a patch release; rollback (Phase R) is for a release that failed mid-flight.
+5. **Major bumps always require confirmation**, even under `ship: auto` or `--yes`.
+6. **Never auto-resolve merge conflicts** during merge-back. Stop and report.
+7. **Never delete a remote tag or a GitHub release without confirmation.**
+8. **Never write `tasks.json` directly.** `scripts/tasks.sh` is its only writer; `ship` only reads it.
+9. **Never leave placeholder artifacts.** CHANGELOG entries, release notes, and version bumps are complete or the phase fails.
+
+---
+
+## Phase 0: PARSE
 
 Extract from `$ARGUMENTS`:
-- If user provides a version (e.g., `ship 2.0.0`), use it as the explicit version.
-- If no version is provided, version will be calculated from conventional commits by the release skill.
 
-### 0.1 Pre-Flight Check
-
-Before starting the chain, verify all prerequisites:
+| Argument | Meaning | Default |
+|---|---|---|
+| `--plan <slug>` | the plan to ship (`docs/plans/<slug>/`) | the single `spec.md` with `status: active`; more than one active plan → stop and ask which |
+| `<version>` | explicit semver (`2.1.0`, `v2.1.0`) | computed from conventional commits (Phase 2) |
+| `--dry-run` | run every phase up to Phase 4, print what would happen, write nothing outside `${SESSION_TMP_DIR}` | off |
+| `--no-publish` | tag and release, skip the package registry step | off |
+| `--yes` | skip the Phase 4 confirmation (same effect as `spec.md` `ship: auto`) | off |
 
 ```bash
-# 1. Working tree is clean
-git status --porcelain
+SLUG="<slug>"; PLAN_DIR="docs/plans/${SLUG}"
+[ -f "${PLAN_DIR}/spec.md" ] || { echo "ship: no plan at ${PLAN_DIR}"; exit 1; }
+SHIP_MODE=$(awk '/^ship:/{print $2; exit}' "${PLAN_DIR}/spec.md")   # auto | manual
+```
 
-# 2. On a feature branch (not main/master)
+Print `[ship] plan=<slug> version=<explicit|computed> dry-run=<y/n> publish=<y/n>`.
+
+---
+
+## Phase 1: PRE-FLIGHT
+
+Every check below must pass; print the table and stop on the first failure.
+
+### 1.1 Every task is `done`
+
+```bash
+NOT_DONE=$("${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --json \
+  | jq -r '[.[] | select(.status != "done")] | map("\(.id) \(.status)\(if .blocked_reason then " (" + .blocked_reason + ")" else "" end)") | join(", ")')
+[ -z "$NOT_DONE" ] || { echo "BLOCK: tasks not done: ${NOT_DONE}. Run /blitz:build ${SLUG} or /blitz:next."; exit 1; }
+```
+
+`tasks.sh` only writes `status: done` after `verify[]` passed, so this line is also the structural "done" check ([loop.md](/_shared/loop.md) §Structural rules).
+
+### 1.2 Fresh PASS check report
+
+The report must say `result: PASS` and be newer than the last task change.
+
+```bash
+UPDATED=$(jq -r '.updated' "${PLAN_DIR}/tasks.json")
+REPORT="${PLAN_DIR}/check-report.md"
+FRESH=0
+if [ -f "$REPORT" ] && grep -qE '^result: PASS' "$REPORT"; then
+  REPORT_TS=$(awk -F': *' '/^(date|ts|generated):/{print $2; exit}' "$REPORT")
+  [ -n "$REPORT_TS" ] && [ "$REPORT_TS" \> "$UPDATED" ] && FRESH=1
+fi
+```
+
+If `FRESH=0`, invoke `/blitz:check --scope plan <slug>` **once** through the Skill tool (no `--fix`; ship does not edit code), then re-read the report. Refuse on anything but `PASS`:
+
+| Report | Action |
+|---|---|
+| `PASS`, newer than `updated` | proceed |
+| `CONDITIONAL` | stop: print the open P2/advisory findings; the user runs `/blitz:check --scope plan <slug> --fix` or rules on them in `progress.md`, then re-runs ship |
+| `FAIL` or missing after the check call | stop: `BLOCK: check-report.md <verdict>; ship refuses` |
+
+Verdict criteria: [quality.md](/_shared/quality.md) §PASS / CONDITIONAL / FAIL.
+
+### 1.3 Repository state
+
+```bash
+git status --porcelain            # must be empty
 BRANCH=$(git branch --show-current)
-echo "Current branch: $BRANCH"
-
-# 3. Dependencies installed
-[ -d "node_modules" ] && echo "DEPS: installed" || echo "DEPS: missing"
-
-# 4. Upstream sprint-review artifact (session-lifecycle.md contract)
-if [ -s "sprint-registry.json" ]; then
-  SPRINT_NUMBER="${SPRINT_NUMBER:-$(jq -r '.current_sprint // empty' sprint-registry.json 2>/dev/null)}"
-  SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
-  [ -s "${SPRINT_DIR}/review-report.md" ] || {
-    echo "BLOCK: ship requires ${SPRINT_DIR}/review-report.md. Run /blitz:sprint-review first." >&2
-    exit 1
-  }
-fi
-```
-
-| Check | Condition | Action |
-|-------|-----------|--------|
-| Clean tree | `git status --porcelain` is empty | Proceed |
-| Clean tree | Uncommitted changes exist | STOP — ask user to commit or stash |
-| Branch | On `main` or `master` | STOP — ship must run from a feature branch |
-| Branch | On any other branch | Proceed |
-| Dependencies | `node_modules` exists | Proceed |
-| Dependencies | `node_modules` missing | STOP — ask user to install dependencies |
-| Review report | `${SPRINT_DIR}/review-report.md` present when sprint context exists | Proceed |
-| Review report | Missing when sprint context exists | STOP — invoke `/blitz:sprint-review` first |
-
-If any pre-flight check fails, report the issue and abort.
-
----
-
-## Phase 1: QUALITY GATES — Run All Checks
-
-### 1.1 Sprint Review (if sprint context exists)
-
-Check for an active sprint:
-```bash
-[ -f "sprint-registry.json" ] && cat sprint-registry.json | head -20 || echo "NO SPRINT REGISTRY"
-```
-
-If a sprint registry exists with an in-progress sprint, dispatch to sprint-review:
-```
-Invoke: /blitz:sprint-review
-```
-
-Wait for completion.
-- If review status is PASS or no critical findings: proceed.
-- If review status is FAIL with critical findings: STOP and report.
-- If no sprint registry exists: mark as SKIPPED.
-
-### 1.2 Completeness Gate
-
-Dispatch the completeness scan (consolidated front-door; completeness-gate folded into review's deterministic lane (--only completeness)):
-```
-Invoke: /blitz:review --only completeness
-```
-The ≥C/70 release cutoff remains owned by ship (reads the completeness grade).
-
-Wait for completion. Read the output:
-- Score >= 70 (C grade or higher): PASS, proceed.
-- Score < 70: FAIL, show top violations, STOP.
-
-### 1.3 Quality Metrics Collection
-
-Dispatch to quality-metrics:
-```
-Invoke: /blitz:quality-metrics collect
-```
-
-Wait for completion. This stores a snapshot for trend analysis.
-
-### 1.4 Gate Summary
-
-Print the combined gate results:
-
-```
-Ship Pre-flight:
-  Sprint Review:     PASS/FAIL/SKIPPED
-  Completeness Gate: PASS/FAIL (score/100)
-  Quality Metrics:   Collected (overall: N/100)
-
-  All gates passed. Proceeding to release preparation.
-```
-
-If any required gate failed, STOP here. Do not proceed to Phase 2.
-
----
-
-## Phase 2: CHANGELOG — Generate Changelog
-
-### 2.1 Parse Conventional Commits
-
-```bash
+git fetch --tags --quiet
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -n "$LAST_TAG" ]; then
-  git log ${LAST_TAG}..HEAD --pretty=format:"%s"
-else
-  git log --pretty=format:"%s"
-fi
 ```
 
-**Delegate to release (O5).** The commit-type → changelog-section map + Keep a Changelog emit are owned by [`skills/release`](../release/SKILL.md) §changelog. ship does NOT restate the map — it invokes release `prepare` (the final step of the ship chain) which generates the changelog. The parse above is only to preview/auto-bump the version; the authoritative changelog is produced by release.
+| Check | Stop when |
+|---|---|
+| Clean tree | any line from `git status --porcelain` (ask to commit or stash) |
+| Release branch | `BRANCH` is not the branch the project releases from (`main`/`master` for trunk-based projects, `release/*` or the plan branch otherwise; ask once when unclear, remember the answer in `progress.md` as a `Ruling:`) |
+| Up to date | `git rev-list --count HEAD..@{u}` is non-zero |
+| Toolchain | `gh auth status` fails and `--no-publish` was not given (GitHub release is skipped with a warning, not a failure) |
+| Dependencies | a lockfile exists but `node_modules` (or the stack's equivalent) does not |
 
-### 2.2 Update CHANGELOG.md
+### 1.4 Gate summary
 
-release `prepare` writes the new version section (Keep a Changelog format) — ship does not hand-edit CHANGELOG.md.
-- release `prepare` owns the emit rules (create-if-missing header, prefix stripping, capitalization, hash-linking, empty-section omission) — see [`skills/release`](../release/SKILL.md) §changelog. ship does not restate or hand-edit these.
+```
+Ship pre-flight (<slug>):
+  Tasks:        N/N done
+  Check report: PASS (<ts>)
+  Tree:         clean on <branch>, <n> commits since <last-tag|start>
+  Publish:      npm|none (--no-publish)
+```
 
 ---
 
-## Phase 3: RELEASE — Prepare Release
+## Phase 2: VERSION
 
-### 3.1 Dispatch to Release Skill
+### 2.1 Semver from conventional commits
 
-```
-Invoke: /blitz:release prepare [version]
-```
+Collect `git --no-pager log ${LAST_TAG:+${LAST_TAG}..}HEAD --format='%h%x09%s%x09%b'` and classify:
 
-This handles:
-- Version calculation (from commits or explicit version)
-- Version bump in `package.json` and related files
-- Changelog generation
-- Release branch creation
+| Commit | Bump | CHANGELOG section |
+|---|---|---|
+| `feat:` / `feat(scope):` | minor | Added |
+| `fix:` / `fix(scope):` | patch | Fixed |
+| `BREAKING CHANGE:` in body, or `!` after the type | major | Breaking Changes |
+| `refactor:`, `perf:` | none | Changed |
+| `docs:` | none | Documentation |
+| `chore:`, `ci:`, `build:` | none | Other |
+| `style:`, `test:` | none | excluded |
 
-### 3.2 Verify Release
+Rules: any major → `X+1.0.0`; else any minor → `X.Y+1.0`; else any patch → `X.Y.Z+1`; no bumping commit → ask whether to patch-bump or stop. An explicit `<version>` must be valid semver and greater than the current version. A tag `v<version>` that already exists stops the skill with the next patch suggested (safety rule 3).
 
-```
-Invoke: /blitz:release verify
-```
-
-Runs all quality gates on the release branch:
-- Type-check
-- Lint
-- Tests
-- Build
-- Version consistency
-
-If verification fails, STOP and report which gates failed.
-
-### 3.3 Confirm with User
+**Major bump confirmation** (always, safety rule 5):
 
 ```
-Ship Ready:
-  Version: vX.Y.Z
-  Changelog: N new entries
-  Quality gates: ALL PASS
-
-  Ready to publish? This will:
-    1. Create tag vX.Y.Z
-    2. Push release branch to remote
-    3. Create GitHub release
-
-  Proceed? [y/n]
+Breaking changes detected:
+  - <hash> <subject>
+This bumps <current> → <next>. Proceed? [y/n]
 ```
 
-Wait for explicit user confirmation. If declined, preserve the release branch for later.
+### 2.2 Version files
 
-### 3.4 Publish (if confirmed)
-
-```
-Invoke: /blitz:release publish
-```
-
-This handles:
-- Tag creation
-- Push to remote
-- GitHub release creation
-- Merge back to main
+Bump every file that carries the current version string: `package.json` (and workspace packages), `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `pyproject.toml`, `Cargo.toml`, or whatever `detect-stack.sh` reports. List the files before editing; the user confirms any file outside that list.
 
 ---
 
-## Phase 4: REPORT
+## Phase 3: CHANGELOG AND NOTES
 
-### 4.1 Output Summary
+Prepend a Keep a Changelog section to `CHANGELOG.md` (create it when absent; template in [references/main.md](references/main.md#changelog-template)):
 
-```
-Ship Complete: vX.Y.Z
-  Quality gates: ALL PASS
-  Completeness: N/100
-  Changelog entries: N
-  Tag: vX.Y.Z
-  Release: https://github.com/...
-
-  Included changes:
-    - N features
-    - N fixes
-    - N other changes
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+### Breaking Changes / Added / Fixed / Changed / Documentation / Other
+- <Subject with the type prefix stripped, first letter capitalized> (<hash>)
 ```
 
-### 4.2 Push Completion Notification
+Omit empty sections; link hashes when a GitHub remote exists; breaking-change bullets keep full sentences and exact migration commands. Write the same section without the version header to `${SESSION_TMP_DIR}/release-notes.md`; append one line `Plan: docs/plans/archive/<date>-<slug>/spec.md` so the release links back to the archived plan.
 
-After printing the summary, send a mobile push notification:
+Commit: `git commit -am "chore(release): prepare vX.Y.Z"` with the `Task: <slug>/release` trailer.
 
-```
-PushNotification(
-  title: "Shipped vX.Y.Z ✓",
-  message: "<N features> · <N fixes> · release at <release-url>",
-  url: "<release-url>"
-)
-```
-
-No-op if Remote Control is not configured.
+`--dry-run` stops here: print the version, the changelog section, and the list of files it would have changed, then `git checkout -- .` to restore them. Nothing else runs.
 
 ---
 
-## Error Recovery
+## Phase 4: CONFIRM
 
-- **Sprint-review fails**: Show findings and suggest fixing issues before retrying ship. The release branch is not created yet, so no cleanup is needed.
-- **Completeness gate fails**: Show the top violations sorted by severity. Suggest fixing critical and high-severity items before retrying.
-- **Release prepare fails**: Clean up the release branch if one was created. Report the error with context.
-- **Release verify fails**: The release branch exists but is not tagged. Report which gates failed. User can fix issues on the release branch and re-run `release verify`.
-- **Publish fails**: Release branch and tag are still valid locally. Suggest manual publish via `gh release create` or re-running `release publish`.
-- **User cancels at confirmation**: Clean state, release branch is preserved. User can resume later with `release publish`.
-- **Working tree not clean**: List uncommitted files. Suggest committing or stashing before retrying.
-- **On main/master branch**: Suggest creating a feature branch first with `git checkout -b <branch-name>`.
+```
+Ship vX.Y.Z (<slug>):
+  1. tag vX.Y.Z and push <branch> + tag
+  2. GitHub release from release-notes.md
+  3. npm publish            (skipped: --no-publish)
+  4. merge back into <target> (skipped: already on <target>)
+  5. archive docs/plans/<slug> → docs/plans/archive/<date>-<slug>
+  6. /blitz:learn <slug>
+Proceed? [y/n]
+```
+
+Wait for `y` unless `ship: auto` or `--yes`. A `n` keeps the prep commit on the branch and prints how to resume (`/blitz:ship --plan <slug> <version>`), nothing is pushed.
+
+---
+
+## Phase 5: RELEASE
+
+Run in order; on any failure jump to Phase R with the list of what completed.
+
+1. **Tag** — `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
+2. **Push** — `git push origin "$BRANCH" && git push origin vX.Y.Z`.
+3. **GitHub release** — `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file "${SESSION_TMP_DIR}/release-notes.md" --target "$BRANCH"`. Without `gh`, print the notes and the manual step; not a failure.
+4. **Publish** — skipped under `--no-publish` or when the package is `"private": true` / has no registry. Otherwise per stack ([references/main.md](references/main.md#publish-per-stack)): `npm publish` (with `--provenance` when running in CI), `pip`/`cargo`/marketplace equivalents. A publish that fails after the tag exists is reported, not rolled back: the tag and release stand, the user re-runs the publish command.
+5. **Merge back** — only when `BRANCH` is not the integration branch: `git checkout <target> && git merge --no-ff --no-edit "$BRANCH" && git push origin <target>`, then return to `BRANCH`. Conflicts stop the skill (safety rule 6); details in [references/main.md](references/main.md#merge-back).
+
+---
+
+## Phase 6: ARCHIVE AND LEARN
+
+1. Set `status: done` in `docs/plans/<slug>/spec.md` (frontmatter only) and append to `progress.md`:
+   `## <ISO-8601> ship vX.Y.Z tag=vX.Y.Z release=<url>`.
+2. Move the plan: `mkdir -p docs/plans/archive && git mv docs/plans/<slug> docs/plans/archive/$(date -u +%Y-%m-%d)-<slug>`. If `next --loop` row 4 already archived it, skip the move and use the archived path.
+3. Commit `chore(plans): archive <slug> after vX.Y.Z` with the `Task: <slug>/release` trailer; push.
+4. Invoke `/blitz:learn <slug>` through the Skill tool. `learn` resolves the archived path itself, is idempotent, and prints one line when nothing non-obvious was learned. If it writes `docs/solutions/<slug>.md`, commit it as `docs(solutions): <slug>` and push. A `learn` failure is reported and does not undo the release.
+
+---
+
+## Phase 7: REPORT
+
+```
+Shipped vX.Y.Z (<slug>)
+  Tag:       vX.Y.Z
+  Release:   <url|manual>
+  Publish:   npm <name>@X.Y.Z | skipped
+  Merged:    <branch> → <target> | n/a
+  Archived:  docs/plans/archive/<date>-<slug>/
+  Learned:   docs/solutions/<slug>.md | nothing new
+  Changes:   N breaking · N added · N fixed · N changed
+```
+
+Then `PushNotification(title: "Shipped vX.Y.Z", message: "<N added> · <N fixed> · <url>")` when Remote Control is configured (no-op otherwise), and the `skill_complete` feed line.
+
+---
+
+## Phase R: ROLLBACK
+
+Entered only from a Phase 5 failure or on `/blitz:ship --plan <slug> --rollback vX.Y.Z`. Assess which artifacts exist (local tag, remote tag, GitHub release, package version, merge commit, prep commit), then remove them in reverse order; remote tag and release deletion each need a `[y/n]` (safety rule 7); a published package version is never unpublished by this skill (deprecate instead). The plan stays where it is; `spec.md` returns to `status: active` only if it was already flipped. Full recipe and the report shape: [references/main.md](references/main.md#rollback-recipe).

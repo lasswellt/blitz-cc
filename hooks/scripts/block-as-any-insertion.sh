@@ -100,7 +100,7 @@ limitations), add an inline justification on the same line:
   const x = thing as any  // blitz:any-allowed: <reason>
 
 The escape hatch is documented in skills/_shared/quality.md §4.
-sprint-review Phase 3.6 spot-checks 3 random escape-hatch comments per sprint;
+check --scope plan spot-checks 3 random escape-hatch comments per plan;
 the rationale must survive scrutiny.
 
 Override the entire hook (not recommended): BLITZ_DISABLE_AS_ANY_BLOCK=1

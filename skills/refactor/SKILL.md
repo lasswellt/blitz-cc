@@ -1,21 +1,14 @@
 ---
 name: refactor
-description: "Performs safe, incremental refactoring with test verification after every step. Snapshots test results, refactors one piece at a time, and reverts if any test that was passing starts failing. Use when the user says 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', or 'clean up'. NOT for behavior changes — those go through sprint-dev or fix-issue."
+description: "Refactors a file or module in small verified steps: snapshots the test baseline, changes one thing at a time, type-checks and tests after each, reverts on regression. Use for 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', 'clean up'. Behavior changes go to /blitz:build."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
 compatibility: ">=2.1.71"
 argument-hint: "<target-file-or-module> <refactoring-goal>"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
-
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
-## Project Context
-!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
-
-
 
 ---
 
@@ -51,7 +44,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Invocation
 
