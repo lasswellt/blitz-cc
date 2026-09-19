@@ -10,6 +10,18 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.3.0] — 2026-09-19 · gate evidence + exit-code contract
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §7 (F-14).
+
+### Added
+- **Per-command verify evidence.** `tasks.sh verify` records `last_verify.runs[]`: one entry per command that actually ran, with `cmd`, `exit`, `duration_ms`, `tail` (capped at 2 KB via `BLITZ_VERIFY_EVIDENCE_CAP`) and `recorded_at`. Before this the record held only the first failing command's 200-char tail, so a reviewer had to re-run the suite to see what a verdict rested on. This is what makes `cannot_verify` a defensible reviewer answer rather than a shrug.
+- **An exit-code contract per deterministic registry row.** "Non-zero means fail" is wrong for most of them: a `grep` detector **passes** when it finds nothing, which is exit 1, and a row ending in `wc -l` always exits 0 so its verdict is the number it prints. Each row now carries `detection.exit`: `{"pass":[0],…}` for a command, `{"pass":[1],…}` for a grep-family tail, or `{"verdict":"stdout"}` for a counter. `det-17` and `det-18` describe operational signals rather than commands and carry no contract. `error` is reported distinctly from `finding`: a detector that cannot run is unknown, and scoring it clean is how a lane goes green on a machine missing the tool.
+- `docs/plans/<slug>/check-report.json` (schema `blitz-check-report/1.0`): the machine-readable sibling of `check-report.md`, with per-lane `selected`/`ran`/`pass`/`finding`/`error` counts, the project's `stacks`, findings, `cannot_verify[]`, the critic verdict and task tallies, so CI and evals assert on a run without parsing prose.
+
+### Notes
+- F-14 (consolidating the six `Bash` PreToolUse guards) is **closed without change**. The audit flagged the fan-out as unmeasured; measured, all eight guards on one non-`git commit` Bash call cost ~156 ms total, about 20 ms each. That does not justify refactoring eight independently tested guards into one dispatcher, and the early-exit paths are already in place.
+
 ## [3.2.0] — 2026-09-19 · token economics + cache routing
 
 Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §5 (F-06, F-12, F-13, F-15).

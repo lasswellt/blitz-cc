@@ -25,6 +25,15 @@ if [ -z "$PLANS_DIR" ]; then
 fi
 TEST_RUNNER_RX='(vitest|jest|npm (run )?test|pnpm test|yarn test|pytest|go test|cargo test|bats )'
 ISO() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Epoch milliseconds. GNU date does %3N; BSD/macOS does not, so fall back to
+# second resolution rather than emitting the literal "3N".
+NOW_MS() {
+  local ms
+  ms=$(date +%s%3N 2>/dev/null || true)
+  case "$ms" in ''|*[!0-9]*) ms=$(( $(date +%s) * 1000 ));; esac
+  printf '%s' "$ms"
+}
 die() { echo "tasks.sh: $*" >&2; exit 2; }
 usage() { sed -n '2,18p' "$0"; exit 2; }
 
@@ -154,6 +163,9 @@ cmd_verify() {
   n=$(printf '%s' "$task" | jq '.verify | length')
   [ "$n" -gt 0 ] || die "task $id has no verify[] entries"
   local root; root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  # Per-command evidence. Without it a reviewer has to re-run the suite to see
+  # what a verdict rested on, and "cannot_verify" is not a defensible answer.
+  local runs="[]" t0 t1 dur head_out
   i=0
   while [ "$i" -lt "$n" ]; do
     cmd=$(printf '%s' "$task" | jq -r ".verify[$i].cmd")
@@ -163,7 +175,15 @@ cmd_verify() {
     if [ "$dry" -eq 1 ]; then echo "[dry] $cmd (timeout ${tmo}s)"; continue; fi
     out=$(mktemp)
     rc=0
+    t0=$(NOW_MS)
     ( cd "$root" && timeout "$tmo" bash -c "$cmd" ) >"$out" 2>&1 || rc=$?
+    t1=$(NOW_MS); dur=$((t1 - t0)); [ "$dur" -lt 0 ] && dur=0
+    # 2 KB is the difference between "the critic reads the tail" and "the
+    # critic re-runs the suite"; more than that is a log, not evidence.
+    head_out=$(tail -c "${BLITZ_VERIFY_EVIDENCE_CAP:-2000}" "$out" 2>/dev/null || true)
+    runs=$(printf '%s' "$runs" | jq -c --arg cmd "$cmd" --argjson exit "$rc" \
+      --argjson ms "$dur" --arg tail "$head_out" --arg ts "$(ISO)" \
+      '. + [{cmd:$cmd, exit:$exit, duration_ms:$ms, tail:$tail, recorded_at:$ts}]')
     if [ "$rc" -ne 0 ]; then
       failed="$cmd"; tail=$(tail -c 200 "$out" | tr '\n' ' ')
       rm -f "$out"; break
@@ -173,7 +193,8 @@ cmd_verify() {
   [ "$dry" -eq 1 ] && return 0
   local ok=true; [ "$rc" -eq 0 ] || ok=false
   local lv
-  lv=$(jq -nc --arg ts "$(ISO)" --argjson ok "$ok" --arg failed "$failed" --arg tail "$tail" '{ts:$ts,ok:$ok,failed:$failed,tail:$tail}')
+  lv=$(jq -nc --arg ts "$(ISO)" --argjson ok "$ok" --arg failed "$failed" --arg tail "$tail" \
+       --argjson runs "$runs" '{ts:$ts,ok:$ok,failed:$failed,tail:$tail,runs:$runs}')
   local json
   json=$(jq --arg id "$id" --argjson lv "$lv" --argjson ok "$ok" '
     (.tasks[] | select(.id==$id)) |= (.last_verify = $lv | .passes = $ok | .status = (if $ok then "done" else (if .status == "done" then "in_progress" else .status end) end) | .blocked_reason = (if $ok then null else .blocked_reason end))' "$f")

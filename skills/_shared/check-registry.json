@@ -62,7 +62,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git diff --diff-filter=D --name-only HEAD~N..HEAD -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs' '*.test.tsx' '*.spec.tsx'"
+        "command": "git diff --diff-filter=D --name-only HEAD~N..HEAD -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs' '*.test.tsx' '*.spec.tsx'",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:block-test-deletion.sh",
@@ -87,7 +98,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git log --all --since='3 days ago' --pretty='%H %s%n%b' | grep -E '(^|\\s)--no-verify(\\s|$)'"
+        "command": "git log --all --since='3 days ago' --pretty='%H %s%n%b' | grep -E '(^|\\s)--no-verify(\\s|$)'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:block-no-verify.sh",
@@ -112,7 +134,11 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b' src/ --exclude-dir=__tests__ | wc -l"
+        "command": "grep -rEn '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b' src/ --exclude-dir=__tests__ | wc -l",
+        "exit": {
+          "verdict": "stdout",
+          "note": "exit code carries no verdict; a non-zero count is the finding"
+        }
       },
       "enforcement": [
         "ratchet:mocks_in_src"
@@ -136,7 +162,11 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\bas any\\b|@ts-(ignore|nocheck)' src/ --include='*.ts' --include='*.tsx' --include='*.vue' --exclude-dir=__tests__ | wc -l"
+        "command": "grep -rEn '\\bas any\\b|@ts-(ignore|nocheck)' src/ --include='*.ts' --include='*.tsx' --include='*.vue' --exclude-dir=__tests__ | wc -l",
+        "exit": {
+          "verdict": "stdout",
+          "note": "exit code carries no verdict; a non-zero count is the finding"
+        }
       },
       "enforcement": [
         "ratchet:as_any_count",
@@ -162,7 +192,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rPzo '(?s)catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}' src/"
+        "command": "grep -rPzo '(?s)catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}' src/",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check"
@@ -186,7 +227,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' src/ | grep -iE 'password|secret|key|token|host|port'"
+        "command": "grep -rEn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' src/ | grep -iE 'password|secret|key|token|host|port'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "ratchet",
@@ -211,7 +263,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' src/"
+        "command": "grep -rEn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' src/",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "pre-edit-guard",
@@ -237,7 +300,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "git",
-        "command": "git diff HEAD~5..HEAD | grep -E '^\\+\\s*//.*\\b(expect|assert|should)\\b'"
+        "command": "git diff HEAD~5..HEAD | grep -E '^\\+\\s*//.*\\b(expect|assert|should)\\b'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "code-sweep Tier 2"
@@ -261,7 +335,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" src/"
+        "command": "grep -rEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" src/",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check"
@@ -285,7 +370,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' src/"
+        "command": "grep -rEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' src/",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check"
@@ -309,7 +405,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -E 'error TS2(307|305|304|339|345)|Cannot find module|unresolved import|undefined: '"
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -E 'error TS2(307|305|304|339|345)|Cannot find module|unresolved import|undefined: '",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:post-edit-typecheck-block.sh",
@@ -334,7 +441,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "tsc",
-        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -cE 'error TS|: error: |^error(\\[|:)|\\.go:[0-9]+:'"
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/scripts/toolchain.sh run typecheck \"${BLITZ_PROBE_FILE:-}\" 2>/dev/null | grep -cE 'error TS|: error: |^error(\\[|:)|\\.go:[0-9]+:'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:post-edit-typecheck-block.sh",
@@ -359,7 +477,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\.(skip|only)\\s*\\(|\\bxit\\b|\\bxdescribe\\b|\\bxtest\\b|test\\.todo\\(|@pytest\\.mark\\.skip|@unittest\\.skip|#\\[ignore\\]|t\\.Skip\\(|@Disabled|xspecify' --include='*.test.*' --include='*.spec.*' --include='test_*.py' --include='*_test.py' --include='*_test.go' --include='*_test.rs' --include='*_spec.rb' --include='*Test.java' --include='*Tests.cs' ."
+        "command": "grep -rEn '\\.(skip|only)\\s*\\(|\\bxit\\b|\\bxdescribe\\b|\\bxtest\\b|test\\.todo\\(|@pytest\\.mark\\.skip|@unittest\\.skip|#\\[ignore\\]|t\\.Skip\\(|@Disabled|xspecify' --include='*.test.*' --include='*.spec.*' --include='test_*.py' --include='*_test.py' --include='*_test.go' --include='*_test.rs' --include='*_spec.rb' --include='*Test.java' --include='*Tests.cs' .",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "critic:2.1",
@@ -384,7 +513,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git log --since='1 day ago' --diff-filter=R --name-status -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs'"
+        "command": "git log --since='1 day ago' --diff-filter=R --name-status -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs'",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "critic:2.8"
@@ -408,7 +548,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '(https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)|:[0-9]{4,5}\\b)' src/ --include='*.ts' --include='*.tsx' --include='*.vue'"
+        "command": "grep -rEn '(https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)|:[0-9]{4,5}\\b)' src/ --include='*.ts' --include='*.tsx' --include='*.vue'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check",
@@ -505,7 +656,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "git reflog --all | grep -iE 'reset.*--hard'   # + working-tree non-empty at time of call"
+        "command": "git reflog --all | grep -iE 'reset.*--hard'   # + working-tree non-empty at time of call",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:block-destructive-git.sh"
@@ -529,7 +691,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -A3 '^\\*\\*Evidence\\*\\*:' \"$FINDING_FILE\" | grep -E '^\\*\\*Evidence\\*\\*:\\s*[0-9]+\\s*(hits|matches|occurrences|instances|files)\\b' | grep -v '```'   # + grep -L 'Confidence:\\s*[0-9]+'"
+        "command": "grep -A3 '^\\*\\*Evidence\\*\\*:' \"$FINDING_FILE\" | grep -E '^\\*\\*Evidence\\*\\*:\\s*[0-9]+\\s*(hits|matches|occurrences|instances|files)\\b' | grep -v '```'   # + grep -L 'Confidence:\\s*[0-9]+'",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "critic:2.9"
@@ -675,7 +848,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "O2 canonical anti-mock pattern set, run via check --only completeness (vi.mock/jest.mock/sinon.stub in src + stub-return patterns)"
+        "command": "O2 canonical anti-mock pattern set, run via check --only completeness (vi.mock/jest.mock/sinon.stub in src + stub-return patterns)",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check",
@@ -701,7 +885,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\(' ; assertions_before=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); assertions_after=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$assertions_after\" -lt \"$assertions_before\" ] && echo \"assertions fell $assertions_before -> $assertions_after\""
+        "command": "git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\(' ; assertions_before=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); assertions_after=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$assertions_after\" -lt \"$assertions_before\" ] && echo \"assertions fell $assertions_before -> $assertions_after\"",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check"
@@ -725,7 +920,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "command",
-        "command": "L1: test -s <artifact>  ;  L2: grep substantive-content <artifact>  (L3 wiring delegates to build:integration)"
+        "command": "L1: test -s <artifact>  ;  L2: grep substantive-content <artifact>  (L3 wiring delegates to build:integration)",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "check"
@@ -798,7 +1004,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "code-doctor F/V/P/G rule packs (regex) + optional inline LLM judge on critical findings; auto-loads when paths: glob matches Vue/Firestore/Pinia"
+        "command": "code-doctor F/V/P/G rule packs (regex) + optional inline LLM judge on critical findings; auto-loads when paths: glob matches Vue/Firestore/Pinia",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "code-doctor",
@@ -2029,7 +2246,18 @@
       "detection": {
         "type": "regex",
         "command": "grep -rnE '#[0-9a-fA-F]{3,8}' ${TARGETS} --include=*.vue --include=*.css --include=*.scss --include=*.html",
-        "exclude": "design.exclude"
+        "exclude": "design.exclude",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "perAdapter": {
         "tailwind": "use a theme() color or @theme token, not a raw hex / bg-[#...] arbitrary class",
@@ -2063,7 +2291,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2091,7 +2330,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE '(margin|padding|gap):[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE '(margin|padding|gap):[[:space:]]*[0-9]+(px|rem)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2119,7 +2369,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'bg-gradient-to-|bg-\\[--|@tailwind[[:space:]]+base' ${TARGETS} --include=*.vue --include=*.html --include=*.css"
+        "command": "grep -rnE 'bg-gradient-to-|bg-\\[--|@tailwind[[:space:]]+base' ${TARGETS} --include=*.vue --include=*.html --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2147,7 +2408,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnc '@apply' ${TARGETS} --include=*.css --include=*.vue"
+        "command": "grep -rnc '@apply' ${TARGETS} --include=*.css --include=*.vue",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2175,7 +2447,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'font-size:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
+        "command": "grep -rnE 'font-size:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2203,7 +2486,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css"
+        "command": "grep -rnE 'border-radius:[[:space:]]*[0-9]' ${TARGETS} --include=*.vue --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2231,7 +2525,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'box-shadow:' ${TARGETS} --include=*.vue --include=*.css"
+        "command": "grep -rnE 'box-shadow:' ${TARGETS} --include=*.vue --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2259,7 +2564,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE '!important' ${TARGETS} --include=*.vue --include=*.css"
+        "command": "grep -rnE '!important' ${TARGETS} --include=*.vue --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2287,7 +2603,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'rgba\\([[:space:]]*var\\(--v-theme-' ${TARGETS} --include=*.vue --include=*.css"
+        "command": "grep -rnE 'rgba\\([[:space:]]*var\\(--v-theme-' ${TARGETS} --include=*.vue --include=*.css",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2315,7 +2642,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "scripts/detect-stack.sh | grep -q \"incompat=quasar+tailwind\""
+        "command": "scripts/detect-stack.sh | grep -q \"incompat=quasar+tailwind\"",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2343,7 +2681,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE '(cubic-bezier\\([^)]*,[[:space:]]*-[0-9.])|timing-function:[^;]*(bounce|elastic|back)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE '(cubic-bezier\\([^)]*,[[:space:]]*-[0-9.])|timing-function:[^;]*(bounce|elastic|back)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2377,7 +2726,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'box-shadow:[^;]*[[:space:]]([3-9][0-9]|[1-9][0-9]{2,})px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'box-shadow:[^;]*[[:space:]]([3-9][0-9]|[1-9][0-9]{2,})px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2413,7 +2773,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'background(-image)?:[^;]*repeating-(linear|radial)-gradient' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'background(-image)?:[^;]*repeating-(linear|radial)-gradient' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2441,7 +2812,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE '(-webkit-)?background-clip:[[:space:]]*text' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE '(-webkit-)?background-clip:[[:space:]]*text' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2469,7 +2851,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'letter-spacing:[[:space:]]*-(0?\\.0[5-9]|[0-9])' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'letter-spacing:[[:space:]]*-(0?\\.0[5-9]|[0-9])' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2497,7 +2890,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'font-size:[[:space:]]*([0-9]|1[01])px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'font-size:[[:space:]]*([0-9]|1[01])px' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2525,7 +2929,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'text-transform:[[:space:]]*uppercase' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'text-transform:[[:space:]]*uppercase' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2553,7 +2968,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rnE 'font-family:[^;]*(Inter|Roboto|Geist|Fraunces|Plus Jakarta|Space Grotesk)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss"
+        "command": "grep -rnE 'font-family:[^;]*(Inter|Roboto|Geist|Fraunces|Plus Jakarta|Space Grotesk)' ${TARGETS} --include=*.vue --include=*.css --include=*.scss",
+        "exit": {
+          "pass": [
+            1
+          ],
+          "finding": [
+            0
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2579,7 +3005,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "hooks/scripts/startup-validate.sh — schema-conform every .cc-sessions/*.json entry and docs/plans/*/tasks.json; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded"
+        "command": "hooks/scripts/startup-validate.sh — schema-conform every .cc-sessions/*.json entry and docs/plans/*/tasks.json; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:startup-validate.sh",
@@ -2604,7 +3041,18 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "startup-validate.sh free-text-field scan: /(ignore (previous|above)|you are now|disregard (all|previous)|system:|</?(system|tool|assistant)|tool_call|https?://)/i in fields that should hold data; every free-text field capped [0:200]"
+        "command": "startup-validate.sh free-text-field scan: /(ignore (previous|above)|you are now|disregard (all|previous)|system:|</?(system|tool|assistant)|tool_call|https?://)/i in fields that should hold data; every free-text field capped [0:200]",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "hook:startup-validate.sh",
@@ -2655,7 +3103,18 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep tools:/allowed-tools: per agent/skill; flag a grant broader than the declared role: Bash on a read-only agent (=exec+egress), WebFetch on a non-network agent (=egress), Write/Edit on a read-only audit skill (=mutation). PASS requires either justification (# capability rationale: comment / <!-- no-disallowed-tools: --> ) or a disallowed-tools declaration."
+        "command": "grep tools:/allowed-tools: per agent/skill; flag a grant broader than the declared role: Bash on a read-only agent (=exec+egress), WebFetch on a non-network agent (=egress), Write/Edit on a read-only audit skill (=mutation). PASS requires either justification (# capability rationale: comment / <!-- no-disallowed-tools: --> ) or a disallowed-tools declaration.",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
       },
       "enforcement": [
         "audit:pillar-agents",
@@ -2680,7 +3139,11 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "counter",
-        "command": "jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json  # failures in the check full run whose test_file was NOT in the selected set (scripts/test-selector.sh); written by check via scripts/test-listener.sh"
+        "command": "jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json  # failures in the check full run whose test_file was NOT in the selected set (scripts/test-selector.sh); written by check via scripts/test-listener.sh",
+        "exit": {
+          "verdict": "stdout",
+          "note": "counter row: the number on stdout is the verdict, compared against the ratchet"
+        }
       },
       "enforcement": [
         "ratchet:advisory:tia_escaped_failures",
@@ -2706,7 +3169,11 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "counter",
-        "command": "scripts/test-selector.sh --json $(git diff --name-only ${BLITZ_BASE:-origin/main}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational"
+        "command": "scripts/test-selector.sh --json $(git diff --name-only ${BLITZ_BASE:-origin/main}..HEAD) | jq '.selection_ratio'  # selected / total test files; informational",
+        "exit": {
+          "verdict": "stdout",
+          "note": "counter row: the number on stdout is the verdict, compared against the ratchet"
+        }
       },
       "enforcement": [
         "ratchet:advisory:tia_selection_ratio",

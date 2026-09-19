@@ -25,6 +25,20 @@ Detail split out of [quality.md](quality.md) so the contract every skill loads s
 
 The lanes catch disjoint bug classes; a skill that runs only one lane ships errors.
 
+### Exit-code contract
+
+A deterministic row's verdict comes from its `detection.exit`, never from "non-zero means fail". A `grep` detector **passes** when it finds nothing, which is exit 1; a build command passes on exit 0; and a row ending in `wc -l` always exits 0, so its verdict is the number it prints. Reading every row the same way either over-reports or under-reports, depending on the tool.
+
+| Shape | `detection.exit` | Reading |
+|---|---|---|
+| Command (`git diff`, `cargo check`, a script) | `{"pass":[0],"finding":[1],"error":[2]}` | Exit 0 passes; 1 is a finding; anything else is a broken detector, reported as `error`, never as a pass |
+| Grep-family tail (`grep`, `git grep`, `rg`) | `{"pass":[1],"finding":[0],"error":[2]}` | Exit 1 (no match) passes; exit 0 (matched) is the finding |
+| Counter (`… \| wc -l`, `jq` of a metric) | `{"verdict":"stdout", "note":"…"}` | Ignore the exit code entirely; the number on stdout is the verdict, compared against the ratchet |
+
+A row with no `exit` key is not evaluated by running it: `det-17` and `det-18` describe operational signals a hook raises, not commands to execute.
+
+Report `error` distinctly from `finding`. A detector that cannot run is unknown, not clean, and silently scoring it as a pass is how a check lane reports green on a machine where the tool is missing.
+
 ### Verdict authority
 
 `reject iff (lane == deterministic ∧ severity ∈ {P0, P1, P2}); else advisory`

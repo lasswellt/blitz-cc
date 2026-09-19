@@ -20,6 +20,7 @@ Siblings: [sessions.md](/_shared/sessions.md), [agents.md](/_shared/agents.md), 
 | `docs/plans/<slug>/tasks.json` | **`scripts/tasks.sh` only** (called by `plan`, `build`, `check`, `audit`, `next`) | `next-state.sh`, `build`, `check`, `critic`, `learn`, `startup-validate.sh` | tracked |
 | `docs/plans/<slug>/progress.md` | `build` (task boundaries), `check`, `next --loop` (rulings), main thread only | `build` (recovery map), `learn`, humans | tracked |
 | `docs/plans/<slug>/check-report.md` | `check` | `next-state.sh` (row 3/4 freshness), `ship`, `learn` | tracked |
+| `docs/plans/<slug>/check-report.json` | `check` | CI, evals, `next` | tracked; schema `blitz-check-report/1.0`, the machine-readable sibling of the report so nothing has to parse prose |
 | `docs/plans/archive/<date>-<slug>/` | `ship` or `learn` (move on done) | `learn`, humans | tracked |
 | `docs/plans/BACKLOG.md` | `todo` | `plan` | tracked |
 | `docs/solutions/<slug>.md` | `learn` (idempotent); frontmatter `{tags, stack, files, symptoms}` | `plan` (cap 5), `startup-validate.sh` | tracked |
@@ -45,7 +46,9 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
              { "cmd": "! grep -nE 'TODO|return \\{\\}' src/x.ts", "timeout": 10 }],
   "passes": false, "status": "open|in_progress|done|blocked",
   "blocked_reason": null,   // hard_spec|oracle-underivable|test-assertion-suspect|scope-expansion-needed|circuit-breaker|dependency-missing|ratchet:<metric>
-  "attempts": 0, "last_verify": {"ts":"","ok":false,"failed":"","tail":""},
+  "attempts": 0,
+  "last_verify": {"ts":"","ok":false,"failed":"","tail":"",
+                  "runs":[{"cmd":"…","exit":0,"duration_ms":8421,"tail":"…","recorded_at":"…"}]},
   "origin": "plan|audit|check|learn|issue:<n>", "notes": "" }
 ```
 
@@ -55,6 +58,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 | `verify[]` | executable checks; `timeout` in seconds; `tasks.sh verify` runs them in order and stops at the first failure |
 | `passes` | written only by `tasks.sh verify`; mirrors `last_verify.ok` |
 | `last_verify.tail` | ≤200 chars of the failing command's output (evidence, not a summary) |
+| `last_verify.runs[]` | one entry per command that actually ran, in order: `cmd`, `exit`, `duration_ms`, `tail` (≤2 KB, `BLITZ_VERIFY_EVIDENCE_CAP`), `recorded_at`. This is what lets the critic adjudicate from the record instead of re-running the suite, and what makes `cannot_verify` a defensible reviewer answer. The run stops at the first failure, so a command after the failing one has no entry. |
 | `blocked_reason` | see the vocabulary below; `ratchet:<metric>` names the quality metric that regressed |
 | `origin` | provenance: `plan`, `audit`, `check`, `learn`, or `issue:<n>`; `tasks.sh add` and `startup-validate.sh` reject anything else |
 

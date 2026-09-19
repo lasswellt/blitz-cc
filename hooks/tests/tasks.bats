@@ -129,3 +129,64 @@ teardown() { teardown_fake_repo; }
   run bash "$TASKS" add demo --id T-002 --title "b" --verify-cmd "true" --origin issue:42
   [ "$status" -eq 0 ]
 }
+
+# --- per-command verify evidence (3.3.0) -----------------------------------
+
+@test "verify records per-command evidence on success" {
+  bash "$TASKS" add demo --id T-001 --title t --verify-cmd 'echo hello' --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run jq -r '.tasks[0].last_verify.runs | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "2" ]
+  run jq -r '.tasks[0].last_verify.runs[0] | "\(.exit) \(.tail)"' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "0 hello" ]
+  run jq -r '.tasks[0].last_verify.runs[0] | has("duration_ms") and has("recorded_at")' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "true" ]
+}
+
+@test "verify records the failing command's evidence and stops there" {
+  bash "$TASKS" add demo --id T-002 --title t \
+    --verify-cmd 'echo "boom" >&2; exit 3' --verify-cmd 'echo never' --origin plan >/dev/null
+  run bash "$TASKS" verify demo T-002
+  [ "$status" -ne 0 ]
+  # Only the command that ran is recorded; the one after the failure is not.
+  run jq -r '.tasks[0].last_verify.runs | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "1" ]
+  run jq -r '.tasks[0].last_verify.runs[0].exit' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "3" ]
+  run jq -r '.tasks[0].last_verify.runs[0].tail' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [[ "$output" == *boom* ]]
+}
+
+@test "verify evidence tail is capped" {
+  bash "$TASKS" add demo --id T-003 --title t \
+    --verify-cmd 'head -c 9000 /dev/zero | tr "\0" "x"; true' --origin plan >/dev/null
+  BLITZ_VERIFY_EVIDENCE_CAP=500 bash "$TASKS" verify demo T-003 >/dev/null
+  run jq -r '.tasks[0].last_verify.runs[0].tail | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" -le 500 ]
+}
+
+@test "every deterministic registry row carries an exit contract or is prose" {
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '[.checks[]
+    | select(.lane=="deterministic")
+    | select((.id|IN("det-17","det-18")) | not)
+    | select(.detection.exit == null) | .id] | join(",")' "$reg"
+  [ -z "$output" ]
+}
+
+@test "a grep-tailed detector passes on exit 1, not exit 0" {
+  # `grep` exits 1 when it finds nothing, which is the PASS case for a
+  # detector hunting for a bad pattern. Reading it as "non-zero means fail"
+  # inverts every grep row in the registry.
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '.checks[] | select(.id=="det-05") | .detection.exit.pass | join(",")' "$reg"
+  [ "$output" = "1" ]
+  run jq -r '.checks[] | select(.id=="det-01") | .detection.exit.pass | join(",")' "$reg"
+  [ "$output" = "0" ]
+}
+
+@test "counter rows take their verdict from stdout, not the exit code" {
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '.checks[] | select(.id=="det-03") | .detection.exit.verdict' "$reg"
+  [ "$output" = "stdout" ]
+}

@@ -235,7 +235,24 @@ plan: <slug>
 ---
 ```
 
-then appends `## <ts> check <result> check-report.md` to `progress.md`. **Diff and repo scope** print the same report to stdout (`scope: diff|repo`, no `plan` key) and write nothing under `docs/plans/`. Terse-technical: tables, `L<line>: <severity> <problem>. <fix>.`, `LGTM` for an empty severity bucket. `--comment`: `ToolSearch "inline_comment"`; when `mcp__github_inline_comment__create_inline_comment` is present post one comment per Critical/Major finding (`path`, `line`, `body` = the finding line), else print them under `## Inline comments (not posted)`.
+and a machine-readable sibling `docs/plans/<slug>/check-report.json`, so CI, evals and `next` assert on the run without parsing prose:
+
+```json
+{ "$schema": "blitz-check-report/1.0",
+  "result": "PASS|CONDITIONAL|FAIL", "ts": "<ISO-8601>", "ref": "<sha>",
+  "scope": "plan|diff|repo", "plan": "<slug>",
+  "stacks": ["node","python"],
+  "lanes": { "deterministic": {"selected": 41, "ran": 41, "pass": 39, "finding": 2, "error": 0},
+             "semantic":      {"selected": 9,  "ran": 9,  "pass": 9,  "finding": 0, "error": 0} },
+  "findings": [{"id": "det-04", "severity": "P1", "where": "src/x.ts:42", "what": "<≤200 chars>"}],
+  "cannot_verify": [],
+  "critic": {"mode": "reject", "verdict": "LGTM|REJECT"},
+  "tasks": {"verified": 7, "failed": 0} }
+```
+
+`selected` counts the rows the [selection contract](/_shared/quality.reference.md) returned for this project's `stacks`; `ran` counts those whose detector actually executed. **`error` is never folded into `pass`**: a detector that could not run is unknown, and reporting it clean is how a lane goes green on a machine that is missing the tool. `result` is `FAIL` when any `error` is present and the run claimed to be complete.
+
+The skill then appends `## <ts> check <result> check-report.md` to `progress.md`. **Diff and repo scope** print the same report to stdout (`scope: diff|repo`, no `plan` key) and write nothing under `docs/plans/`. Terse-technical: tables, `L<line>: <severity> <problem>. <fix>.`, `LGTM` for an empty severity bucket. `--comment`: `ToolSearch "inline_comment"`; when `mcp__github_inline_comment__create_inline_comment` is present post one comment per Critical/Major finding (`path`, `line`, `body` = the finding line), else print them under `## Inline comments (not posted)`.
 
 Final block: `[check] <result> scope=<s> ref=<sha> gates=<n>/<n> findings=C<n>/M<n>/m<n> critic=<LGTM|REJECT|skipped> e2e=<coverage>`, then `Next: /blitz:ship --plan <slug>` on PASS, `/blitz:build <slug>` on a task-attributable failure, `/blitz:check … --fix` otherwise. Disarm the gate, patch `working_on`, log `skill_end`.
 
