@@ -64,50 +64,7 @@ if [[ -f "$MARKETPLACE" ]]; then
   fi
 fi
 
-# --- 3. Check installer/install.sh banner ---
-INSTALL_SH="installer/install.sh"
-if [[ -f "$INSTALL_SH" ]]; then
-  # Matches a banner like: "Claude Code Plugin Installer · v1.1.1"
-  BANNER_VERSION=$(grep -oE 'Installer[[:space:]]*·[[:space:]]*v[0-9]+\.[0-9]+\.[0-9]+' "$INSTALL_SH" \
-    | head -1 \
-    | sed -E 's/.*v//')
-  if [[ -n "$BANNER_VERSION" && "$BANNER_VERSION" != "$AUTHORITATIVE" ]]; then
-    log "  drift: $INSTALL_SH banner is v$BANNER_VERSION (expected v$AUTHORITATIVE)"
-    DRIFT=$((DRIFT + 1))
-  fi
-fi
-
-# --- 4. Check installer/package.json (.version) ---
-INSTALLER_PKG="installer/package.json"
-if [[ -f "$INSTALLER_PKG" ]]; then
-  # Prefer jq; fall back to a grep/sed parse if jq is unavailable.
-  if command -v jq >/dev/null 2>&1; then
-    PKG_VERSION=$(jq -r '.version // empty' "$INSTALLER_PKG" 2>/dev/null || echo "")
-  else
-    PKG_VERSION=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$INSTALLER_PKG" \
-      | head -1 \
-      | sed -E 's/.*"([^"]+)"$/\1/')
-  fi
-  if [[ -n "$PKG_VERSION" && "$PKG_VERSION" != "$AUTHORITATIVE" ]]; then
-    log "  drift: $INSTALLER_PKG has \"version\": \"$PKG_VERSION\" (expected $AUTHORITATIVE)"
-    DRIFT=$((DRIFT + 1))
-  fi
-fi
-
-# --- 5. Check installer/src/constants.js (VERSION const) ---
-CONSTANTS_JS="installer/src/constants.js"
-if [[ -f "$CONSTANTS_JS" ]]; then
-  # Matches: const VERSION = '2.4.4';  (single or double quotes)
-  CONST_VERSION=$(grep -oE "VERSION[[:space:]]*=[[:space:]]*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" "$CONSTANTS_JS" \
-    | head -1 \
-    | sed -E "s/.*['\"]([0-9]+\.[0-9]+\.[0-9]+)['\"].*/\1/")
-  if [[ -n "$CONST_VERSION" && "$CONST_VERSION" != "$AUTHORITATIVE" ]]; then
-    log "  drift: $CONSTANTS_JS has VERSION = '$CONST_VERSION' (expected $AUTHORITATIVE)"
-    DRIFT=$((DRIFT + 1))
-  fi
-fi
-
-# --- 6. Check Claude Code floor citations against .claude-plugin/compat.json ---
+# --- 3. Check Claude Code floor citations against .claude-plugin/compat.json ---
 COMPAT_JSON=".claude-plugin/compat.json"
 if [[ -f "$COMPAT_JSON" ]]; then
   CC_MIN=$(python3 -c "import json;print(json.load(open('$COMPAT_JSON'))['cc_min'])" 2>/dev/null || true)
@@ -128,7 +85,7 @@ print(' '.join(sorted(v for v in vals if v)))" 2>/dev/null || true)
     done < <(grep -oE '2\.1\.[0-9]{2,3}' "$f" | sort -u)
   done
   # The effective floor must be stated verbatim in the consumer-facing files.
-  for f in README.md .claude-plugin/plugin.json installer/README.md; do
+  for f in README.md .claude-plugin/plugin.json; do
     [[ -f "$f" ]] || continue
     if ! grep -q "$CC_MIN" "$f"; then
       log "  drift: $f does not state the effective floor $CC_MIN"

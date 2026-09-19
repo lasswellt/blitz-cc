@@ -42,11 +42,14 @@ jobs:
       - name: Plugin structure
         run: bash scripts/validate-plugin-structure.sh
 
-      - name: Installer JS syntax
+      - name: Workflow JS syntax
         run: |
-          for f in installer/bin/*.js installer/src/*.js; do
+          for f in workflows/*.js; do
             node --check "$f"
           done
+
+      - name: Catalog, dead references, numeric inventory
+        run: bash scripts/gen-catalog.sh --check
 
       - name: Hook tests (bats)
         run: |
@@ -87,7 +90,7 @@ jobs:
           set +e
           mkdir -p evals/results
           # Flags per `claude plugin eval --help` (2.1.276). --scaffold runs our own fixture.sh files;
-          # --allow-tools Bash is required by the health/next/sessions cases (sandboxed).
+          # --allow-tools Bash is required by the doctor/next/sessions cases (sandboxed).
           claude plugin eval . \
             --trust-plugin \
             --scaffold \
