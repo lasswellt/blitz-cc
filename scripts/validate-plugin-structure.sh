@@ -331,6 +331,20 @@ assert 'schema_version' in d and 'name' in d, 'missing schema_version or name'
     else
       check_fail "$rel_path has an empty prompt body"
     fi
+    # frontmatter must parse: an unquoted "key: value: more" description makes the
+    # runner refuse the whole suite ("invalid YAML frontmatter"), not just the case.
+    if head -1 "$pm" | grep -qx -- '---'; then
+      fm=$(awk 'NR==1 && /^---$/ {fm=1; next} fm==1 && /^---$/ {exit} fm==1 {print}' "$pm")
+      if [[ "$HAVE_PYYAML" -eq 1 ]]; then
+        if printf '%s\n' "$fm" | python3 -c "import sys, yaml; d = yaml.safe_load(sys.stdin); assert isinstance(d, dict)" >/dev/null 2>&1; then
+          check_pass "$rel_path frontmatter parses"
+        else
+          check_fail "$rel_path frontmatter does not parse as YAML (quote descriptions that contain ': ')"
+        fi
+      elif printf '%s\n' "$fm" | grep -qE '^description: [^"'"'"'].*: '; then
+        check_fail "$rel_path description contains ': ' and is unquoted (YAML parse error at run time)"
+      fi
+    fi
   done < <(find "$EVALS_DIR" -name prompt.md -not -path "*/results/*" -print0 2>/dev/null)
 
   case_count=$(find "$EVALS_DIR" -mindepth 2 \( -name prompt.md -o -name case.yaml \) -not -path "*/results/*" -printf '%h\n' 2>/dev/null | sort -u | wc -l)

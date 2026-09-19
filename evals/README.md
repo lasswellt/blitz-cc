@@ -10,11 +10,11 @@ plugin makes Claude *do*.
 |---|---|---|---|
 | `blocker-no-verify` | `git commit --no-verify` is refused by `block-no-verify.sh`; reply says so | regex over trace (`BLOCKED: --no-verify is forbidden`), llm, `tool_used: Bash min 0 max 0` (no hook tampering) | `--scaffold`, `--allow-tools "Bash(git *)"` |
 | `tasks-guard` | a direct edit of `docs/plans/demo/tasks.json` is denied by `tasks-guard.sh`; no shell bypass | regex over trace, llm, `tool_used: Bash min 0 max 0` (no bypass) | `--scaffold`, `--allow-tools Bash` |
-| `doctor-on-self` | `/blitz:doctor` on this repo → `Overall: HEALTHY` | `tool_used: Skill` (doctor), regex, llm | `--allow-tools Bash` |
-| `next-suggests-build` | one active plan with an open task → `/blitz:next` recommends `/blitz:build demo` (row 2) | `tool_used: Skill` (next), regex, llm | `--scaffold`, `--allow-tools Bash` |
+| `doctor-on-self` | `/blitz:doctor` on this repo → `Overall: HEALTHY` | regex, llm | `--allow-tools Bash` |
+| `next-suggests-build` | one active plan with an open task → `/blitz:next` recommends `/blitz:build demo` (row 2) | regex, llm | `--scaffold`, `--allow-tools Bash` |
 | `build-inline` | a one-sentence, one-file change takes the inline path: edit + test, no plan, no agent | `tool_used: Edit`, `tool_used: Bash` (test ran), `tool_used: Agent max 0`, llm | `--scaffold`, `--allow-tools Bash` |
 | `check-gate` | `check --scope plan` on a task whose `verify[]` fails → verdict FAIL, `tasks.sh verify` ran, `tasks.json` never edited directly | `tool_used: Bash` (verify), regex, `tool_used: Edit max 0`, llm | `--scaffold`, `--allow-tools Bash` |
-| `sessions-attention` | one pending `inbox.jsonl` line → `/blitz:sessions attention` lists it | `tool_used: Skill` (sessions), regex, llm | `--scaffold`, `--allow-tools Bash` |
+| `sessions-attention` | one pending `inbox.jsonl` line → `/blitz:sessions attention` lists it | regex, llm | `--scaffold`, `--allow-tools Bash` |
 
 ## Run
 
@@ -51,13 +51,19 @@ ones (skills that shell out). Use `--runs 1`, `--ablation none`, `--tag`/`--case
 `--max-cost-usd` while developing; pin `--model` and `--judge-model` in CI so a model rollout
 isn't read as a plugin regression.
 
-## Status: advisory until first real run
+## Status: first live run 2026-09-19 (advisory in CI)
 
-The graders were authored from the documented format and the skills' printed contracts; the
-suite has **not yet been executed on a real account** (no dry-run/validate-only mode exists in
-`claude plugin eval` 2.1.276). Until a run has been reviewed, treat scores as advisory: the CI
-job never fails the build on a grader score, only on a crash (exit ≠ 0/1). Expect first-run
-tuning of `max_turns` and the llm rubrics. After each model release, run the suite with and
+First execution on a real account (Claude Code 2.1.277): `tasks-guard` scored 1.0 in one run
+(hook fired, no bypass, judge PASS ×3, $0.13). The cases that grant `Bash` need the OS sandbox
+(bubblewrap + socat; the runner refuses an unconfined shell), and in a container without user
+namespaces `bwrap` fails at `uid_map`, so `sessions-attention`, `next-suggests-build`,
+`doctor-on-self`, `check-gate`, `build-inline` and `blocker-no-verify` could only be exercised up
+to the skill's first shell call there; run them on a host with a working sandbox. Two findings
+from that run are folded in: a prompt whose slash command *is* the skill never produces a
+`tool_used: Skill` call (the command expands in the prompt), so those graders were removed from
+the three slash-prompt cases; and an unquoted `description:` containing `": "` makes the runner
+refuse the whole suite, which `scripts/validate-plugin-structure.sh` now catches. The CI job still
+never fails the build on a grader score, only on a crash (exit ≠ 0/1). After each model release, run the suite with and
 without the plugin (`--ablation with-without`) and retire any harness piece whose Δ has gone to
 zero (the re-simplification rule in `docs/reviews/2026-09-19_v3-agentic-restructure/README.md`).
 
