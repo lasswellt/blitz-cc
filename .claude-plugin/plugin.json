@@ -1,6 +1,6 @@
 {
   "name": "blitz",
-  "version": "3.3.3",
+  "version": "3.4.0",
   "description": "Language-agnostic agentic development loop: research, plan, build, check, ship. Plans are JSON task DAGs with per-task verify commands; a task is done only when scripts/tasks.sh verified it and a hook denies every other write. One fresh-context dev agent per task, opt-in parallel worktree waves, an adversarial read-only critic before PASS, a shared check registry, anti-shortcut hooks, a diagnostic ratchet that works in any language, and next --loop for unattended ticks. Requires Claude Code >=2.1.271.",
   "author": {
     "name": "lasswellt"

@@ -27,19 +27,9 @@ One skill answers "is this done?" for a diff, a plan, or the whole repo. It is *
 
 ## Flags
 
-| Flag | Effect |
-|---|---|
-| `--scope diff` (default) | branch vs upstream plus the working tree |
-| `--scope plan <slug>` | files of every task in `docs/plans/<slug>/tasks.json`, bounded by `Task: <slug>/` commit trailers; runs `tasks.sh verify` on every task; writes `check-report.md` |
-| `--scope repo` | whole tree, recall mode: `--min-confidence low`, every `both`/`check` row on every file; no critic reject, no report file |
-| `--only completeness\|wiring\|framework\|design\|security` | one lane, read-only, no critic; see §Only |
-| `--fix` | Phase 3 auto-fix loop; arms `gate.json` (tsc + lint) while fixing |
-| `--comment` | post findings as inline PR comments through `mcp__github_inline_comment__create_inline_comment` when the tool is present; else print them |
-| `--mutation` | Stryker mutation run on changed files (off by default; recipe in `references/main.md` §Mutation testing) |
-| `--dual` | `export BLITZ_DUAL_CRITIC=1`: in-Claude critic and `hooks/scripts/critic-gemini.sh` both must LGTM (`BLITZ_USE_GEMINI_CRITIC=1` replaces instead of pairs) |
-| `--min-confidence high\|low` | advisory gate band; default `high` (≥0.8) for diff/plan, `low` for repo. Reject-authority rows bypass it |
-| `--baseline <metric>` | grandfather one ratchet metric on an existing project (`stale_worktree_branch_count`) |
-| `--force` | re-run plan scope over a fresh PASS (`check-report.md` at `HEAD`) |
+`--scope diff|plan <slug>|repo` (default `diff`) · `--only completeness|wiring|framework|design|security` · `--fix` · `--comment` · `--mutation` · `--dual` · `--min-confidence high|low` · `--baseline <metric>` · `--force`.
+
+What each one changes, and the scope/confidence defaults that follow from it: [references/main.md](references/main.md) §Flags.
 
 ## Phase 0: SCOPE
 
@@ -71,43 +61,7 @@ Run everything; collect, do not stop at the first failure. No grep pattern lives
 
 ### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
 
-Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
-
-```bash
-TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"
-bash "$TC" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
-for lane in typecheck lint build; do
-  bash "$TC" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
-done
-```
-
-| Gate | Source | Record |
-|---|---|---|
-| typecheck | `toolchain.sh run typecheck` | pass, diagnostic count per stack, `file:line message` list |
-| lint | `toolchain.sh run lint` | pass, errors, warnings, list |
-| tests | selected run, then one full run (below); `toolchain.sh run test` outside the JS/TS ecosystems | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
-| build | `toolchain.sh run build` | pass, error tail |
-
-A lane with no resolving row for a stack is **skipped, not passed** — record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
-
-Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md](/docs/guides/tia.md)):
-
-```bash
-RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
-SELECTED=$(printf '%s\n' "$CHANGED" | "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "$BASE" | cut -f1)
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-sel"
-npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-selected.json" $SELECTED    # jest: --json --outputFile
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by selector --run-id "$RUN_ID-sel" \
-  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-selected.json"
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-full"
-npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-full.json"                  # monorepo: per changed package
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by full --run-id "$RUN_ID-full" \
-  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-full.json"
-```
-
-`escaped_failures` = failing test files in the full run not in `$SELECTED`; write it to the gates JSON and append to `.cc-sessions/test-journal.meta.json` `escaped_failures_recent` (keep 10). The **full** run gates PASS; the selected run only calibrates. At diff scope the full run may be skipped when the selector's streak is clean (`escaped_failures_recent[-3:]` all zero); plan scope always runs both. No test runner → gate `SKIPPED`, not FAIL.
-
-Gates JSON shape: `{"type_check":{"pass","errors","details"},"lint":{"pass","errors","warnings","details"},"tests":{"pass","total","passed","failed","escaped_failures","selection_ratio"},"build":{"pass","errors"},"e2e_coverage":"pending"}`.
+Gate commands resolve per detected stack from the toolchain table; a lane with no row is recorded `skipped` with its reason, never as a pass. Commands, the record shape, and the two-run TIA split: [references/main.md](references/main.md) §1.1 Gates.
 
 ### 1.2 Registry rows
 
@@ -127,20 +81,11 @@ Gated by the stack banner (`HAS_FIRESTORE`, `HAS_VUEFIRE`, `HAS_VUE`, `HAS_PINIA
 
 ### 1.6 Design lane (`pillar == design`)
 
-Runs in the full pipeline only when the diff touches `*.vue|*.tsx|*.css|*.scss|tailwind.config.*`; always under `--only design`. **Preflight first**: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh" "$PWD"` and print its `DESIGN_LANE_STATUS` line. If `semantic != OK`, surface `DESIGN_LANE_UNAVAILABLE` in the summary, run only the deterministic `design-*` rows, and mark the pillar coverage `reduced`, never green. Resolve the adapter from the `DESIGN_ADAPTER primary=… secondary=…` token line of `scripts/detect-stack.sh`; select rows where `adapter ∈ inclusion(primary) ∪ secondary` (`none→{universal}`, `tailwind→{universal,tailwind}`, `tailwind-md3→{universal,tailwind,tailwind-md3}`, `vuetify→{universal,vuetify}`, `quasar→{universal,quasar}`) minus `reconciliation.relaxFor`. Semantic rows share one impeccable run; deterministic rows apply the registry `design.exclude` guards (token-definition files, comments, SVG paint) before FP-verify. impeccable is a dependency of the target project (`npm i -D impeccable@2.3.2`), never of the plugin. Rendered-UI judgement goes to `design-critic` ([agents.md](/_shared/agents.md)) when Playwright is available.
+Runs only when the design adapter is detected. Lane selection and row set: [references/main.md](references/main.md) §1.6 Design lane.
 
 ### 1.7 Task verification (plan scope)
 
-```bash
-for id in $(jq -r '.tasks[].id' "$PLAN_DIR/tasks.json"); do
-  "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$id" || echo "VERIFY_FAIL $id"
-done
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --json > "${SESSION_TMP_DIR}/check-tasks.json"
-```
-
-Every task must end with `passes: true`; a `VERIFY_FAIL` is a P1 finding carrying `last_verify.tail` as evidence. A task `blocked` with `circuit-breaker` is surfaced, not retried. `check` never edits `tasks.json` directly (`tasks-guard.sh` denies it).
-
-Then run the registry row `check:test-tamper` over the test files in scope (`git diff $BASE --unified=0 -- '**/*.{test,spec}.*' '**/__tests__/**'`): deleted `expect(` lines, `expect(true)`, `toMatchSnapshot` rewrites, `.skip`/`.only` insertions, and assertion counts that fell while the source grew are P1 findings (`Source: check:test-tamper`). Tests that got easier while the code got bigger are the oracle-shaped edit the visible-test gate cannot see.
+Plan scope runs `tasks.sh verify` on every task and records `last_verify.runs[]` as the evidence a verdict rests on. Commands: [references/main.md](references/main.md) §1.7 Task verification.
 
 ### 1.8 Escape-comment spot check
 
@@ -152,16 +97,7 @@ Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5`
 
 ### 2.1 Survey fan-out
 
-Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
-
-| Focus | Reads first | Output |
-|---|---|---|
-| security | auth, injection, XSS/CSRF, secrets, rules files | `${SESSION_TMP_DIR}/check-survey-security.json` |
-| backend | API contracts, validation, error paths, perf | `…-backend.json` |
-| frontend | components, loading/empty/error states, a11y, store wiring | `…-frontend.json` |
-| patterns | consistency, DRY, architecture, meaningful tests | `…-patterns.json` |
-
-Every prompt states the order: **spec compliance first** (does the diff do what `plan.md` and the task's `verify[]` say, nothing more, nothing less), **then code quality**. Agents flag only correctness and requirement gaps; style is parked. Reply is the survey JSON from [agents.reference.md](/_shared/agents.reference.md) §4.2: `findings[] {severity, where, what, evidence, confidence}`. Drop the frontend agent when no UI file changed; drop backend when only UI changed; N is then 3.
+One `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2. Lens roster, prompts and the sequential fallback above 2000 LOC: [references/main.md](references/main.md) §2.1 Survey fan-out.
 
 ### 2.2 Collect
 
@@ -169,59 +105,25 @@ Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING
 
 ### 2.3 App-level verification
 
-Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavailable → `e2e_coverage: skipped_unavailable` (not a failure). Available → replay the recorded `/verify` recipe when Phase 0 found one, else navigate every changed route; console errors → Critical, placeholder data → Warning, broken layout → Minor. Completed → `e2e_coverage: full`; started but incomplete → `partial` (surfaces under Before merge).
+Runs only when the change touches a rendered surface. Procedure: [references/main.md](references/main.md) §2.3 App-level verification.
 
 ### 2.4 `--mutation` (optional)
 
-`references/main.md` §Mutation testing: `@stryker-mutator/vitest-runner`, `coverageAnalysis: "perTest"`, `incremental: true`, mutate only `$CHANGED` source files. Surviving mutants are P3 findings with the mutant diff as evidence. Never runs without the flag.
+Off by default; a sampling mutation run over the changed files. Setup and thresholds: [references/main.md](references/main.md) §2.4 `--mutation`.
 
 ## Phase 3: `--fix`
 
-Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md) §Arming table):
-
-```bash
-GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
-jq -n --arg until "check ${SLUG:-diff} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},
-  {name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$until}' > "$GATE_DIR/gate.json"
-# … fixes …
-rm -f "$GATE_DIR/gate.json"    # before Phase 5 and on every early exit
-```
-
-| Category | Strategy | Max attempts |
-|---|---|---|
-| Missing imports / exports | fix path, add barrel export | 3 |
-| Type errors | add types, null checks, fix mismatches | 3 |
-| Lint errors | `eslint --fix`, then manual | 3 |
-| Framework `auto_fix: true` rows | recipe from `references/main.md` | 1 |
-| Naming, missing return types | rename / annotate | 2 |
-| Unused imports / variables | remove or `_`-prefix | 1 |
-
-Order: imports/exports → types → lint → framework → naming → unused. Loop per issue: apply → run the relevant gate → on pass commit `fix(check): <category> in <file>` (plan scope adds the `Task: <slug>/<id>` trailer) → on fail revert that fix and try the alternative strategy; after `max` attempts document it as manual. **Never auto-fix** security findings, logic errors, architecture, test assertions, or performance; never touch a test's `expect`/`describe`/`it`. After the loop re-run every Phase 1.1 gate and record before/after counts. After each fix commit run the ratchet quick-check (Phase 4.1): a regression reverts the fix commit.
+Only with `--fix`. Arms the gate, applies the fixable findings, re-runs the lanes that produced them, and disarms. Full procedure: [references/main.md](references/main.md) §Phase 3 `--fix`.
 
 ## Phase 4: RATCHET, SECURITY POSTURE, CRITIC
 
 ### 4.1 Ratchet (`docs/sweeps/ratchet.json`)
 
-Compute the eight metrics with the detectors in [quality.reference.md](/_shared/quality.reference.md) §Ratchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
-
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \
-  --origin check --verify-cmd "test \$($DETECTOR) -le $MAX::30"
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "T-$NEXT" status=blocked "blocked_reason=ratchet:$METRIC"
-```
-
-Deterministic metrics also `git revert --no-edit HEAD` when the regressing commit is a `--fix` commit and the tree is clean (det-19); `test_count` never auto-reverts. Diff scope without a plan appends nothing and reports the regression as P2. `auto_revert.enabled: false` → advisory: task appended, nothing reverted.
+Every metric must be at or below its baseline; a regression is a FAIL the verdict cannot override. Metric list, tighten-on-improvement and auto-revert: [quality.reference.md](/_shared/quality.reference.md) §Ratchet, procedure in [references/main.md](references/main.md) §4.1 Ratchet.
 
 ### 4.2 Security posture gate (every run)
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-registry-validate.sh"            # sec-* rows schema-valid
-bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh" --strict --quiet    # tasks.json, docs/solutions, .cc-sessions clean; exit 2 = injection
-grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' "${CLAUDE_PLUGIN_ROOT}"/hooks/scripts/*.sh | grep -v '_lib/common.sh' \
-  && echo "FAIL: pre-trust execution of project content" || true
-```
-
-Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at best. `sec-content-inspection` stays advisory. Details: [security.md](/_shared/security.md).
+Runs the `sec-*` registry rows on every check, not only with `--security`. Row set and the `/security-review` handoff: [references/main.md](references/main.md) §4.2 Security posture gate.
 
 ### 4.3 Critic `--mode reject`
 
@@ -272,15 +174,7 @@ Final block: `[check] <result> scope=<s> ref=<sha> gates=<n>/<n> findings=C<n>/M
 
 ## Only
 
-`--only <lane>` runs that lane's registry rows read-only over the scope, FP-verifies, and reports ranked by `effective_confidence`; no survey fan-out, no critic, no report file, no ratchet write.
-
-| `--only` | Rows | Notes |
-|---|---|---|
-| `completeness` | `o2-anti-mock`, `o2-artifact-l1l2`, det-05/06/07/09/10/15 | the placeholder / stub scan; feeds ratchet `completeness_score` when run from the full pipeline |
-| `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | `build` calls this after integration work |
-| `framework` | `fw-firestore-vue-pinia` (Phase 1.5) | `--fix` applies F5/V3/P2 recipes |
-| `design` | `pillar == design` (Phase 1.6) | preflight banner is mandatory; reduced coverage is never green |
-| `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | when the Skill tool lists `security-review` (the docs name it as model-invokable) run it on the same scope and merge its findings as `Source: security-review`; otherwise print one line pointing at `/security-review` or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |
+`--only <lane>` scopes the run to one lane and skips the verdict pipeline. Lane names and what each runs: [references/main.md](references/main.md) §Only.
 
 ## Gotchas
 

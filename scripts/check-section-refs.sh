@@ -73,6 +73,17 @@ for fp in glob.glob("skills/_shared/*.md"):
         if fenced and re.search(r'\]\([a-z]+\.(reference\.)?md\)', line):
             bad.append(f"{fp}:{i}: protocol link inside a fenced block does not render; use plain prose")
 
+# 3b. A file linking to itself by its own basename. This arrives whenever a
+# section is MOVED between files: the link was correct where it was written and
+# resolves to <dir>/<dir>/<file> in its new home. Link checking catches the
+# broken path, but only after the move ships, so assert it here too.
+for fp in glob.glob("skills/*/references/main.md") + glob.glob("skills/_shared/*.md"):
+    base = fp.split("/")[-1]
+    parent = fp.split("/")[-2]
+    for i, line in enumerate(open(fp).read().split("\n"), 1):
+        if re.search(r'\]\(' + re.escape(f"{parent}/{base}") + r'\)', line):
+            bad.append(f"{fp}:{i}: links to itself as {parent}/{base}; a moved section kept its old relative path")
+
 # 4. A doubled or unspaced citation, the 3.2.0 retarget signature.
 for fp in glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):

@@ -391,3 +391,40 @@ EOF
   run grep -c 'BLITZ_PROBE_FILE' "$reg"
   [ "$output" = "0" ]
 }
+
+# --- skill body budget ------------------------------------------------------
+
+@test "every SKILL.md body is under the compaction re-attach cap" {
+  # Claude Code re-attaches an invoked skill after compaction keeping only the
+  # FIRST 5,000 TOKENS. Markdown puts terminal phases last, so an over-cap body
+  # loses its verdict, gate, report and recovery — exactly what a long session
+  # needs, and a long session is when compaction fires.
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  local over=0 f b
+  for f in "$root"/skills/*/SKILL.md; do
+    b=$(awk 'f{print} /^---$/{c++; if(c==2) f=1}' "$f" | wc -c | tr -d ' ')
+    if [ "$b" -gt 18000 ]; then
+      echo "over cap: $f (${b}B)" >&2
+      over=1
+    fi
+  done
+  [ "$over" -eq 0 ]
+}
+
+@test "terminal phases sit inside the 5,000-token cut point" {
+  # Not just "under the cap" — the closing sections specifically must survive.
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  local bad=0 f body off
+  for f in "$root"/skills/*/SKILL.md; do
+    body=$(awk 'f{print} /^---$/{c++; if(c==2) f=1}' "$f")
+    for h in '## Recovery' '## Report' '## Gate' '## Gotchas' '## Error Recovery'; do
+      off=$(printf '%s' "$body" | grep -bF "$h" | head -1 | cut -d: -f1)
+      [ -z "$off" ] && continue
+      if [ "$((off / 4))" -gt 5000 ]; then
+        echo "past the cut point: $f '$h' at ~$((off / 4)) tok" >&2
+        bad=1
+      fi
+    done
+  done
+  [ "$bad" -eq 0 ]
+}

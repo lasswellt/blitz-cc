@@ -119,3 +119,36 @@ Builds T-005 with one dev agent, verifies through scripts/tasks.sh, marks it don
   → Ready: /blitz:ship --plan checkout-v2
 Run /blitz:next --loop to mark the plan done, mine solutions, and archive it first.
 ```
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+## Flag Parsing
+
+- `--loop`: one autonomous tick. Reads state, triages the inbox, dispatches one row, commits/pushes, exits. Sets autonomy `full` — all sub-skill confirmation prompts auto-approved. Designed for `/loop <interval> /blitz:next --loop` **in a dedicated session**, a Routine, or a `claude -p` shell loop.
+- `--plan <slug>`: restrict rows 2–4 to that plan (still evaluates rows 0 and 1 globally). Default: the plan `next-state.sh` selects (first `status: active` by `priority`, then `created`).
+
+**Scheduling tiers for `--loop`** (facts per [loop.reference.md](/_shared/loop.reference.md) §Running the loop):
+
+| Tier | How | Persistence | Min interval | Use case |
+|------|-----|-------------|--------------|----------|
+| `/loop 15m /blitz:next --loop` | Dedicated `claude` session, CronCreate-backed | CronCreate tasks expire after **7 days** (recurring fires jitter up to 30 min late); the loop dies with the session | 1 min | Interactive dev runs, day-long runs |
+| `/loop /blitz:next --loop` (self-paced) | Same session, `ScheduleWakeup` between ticks | **Not restored on `--resume`** — lost with the process | model-paced | Short attended runs only |
+| Bare `/loop` | Reads `.claude/loop.md`, written by `/blitz:doctor --loop-md` (`/blitz:next --loop`) | as above | as above | Same semantics as the two rows above |
+| Desktop scheduled task | Claude Desktop, local machine | Survives session restart; needs the machine on | 1 min | Overnight local runs |
+| Routine (cloud) | Fresh session per fire, no permission prompts | Machine-independent | **1 hour** | Nightly CI, weekly sweeps — pair with `crossSessionInbound: hold` (TB-5) |
+| Shell loop | `while :; do claude -p "/blitz:next --loop" \| tee -a loop.log \| grep -q LOOP_DONE && break; done` | Fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; `crossSessionInbound: accept` for `-p` workers |
+
+**Fresh session per tick is preferred.** Every model degrades with context length and compaction can erase constraints; `tasks.json`, `progress.md`, and git are the memory. A Routine, the shell loop, or a Projects thread beats one long `/loop` session. Inside a long session, `pre-compact-snapshot.sh` writes `HANDOFF.json` (plan, task, gate path, never-edit list) so a compacted session resumes the same task.
+
+**Self-scheduling is per-session and lost on resume.** A `ScheduleWakeup` this skill registers (§3.6) only bridges ticks *inside the current process*; it is never the keep-alive for unattended work. Durable loops are `/loop` in its own session (re-arm after any `--resume`), a Desktop task, a Routine, or the shell loop. Do NOT call `ScheduleWakeup` when `/loop` manages the cadence (`CLAUDE_CODE_LOOP_MANAGED=1`).
+
+**`/goal` companion.** On the **first tick only** (no prior `skill_start` from this session in the feed), print the recommended goal line once so the operator can paste it — blitz never sets it itself; it turns the session's `Stop` hook into a condition evaluator with check-ins that double from 30 min during background work:
+```
+/goal <slug>: every task in docs/plans/<slug>/tasks.json is status: done, tsc clean, check-report.md PASS; stop after 40 turns
+```
+
+If `--loop` is not specified, fall through to suggest mode (Phases 0, 0.5, 1, 2 — no dispatch).

@@ -524,3 +524,152 @@ Write `${AUDIT_RUN}/reports/audit-report.md` using the report template from `ref
 ## Plan Emission (Phase 3)
 
 No JSON index. The machine-readable output is `docs/plans/audit-<date>/tasks.json`, written only by `scripts/tasks.sh` (see §Task Emission above); `next-state.sh` reads it once `spec.md` says `status: active`. Rerun on the same day appends tasks for new themes (title match skips duplicates) and never rewrites the `spec.md` frontmatter.
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 1.1 Spawn 10 Pillar Agents via Agent Tool (default path)
+
+Spawn all 10 agents using the `Agent` tool, all in **a single assistant message** so they execute concurrently.
+
+Per-spawn parameters:
+- `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails)
+- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
+- `description: audit <agent-name>`
+- `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
+- `run_in_background: true`
+
+Cross-pillar findings synthesized on the main thread in Phase 2 from output files (not peer-to-peer, per [agents.md](/_shared/agents.md)).
+
+**Weight class**: Medium (per [agents.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
+
+Every agent receives:
+1. The inventory JSON (inline, not a file path).
+2. The stack profile from Phase 0.
+3. Its specific pillar, scope, and file cap.
+4. Its output file path under `${AUDIT_RUN}/findings/`.
+5. The pillar-specific checklist from `references/main.md`.
+6. Instructions to write findings incrementally (not all at the end).
+
+**Agent Roster:**
+
+**2 independent same-scope passes per pillar** — both agents in a pillar audit the *full* pillar surface independently (not a frontend/backend split). Their overlap is the agreement signal Phase 2.0 aggregates: a finding both passes flag is high-confidence; one-pass findings are low-confidence. (Distinct breadth is recovered by aggregation across the two passes + the deterministic lane, §1.5.)
+
+| # | Agent Name | Pillar | Scope (full pillar — independent pass) | File Cap | Output File |
+|---|-----------|--------|-------|----------|-------------|
+| 1 | `arch-a` | Architecture | Components/stores/composables/router/layouts + functions/schemas/API/DB models | 14 | `findings/01-arch-a.md` |
+| 2 | `arch-b` | Architecture | (same scope as `arch-a` — independent pass) | 14 | `findings/02-arch-b.md` |
+| 3 | `perf-a` | Performance | Re-renders/memory/bundle/lazy + cold-starts/DB queries/batch/caching | 12 | `findings/03-perf-a.md` |
+| 4 | `perf-b` | Performance | (same scope as `perf-a` — independent pass) | 12 | `findings/04-perf-b.md` |
+| 5 | `sec-a` | Security | DB/storage rules, auth/CORS/CSP + XSS/middleware/input-validation/secrets | 12 | `findings/05-sec-a.md` |
+| 6 | `sec-b` | Security | (same scope as `sec-a` — independent pass) | 12 | `findings/06-sec-b.md` |
+| 7 | `maint-a` | Maintainability | Naming/complexity/duplication/dead-code + type-safety/consistency/error-types/reuse | 14 | `findings/07-maint-a.md` |
+| 8 | `maint-b` | Maintainability | (same scope as `maint-a` — independent pass) | 14 | `findings/08-maint-b.md` |
+| 9 | `robust-a` | Robustness | Error boundaries/feedback/edge/offline + error-handling/transactions/logging/retries | 12 | `findings/09-robust-a.md` |
+| 10 | `robust-b` | Robustness | (same scope as `robust-a` — independent pass) | 12 | `findings/10-robust-b.md` |
+
+`--dual` adds cross-model agreers for the Security pillar (highest-stakes; self-critique-paradox mitigation).
+
+### 1.1-W Dispatch via Workflow (opt-in path)
+
+Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
+
+**Dispatch:** invoke the plugin workflow `/blitz:audit-sweep` (`workflows/audit-sweep.js`) with
+`args: { roster: [{ name, prompt }, …], findingsSchema }` — the roster is the 10-agent table below with each
+`prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
+inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
+`Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
+hard-fail. Resume semantics + concurrency cap: [agents.md](/_shared/agents.md)
+§Workflow Dispatch Contract.
+
+- Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
+- `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).
+- `schema` replaces the `classify_output()` gate; `null` entries = failed agents (handled by Phase 2.2).
+- After the workflow returns, proceed to Phase 1.4 / Phase 1.5 / Phase 2 unchanged.
+
+### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
+
+Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agents.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: this file §Recall hardening.
+
+When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
+
+```js
+// args: { findings:[{key,desc,fileLine}], lenses:['correctness','security','reproduces'], verdictSchema }
+const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
+const judged = await parallel(args.findings.map(f => () =>
+  parallel(args.lenses.map(lens => () =>
+    agent(`${OS}\n\nRe-read ${f.fileLine}. REFUTE via the ${lens} lens: "${f.desc}". Default refuted=true if not reproducible.`,
+      { label: `refute:${lens}:${f.key}`, phase: 'Audit', model: 'sonnet', schema: args.verdictSchema })))
+    // full-lens denominator is deliberate (recall bias: refuter failure must NOT auto-drop a finding — see references/main.md §553)
+    .then(votes => ({ f, refuted: votes.filter(Boolean).filter(v => v.refuted).length > args.lenses.length / 2 }))))
+const survivors = judged.filter(j => !j.refuted).map(j => j.f)  // ≥majority refute → dropped
+```
+
+- `schema`-validated verdicts replace inline parsing; `.filter(Boolean)` drops `null` (failed) refuters before the majority count. Deterministic findings never enter `args.findings`.
+
+### 0.2 Build Codebase Inventory
+
+1. **Identify project root and structure.** Run:
+   ```bash
+   find . -maxdepth 3 -name 'package.json' -not -path '*/node_modules/*' | head -30
+   ```
+2. **Read root config files.** Read `package.json`, workspace configs (`pnpm-workspace.yaml`, `nx.json`, `turbo.json`), and framework configs (`nuxt.config.ts`, `vite.config.ts`, etc.).
+3. **Map entry points.** Glob for:
+   - Frontend: `**/pages/**/*.vue`, `**/views/**/*.vue`, `**/components/**/*.vue`, `**/composables/**/*.ts`, `**/stores/**/*.ts`, `**/router/**/*.ts`
+   - Backend: `**/functions/**/*.ts`, `**/server/**/*.ts`, `**/api/**/*.ts`, `**/schemas/**/*.ts`
+   - Config: `**/rules/**/*`, `**/*.rules`, `**/security*`, `**/middleware/**/*.ts`
+
+4. **Count files per area.** Record approximate file counts for frontend, backend, config, and tests. This guides agent file caps.
+
+5. **Write inventory file:**
+   ```
+   ${AUDIT_RUN}/inventory.json
+   ```
+   Schema:
+   ```json
+   {
+     "timestamp": "<ISO-8601>",
+     "root": "<project-root>",
+     "stack": { "framework": "...", "ui": "...", "backend": "...", "build": "..." },
+     "entry_points": {
+       "frontend": ["<paths>"],
+       "backend": ["<paths>"],
+       "config": ["<paths>"]
+     },
+     "file_counts": { "frontend": 0, "backend": 0, "config": 0, "tests": 0 }
+   }
+   ```
+
+## Error Recovery
+
+- **Too few source files**: Inform user the codebase is too small for a full audit. Suggest manual review.
+- **A pillar has little/no relevant surface** (e.g. no frontend, or no backend): still spawn both same-scope passes for that pillar — each auto-scopes to what exists from the inventory; sparse pillars simply yield few findings. Do NOT skip numbered agents (the roster is 2 independent passes per pillar, not a frontend/backend split). If an entire pillar is N/A (e.g. no UI at all), note it in the `coverage_boundary` (§2.8) rather than dropping the passes.
+- **Agent timeout**: Mark as failed, proceed with available findings. Note gaps in report.
+- **All agents failed**: Abort and report the failure. Suggest checking stack detection and file permissions.
+- **Existing audit found**: Load previous findings for comparison. Include a "Delta" section in the report showing improvements and regressions.
+- **`tasks.sh add` refuses a task** (no non-test check, bad role, duplicate id): fix the command, never hand-edit `tasks.json`; if no executable check exists, demote the theme to a note.
+- **No theme has an executable check**: still write `spec.md` (findings + notes) and an empty `tasks.json`; say so in the final output.
+
+### 1.2 Security pillar: registry rows first, claude-security when installed
+
+The pillar's authoritative checks are the registry `sec-*` rows ([`/_shared/check-registry.json`](/_shared/check-registry.json), `pillar == security`); they run in the deterministic lane (§1.5) on every audit and keep reject authority. Deep semantic scanning is delegated when the `claude-security` plugin is present:
+
+```bash
+SEC_PLUGIN=0
+{ claude plugin list 2>/dev/null | grep -q 'claude-security'; } \
+  || grep -qs 'claude-security' "${HOME}/.claude/plugins/installed_plugins.json" && SEC_PLUGIN=1
+echo "[audit] security: registry sec-* rows$( [ "$SEC_PLUGIN" = 1 ] && echo ' + claude-security scan' || echo ' + sec-a/sec-b passes')" >&2
+```
+
+- **`SEC_PLUGIN=1`** → do not spawn `sec-a`/`sec-b` (roster shrinks to 8). Invoke the plugin's scan skill on the audit scope, write its verified findings (SARIF → severity schema, one `FINDING:` per result, `Confidence: 90`) to `findings/05-sec-external.md` tagged `lane: external`. External findings skip §2.1.4 aggregation and §2.3.5 refutation (already verified by the plugin) and stay `advisory`.
+- **`SEC_PLUGIN=0`** → spawn `sec-a`/`sec-b` as listed; the report's Security section and the Phase 3 spec carry one line: `Recommendation: install the claude-security plugin (verified SARIF findings) or run /security-review before release; blitz audit covers registry sec-* rows only.`
+- `--dual` applies only when `SEC_PLUGIN=0` (cross-model agreers for the two passes).
+
+### 1.5 Deterministic lane (run alongside the semantic passes)
+
+Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP — and write to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. The deterministic and semantic lanes catch **disjoint** bug classes (ianlpaterson 38-task) — a deleted test has no semantic signature; a wrong answer-key has no structural one — so run both. Detail: this file §Recall hardening.
+
+**Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:check --only design`). Vendored rows share one **key-free** `npx impeccable detect --json` run (filter by `detection.filter`); the provider-gated tells route through `agents/design-critic.md`'s gemini CLI (`BLITZ_GEMINI_BIN`), the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: this file §Phase 1.D2.

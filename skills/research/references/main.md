@@ -477,3 +477,134 @@ Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. 
 | Security concern identified | `audit` | Audit for related vulnerabilities. |
 | Performance approach selected | `test-gen` | Generate performance-related tests. |
 ```
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 1.3-W Dispatch via Workflow (opt-in path)
+
+Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a conditional `agent()` in the same script — replacing manual poll (§1.7) + classify (§2.1) + jq-gated second wave with native primitives.
+
+```js
+export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
+// args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
+const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
+const found = await parallel(args.roster.map(a => () =>
+  agent(a.prompt, { label: a.name, phase: 'Investigate',
+    model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
+// One narrow second wave (≤2 agents) for unanswered / under-cited questions
+const gaps = (await agent(args.gapPrompt, { phase: 'GapFill', model: 'haiku', schema: args.gapSchema }))
+  ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
+const gapFills = await parallel(gaps.map(g => () =>
+  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
+return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
+```
+
+- Model routing per token-budget: `codebase-analyst` → sonnet, retrieval agents → haiku.
+- `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
+- Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
+- `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.
+- After the workflow returns, proceed to §2.2 (summarize) → Phase 3 (synthesize) unchanged.
+
+## Codebase mode (`--codebase`)
+
+Answer a question about the current codebase from evidence, not memory. Rules:
+
+1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; if `autonomy=high|full`, skip the question and state the assumption in one line.
+2. **Locate — semantic first, grep second.** Resolve a symbol in this order, stopping at the first that works:
+   1. **`LSP`** — workspace symbol search → `goToDefinition` → `findReferences`. One call returns the definition and every call site as a location list. Use it whenever the target is a symbol (function, type, class, constant) in a language with a running server.
+   2. **`Grep` / `Glob`** from the most specific term outward (symbol → import sites → routes/config), then `Read` with an `offset` around each hit. Use this when the `LSP` tool is inactive: no language server for the file's language, a binary that is not installed, or a **cloud session**, where Claude Code does not start plugin language servers at all.
+
+   Never read a whole file to find one symbol. For a question wider than ~15 files, spawn one `Explore` subagent (read-only, haiku) with the question and a 150-line reply cap; more than one only when the question has independent halves.
+3. **Read before claiming.** Every statement in the answer cites `path:line` you opened in this turn. Quote the load-bearing line verbatim (≤2 lines per cite). No cite → say "not found" rather than guess.
+4. **Trace, don't summarize.** For "how does Y work": entry point → each hop (call, event, store mutation, rule) → side effects, as a numbered chain with one cite per hop. For "where is X": ranked list of candidates, best first, with why.
+5. **No writes.** No `Write`/`Edit`, no scratch files, no `docs/research/` doc, no session registration or feed lines beyond `task_start`/`task_complete`. If the answer reveals work to do, end with one line: `Next: /blitz:plan <slug>` or `/blitz:build <one-sentence diff>`.
+6. **Stop.** Answer ≤40 lines; offer `--codebase` follow-ups only if the user asks.
+
+Output shape:
+
+```
+Answer: <one sentence>
+1. <hop> — path:line — `<verbatim>`
+2. …
+Not verified: <anything inferred rather than read>
+Next: <optional one line>
+```
+
+Everything below is topic research.
+
+### 3.1 Generate Research Document
+
+Write to:
+```
+docs/research/YYYY-MM-DD_<topic-slug>.md
+```
+
+```bash
+mkdir -p docs/research    # tracked; docs/_research/ is legacy (gitignored) — never write there
+```
+
+**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter, tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections — write full prose.
+
+**Terse exemptions (LITE intensity):** §7 Risks + Open Questions (full sentences + reasoning chain required). Resume terse on next section.
+
+Use the template from `references/main.md`. Required sections:
+
+1. **Summary** — 3-5 sentence executive summary + recommendation.
+2. **Research Questions** — Each question with a concise answer.
+3. **Findings** — By theme (not by agent); each finding must cite its source.
+4. **Compatibility Analysis** — Fit with detected stack: version compat, dependency conflicts, integration complexity.
+5. **Recommendation** — Actionable with rationale; comparison matrix if comparing options. This section is the contract for `/blitz:plan --from-research <doc>`: it must state one `### Decision`, a `### Rationale`, and the affected areas/files so `plan` can derive tasks without re-researching.
+6. **Implementation Sketch** — High-level steps adapted to detected stack: key code patterns, file locations, config changes.
+7. **Risks** — Known risks, mitigations, open questions.
+8. **References** — All cited docs, articles, discussions.
+
+### 2.1 Classify Outputs (canonical gate from spawn-protocol §8)
+
+Run the standard classifier BEFORE reading findings. MISSING / EMPTY / MALFORMED outputs MUST NOT silently pass through as SUCCESS:
+
+```bash
+EXPECTED_OUTPUTS=(
+  "${SESSION_TMP_DIR}/research/library-docs.md"
+  "${SESSION_TMP_DIR}/research/web-researcher.md"
+  "${SESSION_TMP_DIR}/research/codebase-analyst.md"
+)
+[ "$SPAWN_INFRA" = true ] && EXPECTED_OUTPUTS+=("${SESSION_TMP_DIR}/research/infra-analyst.md")
+
+# classify_output() and gate logic from /_shared/agents.reference.md §8
+classify_output() {
+  local f="$1"
+  if [ ! -f "$f" ]; then echo MISSING; return; fi
+  if [ ! -s "$f" ]; then echo EMPTY; return; fi
+  if grep -q '^PARTIAL: true' "$f"; then
+    grep -q '^COMPLETED:' "$f" && grep -q '^MISSING:' "$f" \
+      && echo PARTIAL || echo MALFORMED
+    return
+  fi
+  echo SUCCESS
+}
+
+declare -A COUNTS=()
+for f in "${EXPECTED_OUTPUTS[@]}"; do
+  c=$(classify_output "$f")
+  COUNTS[$c]=$((${COUNTS[$c]:-0} + 1))
+  echo "$f → $c"
+done
+
+MISSING_COUNT=$(( ${COUNTS[MISSING]:-0} + ${COUNTS[EMPTY]:-0} + ${COUNTS[MALFORMED]:-0} ))
+N=${#EXPECTED_OUTPUTS[@]}
+case $N in
+  1) THRESHOLD=1 ;;
+  2|3) THRESHOLD=2 ;;
+  *) THRESHOLD=$(( (N + 1) / 2 )) ;;
+esac
+
+if [ "$MISSING_COUNT" -ge "$THRESHOLD" ]; then
+  echo "[research] ABORT: $MISSING_COUNT/$N agents failed (threshold $THRESHOLD)" >&2
+  # Do NOT clean up — preserve findings dir for inspection
+  exit 1
+fi
+```

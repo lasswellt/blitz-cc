@@ -10,6 +10,33 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.4.0] — 2026-09-19 · skill bodies fit the compaction budget
+
+Six skills were silently truncated after every compaction. Validation passed the whole time, because the guard measured the wrong thing.
+
+### Fixed
+- **The skill-body cap was a line count, and lines are not what the platform measures.** `check` passed the 500-line rule at 295 lines while being 40% over the limit that actually bites. After auto-compaction Claude Code re-attaches the most recent invocation of each skill keeping only the **first 5,000 tokens** of each, sharing a 25,000-token budget across them. Six bodies exceeded it, and because markdown puts terminal phases last, what was being cut was the ending: `check` lost **Phase 5 VERDICT AND REPORT**, `build` lost the **Gate, Recovery and Report**, `doctor` lost `--fix` and REPORT, `audit` lost all of Phase 3, `research` lost citation validation and REPORT. Exactly what a long session needs, and a long session is when compaction fires. This is the failure mode [security.md](skills/_shared/security.md) already cites: constraints dropped by summarization are violated 30–59% of the time.
+
+  | Skill | Before | After | Cut |
+  |---|---|---|---|
+  | `audit` | 6,975 tok | **4,370** | −37% |
+  | `check` | 6,973 | **4,248** | −39% |
+  | `doctor` | 6,270 | **4,059** | −35% |
+  | `build` | 6,230 | **4,025** | −35% |
+  | `research` | 5,961 | **4,280** | −28% |
+  | `next` | 4,898 | **4,142** | −15% |
+
+  Every terminal phase now sits between ~2,840 and ~4,172 tokens, comfortably inside the cut point. The restructure is verbatim: 22 sections moved into `references/`, each replaced by a contract summary and a pointer at its original position, and a line-level check confirms nothing was lost from any of the six.
+
+- Six links in `references/main.md` files resolved to `references/references/main.md`. They arrived with the moved sections, where the relative path had been correct.
+
+### Changed
+- `skill-frontmatter-validate.sh` check 8 is now a byte budget (18,000 B ≈ 4,500 tok, `BLITZ_SKILL_BODY_CAP`) instead of a 500-line cap, with headroom because table- and code-dense markdown tokenizes nearer 3.5 bytes/token than 4, so the estimate understates. The failure message names the remedy: move mid-body detail out, keep the closing phases in.
+- `check-section-refs.sh` gains a self-link rule: a file linking to itself by its own basename is what a section move leaves behind.
+
+### Added
+- Two tests: every `SKILL.md` body under the cap, and the closing sections specifically inside the 5,000-token cut point. The second matters more — "under the cap" does not by itself guarantee the ending survives.
+
 ## [3.3.3] — 2026-09-19 · reference integrity + the polyglot eval
 
 A sweep of what none of the earlier passes had looked at.
