@@ -42,6 +42,19 @@ plan: <slug>            # plan scope only
 | T-001 | true | true | — | — |
 | T-002 | false | false | `npx vitest run src/x.test.ts` | <≤200 chars> |
 
+## Held-out checks (critic-authored, plan scope)
+
+| Task | ok | Command | Tail |
+|---|---|---|---|
+| T-001 | true | `node -e "import('./src/health.ts').then(m=>process.exit(m.health().ok?0:1))"` | — |
+| T-002 | null | — | no runnable surface: route needs the emulator |
+
+## Cannot verify (survey)
+
+| What | Needs | Resolution |
+|---|---|---|
+| retry on 429 from the payments API | fixture | ran `vitest run src/pay.test.ts -t 429`: covered |
+
 ## Findings
 
 ### Critical (blocks)

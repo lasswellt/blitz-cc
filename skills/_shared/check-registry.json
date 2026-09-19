@@ -611,6 +611,27 @@
       "notes": "Folded into check (tasks verify + anti-mock)."
     },
     {
+      "id": "check:test-tamper",
+      "name": "test-oracle-tamper",
+      "lane": "deterministic",
+      "pillar": "completeness",
+      "base_confidence": 0.9,
+      "severity": "P1",
+      "verdict_authority": "reject",
+      "detection": {
+        "type": "git",
+        "command": "git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\(' ; assertions_before=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); assertions_after=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$assertions_after\" -lt \"$assertions_before\" ] && echo \"assertions fell $assertions_before -> $assertions_after\""
+      },
+      "enforcement": [
+        "check"
+      ],
+      "owner": "check",
+      "consolidated_target": "check",
+      "escape_hatch": "a deleted test file that a `Ruling:` line in progress.md names as intentionally removed",
+      "source": "Building to the Test (arXiv 2606.28430), SpecPath (2608.09799), Hacker-Fixer Loops (2606.08960): models saturate the visible oracle by editing it",
+      "notes": "Runs at check §1.7 over test files in scope only. Deleted expect() lines, trivial assertions, snapshot rewrites, skip/only insertions, and a falling assertion count while source grew are P1. Complements block-test-deletion.sh and block-test-disabling.sh, which stop the same moves at the tool boundary but cannot see a rebased or worktree-merged diff."
+    },
+    {
       "id": "o2-artifact-l1l2",
       "name": "artifact-verification-l1-l2",
       "lane": "deterministic",

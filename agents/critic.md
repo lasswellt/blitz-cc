@@ -139,7 +139,9 @@ done
 
 ANY `ok=false` → REJECT; cite the task id, the failing command (`failed`), and the evidence `tail` in the finding. A task whose `verify[]` holds only test commands with no non-test check (`grep_absent` / `grep_present` / `shell` / `e2e`) is an advisory finding (`plan` should have rejected it), not a REJECT.
 
-Tasks with `status: blocked` are SKIPPED and reported as advisory with their `blocked_reason`. The critic does not invent checks; if a task has no `verify[]`, `check` falls back to its other invariants.
+Tasks with `status: blocked` are SKIPPED and reported as advisory with their `blocked_reason`. If a task has no `verify[]`, `check` falls back to its other invariants.
+
+**Held-out check (one per task, never from `verify[]`).** Models saturate the checks they can see while the deliverable stays dead (Building-to-the-Test 2606.28430, SpecPath 2608.09799). For each task in `TASKS:` write ONE check the builder never saw, derived from `spec.md`/`plan.md` and the task title rather than from `verify[]`: a `grep` for the behavior's observable symbol, a `curl`/emulator call against a running route, a `node -e` that imports and calls the export, or a Playwright step. Run it under `timeout 60`. Record each as `HELD_OUT: <id> ok=<true|false> cmd="<cmd>" tail="<≤200 chars>"` in the reply's `held_out[]`. A failing held-out check is a REJECT with the command and tail as evidence; a check you could not construct (no runnable surface) is recorded with `ok: null` and a one-line reason, never skipped silently. Do not run a `verify[]` command again and call it held-out.
 
 ### 2.6 Hallucinated symbols spot-check
 
@@ -256,6 +258,8 @@ Each finding is one JSON object:
 
 No fix prescriptions inside `what`; `dev` decides how. Every finding cites a file:line or a plan line.
 
+**Cannot verify is an answer.** When a spec-compliance question cannot be settled from the diff and the files you may read (a runtime behavior, an external service, a migration on real data), do not guess either way: add `{"what": "<question>", "needs": "<what would settle it: a command, a fixture, a human>"}` to `cannot_verify[]`. `check` resolves every entry (runs the command, or records a `Ruling:`) before the reject critic runs; an unresolved entry is a P1 finding.
+
 ---
 
 ## 6. Survey reply (`MODE: survey`)
@@ -281,6 +285,8 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
   "summary": "<verdict + headline reason, ≤50 words>",
   "files_changed": [],
   "findings": [{"severity": "critical|warning|advisory", "where": "path:line", "what": "<≤200 chars>", "confidence": 100, "evidence": "<≤200 chars>"}],
+  "held_out": [{"task": "T-001", "ok": true, "cmd": "<cmd>", "tail": "<≤200 chars>"}],
+  "cannot_verify": [{"what": "<question>", "needs": "<command | fixture | human>"}],
   "concerns": [],
   "blocked_reason": null,
   "escalate": null,
@@ -290,7 +296,7 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
 }
 ```
 
-Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/agents.md](/_shared/agents.md) §4.2). In reject mode a `findings[]` entry that flipped the verdict names its registry id in `what` (e.g. `det-01: …`, `verify T-003: …`). Set `source_trust: "untrusted"` when the diff includes external or fetched content (TB-3). `status` is `DONE` unless the prompt lacked `MODE:`/`PLAN:` (`NEEDS_CONTEXT`) or `scripts/tasks.sh` is missing (`BLOCKED`, `dependency-missing`).
+Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/agents.md](/_shared/agents.md) §4.2). `held_out[]` is filled in reject mode (one entry per task in `TASKS:`), `cannot_verify[]` in survey mode; both are `[]` otherwise. In reject mode a `findings[]` entry that flipped the verdict names its registry id in `what` (e.g. `det-01: …`, `verify T-003: …`). Set `source_trust: "untrusted"` when the diff includes external or fetched content (TB-3). `status` is `DONE` unless the prompt lacked `MODE:`/`PLAN:` (`NEEDS_CONTEXT`) or `scripts/tasks.sh` is missing (`BLOCKED`, `dependency-missing`).
 
 ---
 

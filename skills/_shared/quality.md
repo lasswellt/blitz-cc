@@ -20,14 +20,17 @@ How blitz decides that work is done, what `check` runs, and what can flip a verd
 
 ## Tests are not the only signal
 
-SpecBench (2026): every frontier model saturates the visible tests while failing held-out tests, and the gap grows ~28 pp per 10× code size. A green test run is therefore evidence, not proof.
+SpecBench (May 2026): every frontier model saturates the visible tests while failing held-out tests, and the gap grows ~28 pp per 10× code size. Building to the Test (Jun 2026) went further: with a hidden Playwright oracle in the loop, models reached near-perfect scores while the library itself was dead or absent; SpecPath (Aug 2026) found 35 of 100 passing task blocks fail a contract-equivalent revision of the spec. A green test run is therefore evidence, not proof.
 
 | Rule | Where |
 |---|---|
 | Every behavior task carries ≥1 non-test check beside its test command: `grep_absent` (`! grep -nE 'TODO\|return \{\}' src/x.ts`), `grep_present` (the new export / route / rule string exists), `shell` (a script that exercises the change), or `e2e` (Playwright / `browse`) | `plan` templates per stack; `tasks.sh verify` runs them all |
 | `check` runs the critic on the **diff**, not only the tests: spec compliance against `plan.md` first, then code quality (two-stage, one survey pass each) | `check` Phase 2.1; [agents.md](/_shared/agents.md) `critic --mode survey` |
 | Deterministic rows run before any semantic pass; a semantic finding without reproducing evidence is dropped, never a blocker | §Shared check registry |
-| Held-out check: the full suite runs once at `check` time even when TIA selected a subset; escaped failures feed `tia_escaped_failures` | `scripts/test-selector.sh`, `docs/guides/tia.md` |
+| Full-suite check: the full suite runs once at `check` time even when TIA selected a subset; escaped failures feed `tia_escaped_failures` | `scripts/test-selector.sh`, `docs/guides/tia.md` |
+| Held-out check: the reject critic authors one check per task that the builder never saw (derived from `spec.md`, not `verify[]`), runs it, and REJECTs on failure | [critic.md](../../agents/critic.md) §2.5; `check-report.md` §Held-out checks |
+| Oracle tamper: deleted `expect(` lines, trivial assertions, snapshot rewrites, `.skip`/`.only` insertions, or a falling assertion count while source grew in the diff's test files is P1 | registry `check:test-tamper`; `check` §1.7 |
+| Cannot verify is an answer: a survey critic records what the diff cannot settle in `cannot_verify[]`; `check` runs the command or records a `Ruling:` before the gate | [critic.md](../../agents/critic.md) §5.4; `check` §2.2 |
 | Optional `check --mutation`: `@stryker-mutator/vitest-runner` with `coverageAnalysis: "perTest"` and `incremental: true`; surviving mutants on changed files are P3 findings. Off by default (cost) | `check` flag; results cached in `.stryker-tmp/` (gitignored) |
 
 Mocking guidance for authors (what may be mocked, emulator-backed alternatives) lives in [test-gen/references/deterministic-tests.md](../test-gen/references/deterministic-tests.md) §Mocking policy.
@@ -292,6 +295,7 @@ Banned in production code; any hit means the work is not done.
 | 8 | No-op event handlers (`() => {}`) | interactions do nothing | check:anti-mock |
 | 9 | Store actions returning hardcoded data instead of calling real APIs | stale or fake data | check:anti-mock, build:integration |
 | 10 | `vi.mock` / `jest.mock` of a module under `src/` in a new test | test passes while the product fails | det-03, ratchet `mocks_in_src` |
+| 11 | A test edit that removes or trivializes an assertion so the visible check passes | the oracle was changed, not the code | check:test-tamper |
 
 Self-check for every function written: "if this ran in production right now, would it work?" No ⇒ not done.
 

@@ -126,6 +126,8 @@ done
 
 Every task must end with `passes: true`; a `VERIFY_FAIL` is a P1 finding carrying `last_verify.tail` as evidence. A task `blocked` with `circuit-breaker` is surfaced, not retried. `check` never edits `tasks.json` directly (`tasks-guard.sh` denies it).
 
+Then run the registry row `check:test-tamper` over the test files in scope (`git diff $BASE --unified=0 -- '**/*.{test,spec}.*' '**/__tests__/**'`): deleted `expect(` lines, `expect(true)`, `toMatchSnapshot` rewrites, `.skip`/`.only` insertions, and assertion counts that fell while the source grew are P1 findings (`Source: check:test-tamper`). Tests that got easier while the code got bigger are the oracle-shaped edit the visible-test gate cannot see.
+
 ### 1.8 Escape-comment spot check
 
 Pick three random `blitz:any-allowed` / `blitz:skip-pinned` comments in scope; read each rationale. One that does not survive reading is a P2 finding (det-04 / det-13 escape abuse).
@@ -149,7 +151,7 @@ Every prompt states the order: **spec compliance first** (does the diff do what 
 
 ### 2.2 Collect
 
-Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.md](/_shared/agents.md) §4.4 (thresholds live there, not here). A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
+Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.md](/_shared/agents.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
 
 ### 2.3 App-level verification
 
@@ -209,13 +211,13 @@ Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at
 
 ### 4.3 Critic `--mode reject`
 
-Skipped at `repo` scope and under `--only`. Spawn one `blitz:critic` (opus, fresh context, never resumed, no Write/Edit, `omitClaudeMd: true`) whose prompt opens with `MODE: reject`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`, on `check.patch` plus `spec.md`/`plan.md` at plan scope, the gates JSON, the ratchet delta and the FP-verified survey findings. It runs `tasks[].verify[]` through `tasks.sh` itself. Reply: `{verdict: "LGTM"|"REJECT", findings[]}`, validated with `jq`; a MALFORMED or MISSING critic is a REJECT (the verdict is load-bearing, never skipped). Cross-model: `BLITZ_USE_GEMINI_CRITIC=1` routes through `hooks/scripts/critic-gemini.sh --mode pre-pass`; `BLITZ_DUAL_CRITIC=1` (`--dual`) runs both and requires both `LGTM`. A missing `gemini` binary under `--dual` degrades to in-Claude only with a printed warning; it never silently passes.
+Skipped at `repo` scope and under `--only`. Spawn one `blitz:critic` (opus, fresh context, never resumed, no Write/Edit, `omitClaudeMd: true`) whose prompt opens with `MODE: reject`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`, on `check.patch` plus `spec.md`/`plan.md` at plan scope, the gates JSON, the ratchet delta and the FP-verified survey findings. It runs `tasks[].verify[]` through `tasks.sh` itself and authors one held-out check per task (`held_out[]`, [critic.md](../../agents/critic.md) §2.5); a failing held-out check is a REJECT. Reply: `{verdict: "LGTM"|"REJECT", findings[], held_out[]}`, validated with `jq`; a `held_out[]` shorter than the task list at plan scope is MALFORMED; a MALFORMED or MISSING critic is a REJECT (the verdict is load-bearing, never skipped). Cross-model: `BLITZ_USE_GEMINI_CRITIC=1` routes through `hooks/scripts/critic-gemini.sh --mode pre-pass`; `BLITZ_DUAL_CRITIC=1` (`--dual`) runs both and requires both `LGTM`. A missing `gemini` binary under `--dual` degrades to in-Claude only with a printed warning; it never silently passes.
 
 ## Phase 5: VERDICT AND REPORT
 
 | Verdict | Criteria ([quality.md](/_shared/quality.md) §PASS / CONDITIONAL / FAIL) |
 |---|---|
-| **PASS** | tsc, lint, full tests, build pass; every task in scope `passes: true`; no P0/P1 finding; no ratchet regression; critic `LGTM`; security posture clean |
+| **PASS** | tsc, lint, full tests, build pass; every task in scope `passes: true`; every held-out check `ok: true` or explained; no P0/P1 finding; no unresolved `cannot_verify`; no ratchet regression; critic `LGTM`; security posture clean |
 | **CONDITIONAL** | gates pass but P2 or unresolved advisory findings remain; minor gate failures with no P0/P1; a regression already carried as a `ratchet:<metric>` blocked task; posture non-zero without injection |
 | **FAIL** | any gate fails after `--fix`; any P0/P1; critic `REJECT`; `type_errors > 0`; a `ratchet:<metric>` task still blocked at attempt 3; injection or pre-trust execution |
 

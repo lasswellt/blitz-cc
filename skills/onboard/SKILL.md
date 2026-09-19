@@ -133,6 +133,15 @@ Create the files from G2 in order. Every file is complete ([references/main.md](
 
 `worktree.baseRef: "head"` is required for `/blitz:build --parallel`; the default `fresh` branches from `origin/<default>` and drops uncommitted state.
 
+- **Project rules**: write `CLAUDE.md` (or append to `AGENTS.md` when the repo already uses one; Claude Code reads `AGENTS.md` when `CLAUDE.md` is absent) with the stack line, the three commands (`type-check`, `test`, `lint`), and this `## Testing` block verbatim. One sentence of mocking policy in the agent config file is what drove agent-authored mock additions to near zero in the field:
+
+```markdown
+## Testing
+- Never mock modules under `src/`; mock only true externals (network, clock, randomness, third-party SaaS) at the wire.
+- Firestore rules and functions run against the emulator (`firebase emulators:exec`), never a mock SDK.
+- A change is done when `docs/plans/<slug>/tasks.json` says so (`scripts/tasks.sh verify`), not when a test passes.
+```
+
 - **`.gitignore`**: append (do not duplicate) `.cc-sessions/`, `.claude/worktrees/`, `node_modules/`, `dist/`, `.output/`, `.nuxt/`, `coverage/`, `.env*` (keep `.env.example`).
 - **README.md**: name, stack line, the three scripts, and the blitz entry points (`/blitz:plan`, `/blitz:build`, `/blitz:check`).
 - **Barrel exports** (package mode): if the workspace uses `index.ts` barrels, append the new package's exports rather than creating a second barrel.
@@ -269,6 +278,8 @@ Onboard Map Complete
 ```
 
 Remove `${SESSION_TMP_DIR}/map-*.md`; keep the inventory files for a re-run.
+
+If `CLAUDE.md` (or `AGENTS.md`) exists without a `## Testing` heading, append the G3 Testing block and say so in the report; if neither file exists, write `CLAUDE.md` with the stack line from `detect-stack.sh`, the three commands, and the block. Never rewrite existing sections.
 
 ---
 
