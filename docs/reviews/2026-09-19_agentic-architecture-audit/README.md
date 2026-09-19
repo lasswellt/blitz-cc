@@ -1,7 +1,8 @@
 ---
 title: "blitz-cc agentic architecture audit — worktree contract, token economics, language agnosticism"
 date: 2026-09-19
-status: proposed
+status: implemented
+shipped_in: 3.0.2, 3.1.0, 3.2.0, 3.3.0
 plugin_version_reviewed: 3.0.1
 cc_version_verified_against: 2.1.277
 scope: manifest, concurrency/worktrees, token economics, language agnosticism, quality gates
@@ -480,6 +481,19 @@ Per-tool-call cost (F-14) is measurable today via OpenTelemetry and `/usage`; th
 ---
 
 ## 8. Migration plan
+
+All five phases shipped. Outcome per phase:
+
+| Phase | Shipped in | Result |
+|---|---|---|
+| 0 — Hotfix | 3.0.2 | `WorktreeCreate` deregistered, handler deleted, guard relocated to `doctor` D-314 / `build` Phase 0.4, `agents.md` §6 corrected, 7 regression tests |
+| 1 — Language agnosticism | 3.1.0 | `toolchain.sh` + a 34-row table across 11 stacks; the ratchet verified blocking a `mypy` and a `cargo check` regression; test guards widened to 8 ecosystems; `stacks[]` on all 97 registry rows |
+| 2 — Token economics | 3.2.0 | `/blitz:build` **41,571 → 19,154 tokens**; `/blitz:check` **47,296 → 14,138**; heads capped in `pre-commit-validate.sh` |
+| 3 — Cache and routing | 3.2.0 | `spawn-invariant.md` via `SubagentStart`, `cacheTtl: 1h` on all five agents, haiku deterministic lane, model-disclosure rule (which caught `migrate`) |
+| 4 — Semantic intelligence | 3.1.0 | `.lsp.json` + `lspServers` for TypeScript, Python, Rust, Go, each binary a `userConfig` option; `doctor` D-316/D-317 |
+| 5 — Gate hardening | 3.3.0 | `last_verify.runs[]` evidence, `detection.exit` contract per row, `check-report.json`. F-14 closed without change: measured at ~156 ms for all eight guards, a consolidation rewrite is not justified |
+
+Three bugs surfaced during implementation that the audit had not found, all now fixed: the ratchet blocked the first edit in any repo with pre-existing diagnostics (baseline defaulted to `0` rather than "no floor recorded"); stack markers were newline-joined inside a line-based read loop, so only each stack's first marker was ever tested; and a first pass at the exit-code contract split pipelines on `|` and mis-read the pipes inside grep's own regexes.
 
 | Phase | Work | Findings | Acceptance |
 |---|---|---|---|
