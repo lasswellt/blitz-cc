@@ -43,7 +43,7 @@ Every `agents/*.md` and every dynamic `Agent({model})` sets `model:` explicitly.
 
 Cost controls that apply to every spawn:
 
-- `subagentPromptCacheTtl: 1h` in project settings; `experimental.cacheTtl: 1h` on `dev` and `test-writer`.
+- `subagentPromptCacheTtl: 1h` in project settings; `experimental.cacheTtl: 1h` on `dev` and `test-writer` (≥2.1.248; the platform ignores `1h` while a subscription is on usage credits).
 - Agent bodies ≥1024 tokens are static-prefix-first (role, protocol, output style) with dynamic content (task, files, feed slice) last, so the cached prefix survives across tasks.
 - Lazy tool loading: `ToolSearch` on demand, never bulk-enable MCP servers in an agent.
 - Effort: routing skills run `effort: low`; multi-phase orchestrators (`build --parallel`) keep the session effort.

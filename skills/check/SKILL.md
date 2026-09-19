@@ -249,7 +249,7 @@ Final block: `[check] <result> scope=<s> ref=<sha> gates=<n>/<n> findings=C<n>/M
 | `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | `build` calls this after integration work |
 | `framework` | `fw-firestore-vue-pinia` (Phase 1.5) | `--fix` applies F5/V3/P2 recipes |
 | `design` | `pillar == design` (Phase 1.6) | preflight banner is mandatory; reduced coverage is never green |
-| `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | prints one line: deep scans are `/security-review` (bundled) or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |
+| `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | when the Skill tool lists `security-review` (the docs name it as model-invokable) run it on the same scope and merge its findings as `Source: security-review`; otherwise print one line pointing at `/security-review` or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |
 
 ## Gotchas
 

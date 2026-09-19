@@ -166,7 +166,7 @@ Each flag writes exactly one file, never overwrites without saying so, and print
 
 | Flag | Writes | Source | Overwrite |
 |---|---|---|---|
-| `--loop-md` | `.claude/loop.md` | `cp "${CLAUDE_PLUGIN_ROOT}/templates/loop.md" .claude/loop.md` | Replaces an existing file only if it already contains `/blitz:next --loop`; otherwise prints the diff and asks. Bare `/loop` then runs the blitz tick ([loop.md](/_shared/loop.md) §Running the loop). |
+| `--loop-md` | `.claude/loop.md` | `cp "${CLAUDE_PLUGIN_ROOT}/templates/loop.md" .claude/loop.md` | Replaces an existing file only if it already contains `/blitz:next --loop`; otherwise prints the diff and asks. Bare `/loop` then runs the blitz tick ([loop.md](/_shared/loop.md) §Running the loop); a user-level `~/.claude/loop.md` loses to the project file. |
 | `--review-md` | `REVIEW.md` | `bash "${CLAUDE_PLUGIN_ROOT}/scripts/gen-review-md.sh" --write REVIEW.md` | Always: the file is derived from `check-registry.json` P0/P1 rows ([quality.md](/_shared/quality.md) §REVIEW.md export); commit it. |
 | `--ci` | `.github/workflows/blitz-check.yml` | `mkdir -p .github/workflows && cp "${CLAUDE_PLUGIN_ROOT}/templates/blitz-check.yml" .github/workflows/blitz-check.yml` | Never overwrites; prints a diff when present. Then remind: add the `ANTHROPIC_API_KEY` secret (or swap in the OAuth token line per the file's comments); fork PRs get no secrets. |
 | `--verify-recipe` | `.claude/skills/verify/SKILL.md` | the seeding snippet in [references/main.md](references/main.md) §Verify recipe, filled from stack detection and `package.json` | Never overwrites. The bundled `/verify` records its own recipe on its first run, so seed only when the user asks for it before running `/verify`; `check` reads whichever exists. |

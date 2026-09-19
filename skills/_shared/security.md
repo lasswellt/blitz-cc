@@ -138,7 +138,9 @@ Blitz is itself a dependency with hooks that run on `SessionStart`. Treat it as 
 - Pin the plugin `version` in the marketplace install (`claude plugin install blitz@<version>` / a pinned `plugins:` entry in `.claude/settings.json`); keep plugin auto-update **off** so a new release cannot change hook behavior without a reviewed bump.
 - Review `hooks/hooks.json` and `hooks/scripts/*.sh` before enabling a version — hooks execute with the user's permissions.
 - Run `claude plugin validate .` on the checkout you are about to enable; the plugin's own pre-commit runs the same validators.
-- npm-sourced plugins are fetched with `--ignore-scripts` (no `postinstall` execution); Blitz has no npm dependencies of its own.
+- npm-sourced plugins are fetched with `--ignore-scripts` and integrity-verified (≥2.1.275); Blitz has no npm dependencies of its own.
+- **Plugin4Shell (disclosed 2026-09-18):** git resolves a hash-shaped branch name as a ref, so a plugin pinned by commit SHA from a git source could be silently swapped by the repository owner. Fixed in Claude Code 2.1.179 (blitz's floor is 2.1.271); GitHub-hosted marketplaces are immune because GitHub rejects hash-like branch names, and blitz's marketplace is GitHub-hosted. Install from `lasswellt/blitz-cc` only, and pass `--accept-command <sha256>` (≥2.1.269) when a marketplace declares an install command.
+- Repo-provided `.claude/settings.json` hooks and memory directories are untrusted until reviewed; `blockReadsOutsideWorkingDirectories` (2.1.277) stops repo-chosen memory dirs from loading. Critics run with `omitClaudeMd: true` so repo files cannot steer the evaluator.
 - Package adds inside a consumer project follow the [Package Install Policy](#package-install-policy) below — resolved from the registry, never from memory.
 
 ---

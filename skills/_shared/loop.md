@@ -250,7 +250,7 @@ Row 1 notifies through the first available channel, then prints `LOOP_ESCALATE`:
 |---|---|---|---|---|
 | `/loop` fixed interval | `/loop 15m /blitz:next --loop` in **its own session** | CronCreate task: expires 7 days after creation, recurring fires jitter up to 30 min late; dies with the session | 1 min | Re-create weekly; re-arm after any `--resume`. `CLAUDE_CODE_LOOP_MANAGED=1` is set: the skill never calls `ScheduleWakeup` |
 | `/loop` self-paced | `/loop /blitz:next --loop` | `ScheduleWakeup` between ticks; row 5 ends it with `stop:true`; **not restored on `--resume`**; 20-min fallback wake when the model sets none | model-paced | Short attended runs only |
-| Bare `/loop` | `/loop` | reads `.claude/loop.md`, written by `doctor --loop-md` (`/blitz:next --loop`) | as above | Same semantics as the two rows above |
+| Bare `/loop` | `/loop` | reads `.claude/loop.md` (project) or `~/.claude/loop.md` (user), written by `doctor --loop-md` (`/blitz:next --loop`); 25,000-byte cap; edits apply on the next iteration | as above | Same semantics as the two rows above |
 | Desktop scheduled task | Claude Desktop task running `/blitz:next --loop` | survives session restart; needs the machine on | 1 min | Overnight local runs |
 | Routine (cloud) | Routine prompt `/blitz:next --loop` | fresh cloud session per fire, no permission prompts, commits on `claude/` branches | 1 hour | Nightly and weekly; pair with `crossSessionInbound: hold` |
 | Shell loop | `while :; do claude -p "/blitz:next --loop" \| tee -a loop.log \| grep -q LOOP_DONE && break; done` | fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; set `crossSessionInbound: accept` for `-p` workers |

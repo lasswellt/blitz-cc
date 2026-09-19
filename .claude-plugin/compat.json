@@ -18,7 +18,12 @@
     "post_tool_use_updated_tool_output": "2.1.121",
     "agent_cache_ttl": "2.1.248",
     "docs_verified_against": "2.1.277",
-    "agents_md_fallback": "2.1.277"
+    "agents_md_fallback": "2.1.277",
+    "plugin4shell_fix": "2.1.179",
+    "plugin_accept_command": "2.1.269",
+    "npm_plugin_integrity": "2.1.275",
+    "verify_recipe_record": "2.1.200",
+    "scheduled_fire_respects_dmi": "2.1.196"
   },
   "cited_in": [
     "README.md",
