@@ -15,7 +15,7 @@ compatibility: ">=2.1.71"
 
 You are the conformance auditor + migration runner. You bring an existing **project's** blitz runtime artifacts (or a plugin **fork's** structure) into spec with the current canonical schemas defined in `skills/_shared/`.
 
-**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/terse-output.md). Print `[conform]` prefixed status lines at every phase transition, finding, and dispatch. Log `skill_start`, `audit_complete`, `migration_applied`, and `skill_complete` events to `.cc-sessions/activity-feed.jsonl`.
+**Verbose progress is mandatory.** Follow [terse-output.md](/_shared/output.md). Print `[conform]` prefixed status lines at every phase transition, finding, and dispatch. Log `skill_start`, `audit_complete`, `migration_applied`, and `skill_complete` events to `.cc-sessions/activity-feed.jsonl`.
 
 **Read-only by default.** Never write to the target without an explicit `--fix` argument. If `--fix` is omitted, end at Phase 6 (REPORT) — no migration ever runs.
 
@@ -32,18 +32,18 @@ You are the conformance auditor + migration runner. You bring an existing **proj
 ## Additional Resources
 
 - For per-artifact schema versioning rules + migration tables (story frontmatter `registry_entries` additive migration, STATE.md formats, roadmap canonical-vs-extension table, session model variants), see [references/main.md](references/main.md)
-- For the carry-forward registry schema, see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For the activity-feed JSONL schema, see [terse-output.md](/_shared/terse-output.md)
-- For the canonical story frontmatter, see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For pipeline state handoff + STATE.md required fields, see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For autonomy field schema, see [session-lifecycle.md](/_shared/session-lifecycle.md) §Autonomy Levels
+- For the carry-forward registry schema, see [sprint-contracts.md](/_shared/quality.md)
+- For the activity-feed JSONL schema, see [terse-output.md](/_shared/output.md)
+- For the canonical story frontmatter, see [sprint-contracts.md](/_shared/quality.md)
+- For pipeline state handoff + STATE.md required fields, see [session-lifecycle.md](/_shared/sessions.md)
+- For autonomy field schema, see [session-lifecycle.md](/_shared/sessions.md) §Autonomy Levels
 - For plugin-mode migration scripts, see [scripts/maint/v1.9.0/README.md](../../scripts/maint/v1.9.0/README.md)
 
 ---
 
 ## Phase 0: PARSE — Determine Target, Mode, Scope
 
-1. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+1. **Register session.** Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 2. **Resolve target directory.** Default to `pwd`. If first positional arg is a directory path, use it. Reject paths outside `${HOME}` unless explicit `--allow-system-paths` flag passed.
 
@@ -148,7 +148,7 @@ Print plan as verbose-progress table. If `--report-only`, skip to Phase 6.
 
 ### Story-frontmatter `registry_entries` migration
 
-**Canonical field names are `epic` + `verify`** ([/_shared/sprint-contracts.md](/_shared/sprint-contracts.md)) — NOT `epic_id`/`acceptance_criteria`. Never rename them; the only additive field is `registry_entries`. A story with `epic` + `verify` + `registry_entries` is conformant.
+**Canonical field names are `epic` + `verify`** ([/_shared/quality.md](/_shared/quality.md)) — NOT `epic_id`/`acceptance_criteria`. Never rename them; the only additive field is `registry_entries`. A story with `epic` + `verify` + `registry_entries` is conformant.
 
 For each story flagged MIGRATE (lacks `registry_entries` AND project uses carry-forward registry):
 

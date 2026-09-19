@@ -6,7 +6,7 @@ Templates, checklists, rules for sprint-review skill.
 
 ## Phase 0.0 Input Gate
 
-Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [session-lifecycle.md](/_shared/session-lifecycle.md) contract.
+Hard-fail bash block for sprint-review/SKILL.md Phase 0.0. Per [session-lifecycle.md](/_shared/sessions.md) contract.
 
 ```bash
 PIPELINE_MISSING=()
@@ -16,7 +16,7 @@ SPRINT_DIR="sprints/sprint-${SPRINT_NUMBER}"
 [ -s "${SPRINT_DIR}/manifest.json" ] || PIPELINE_MISSING+=("${SPRINT_DIR}/manifest.json")
 ls "${SPRINT_DIR}/stories/"S*.md >/dev/null 2>&1 || PIPELINE_MISSING+=("${SPRINT_DIR}/stories/S*.md")
 if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
-  echo "BLOCK: missing pipeline inputs (see /_shared/session-lifecycle.md §sprint-review):" >&2
+  echo "BLOCK: missing pipeline inputs (see /_shared/sessions.md §sprint-review):" >&2
   printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
   echo "Producer: /blitz:sprint-plan + /blitz:sprint-dev." >&2
   echo "Override (not recommended): BLITZ_REVIEW_NO_MANIFEST=1" >&2
@@ -337,7 +337,7 @@ and propose a rewording. Format (one per line):
 Leave empty if no gap. Do NOT pad with "no gaps to report."
 ```
 
-Orchestrator post-processing (Phase 4): for each non-empty Instruction Gaps line, append to `.cc-sessions/KNOWLEDGE.md` under `## <DATE> · Skill Instruction Drift — <reviewer-role>` per [knowledge-protocol.md](/_shared/knowledge-protocol.md) §1. Entries with empty `<suggested rewording>` are dropped.
+Orchestrator post-processing (Phase 4): for each non-empty Instruction Gaps line, append to `.cc-sessions/KNOWLEDGE.md` under `## <DATE> · Skill Instruction Drift — <reviewer-role>` per [knowledge-protocol.md](/_shared/loop.md) §1. Entries with empty `<suggested rewording>` are dropped.
 
 ### Severity Guidelines
 
@@ -450,7 +450,7 @@ L30: ❓ q: why `Map` over `Record<string, X>` here? Hot path?
 
 ## Registry Invariants — Phase 3.6 Detailed Procedures
 
-**Hard gate**: any invariant failure fails sprint close. Audits carry-forward registry against current sprint state to prevent silent scope drops. See [sprint-contracts.md](/_shared/sprint-contracts.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
+**Hard gate**: any invariant failure fails sprint close. Audits carry-forward registry against current sprint state to prevent silent scope drops. See [sprint-contracts.md](/_shared/quality.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
 
 ### 3.6.1 Load the Registry
 
@@ -480,9 +480,9 @@ Record results as `invariant_1: {pass|fail, violations: [...]}` in report.
 For every registry entry with `status ∈ {active, partial}`:
 
 - **Touched:** `last_touched.sprint == sprint-${SPRINT_NUMBER}` → pass.
-- **Explicitly deferred:** the **merged** entry has `status == "deferred"` (the deferral writer sets `status: "deferred"`, not just `event: "deferred"`) with non-empty `notes` → pass. Do **NOT** test `.event` of the merged object for the deferred-escape: the reader field-merges by `id` in `ts` order, so a deferred-then-corrected entry has its `.event` clobbered to `"correction"` and would be mis-flagged STALE. The canonical Step-4 reducer in [sprint-contracts.md](/_shared/sprint-contracts.md) §registry escapes STALE on `status == "deferred"` (or an explicit `deferred` flag), which survives later corrections. Keep this prose consistent with that Step 4.
+- **Explicitly deferred:** the **merged** entry has `status == "deferred"` (the deferral writer sets `status: "deferred"`, not just `event: "deferred"`) with non-empty `notes` → pass. Do **NOT** test `.event` of the merged object for the deferred-escape: the reader field-merges by `id` in `ts` order, so a deferred-then-corrected entry has its `.event` clobbered to `"correction"` and would be mis-flagged STALE. The canonical Step-4 reducer in [sprint-contracts.md](/_shared/quality.md) §registry escapes STALE on `status == "deferred"` (or an explicit `deferred` flag), which survives later corrections. Keep this prose consistent with that Step 4.
 - **Waivered this sprint:** entry id in current manifest's `registry_entries_touched`, AND registry has matching `event: "auto_waived"` line dated within sprint → pass. Catches sprint-plan Phase 4.1 auto-waivers.
-- **Otherwise:** **FAIL**. Increment `rollover_count` in a new `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so this patches `rollover_count` while preserving `status`/`scope`/`coverage` — and because the deferred-escape now tests merged `status`, a prior `deferred` is not undone by this `correction` line, which omits `status`):
+- **Otherwise:** **FAIL**. Increment `rollover_count` in a new `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/quality.md) §registry, so this patches `rollover_count` while preserving `status`/`scope`/`coverage` — and because the deferred-escape now tests merged `status`, a prior `deferred` is not undone by this `correction` line, which omits `status`):
   ```jsonl
   {"id":"<entry-id>","ts":"<ISO-8601>","event":"correction","rollover_count":<prev+1>,"notes":"sprint-review Invariant 2: entry not touched in sprint-${SPRINT_NUMBER}"}
   ```
@@ -529,7 +529,7 @@ Write entry's id to `sprints/sprint-$((SPRINT_NUMBER + 1))-planning-inputs.json`
 }
 ```
 
-Next `sprint-plan` reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator explicitly `defer`/`drop` before planning. **Linear cycle semantics**: nothing silently falls out of view. See [sprint-contracts.md](/_shared/sprint-contracts.md).
+Next `sprint-plan` reads this file in Phase 0 step 8 and must either (a) generate stories against each `mandatory_entries` item or (b) operator explicitly `defer`/`drop` before planning. **Linear cycle semantics**: nothing silently falls out of view. See [sprint-contracts.md](/_shared/quality.md).
 
 `status == partial` entries not auto-injected — carried via normal reader path (sprint-plan Phase 0 step 8 reads both active and partial). Only `active` with `coverage < 1.0` needs explicit file marker.
 
@@ -596,7 +596,7 @@ Next: ${RECOMMENDED_ACTION}
 
 ## Invariant 6 — Ratchet Procedures
 
-Authoritative protocol: [`/_shared/quality-engine.md`](/_shared/quality-engine.md).
+Authoritative protocol: [`/_shared/quality.md`](/_shared/quality.md).
 
 ### Compute current values
 
@@ -621,7 +621,7 @@ if [ -z "$COMPLETENESS_SCORE" ]; then
 fi
 ```
 
-All **8** canonical ratchet metrics are now computed: `TEST_COUNT`, `TYPE_ERRORS`, `AS_ANY`, `LINT_VIOLATIONS`, `COMPLETENESS_SCORE`, `MOCKS_IN_SRC`, `TODO_COUNT`, `STALE_WT` (see [quality-engine.md](/_shared/quality-engine.md) §1 for the canonical metric table). Omitting any lets a regression in it silently pass.
+All **8** canonical ratchet metrics are now computed: `TEST_COUNT`, `TYPE_ERRORS`, `AS_ANY`, `LINT_VIOLATIONS`, `COMPLETENESS_SCORE`, `MOCKS_IN_SRC`, `TODO_COUNT`, `STALE_WT` (see [quality-engine.md](/_shared/quality.md) §1 for the canonical metric table). Omitting any lets a regression in it silently pass.
 
 ### Compare and act
 
@@ -645,13 +645,13 @@ Append to `docs/sweeps/ratchet.json -> history[]`. Never rewrite prior entries:
 
 ### Multi-agent worktree merge
 
-When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allowed)` for ↓ metrics and `max(min_allowed)` for ↑ metrics. See [`/_shared/quality-engine.md`](/_shared/quality-engine.md) §4 for the canonical jq merge.
+When two parallel sprint-dev waves modify the ratchet, merge takes `min(max_allowed)` for ↓ metrics and `max(min_allowed)` for ↑ metrics. See [`/_shared/quality.md`](/_shared/quality.md) §4 for the canonical jq merge.
 
 ---
 
 ## Invariant 8 — Branch Hygiene
 
-Asserts sprint-dev Phase 4.4 completed its branch cleanup before review. Catches three failure modes: (1) Phase 4.4 was skipped because Phase 4.1 merge failed silently, (2) `BLITZ_SKIP_BRANCH_CLEANUP=1` was set and never unset, (3) the user interrupted sprint-dev after Phase 4.1 but before Phase 4.4. Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md).
+Asserts sprint-dev Phase 4.4 completed its branch cleanup before review. Catches three failure modes: (1) Phase 4.4 was skipped because Phase 4.1 merge failed silently, (2) `BLITZ_SKIP_BRANCH_CLEANUP=1` was set and never unset, (3) the user interrupted sprint-dev after Phase 4.1 but before Phase 4.4. Canonical contract: [/_shared/agents.md](/_shared/agents.md).
 
 Detector:
 
@@ -732,7 +732,7 @@ esac
 Agent({
   subagent_type: "blitz:critic",
   description: "Adversarial pre-PASS review",
-  prompt: "Review sprint-${SPRINT_NUMBER}. Run the 8-checklist from agents/critic.md against the changes since ${SPRINT_BASE_SHA}. Reject if ANY of the 19 shortcut signals (skills/_shared/quality-engine.md), ratchet regressions, type-error regressions, test deletions, or hallucinated-symbol findings are present. Return canonical JSON reply with verdict (LGTM | REJECT). Output style: terse-technical per /_shared/terse-output.md."
+  prompt: "Review sprint-${SPRINT_NUMBER}. Run the 8-checklist from agents/critic.md against the changes since ${SPRINT_BASE_SHA}. Reject if ANY of the 19 shortcut signals (skills/_shared/quality.md), ratchet regressions, type-error regressions, test deletions, or hallucinated-symbol findings are present. Return canonical JSON reply with verdict (LGTM | REJECT). Output style: terse-technical per /_shared/output.md."
 })
 ```
 
@@ -873,7 +873,7 @@ Written to review report under `## Automation Coverage` between `## Story Status
 Audit command (sprint-review runs this in Phase 3.6 — covers SKILL.md AND references/main.md):
 
 ```bash
-SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/terse-output.md'
+SNIPPET_RE='OUTPUT STYLE: (terse-technical|lite|full|ultra) per /_shared/output.md'
 
 # Every SKILL.md must include the snippet (Anthropic-canonical SKILL.md template requirement).
 SKILL_TOTAL=$(ls skills/*/SKILL.md | wc -l)

@@ -14,15 +14,15 @@ paths:
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For rule tables, severity matrix, fix recipes, JSON schema, and ratchet protocol, see [references/main.md](references/main.md) — load on-demand, only the sections you need
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-- For session registration and activity feed, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
-- For verbose progress format, see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
+- For session registration and activity feed, see [/_shared/sessions.md](/_shared/sessions.md)
+- For verbose progress format, see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -53,7 +53,7 @@ Detect framework-API anti-patterns, misuse, dead exports, and duplication candid
 
 ### 0.1 Session Registration
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md):
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration and [terse-output.md](/_shared/output.md):
 - Generate `SESSION_ID = "code-doctor-<8-char-hex>"`
 - Create `SESSION_TMP_DIR = ".cc-sessions/${SESSION_ID}/tmp/"`
 - Check for conflicting sessions on overlapping scopes

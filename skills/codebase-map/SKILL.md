@@ -8,14 +8,14 @@ argument-hint: "(no arguments — analyzes the current project)"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -33,7 +33,7 @@ Produce a comprehensive, prescriptive analysis of an existing codebase by spawni
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration and [terse-output.md](/_shared/output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Build File Inventory
 
@@ -65,7 +65,7 @@ Spawn 4 agents in **a single assistant message** so they execute concurrently. E
 
 ### 1.0 Select Dispatch Mode (capability gate)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 4-dimension pool — no DAG, no worktree, no cross-session resume.
+Per [agent-orchestration.md](/_shared/agents.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 4-dimension pool — no DAG, no worktree, no cross-session resume.
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -117,7 +117,7 @@ For each agent, call the `Agent` tool with:
 - `prompt`: the dimension-agent prompt template (see `references/main.md` section "Dimension Agent Prompt Template")
 - `run_in_background: false` (orchestrator waits on all 4 synchronously)
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). The prompt MUST declare: file cap from the roster, max 25 tool calls, max 250-line output, 5-min wall-clock, stub-then-append write pattern.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)). The prompt MUST declare: file cap from the roster, max 25 tool calls, max 250-line output, 5-min wall-clock, stub-then-append write pattern.
 
 ### 1.3 Inputs Each Agent Receives
 
@@ -184,7 +184,7 @@ Analyzed by: blitz codebase-map (v<plugin-version>)
 
 The `Recommendations` section is the orchestrator's cross-cutting synthesis — e.g., a quality concern that compounds with an architectural gap. This is the one place the orchestrator adds value beyond concatenation.
 
-**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `CODEBASE-MAP.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `CODEBASE-MAP.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)

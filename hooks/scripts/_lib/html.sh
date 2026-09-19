@@ -9,9 +9,17 @@
 #   sanitize_html                 stdin → stdout; deterministic TB-4 scrub of converter output
 #   emit_html <md> [trusted|untrusted]   writes <stem>.html next to <stem>.md (never touches the .md)
 #
-# Contract, gate (BLITZ_OUTPUT_FORMAT=html), trust tiers and the adopter list
-# live in skills/_shared/html-template-helper.md — this file is the ONE place
-# the bash bodies exist (the doc references it; never inline a second copy).
+# Contract (the ONE place it lives; skills source this file, never paste a copy):
+#   - Additive only: emit_html writes <stem>.html next to <stem>.md and never moves,
+#     renames, or replaces the .md (the .md stays the artifact other tools read).
+#   - Gate: no-op unless BLITZ_OUTPUT_FORMAT=html. Call site, right after the .md Write:
+#       [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html <stem>.md            # trusted local data
+#       [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html <stem>.md untrusted  # may quote fetched text
+#   - Self-contained output: inline <style>, CSS variables, no external deps, no <script>.
+#   - Security (TB-4, skills/_shared/security.md): `untrusted` HTML-escapes the body into
+#     a <pre> block (the only complete close for fetched content); trusted input goes
+#     through pandoc -raw_html or marked, post-filtered by sanitize_html.
+#   Adopter today: /blitz:sessions dashboard --html.
 # Requires: perl (sanitize_html); pandoc or marked are optional (escaped <pre>
 # fallback otherwise). Safe under set -euo pipefail.
 

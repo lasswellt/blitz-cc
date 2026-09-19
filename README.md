@@ -160,7 +160,7 @@ Four layers turn a skill collection into a partly-autonomous environment. Slash 
 
 ### 1. Orchestrator (freeform-input router)
 
-`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
+`agents/orchestrator.md` is wired as the plugin's main-thread agent via `.claude-plugin/settings.json` (`{ "agent": "orchestrator" }`). It is **read-only by construction** — its tools are `Read, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, Monitor`, with no Write/Edit/Agent. That constraint is load-bearing: Claude Code forbids subagents from spawning subagents, so any skill that fans out parallel agents (sprint-dev, sprint-plan, research, audit, …) stays slash-invoked and the orchestrator *routes to it* rather than running it. On session start it surfaces a one-line state summary from `HANDOFF.json` + the activity feed. See [`skills/_shared/agents.md`](skills/_shared/agents.md).
 
 Opt out via a user settings override — set `{"agent": null}` (or remove the plugin `agent` setting) in `~/.claude/settings.json`:
 
@@ -380,13 +380,13 @@ Every blitz skill (`/blitz:*`) and agent is a valid dispatch target for Claude C
 - **Remote alerts** — `BLITZ_NOTIFY_ON_IDLE=1` adds an idle terminal bell; stuck-loop / Tier-3 escalations land in the inbox and the attention queue; `PushNotification` reaches a phone when Remote Control is connected.
 - **Unattended** — Claude Projects threads (one per sprint lane), cloud Routines (nightly sweeps, weekly dep-health), Desktop tasks, and Channels are covered in [docs/guides/cloud-threads.md](docs/guides/cloud-threads.md).
 
-Full contract: [`skills/_shared/session-lifecycle.md`](skills/_shared/session-lifecycle.md) (registration, conflict matrix, mailbox, scheduling, inbox) and [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md) §Agent-View / §Cross-session messaging.
+Full contract: [`skills/_shared/sessions.md`](skills/_shared/sessions.md) (registration, conflict matrix, mailbox, scheduling, inbox) and [`skills/_shared/agents.md`](skills/_shared/agents.md) §Agent-View / §Cross-session messaging.
 
 ---
 
 ## Token Budget
 
-Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work (docs) on Haiku, the bulk of builder/reviewer work on Sonnet, orchestration reasoning on Opus. Prompt caching (1-hr TTL) and lazy MCP/skill loading keep cost down; agents reply with a structured JSON contract rather than echoing findings. See [`skills/_shared/agent-orchestration.md`](skills/_shared/agent-orchestration.md).
+Model routing follows a 60/35/5 Haiku/Sonnet/Opus matrix: cheap mechanical work (docs) on Haiku, the bulk of builder/reviewer work on Sonnet, orchestration reasoning on Opus. Prompt caching (1-hr TTL) and lazy MCP/skill loading keep cost down; agents reply with a structured JSON contract rather than echoing findings. See [`skills/_shared/agents.md`](skills/_shared/agents.md).
 
 ---
 

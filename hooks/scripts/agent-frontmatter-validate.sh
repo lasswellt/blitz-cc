@@ -160,6 +160,7 @@ validate_one() {
   body_lines=$(printf '%s\n' "$body" | wc -l)
   [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500)"
 
+  return 0
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done

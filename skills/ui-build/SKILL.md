@@ -14,7 +14,7 @@ paths:
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -26,14 +26,14 @@ Build production-grade Vue 3 UI native to the project. Follow the 5-phase workfl
 
 ## Additional Resources
 - UX principles, wireframe templates, accessibility checklist: [references/main.md](references/main.md)
-- Output style: [/_shared/terse-output.md](/_shared/terse-output.md)
+- Output style: [/_shared/output.md](/_shared/output.md)
 
 
 ---
 
 ## Phase 0: SESSION — Register and Check for Conflicts
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ---
 
@@ -291,7 +291,7 @@ When triggered, spawn `agents/design-critic.md`:
 Agent({
   subagent_type: "blitz:design-critic",
   description: "Design-quality critique (live nav)",
-  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/terse-output.md. Return ONLY the canonical JSON — no prose, no preamble."
+  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })
 ```
 
@@ -300,7 +300,7 @@ Agent({
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
                                                                # (article ran 5–15; cost-aware midpoint)
-                                                               # budget bound per /_shared/agent-orchestration.md
+                                                               # budget bound per /_shared/agents.md
 after evaluation N (scores S_N), trend = mean(S_N) - mean(S_{N-1}):   # first iter has no trend → REFINE
   PASS (all dims ≥7)                          → STOP (ship)
   trend > +0.5                                → REFINE: feed critique to Phase 4 IMPLEMENT, one
@@ -340,7 +340,7 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 ## Production Readiness (NON-NEGOTIABLE)
 
-Every component and function must be fully implemented. See [Definition of Done](/_shared/sprint-contracts.md).
+Every component and function must be fully implemented. See [Definition of Done](/_shared/quality.md).
 
 **BANNED PATTERNS** — if any appear, the work is not done:
 

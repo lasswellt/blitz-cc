@@ -9,14 +9,14 @@ compatibility: ">=2.1.271"
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For pipeline artifact contracts (which files indicate which next-action: `STATE.md`, `roadmap/`, `carry-forward.jsonl`, `review-report.md`), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
-- For carry-forward registry reads (`CF_ACTIVE`, `CF_ESCALATED`, `UNINGESTED_COUNT`), see [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md)
-- For scheduling tiers (`/loop` in a dedicated session, CronCreate 7-day expiry, Desktop tasks, Routines, `/goal`) and the inbox / `HEARTBEAT_OK` contract, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §Scheduling Reference
+- For pipeline artifact contracts (which files indicate which next-action: `STATE.md`, `roadmap/`, `carry-forward.jsonl`, `review-report.md`), see [/_shared/sessions.md](/_shared/sessions.md)
+- For carry-forward registry reads (`CF_ACTIVE`, `CF_ESCALATED`, `UNINGESTED_COUNT`), see [/_shared/quality.md](/_shared/quality.md)
+- For scheduling tiers (`/loop` in a dedicated session, CronCreate 7-day expiry, Desktop tasks, Routines, `/goal`) and the inbox / `HEARTBEAT_OK` contract, see [/_shared/sessions.md](/_shared/sessions.md) §Scheduling Reference
 
 ---
 
@@ -29,7 +29,7 @@ Two modes:
 1. **Default (read-only suggest)** — `/blitz:next` reads state and prints the recommended next blitz command. No dispatch, no writes. Lightweight survey.
 2. **`--loop` (auto-dispatch reconciliation)** — `/blitz:next --loop` reads state, executes **one phase**, commits + pushes, and exits cleanly so `/loop` or `ScheduleWakeup` can re-tick. Sets autonomy to `full`. Canonical autonomous-loop entry point for blitz (supersedes `/blitz:sprint --loop` since v1.13.0).
 
-**Session protocol**: skipped in default mode (read-only). In `--loop` mode, follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration before dispatching.
+**Session protocol**: skipped in default mode (read-only). In `--loop` mode, follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration before dispatching.
 
 **Verbose progress**: skipped in default mode. `--loop` mode prints a concise per-tick reconciliation report (Observe → Diff → Act → Report).
 
@@ -39,7 +39,7 @@ Two modes:
 
 - `--loop`: Autonomous reconciliation mode. Reads state, triages the inbox, dispatches one phase, commits/pushes, exits. Sets autonomy `full` — all sub-skill confirmation prompts auto-approved. Designed for `/loop <interval> /blitz:next --loop` **in a dedicated session**.
 
-  **Scheduling tiers for `--loop`** (facts per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §Scheduling Reference):
+  **Scheduling tiers for `--loop`** (facts per [/_shared/sessions.md](/_shared/sessions.md) §Scheduling Reference):
 
   | Tier | How | Persistence | Min interval | Use case |
   |------|-----|-------------|--------------|----------|
@@ -187,7 +187,7 @@ done
 
 ### 0.9c Check Scope Limit
 
-Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) for the full schema and behavior contract.
+Detect an active `SCOPE-LIMIT.md` at repo root. Honors `expires_after` (treats past-date as cleared). See [/_shared/quality.md](/_shared/quality.md) for the full schema and behavior contract.
 
 Phase 0.9c only sets `SCOPE_LIMIT_ACTIVE`. When row 6f fires (Phase 3.4 dispatch), the banner emitter reads the additional fields (`declared_at`, `declared_by`, `scope`, `reason`) directly from `SCOPE-LIMIT.md` via the Phase 4 banner template — no need to pre-extract here.
 
@@ -226,7 +226,7 @@ If `$HARD_SPEC_BLOCKERS` is non-empty, row 1a fires before row 1. The HARD_SPEC 
 
 ## Phase 0.5: INBOX TRIAGE (every invocation, before the state machine)
 
-`.cc-sessions/inbox.jsonl` is the attention queue hooks feed ([/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §Inbox and heartbeat). Triage it first so a stuck session never hides behind a "next phase" recommendation:
+`.cc-sessions/inbox.jsonl` is the attention queue hooks feed ([/_shared/sessions.md](/_shared/sessions.md) §Inbox and heartbeat). Triage it first so a stuck session never hides behind a "next phase" recommendation:
 
 ```bash
 jq -c 'select(.status=="pending")' .cc-sessions/inbox.jsonl 2>/dev/null
@@ -286,7 +286,7 @@ Apply this priority-ordered decision tree (canonical — same logic used by `--l
 6. Plan new work from injected inputs (row 6b) before roadmap epics (row 6c)
 7. Plan carry-forward gap closure (row 6d) before declaring idle (row 7)
 8. HARD_SPEC escalation (row 1a) short-circuits resume (row 1) — auto-resuming a sprint with a HARD_SPEC-blocked story burns tokens on the same failing attempt; the loop must escalate to operator instead.
-9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md).
+9. SCOPE_LIMIT_ACTIVE (row 6f) short-circuits rows 6a-6e only — it suspends auto-detection of **new** work but does NOT interrupt an in-progress or planned sprint (rows 1-5). A sprint that's already committed continues to ship; the override prevents the loop from queueing additional sprints behind it. Operators who need to halt active work should let the sprint complete OR manually delete `sprint-${N}/STATE.md` to abandon. See [/_shared/quality.md](/_shared/quality.md).
 10. Plan audit-derived sprint (row 6e) sits after carry-forward gap closure (6d) and before idle (7) — registry-tracked work always beats audit-suggested work. Audit findings are surfaced via `roadmap extend` ingestion (row 0 + Phase 0.8 path includes `docs/audits/*-epics.md`).
 
 **Why rows 6a-6f exist:** the prior state machine collapsed rows 6 and 7 together, so an idle roadmap with a non-empty carry-forward registry was indistinguishable from "nothing to do" — the silent-drop mode traced in `docs/_research/2026-04-08_sprint-carryforward-registry.md`. The four-way split (6a-6d) makes registry state load-bearing: the loop cannot exit idle while there is pending carry-forward work, and row 6a short-circuits `rollover_count >= 3` to human escalation. **Rows 6e and 6f** were added per `docs/_research/2026-05-18_audit-deferred-work-detection.md`: row 6e closes a separate silent-drop mode where `audit` produced `docs/audits/*-epics.md` with proposed epics that were invisible to every other row (no scope-block ingestion path existed), and row 6f gives operators a single canonical signal (`SCOPE-LIMIT.md`) to suspend new-work auto-detection without manually transitioning every registry entry to `deferred`.
@@ -343,7 +343,7 @@ Loop-only: interactive `/blitz:next` (no --loop) leaves `BLITZ_DISPATCH` at its 
 
 ### 3.1.5 Arm the Stop gate for this tick
 
-Write a phase-specific gate so the turn cannot end red ([quality-engine.md §Verification stack](/_shared/quality-engine.md#verification-stack)); the hook is a no-op when the file is absent and stands down on the stop-signal markers below:
+Write a phase-specific gate so the turn cannot end red ([quality-engine.md §Verification stack](/_shared/quality.md#verification-stack)); the hook is a no-op when the file is absent and stands down on the stop-signal markers below:
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
@@ -359,7 +359,7 @@ Drop the `tests` check when the selector returns nothing (no runner, cold start 
 
 ### 3.2 Session-conflict pre-check (loop-only soft fail)
 
-If another sprint-plan / sprint-dev / sprint-review session is live (Phase 0.9: overlay `state ∈ {working, blocked}` and not stale — the SessionStart hook already ran the §5a sweep), do NOT abort — message it and defer per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §Messaging action (`SendMessage(to, "blitz: next --loop deferring to your sprint-dev", notify_when_idle: true)` when the tool is available; WARN-only text otherwise):
+If another sprint-plan / sprint-dev / sprint-review session is live (Phase 0.9: overlay `state ∈ {working, blocked}` and not stale — the SessionStart hook already ran the §5a sweep), do NOT abort — message it and defer per [/_shared/sessions.md](/_shared/sessions.md) §Messaging action (`SendMessage(to, "blitz: next --loop deferring to your sprint-dev", notify_when_idle: true)` when the tool is available; WARN-only text otherwise):
 
 ```
 [next --loop] Reconciliation:

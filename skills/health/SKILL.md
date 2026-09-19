@@ -10,7 +10,7 @@ compatibility: ">=2.1.152"
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -120,7 +120,7 @@ if [ "${CLAUDE_CODE_DISABLE_AGENT_VIEW:-}" = "1" ] || grep -q '"disableAgentView
 fi
 ```
 
-Report: daemon reachable (y/n), live background-session count, and the disable warning if present. Cross-ref: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md) §Interop.
+Report: daemon reachable (y/n), live background-session count, and the disable warning if present. Cross-ref: [/_shared/agents.md](/_shared/agents.md) §Interop.
 
 Summary only here — per-session table, attention queue, locks, inbox, and dashboard: `/blitz:sessions` (detail: /blitz:sessions; runtime state lives there, structural checks stay here).
 
@@ -218,5 +218,5 @@ If any checks fail, list recommended actions:
 Recommended Actions:
   1. [STALE SESSION] Clean up session <X> — PID not running, 6h old
   2. [ORPHANED LOCK] Delete sprint-registry.json.lock — owning session completed
-  3. [FRONTMATTER] skills/foo/SKILL.md: missing required field 'effort' — see /_shared/terse-output.md and lint hook
+  3. [FRONTMATTER] skills/foo/SKILL.md: missing required field 'effort' — see /_shared/output.md and lint hook
 ```

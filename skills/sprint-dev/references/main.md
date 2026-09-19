@@ -6,8 +6,8 @@ Supporting templates, coordination patterns, and distribution rules for the spri
 
 ## Agent Prompt Templates
 
-<!-- import: /_shared/agent-orchestration.md -->
-Canonical recurring sections (Heavy BUDGET, HEARTBEAT story-completion variant, PARTIAL sprint-dev variant) are documented in [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md). The four role-specific templates below remain the byte-stable spawn source — agents execute the WORKFLOW lists byte-for-byte and OUTPUT STYLE is required inline per sprint-review Invariant 5.
+<!-- import: /_shared/agents.md -->
+Canonical recurring sections (Heavy BUDGET, HEARTBEAT story-completion variant, PARTIAL sprint-dev variant) are documented in [/_shared/agents.md](/_shared/agents.md). The four role-specific templates below remain the byte-stable spawn source — agents execute the WORKFLOW lists byte-for-byte and OUTPUT STYLE is required inline per sprint-review Invariant 5.
 
 ### Backend Dev Agent
 
@@ -45,13 +45,13 @@ ${REUSABLE_ASSETS}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
+DEVIATION HANDLING (follow /_shared/quality.md):
 - Auto-fix: bugs in existing code blocking you, missing imports, clear type mismatches
 - Report via DEVIATION: utility functions you had to create, error handling you added
 - Escalate via ESCALATE: architectural changes, public API changes, >3 files outside scope
 - Never auto-fix: security rules, DB migrations, new package dependencies
 
-CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
+CONTEXT MANAGEMENT (follow /_shared/sessions.md):
 - Self-contained DONE summaries: include files, exports, verify result — don't reference earlier stories
 - Reference files by path, not "the file I created earlier"
 - Compact verification output: "type-check PASS" not full log dump
@@ -114,13 +114,13 @@ ${REUSABLE_ASSETS}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
+DEVIATION HANDLING (follow /_shared/quality.md):
 - Auto-fix: bugs in existing code blocking you, missing imports, clear type mismatches
 - Report via DEVIATION: utility functions you had to create, error handling you added
 - Escalate via ESCALATE: architectural changes, public API changes, >3 files outside scope
 - Never auto-fix: security rules, DB migrations, new package dependencies
 
-CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
+CONTEXT MANAGEMENT (follow /_shared/sessions.md):
 - Self-contained DONE summaries: include files, exports, verify result — don't reference earlier stories
 - Reference files by path, not "the file I created earlier"
 - Compact verification output: "type-check PASS" not full log dump
@@ -183,13 +183,13 @@ ${CONVENTIONS_GUIDE}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
+DEVIATION HANDLING (follow /_shared/quality.md):
 - Auto-fix: test utility issues, missing test helpers
 - Report via DEVIATION: test factories you had to create for missing fixtures
 - Escalate via ESCALATE: implementation bugs that need code changes beyond test scope
 - Never auto-fix: security rules, breaking changes to shared test utilities
 
-CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
+CONTEXT MANAGEMENT (follow /_shared/sessions.md):
 - Self-contained DONE summaries: include test file paths, test counts, verify result
 - Reference implementation files by path, not "the file that was created earlier"
 - Compact verification output: "12/12 tests passed" not full test runner output
@@ -249,13 +249,13 @@ ${REUSABLE_ASSETS}
 
 SESSION TMP DIR: ${SESSION_TMP_DIR}
 
-DEVIATION HANDLING (follow /_shared/sprint-contracts.md):
+DEVIATION HANDLING (follow /_shared/quality.md):
 - Auto-fix: missing config keys that have obvious defaults, broken CI syntax
 - Report via DEVIATION: new environment variables needed, security rule changes
 - Escalate via ESCALATE: changes to production deployment, IAM/permission changes, new cloud services
 - Never auto-fix: security rules, secrets management, production environment configs
 
-CONTEXT MANAGEMENT (follow /_shared/session-lifecycle.md):
+CONTEXT MANAGEMENT (follow /_shared/sessions.md):
 - Self-contained DONE summaries: include config file paths, what was configured, verify result
 - Reference files by path, not "the config I edited earlier"
 - Compact verification output: "deploy dry-run PASS" not full deployment logs
@@ -353,7 +353,7 @@ Per `docs/_research/2026-05-16_agent-complexity-ceiling-spec-fixing.md`.
 
 ### Per-Story Scope Constraint (atomic+scoped attempts)
 
-When dispatching a story to an agent, declare the file set the agent MAY touch. Derived from the story's canonical `files` frontmatter (per [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Field Contract; if present) or, as a true fallback for stories missing `files:`, inferred from the story body's mentioned paths:
+When dispatching a story to an agent, declare the file set the agent MAY touch. Derived from the story's canonical `files` frontmatter (per [/_shared/quality.md](/_shared/quality.md) §Field Contract; if present) or, as a true fallback for stories missing `files:`, inferred from the story body's mentioned paths:
 
 ```bash
 # Per story dispatch. Canonical field is `files` (sprint-contracts.md §Field Contract).
@@ -568,7 +568,7 @@ Sprint ${SPRINT_NUMBER} implementation complete.
 
 Used in Phase 3.5.1.
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)).
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)).
 
 **Spawn parameters**:
 - `subagent_type: blitz:frontend-dev` (has Write + Edit — required for integration edits)
@@ -601,7 +601,7 @@ Full item definitions for the integration agent (Phase 3.5.2):
 
 ## KNOWLEDGE.md Slice Procedure
 
-Phase 0.6 of `SKILL.md`. Build a relevance slice of `.cc-sessions/KNOWLEDGE.md` for injection into every dev-agent prompt (spec item 14). Per [knowledge-protocol.md](/_shared/knowledge-protocol.md).
+Phase 0.6 of `SKILL.md`. Build a relevance slice of `.cc-sessions/KNOWLEDGE.md` for injection into every dev-agent prompt (spec item 14). Per [knowledge-protocol.md](/_shared/loop.md).
 
 ```bash
 KNOWLEDGE_FILE=".cc-sessions/KNOWLEDGE.md"
@@ -669,10 +669,10 @@ Every dev agent prompt (Phase 2.3) must include all 14 items:
 5. Commit message format: `feat(sprint-${N}/<role>): S${N}-XXX <description>`.
 6. Project conventions guide from Phase 0.5 (full text, not a file reference).
 7. Reusable assets list — composables, utilities, and shared components agents must use.
-8. Anti-mock rules — Every function must be fully implemented, no placeholders. See [Definition of Done](/_shared/sprint-contracts.md).
-9. Deviation handling rules — Follow the [Deviation Handling Protocol](/_shared/sprint-contracts.md). Auto-fix small issues, report deviations, escalate architectural changes.
+8. Anti-mock rules — Every function must be fully implemented, no placeholders. See [Definition of Done](/_shared/quality.md).
+9. Deviation handling rules — Follow the [Deviation Handling Protocol](/_shared/quality.md). Auto-fix small issues, report deviations, escalate architectural changes.
 10. Wave assignment — Tell each agent which wave their stories belong to, so they understand the execution order context.
-11. Context management rules — Follow the [Context Management Protocol](/_shared/session-lifecycle.md). Self-contained DONE summaries, reference files by path not memory, compact verification output, prune context between stories.
+11. Context management rules — Follow the [Context Management Protocol](/_shared/sessions.md). Self-contained DONE summaries, reference files by path not memory, compact verification output, prune context between stories.
 12. **HEARTBEAT + PARTIAL protocol** (add verbatim to prompt):
     ```
     HEARTBEAT: After each story DONE, write a file ${SESSION_TMP_DIR}/agent-<role>-progress.md
@@ -695,7 +695,7 @@ Every dev agent prompt (Phase 2.3) must include all 14 items:
     asked for that version, OR (b) a peer-compatibility constraint forces it.
     Verify after install: npm view <pkg> version vs the resolved version.
     ```
-14. **Project Lessons block** — inject the KNOWLEDGE.md slice computed in SKILL.md Phase 0.6. Per [knowledge-protocol.md](/_shared/knowledge-protocol.md), this surfaces project-specific gotchas before generation, counteracting training-data bias (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P1/F2). Inject verbatim:
+14. **Project Lessons block** — inject the KNOWLEDGE.md slice computed in SKILL.md Phase 0.6. Per [knowledge-protocol.md](/_shared/loop.md), this surfaces project-specific gotchas before generation, counteracting training-data bias (per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P1/F2). Inject verbatim:
     ```
     ## Project Lessons (from .cc-sessions/KNOWLEDGE.md)
     <contents of ${KNOWLEDGE_SLICE_FILE} — last 30 lines>
@@ -716,7 +716,7 @@ Used by dev agents and orchestrator in Phase 3.3.
 |---|---|---|
 | `DONE:` | Agent -> Orchestrator | Story completed, requesting next |
 | `BLOCKED:` | Agent -> Orchestrator | Cannot proceed, needs help |
-| `DEVIATION:` | Agent -> Orchestrator | Auto-added code outside story scope (see [sprint-contracts.md](/_shared/sprint-contracts.md)) |
+| `DEVIATION:` | Agent -> Orchestrator | Auto-added code outside story scope (see [sprint-contracts.md](/_shared/quality.md)) |
 | `ESCALATE:` | Agent -> Orchestrator | Needs decision on architectural/scope change |
 | `UNBLOCK:` | Orchestrator -> Agent | Dependency resolved, new story available |
 | `ASSIST:` | Orchestrator -> Agent | Help with current issue |
@@ -727,7 +727,7 @@ Used by dev agents and orchestrator in Phase 3.3.
 
 ## Worktree + Branch Cleanup (Phase 4.4)
 
-Run this AFTER Phase 4.1 merge succeeds. Removes worktree directories AND deletes the underlying agent branches — the platform leaves branches behind after `git worktree remove`. Uses `git branch -d` (refuses unmerged), so unmerged branches are preserved with a warning for manual reconciliation. Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md). Escape hatch: `BLITZ_SKIP_BRANCH_CLEANUP=1`.
+Run this AFTER Phase 4.1 merge succeeds. Removes worktree directories AND deletes the underlying agent branches — the platform leaves branches behind after `git worktree remove`. Uses `git branch -d` (refuses unmerged), so unmerged branches are preserved with a warning for manual reconciliation. Canonical contract: [/_shared/agents.md](/_shared/agents.md). Escape hatch: `BLITZ_SKIP_BRANCH_CLEANUP=1`.
 
 ```bash
 [ "${BLITZ_SKIP_BRANCH_CLEANUP:-0}" = "1" ] && echo "[sprint-dev] branch cleanup skipped" && exit 0
@@ -797,7 +797,7 @@ fi
 Each agent follows this loop for each assigned story:
 
 1. **Read story** — Parse frontmatter and body. Note `verify` and `done` fields if present.
-2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/sprint-contracts.md) for unexpected issues.
+2. **Implement** — Create/modify files as specified. Follow implementation notes and code snippets. Follow the [Deviation Handling Protocol](/_shared/quality.md) for unexpected issues.
 3. **Verify** — Run the story's `verify` commands if defined. If no `verify` field, fall back to type-check:
    ```bash
    # If story has verify commands, run each one:

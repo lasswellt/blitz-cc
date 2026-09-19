@@ -9,7 +9,7 @@ compatibility: ">=2.1.271"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -28,7 +28,7 @@ Runtime view of every Claude Code session working in this checkout. Three source
 | `claude agents --json --all` overlay (`blitz_agent_view`) | native agent view | read-time only; never persisted |
 | `.cc-sessions/activity-feed.jsonl`, `inbox.jsonl`, `**/*.lock` | hooks + skills | untrusted repo-local data |
 
-Contract: [session-lifecycle.md](/_shared/session-lifecycle.md) (record schema, stale rules, conflict matrix). Why this is not `/blitz:health`: health asserts the plugin's structure; `sessions` reports the runtime state of this checkout. `/blitz:health` §2.5 delegates here.
+Contract: [session-lifecycle.md](/_shared/sessions.md) (record schema, stale rules, conflict matrix). Why this is not `/blitz:health`: health asserts the plugin's structure; `sessions` reports the runtime state of this checkout. `/blitz:health` §2.5 delegates here.
 
 **Read-only** except `prune --apply` (deletes closed records older than 7 days; nothing else). Default mode: `list`.
 
@@ -36,7 +36,7 @@ Contract: [session-lifecycle.md](/_shared/session-lifecycle.md) (record schema, 
 
 ## Phase 0 — Claim the session record
 
-Per [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration: the hook already created `.cc-sessions/sessions/${CLAUDE_SESSION_ID}.json`. Never mint an id. PATCH the enrichment fields only:
+Per [session-lifecycle.md](/_shared/sessions.md) §Session Registration: the hook already created `.cc-sessions/sessions/${CLAUDE_SESSION_ID}.json`. Never mint an id. PATCH the enrichment fields only:
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/common.sh"
@@ -100,7 +100,7 @@ Empty queue → print exactly `HEARTBEAT_OK` (the `/blitz:next --loop` heartbeat
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/sessions-dashboard.sh" $( [ "$HTML" = 1 ] && echo --html )
 ```
 
-Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Locks, Inbox, Timeline = last 200 feed lines, Token estimate) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: [html-template-helper.md](/_shared/html-template-helper.md)). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4) — say so when quoting them.
+Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Locks, Inbox, Timeline = last 200 feed lines, Token estimate) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: [html-template-helper.md](/_shared/sessions.md)). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4) — say so when quoting them.
 
 ### 1.4 `prune` — closed records older than 7 days
 
@@ -127,6 +127,6 @@ Without `--apply`: list only, then print `Run with --apply to delete N record(s)
 One line per mode: `sessions <mode>: N records (A active, B closed), M overlay rows, Q attention item(s)`. Then `blitz_log_event sessions task_complete ...`.
 
 ## Additional Resources
-- Record schema, stale rules (`blitz_session_stale`), conflict matrix, mailbox: [session-lifecycle.md](/_shared/session-lifecycle.md)
+- Record schema, stale rules (`blitz_session_stale`), conflict matrix, mailbox: [session-lifecycle.md](/_shared/sessions.md)
 - Helpers used here (`blitz_agent_view`, `blitz_iso_epoch`, `blitz_session_update`): `hooks/scripts/_lib/common.sh`
-- HTML twin contract: [html-template-helper.md](/_shared/html-template-helper.md); structural plugin checks: `/blitz:health`
+- HTML twin contract: [html-template-helper.md](/_shared/sessions.md); structural plugin checks: `/blitz:health`

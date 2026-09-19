@@ -9,17 +9,17 @@ argument-hint: "[full|refresh|extend|status]"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For capability schema, document classification, and Phases 5-8 procedures, see [references/main.md](references/main.md)
-- For the carry-forward registry (written in Phase 1 from research doc scope: blocks; re-scanned in refresh mode), see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For pipeline artifact contracts (`docs/roadmap/`, `capability-index.json` consumed by sprint-plan), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For the carry-forward registry (written in Phase 1 from research doc scope: blocks; re-scanned in refresh mode), see [sprint-contracts.md](/_shared/quality.md)
+- For pipeline artifact contracts (`docs/roadmap/`, `capability-index.json` consumed by sprint-plan), see [/_shared/sessions.md](/_shared/sessions.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
-All generated epics and roadmap artifacts must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder descriptions.
+All generated epics and roadmap artifacts must satisfy the [Definition of Done](/_shared/quality.md). No placeholder descriptions.
 
 
 
@@ -36,7 +36,7 @@ Parse `$ARGUMENTS`; default to `full` if absent.
 | Argument | Mode | Phases run |
 |----------|------|------------|
 | `full` (default) | Full Generation | 0-8. Use when no roadmap exists. |
-| `refresh` | Refresh | 0-4, then Phases 5-8 for changed domains only. Phase 1 re-scans carry-forward registry — see Phase 1.1.6 and `skills/_shared/sprint-contracts.md`. |
+| `refresh` | Refresh | 0-4, then Phases 5-8 for changed domains only. Phase 1 re-scans carry-forward registry — see Phase 1.1.6 and `skills/_shared/quality.md`. |
 | `extend` | Extend | Phase 0; Phase 1 for new docs only (Phase 1.1.5 hard-fails on duplicate registry ids); Phase 4 for dependency re-resolution; Phases 5-8 for new domains only. |
 | `status` | Status | Phase 0 load only → print status report → STOP. No generation. |
 
@@ -45,7 +45,7 @@ Parse `$ARGUMENTS`; default to `full` if absent.
 ## Phase 0: CONTEXT — Load Project State
 
 ### 0.0 Register Session
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Locate Registry Files
 ```
@@ -91,7 +91,7 @@ Read every file found in Phase 0.2. For each document:
 
 ### 1.1.5 Parse `scope:` YAML Frontmatter (Carry-Forward Registry Ingestion)
 
-Before extracting capabilities, check the research doc for a **`scope:` YAML frontmatter block**. This is the structured-scope contract emitted by `skills/research` Phase 3.1.1. Each entry in the block becomes both a capability `scope_metric` (see `references/main.md`) **and** an append-only line in `.cc-sessions/carry-forward.jsonl`. See [sprint-contracts.md](/_shared/sprint-contracts.md) for the full registry protocol.
+Before extracting capabilities, check the research doc for a **`scope:` YAML frontmatter block**. This is the structured-scope contract emitted by `skills/research` Phase 3.1.1. Each entry in the block becomes both a capability `scope_metric` (see `references/main.md`) **and** an append-only line in `.cc-sessions/carry-forward.jsonl`. See [sprint-contracts.md](/_shared/quality.md) for the full registry protocol.
 
 **Parse step (all modes):**
 
@@ -215,7 +215,7 @@ gaps:
 Status meanings: `not_started` = no related code; `partial` = infrastructure exists, feature incomplete; `implemented` = exists but may not match spec; `complete` = matches all acceptance criteria.
 
 ### 2.3 Gap Analysis
-Write `docs/roadmap/gap-analysis.md` (terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md)):
+Write `docs/roadmap/gap-analysis.md` (terse-technical per [/_shared/output.md](/_shared/output.md)):
 - Greenfield capabilities (no codebase support)
 - Partial capabilities (extend/refactor needed)
 - Already implemented (verify/skip)
@@ -322,7 +322,7 @@ These phases are loaded on demand from `references/main.md` to keep this skill f
 
 **Phase 6**: Generate cross-cutting specs (auth system, error handling strategy, testing strategy, CI/CD pipeline, monitoring).
 
-**Phase 7**: Spawn agents per phase to convert specs into epics with stories, acceptance criteria, and effort estimates. **Phase 7 also backfills `parent.capability` and `parent.epic` on every carry-forward registry entry created in Phase 1.1.5.** For each registry entry, look up the capability whose `registry_entry_id` matches, then find the epic that contains that capability, and append a `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/sprint-contracts.md) §registry, so a thin line patches only the named fields and preserves `status`/`scope`/`coverage`):
+**Phase 7**: Spawn agents per phase to convert specs into epics with stories, acceptance criteria, and effort estimates. **Phase 7 also backfills `parent.capability` and `parent.epic` on every carry-forward registry entry created in Phase 1.1.5.** For each registry entry, look up the capability whose `registry_entry_id` matches, then find the epic that contains that capability, and append a `correction` delta line (the reader field-merges by `id` in `ts` order per [sprint-contracts.md](/_shared/quality.md) §registry, so a thin line patches only the named fields and preserves `status`/`scope`/`coverage`):
 ```jsonl
 {"id":"<registry-id>","ts":"<ISO-8601>","event":"correction","parent":{"capability":"CAP-NNN","epic":"E<NNN>"},"notes":"Parent backfilled by roadmap Phase 7 after epic generation"}
 ```

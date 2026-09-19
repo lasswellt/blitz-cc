@@ -17,11 +17,11 @@ Enforced by `hooks/scripts/skill-frontmatter-validate.sh` and `hooks/scripts/age
 - Skills that need stack detection include the one-line injection `!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`` under a `## Project Context` heading.
 - `allowed-tools` never lists `TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet`, or `TodoWrite`: those tools are off on current models. Work is tracked in `docs/plans/<slug>/tasks.json`.
 - Optional fields the validator shape-checks: `context: fork` (+ `agent`, `background`), `when_to_use`, `arguments`, `user-invocable`, `paths`, `argument-hint`, `disallowed-tools`.
-- Every skill claims the hook-created session record (`skills/_shared/session-lifecycle.md` §Session Registration); it never mints its own session id.
+- Every skill claims the hook-created session record (`skills/_shared/sessions.md` §Session Registration); it never mints its own session id.
 
 ## agents/*.md
 
-- Required: `name`, `description` with `<example>` blocks, `tools`, `maxTurns`, explicit `model` (`inherit` is not allowed for plugin agents; the routing matrix in `agent-orchestration.md` §1 decides).
+- Required: `name`, `description` with `<example>` blocks, `tools`, `maxTurns`, explicit `model` (`inherit` is not allowed for plugin agents; the routing matrix in `agents.md` §1 decides).
 - `memory` ∈ `user|project|local|none`; `isolation: worktree` only; `omitClaudeMd: true` on adversarial reviewers; `experimental.cacheTtl: 1h` on agents spawned more than once per sprint.
 - Forbidden (silently stripped for plugin agents): `hooks`, `mcpServers`, `permissionMode`. Never list tools the platform removes from subagents: `ScheduleWakeup`, `Workflow`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`, `TaskOutput`.
 - Read-only roles (architect, critic, design-critic, research-critic, reviewer) keep Bash to a read subset and never gain network egress beyond what `security.md` §5 grants.

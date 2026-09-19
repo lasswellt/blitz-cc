@@ -7,14 +7,14 @@ This repo is the **blitz** Claude Code plugin: 38 development skills in `skills/
 The `SessionStart` hook prints recent activity from other sessions and the hooks record session start/end, idle, notifications, and file edits in `.cc-sessions/activity-feed.jsonl`. You still append the events only you can know, one JSONL line each, `session` = your native session id (`${CLAUDE_SESSION_ID}`):
 
 - `task_start` when you begin a task, `decision` for a non-trivial choice, `verification` with `detail: {"command", "result": "pass|fail"}` after a build/test/lint, `task_complete` with `detail: {"summary"}`.
-- Format: `{"ts":"<ISO-8601>","session":"<id>","skill":"freeform|<skill>","event":"<type>","message":"<≤200 chars>","detail":{}}`. Full spec: `skills/_shared/terse-output.md` §Activity Feed.
+- Format: `{"ts":"<ISO-8601>","session":"<id>","skill":"freeform|<skill>","event":"<type>","message":"<≤200 chars>","detail":{}}`. Full spec: `skills/_shared/output.md` §Activity Feed.
 - If the feed shows another session on overlapping files, say so before editing.
 
 ## Where the rules live
 
 - Skill and agent authoring contract (frontmatter, OUTPUT STYLE snippet, model inheritance): `.claude/rules/skills.md` (loads when you touch `skills/**` or `agents/**`).
 - Hook authoring contract (stdin fields, exit codes, helpers, bats): `.claude/rules/hooks.md` (loads when you touch `hooks/**`).
-- Shared protocols: `skills/_shared/` — one file per concern; `session-lifecycle.md` (sessions, locks, context), `sprint-contracts.md` (registry, DoD), `agent-orchestration.md` (spawning, routing, Workflow), `quality-engine.md` (checks, ratchet, verification stack), `security.md` (TB-1…TB-5), `terse-output.md` (output style, feed).
+- Shared protocols: `skills/_shared/` — one file per concern; `loop.md` (tasks.json, gate, next rows, scheduling), `sessions.md` (session records, inbox, mailbox, handoff), `agents.md` (spawning, reply contract, parallelism, Workflow), `quality.md` (check registry, ratchet, structural done, DoD), `security.md` (TB-1…TB-5, kill switch), `output.md` (terse output, progress lines).
 - Hook index: `hooks/scripts/README.md`. Validators: `scripts/validate-plugin-structure.sh`, `scripts/check-version-sync.sh`, `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `bats hooks/tests/`.
 
 ## Working here
@@ -31,7 +31,7 @@ Before any non-trivial freeform task, state assumptions and surface tradeoffs: l
 
 ## Quality Gates
 
-`sprint-review` Phase 3.6 enforces 8 invariants (registry consistency, epic completion, OUTPUT STYLE presence, the 8-metric ratchet, critic LGTM, branch hygiene); the verification stack (Stop gate, `/goal`, critic, `/verify`) is defined in `skills/_shared/quality-engine.md`. The 20-detector anti-shortcut taxonomy (13 reject / 7 advisory) lives there too.
+`sprint-review` Phase 3.6 enforces 8 invariants (registry consistency, epic completion, OUTPUT STYLE presence, the 8-metric ratchet, critic LGTM, branch hygiene); the verification stack (Stop gate, `/goal`, critic, `/verify`) is defined in `skills/_shared/quality.md`. The 20-detector anti-shortcut taxonomy (13 reject / 7 advisory) lives there too.
 
 ## Compaction
 

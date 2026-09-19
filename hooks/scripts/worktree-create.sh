@@ -32,7 +32,7 @@ BRANCH=$(blitz_extract branch)
 # `worktree-agent-<8hex>` branch name only, so it does NOT fire for native
 # background-session worktrees (`claude --bg` / `claude agents`), which the
 # platform isolates under .claude/worktrees/ with different branch naming.
-# No false-abort on background dispatch. See worktree-lifecycle.md §Interop.
+# No false-abort on background dispatch. See agents.md §6.
 if [[ "$BRANCH" =~ ^worktree-agent-[0-9a-f]{8}$ ]] \
    && [ "${BLITZ_ALLOW_WORKTREE_COLLISION:-0}" != "1" ]; then
   if git -C "$ROOT" rev-parse --verify "$BRANCH" >/dev/null 2>&1; then

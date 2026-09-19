@@ -8,20 +8,20 @@ compatibility: ">=2.1.71"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
-- For context window hygiene, see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For quantified scope → registry ingestion, see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agent-orchestration.md](/_shared/agent-orchestration.md)
-<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For context window hygiene, see [session-lifecycle.md](/_shared/sessions.md)
+- For quantified scope → registry ingestion, see [sprint-contracts.md](/_shared/quality.md)
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agent-orchestration.md](/_shared/agents.md)
+<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
-All research output must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder sections.
+All research output must satisfy the [Definition of Done](/_shared/quality.md). No placeholder sections.
 
 
 ---
@@ -36,7 +36,7 @@ Investigate a topic by spawning parallel research agents, collecting findings, a
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Extract Research Topic
 
@@ -82,7 +82,7 @@ Spawn 2-4 agents depending on research type:
 | `codebase-analyst` | Codebase Analysis | Yes | sonnet | Existing patterns, integration points, migration impact, affected files, dependency graph |
 | `infra-analyst` | Infrastructure Analysis | Conditional (§1.2.5) | haiku | Cloud service docs, pricing, quotas, deployment implications, environment config |
 
-Model routing follows [agent-orchestration.md](../_shared/agent-orchestration.md): retrieval-class workloads (library-docs, web-researcher, infra-analyst) → Haiku 4.5 (12× cheaper than Sonnet, comparable hallucination rate per arxiv 2604.03173). Semantic codebase reasoning (codebase-analyst) → Sonnet 4.6.
+Model routing follows [agent-orchestration.md](../_shared/agents.md): retrieval-class workloads (library-docs, web-researcher, infra-analyst) → Haiku 4.5 (12× cheaper than Sonnet, comparable hallucination rate per arxiv 2604.03173). Semantic codebase reasoning (codebase-analyst) → Sonnet 4.6.
 
 ### 1.2.5 Spawn-N Gate (skip unneeded agents)
 
@@ -106,7 +106,7 @@ Saves ~$0.10/run on ~40% of runs (token-economics §9 Gap 6).
 
 ### 1.2.6 Select Dispatch Mode (capability gate)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/research/`; only the orchestration mechanism differs.
+Per [agent-orchestration.md](/_shared/agents.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/research/`; only the orchestration mechanism differs.
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -129,7 +129,7 @@ Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a condit
 ```js
 export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
 // args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
-const OS = 'OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
+const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
     model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
@@ -159,7 +159,7 @@ Spawn each agent in **a single assistant message** (so they run concurrently) us
 
 Each agent prompt MUST include: research topic + questions; detected stack profile; output file path (`${SESSION_TMP_DIR}/research/<agent-name>.md`); research limits (§1.5); write-as-you-go rule ("Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory.").
 
-Cross-cutting findings synthesized by orchestrator in Phase 2 (not peer-to-peer; per [agent-orchestration.md](/_shared/agent-orchestration.md)).
+Cross-cutting findings synthesized by orchestrator in Phase 2 (not peer-to-peer; per [agent-orchestration.md](/_shared/agents.md)).
 
 ### 1.5 Research Limits Per Agent
 
@@ -206,7 +206,7 @@ EXPECTED_OUTPUTS=(
 )
 [ "$SPAWN_INFRA" = true ] && EXPECTED_OUTPUTS+=("${SESSION_TMP_DIR}/research/infra-analyst.md")
 
-# classify_output() and gate logic from /_shared/agent-orchestration.md §8
+# classify_output() and gate logic from /_shared/agents.md §8
 classify_output() {
   local f="$1"
   if [ ! -f "$f" ]; then echo MISSING; return; fi
@@ -318,7 +318,7 @@ docs/_research/YYYY-MM-DD_<topic-slug>.md
 mkdir -p docs/_research
 ```
 
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter (especially `scope:`), tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections — write full prose.
+**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter (especially `scope:`), tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections — write full prose.
 
 **Terse exemptions (LITE intensity):** §7 Risks + Open Questions (full sentences + reasoning chain required). Resume terse on next section.
 
@@ -337,7 +337,7 @@ Use the template from `references/main.md`. Required sections:
 
 If any finding or recommendation contains a **quantified scope claim** — regex match: `\d+\s+(files|components|modals|routes|tests|endpoints|pages|views|tables|endpoints|migrations|fields|records)` in the Summary, Findings, or Recommendation sections — the research doc MUST include a `scope:` YAML frontmatter block at the top of the file, above the `# <title>` heading.
 
-Machine-readable contract parsed by `roadmap extend`; without it quantified claims silently drop between sprints. Full `scope:` format, 5 emission rules, pre-write cross-check: [references/main.md](references/main.md#structured-scope-emission). Registry protocol: [sprint-contracts.md](/_shared/sprint-contracts.md).
+Machine-readable contract parsed by `roadmap extend`; without it quantified claims silently drop between sprints. Full `scope:` format, 5 emission rules, pre-write cross-check: [references/main.md](references/main.md#structured-scope-emission). Registry protocol: [sprint-contracts.md](/_shared/quality.md).
 
 ### 3.2 Quality Gates
 
@@ -359,7 +359,7 @@ Agent({
   prompt: "Probe all citations in docs/_research/${TIMESTAMP}_${TOPIC_SLUG}.md.
            Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
            per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
-           Output style: terse-technical per /_shared/terse-output.md. Return ONLY the canonical JSON — no prose, no preamble."
+           Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })
 ```
 
@@ -373,7 +373,7 @@ Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on for docs des
 
 ### 3.2.6 Opt-in HTML Twin (additive — `.md` stays canonical)
 
-After the `scope:`-bearing `docs/_research/...md` is finalized (§3.1) AND the §3.2 quality + §3.2.5 citation gates pass, before §3.3 cleanup: emit an HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Research docs may quote fetched/untrusted content → pass the `untrusted` trust arg so the body is HTML-escaped into `<pre>` (TB-4, the only complete close — converters + regex scrubbers leak across encodings). The canonical `.md` (with its `scope:` YAML) is never altered or replaced; `roadmap extend` keeps globbing the `.md`. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+After the `scope:`-bearing `docs/_research/...md` is finalized (§3.1) AND the §3.2 quality + §3.2.5 citation gates pass, before §3.3 cleanup: emit an HTML twin via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Research docs may quote fetched/untrusted content → pass the `untrusted` trust arg so the body is HTML-escaped into `<pre>` (TB-4, the only complete close — converters + regex scrubbers leak across encodings). The canonical `.md` (with its `scope:` YAML) is never altered or replaced; `roadmap extend` keeps globbing the `.md`. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 DOC_PATH="docs/_research/${TIMESTAMP}_${TOPIC_SLUG}.md"

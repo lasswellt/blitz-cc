@@ -22,7 +22,7 @@
 #
 # Never wire a prompt-type Stop hook alongside this one: a user `/goal` is
 # itself a prompt-based Stop hook and the two would fight. Owner of the
-# verification-stack contract: /_shared/quality-engine.md §Verification stack.
+# verification-stack contract: /_shared/quality.md §Verification stack.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 

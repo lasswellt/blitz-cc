@@ -8,13 +8,13 @@ argument-hint: "(no arguments — runs analysis automatically)"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For pattern taxonomy, proposal templates, and safety classification rules, see [references/main.md](references/main.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -37,7 +37,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 5. **NEVER auto-apply a proposal that authors or edits a SKILL.md (skill-authoring).** Such proposals are propose-only / human-curated regardless of apparent safety class. Rationale: SkillsBench (arXiv:2602.12670) measured Claude-self-generated skills at zero average benefit — the +16.2pp accuracy gain comes only from human-curated skills, so the model cannot reliably author the procedural knowledge it benefits from consuming. Surface skill-authoring proposals to the user; do not self-apply.
 6. **Minimum 3 completed sessions required before running retrospective.** Insufficient data leads to bad conclusions.
 7. **NEVER modify session data.** Session files are read-only input. Never edit, delete, or rewrite session JSONs or operation logs.
-8. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
+8. **NEVER leave placeholder code behind.** Any applied changes must be complete and functional. See [Definition of Done](/_shared/quality.md).
 
 ---
 
@@ -45,7 +45,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Check Minimum Sessions
 
@@ -191,7 +191,7 @@ Every proposal MUST be classified into exactly one category (rules from `referen
 mkdir -p docs/retrospective
 ```
 
-Output style: terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Field values use fragments; field **labels** preserved verbatim (downstream parsers grep them). **LITE intensity** required for Classification rationale on "Never Auto-Apply" proposals.
+Output style: terse-technical per [/_shared/output.md](/_shared/output.md). Field values use fragments; field **labels** preserved verbatim (downstream parsers grep them). **LITE intensity** required for Classification rationale on "Never Auto-Apply" proposals.
 
 Write to `docs/retrospective/YYYY-MM-DD-proposals.md`:
 

@@ -8,16 +8,16 @@ argument-hint: "<collect|dashboard|trend|compare <date1> <date2>>"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For metric snapshot schema, dashboard templates, trend thresholds, and score calculation details, see:
 !cat skills/quality-metrics/references/main.md
-<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -33,7 +33,7 @@ Collect code quality signals, store snapshots over time, and produce dashboards 
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -74,7 +74,7 @@ For each collector, call the `Agent` tool with:
 - `prompt`: the collector prompt template from `references/main.md`
 - `run_in_background: false`
 
-**Weight class**: Light (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Each collector prompt declares: max 1 bash command, max 5 file reads (for parsing output), max 8 tool calls, 3-min wall-clock (typescript/tests/build may be slow on large projects — bump to 5 min for those specifically), output-file existence check.
+**Weight class**: Light (per [agent-orchestration.md](/_shared/agents.md)). Each collector prompt declares: max 1 bash command, max 5 file reads (for parsing output), max 8 tool calls, 3-min wall-clock (typescript/tests/build may be slow on large projects — bump to 5 min for those specifically), output-file existence check.
 
 ### 1.3 Inputs Each Collector Receives
 
@@ -125,7 +125,7 @@ Read `package.json` and count keys in `dependencies` (production) and `devDepend
 
 ### 1.6 Advisory TIA Metrics (test-impact journal)
 
-Read-only over `.cc-sessions/test-journal.jsonl` + `test-journal.meta.json` (written by `scripts/test-listener.sh`; see [quality-engine.md](/_shared/quality-engine.md) §Advisory metrics and `docs/guides/tia.md`). Not ratcheted — reported next to the 8 ratchet metrics.
+Read-only over `.cc-sessions/test-journal.jsonl` + `test-journal.meta.json` (written by `scripts/test-listener.sh`; see [quality-engine.md](/_shared/quality.md) §Advisory metrics and `docs/guides/tia.md`). Not ratcheted — reported next to the 8 ratchet metrics.
 
 ```bash
 META=.cc-sessions/test-journal.meta.json; JOURNAL=.cc-sessions/test-journal.jsonl
@@ -277,7 +277,7 @@ Write `docs/metrics/dashboard.md` with the following structure:
 - If previous snapshot exists, show the numeric difference (e.g., +5, -3, =)
 - If no previous snapshot, show "—"
 
-**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `docs/metrics/dashboard.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). The `.json` snapshot path is untouched.
+**Opt-in HTML twin (additive — `.md` stays canonical):** after the canonical `docs/metrics/dashboard.md` Write completes, emit a styled HTML twin via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). The `.json` snapshot path is untouched.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)

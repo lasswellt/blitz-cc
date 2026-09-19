@@ -145,6 +145,7 @@ validate_one() {
       fail "$rel" "allowed-tools lists '${gated_tool}' — Task/Todo tools are off on current models; track work in docs/plans/<slug>/tasks.json"
     fi
   done
+  return 0
 }
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done

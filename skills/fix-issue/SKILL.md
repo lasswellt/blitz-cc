@@ -8,14 +8,14 @@ argument-hint: "<issue-number>"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -27,7 +27,7 @@ Resolve a GitHub issue end-to-end: fetch context, identify root cause, implement
 
 ---
 
-All code produced must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder implementations.
+All code produced must satisfy the [Definition of Done](/_shared/quality.md). No placeholder implementations.
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
@@ -43,7 +43,7 @@ All code produced must satisfy the [Definition of Done](/_shared/sprint-contract
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Arguments
 
@@ -314,7 +314,7 @@ EOF
 
 ### 4.2 Update GitHub Issue
 
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Field **labels** preserved verbatim (downstream parsers grep them). Field **values** compress to fragments. Preserve verbatim: file paths, branch names, verification-check pass/fail tokens. **LITE intensity** required for **Root Cause** — the reasoning chain must survive ("undefined because foo unset on cold start, caused by bar in baz.ts"). Drop the trailing "Ready for review and merge." line — filler.
+**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Field **labels** preserved verbatim (downstream parsers grep them). Field **values** compress to fragments. Preserve verbatim: file paths, branch names, verification-check pass/fail tokens. **LITE intensity** required for **Root Cause** — the reasoning chain must survive ("undefined because foo unset on cold start, caused by bar in baz.ts"). Drop the trailing "Ready for review and merge." line — filler.
 
 Post a comment on the issue with the fix details:
 ```bash

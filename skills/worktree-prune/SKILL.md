@@ -14,7 +14,7 @@ compatibility: ">=2.1.71"
 
 # Worktree + Branch Prune
 
-Inventory and safely delete stale git worktrees + agent-spawned branches that accumulate from blitz's `Agent({isolation: "worktree"})` usage and Claude Code harness auto-naming. Canonical contract: [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md).
+Inventory and safely delete stale git worktrees + agent-spawned branches that accumulate from blitz's `Agent({isolation: "worktree"})` usage and Claude Code harness auto-naming. Canonical contract: [/_shared/agents.md](/_shared/agents.md).
 
 **Default mode is `--dry-run`** — no mutation unless `--apply` is explicit.
 
@@ -33,7 +33,7 @@ Duration parses as `30d`, `7d`, `12h`. Default threshold: `7d`.
 
 ## Phase 0 — Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration. Log start:
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration. Log start:
 ```
 {"ts":"<ISO>","session":"<id>","skill":"worktree-prune","event":"session_start","message":"mode=<dry-run|apply>"}
 ```
@@ -177,4 +177,4 @@ Exit codes:
 - **Reduces churn:** sprint-dev Phase 4.4 deletes `sprint-${N}/${role}` branches post-merge — this skill catches everything Phase 4.4 missed (mid-sprint aborts, harness branches outside blitz control).
 - **Surfaces divergence:** `stale-divergent` rows are exactly the pattern that caused sprint-289/CAP-148 — review before deleting.
 
-See [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md) for the full contract.
+See [/_shared/agents.md](/_shared/agents.md) for the full contract.

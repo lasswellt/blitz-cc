@@ -9,14 +9,14 @@ argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
 disable-model-invocation: true
 ---
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For codemod registry, risk assessment matrix, and rollback procedures, see [references/main.md](references/main.md)
 - For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -48,13 +48,13 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **NEVER combine multiple breaking changes into one step.** Each breaking change gets its own atomic step with its own verification.
 
-8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [Definition of Done](/_shared/sprint-contracts.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [Definition of Done](/_shared/quality.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
 ## Phase 0: PARSE — Understand Migration Target
 
-1. Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
+1. Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
 2. Extract migration target from `$ARGUMENTS`. Ambiguous target → ask for clarification. Full examples: [references/main.md](references/main.md#target-interpretation-examples).
 3. Read `package.json` (all workspace files) for current target version, related peer packages, and lock file format:
    ```bash
@@ -203,7 +203,7 @@ Migration Progress: <current> → <target>
   [ ] Step 6: Clean up deprecations — PENDING
 ```
 
-### 4.2 Output Artifacts (canonical, per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §migrate)
+### 4.2 Output Artifacts (canonical, per [/_shared/sessions.md](/_shared/sessions.md) §migrate)
 
 Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
 - `plan.md` — incremental step plan + per-step verification commands.

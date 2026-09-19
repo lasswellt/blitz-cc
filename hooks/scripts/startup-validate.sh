@@ -5,7 +5,7 @@
 #   /_shared/security.md §3 TB-2 (persistent .cc-sessions/ state is untrusted across sessions).
 # Registry: check-registry.json sec-startup-schema + sec-startup-injection.
 #
-# WHY: session-lifecycle.md startup reads ALL .cc-sessions/*.json + activity-feed
+# WHY: sessions.md startup reads ALL .cc-sessions/*.json + activity-feed
 # + carry-forward.jsonl into context. An injection landing there is reloaded each
 # session and (for carry-forward) auto-injected into the next sprint. This is the
 # article's persistent-state poisoning (AP-4) and the memory-poisoning literature's

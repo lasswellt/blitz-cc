@@ -9,23 +9,23 @@ compatibility: ">=2.1.71"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For story YAML schema (canonical, producer/consumer matrix), see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For story YAML schema (canonical, producer/consumer matrix), see [sprint-contracts.md](/_shared/quality.md)
+- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/sessions.md)
 - For review report template, reviewer checklists, and auto-fix strategies, see [references/main.md](references/main.md)
-- For context window hygiene (reviewer agents), see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For checkpoint awareness, see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For handling reviewer agent escalations, see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For the carry-forward registry (canonical Reader Algorithm enforced by Phase 3.6), see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For context window hygiene (reviewer agents), see [session-lifecycle.md](/_shared/sessions.md)
+- For checkpoint awareness, see [session-lifecycle.md](/_shared/sessions.md)
+- For handling reviewer agent escalations, see [sprint-contracts.md](/_shared/quality.md)
+- For the carry-forward registry (canonical Reader Algorithm enforced by Phase 3.6), see [sprint-contracts.md](/_shared/quality.md)
+- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, canonical exemptions), see [/_shared/output.md](/_shared/output.md)
 
 
-All auto-fix code must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder implementations.
+All auto-fix code must satisfy the [Definition of Done](/_shared/quality.md). No placeholder implementations.
 
 ---
 
@@ -37,11 +37,11 @@ Review sprint quality through automated checks and parallel reviewer agents. Run
 
 ## Phase 0.0: INPUT GATE — Validate Pipeline Inputs
 
-Hard-fail if required upstream artifacts missing per [session-lifecycle.md](/_shared/session-lifecycle.md): `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, `${SPRINT_DIR}/stories/S*.md`. Override (not recommended): `BLITZ_REVIEW_NO_MANIFEST=1`. Bash block in `references/main.md` §**Phase 0.0 Input Gate**.
+Hard-fail if required upstream artifacts missing per [session-lifecycle.md](/_shared/sessions.md): `sprint-registry.json`, `${SPRINT_DIR}/manifest.json`, `${SPRINT_DIR}/stories/S*.md`. Override (not recommended): `BLITZ_REVIEW_NO_MANIFEST=1`. Bash block in `references/main.md` §**Phase 0.0 Input Gate**.
 
 ## Phase 0: CONTEXT — Load Sprint State
 
-1. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch per terse-output.md.
+1. **Register session.** Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch per terse-output.md.
 2. **Find the sprint to review.** Read `sprint-registry.json`; find sprint with `status: review` or `status: in-progress`. Use user-specified number if given. If none ready, inform and STOP.
 3. **Check for STATE.md.** If present, read for blocked-story context. Include in review report.
 4. **Load stories.** Read all `${SPRINT_DIR}/stories/` files. Categorize: `done` (ready for review), `incomplete` (flag), `blocked` (note in report).
@@ -160,7 +160,7 @@ Default: parallel. Switch to sequential when `BLITZ_REVIEW_SEQUENTIAL=1` or `git
 
 #### 2.2.0-W Dispatch via Workflow (opt-in path)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md) capability gate (`BLITZ_DISPATCH`: `auto`/`workflow`/`agent`). When `USE_WORKFLOW` truthy AND `Workflow` tool available, dispatch reviewers + critic via native primitives; on ANY failure fall back to §2.2.1 (`Agent()`). Never hard-fail. Findings files + report synthesis stay in main-thread Bash (hybrid wrapper boundary); the script touches no filesystem.
+Per [agent-orchestration.md](/_shared/agents.md) capability gate (`BLITZ_DISPATCH`: `auto`/`workflow`/`agent`). When `USE_WORKFLOW` truthy AND `Workflow` tool available, dispatch reviewers + critic via native primitives; on ANY failure fall back to §2.2.1 (`Agent()`). Never hard-fail. Findings files + report synthesis stay in main-thread Bash (hybrid wrapper boundary); the script touches no filesystem.
 
 **Dispatch:** invoke the plugin workflow `/blitz:review-fanout` (`workflows/review-fanout.js`) with
 `args: { roster: [{ name, prompt }, …], sequential: <bool from §2.2.0>, criticPrompt, reviewerSchema, criticSchema }`.
@@ -168,7 +168,7 @@ It runs the reviewers (parallel by default; a sequential accumulator that thread
 `sequential: true`) and then the `blitz:critic` agent, and returns `{ reviews: [{ name, ok, result }], critic }`.
 **On any failure** (tool absent, no `Workflow(<name>)` allow rule in a `-p` run, script error, abort)
 **fall back to §2.2.1 (`Agent()`)** — never hard-fail. Resume semantics + concurrency cap:
-[agent-orchestration.md](/_shared/agent-orchestration.md) §Workflow Dispatch Contract.
+[agent-orchestration.md](/_shared/agents.md) §Workflow Dispatch Contract.
 
 - `model: 'sonnet'` per token-budget (explicit — prevents `[1m]` inheritance). Critic uses `agentType: 'blitz:critic'` so its system prompt loads; `schema` forces canonical `{verdict: LGTM|REJECT, ...}` and removes inline jq parsing.
 - Each `a.prompt`/`criticPrompt` MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule.
@@ -192,7 +192,7 @@ Orchestrator synthesizes during Phase 3: security `unvalidated input` → Backen
 
 ### 2.6 Collect Review Findings
 
-Wait for all reviewers. **Run canonical Agent Output Contract validator** from [agent-orchestration.md](/_shared/agent-orchestration.md) §8 — classifies SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT, applies N=4 gate (ABORT at MISSING_COUNT ≥ 2). Do NOT redefine thresholds inline.
+Wait for all reviewers. **Run canonical Agent Output Contract validator** from [agent-orchestration.md](/_shared/agents.md) §8 — classifies SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT, applies N=4 gate (ABORT at MISSING_COUNT ≥ 2). Do NOT redefine thresholds inline.
 
 ```bash
 EXPECTED_OUTPUTS=(
@@ -201,7 +201,7 @@ EXPECTED_OUTPUTS=(
   "${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-review-frontend.md"
   "${SESSION_TMP_DIR}/sprint-${SPRINT_NUMBER}-review-patterns.md"
 )
-# Run validator from /_shared/agent-orchestration.md §8.
+# Run validator from /_shared/agents.md §8.
 # A security-domain MISSING is particularly dangerous — if classify_output → MISSING for the
 # security reviewer specifically, escalate the abort message: "SECURITY DOMAIN UNREVIEWED — sprint cannot close."
 ```
@@ -273,15 +273,15 @@ Re-run full quality gate suite (type-check + lint + test + build). Record `type-
 
 **Hard gate**: failing any invariant fails the sprint close. Prevents silent scope drops by auditing the carry-forward registry against current sprint state.
 
-Full invariant procedures (Invariants 1-4, hard-gate decision, report schema, escalation rules) in `references/main.md` §"Registry Invariants — Phase 3.6 Detailed Procedures". See also [sprint-contracts.md](/_shared/sprint-contracts.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
+Full invariant procedures (Invariants 1-4, hard-gate decision, report schema, escalation rules) in `references/main.md` §"Registry Invariants — Phase 3.6 Detailed Procedures". See also [sprint-contracts.md](/_shared/quality.md) and `docs/_research/2026-04-08_sprint-carryforward-registry.md`.
 
-1. Run canonical Reader Algorithm from [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Reader Algorithm with `MODE=review`. Consolidates Invariants 1, 2, 4 + rollover-ceiling escalation — exit 2 = INVARIANT FAILURE; exit 3 = ESCALATION; both block sprint close.
+1. Run canonical Reader Algorithm from [/_shared/quality.md](/_shared/quality.md) §Reader Algorithm with `MODE=review`. Consolidates Invariants 1, 2, 4 + rollover-ceiling escalation — exit 2 = INVARIANT FAILURE; exit 3 = ESCALATION; both block sprint close.
 2. Run skill-local Invariants 3 and 5:
    - **Invariant 3**: every epic with `status: done|complete` has all registry entries at `status: complete`.
-   - **Invariant 5**: every `skills/*/SKILL.md` AND every `skills/*/references/main.md` containing an Agent-prompt template contains the canonical `OUTPUT STYLE: … per /_shared/terse-output.md` snippet from `agent-orchestration.md` §7. Missing snippet → Critical finding → sprint FAILs (BLOCKER).
-3. **Invariant 6** (ratchet — see [/_shared/quality-engine.md](/_shared/quality-engine.md)): read `docs/sweeps/ratchet.json`. Recompute each metric; verify direction. Regression without covering carry-forward → sprint cannot reach PASS. On improvement, tighten thresholds and append history snapshot.
-4. **Invariant 7** (critic — see [/_shared/quality-engine.md](/_shared/quality-engine.md) and `agents/critic.md`): spawn `blitz:critic`. Returns `{verdict: "LGTM" | "REJECT", issues: [...]}`. REJECT blocks PASS.
-5. **Invariant 8** (worktree branch hygiene — see [/_shared/worktree-lifecycle.md](/_shared/worktree-lifecycle.md)): assert sprint-dev Phase 4.4 deleted every `sprint-${SPRINT_NUMBER}/{backend,frontend,tests,infra,integration}` branch. Any surviving match → FAIL. Resolution: `/blitz:worktree-prune --apply --merged-only`. Full procedure: `references/main.md` §Invariant 8 — Branch Hygiene.
+   - **Invariant 5**: every `skills/*/SKILL.md` AND every `skills/*/references/main.md` containing an Agent-prompt template contains the canonical `OUTPUT STYLE: … per /_shared/output.md` snippet from `agent-orchestration.md` §7. Missing snippet → Critical finding → sprint FAILs (BLOCKER).
+3. **Invariant 6** (ratchet — see [/_shared/quality.md](/_shared/quality.md)): read `docs/sweeps/ratchet.json`. Recompute each metric; verify direction. Regression without covering carry-forward → sprint cannot reach PASS. On improvement, tighten thresholds and append history snapshot.
+4. **Invariant 7** (critic — see [/_shared/quality.md](/_shared/quality.md) and `agents/critic.md`): spawn `blitz:critic`. Returns `{verdict: "LGTM" | "REJECT", issues: [...]}`. REJECT blocks PASS.
+5. **Invariant 8** (worktree branch hygiene — see [/_shared/agents.md](/_shared/agents.md)): assert sprint-dev Phase 4.4 deleted every `sprint-${SPRINT_NUMBER}/{backend,frontend,tests,infra,integration}` branch. Any surviving match → FAIL. Resolution: `/blitz:worktree-prune --apply --merged-only`. Full procedure: `references/main.md` §Invariant 8 — Branch Hygiene.
 5b. **Security-posture gate** (see [/_shared/security.md](/_shared/security.md)):
    ```bash
    bash hooks/scripts/check-registry-validate.sh          # security-pillar rows schema-valid
@@ -296,7 +296,7 @@ Full invariant procedures (Invariants 1-4, hard-gate decision, report schema, es
 
 ### Invariants 6 and 7 — Ratchet + Critic (BLOCKERs)
 
-- **Invariant 6 (ratchet)**: see [`/_shared/quality-engine.md`](/_shared/quality-engine.md). Compute 8 monotonic metrics, compare to `docs/sweeps/ratchet.json`, tighten on improvement, block PASS on regression without covering carry-forward. `type_errors > 0` is an absolute floor. The 8th metric `stale_worktree_branch_count` (added 2026-05-17 per [worktree-lifecycle.md](/_shared/worktree-lifecycle.md)) requires existing projects to run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt. Full procedure: `references/main.md` §Invariant 6 — Ratchet Procedures.
+- **Invariant 6 (ratchet)**: see [`/_shared/quality.md`](/_shared/quality.md). Compute 8 monotonic metrics, compare to `docs/sweeps/ratchet.json`, tighten on improvement, block PASS on regression without covering carry-forward. `type_errors > 0` is an absolute floor. The 8th metric `stale_worktree_branch_count` (added 2026-05-17 per [worktree-lifecycle.md](/_shared/agents.md)) requires existing projects to run `code-sweep --baseline stale_worktree_branch_count` once to grandfather pre-fix debt. Full procedure: `references/main.md` §Invariant 6 — Ratchet Procedures.
 - **Invariant 7 (critic)**: spawn `blitz:critic` (read-only adversarial — see `agents/critic.md`). Runs 20-detector shortcut scan + ratchet + hallucinated-symbol spot-check; returns canonical JSON `{verdict: LGTM | REJECT, ...}`. REJECT blocks PASS. Spawn template: `references/main.md` §Invariant 7 — Critic Spawn.
 
 ### Invariant 5 — Agent-Prompt Output Style Snippet (BLOCKER)
@@ -326,7 +326,7 @@ Per `docs/_research/2026-05-16_github-accessibility-agent-patterns.md` P8/F4, de
 
 ### 4.1 Write Review Report
 
-**Output style:** terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Tables preferred over prose. Executive Summary: 2-3 fragments. Recommendations: imperative bullets. Preserve verbatim: quality-gate table structure, severity prefixes, file paths, grep patterns, JSON invariant records. **LITE intensity** for: critical/major findings explanations, security/CVE details, root-cause sections, registry-invariant mismatch deltas. `full` intensity for info-level and cosmetic findings. Finding format: `L<line>: <severity-prefix> <problem>. <fix>.` with 🔴/🟡/🔵/❓ prefixes (see S3-003 review-format absorption). If no findings in a severity bucket, write `LGTM` and stop.
+**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Tables preferred over prose. Executive Summary: 2-3 fragments. Recommendations: imperative bullets. Preserve verbatim: quality-gate table structure, severity prefixes, file paths, grep patterns, JSON invariant records. **LITE intensity** for: critical/major findings explanations, security/CVE details, root-cause sections, registry-invariant mismatch deltas. `full` intensity for info-level and cosmetic findings. Finding format: `L<line>: <severity-prefix> <problem>. <fix>.` with 🔴/🟡/🔵/❓ prefixes (see S3-003 review-format absorption). If no findings in a severity bucket, write `LGTM` and stop.
 
 Write `${SPRINT_DIR}/review-report.md` using template from references/main.md. Include:
 
@@ -347,7 +347,7 @@ Write `${SPRINT_DIR}/review-report.md` using template from references/main.md. I
 
 ### 4.3 Update Sprint Registry
 
-**Registry Lock — `sprint-registry.json`**: Before writing, acquire file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
+**Registry Lock — `sprint-registry.json`**: Before writing, acquire file-based lock per [session-lifecycle.md](/_shared/sessions.md):
 1. CHECK `sprint-registry.json.lock` — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `sprint-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.
@@ -407,7 +407,7 @@ Next on PASS: `/blitz:ship` (or `/blitz:release` to cut a version).
 
 **Inline recovery rules**:
 - **Reviewer timeout/missing**: PARTIAL counts if ≥1 finding-file non-empty; escalate security-MISSING as blocker.
-- **Auto-fix loop fails 3×**: abort auto-fix, document issues, fallback to manual-fix note in report. Append carry-forward `active` entry per [sprint-contracts.md](/_shared/sprint-contracts.md) (prevents CAP-133-class silent drop).
+- **Auto-fix loop fails 3×**: abort auto-fix, document issues, fallback to manual-fix note in report. Append carry-forward `active` entry per [sprint-contracts.md](/_shared/quality.md) (prevents CAP-133-class silent drop).
 - **Lock conflict**: retry 3× with 20s backoff; abort with `BLOCK:` if unresolved.
 - **No test runner found**: fallback to "SKIPPED" gate marker (not "FAIL").
 - **Corrupt sprint artifacts**: recover with `/blitz:conform --fix`; retry review gate after.

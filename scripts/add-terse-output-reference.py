@@ -16,7 +16,7 @@ from __future__ import annotations
 import sys
 import pathlib
 
-LINE = "- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)"
+LINE = "- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)"
 ANCHOR = "## Additional Resources"
 
 def process(path: pathlib.Path, check: bool) -> str:

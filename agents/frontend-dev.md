@@ -12,7 +12,7 @@ description: |
 tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 50
-# Sonnet per /_shared/agent-orchestration.md — standard implementation work.
+# Sonnet per /_shared/agents.md — standard implementation work.
 model: sonnet
 memory: project
 # Spawned several times per sprint: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
@@ -34,7 +34,7 @@ Read the assigned story. In one paragraph, state:
 2. **Tradeoffs** — if >1 implementation path exists, name them and pick one with rationale.
 3. **Surgical scope** — list the files you expect to touch. Every file must trace to story acceptance_checks.
 
-Emit as the first lines of your output. If ambiguity blocks a design choice, emit ESCALATE per [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) Tier 3 BEFORE writing code.
+Emit as the first lines of your output. If ambiguity blocks a design choice, emit ESCALATE per [/_shared/quality.md](/_shared/quality.md) Tier 3 BEFORE writing code.
 
 ### Implementation rules (every story)
 
@@ -240,7 +240,7 @@ Before considering your work complete, verify:
 
 ## Anti-Mock Enforcement (NON-NEGOTIABLE)
 
-Every component and function you write must be fully implemented. See [Definition of Done](/_shared/sprint-contracts.md).
+Every component and function you write must be fully implemented. See [Definition of Done](/_shared/quality.md).
 
 **BANNED PATTERNS** — if any of these appear in your code, the work is not done:
 

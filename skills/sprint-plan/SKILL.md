@@ -1,6 +1,6 @@
 ---
 name: sprint-plan
-description: "Plans the next sprint from roadmap epics. Selects unblocked epics via dependency graph, spawns parallel research agents, generates story files with /_shared/sprint-contracts.md schema, creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', or 'sprint planning'. --gaps generates gap-closure stories from the prior review report."
+description: "Plans the next sprint from roadmap epics. Selects unblocked epics via dependency graph, spawns parallel research agents, generates story files with /_shared/quality.md schema, creates GitHub issues. Use when the user says 'plan sprint', 'generate stories', or 'sprint planning'. --gaps generates gap-closure stories from the prior review report."
 argument-hint: "[--sprint N] [--gaps]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
 disable-model-invocation: false
@@ -9,22 +9,22 @@ compatibility: ">=2.1.71"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For story YAML schema (canonical, producer/consumer matrix, validation algorithm), see [sprint-contracts.md](/_shared/quality.md)
+- For pipeline state contracts (which artifacts this skill produces and requires), see [session-lifecycle.md](/_shared/sessions.md)
 - For agent assignment rules and partition logic, see [references/main.md](references/main.md)
-- For context window hygiene (research agents), see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For checkpoint awareness, see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For the carry-forward registry (Reader Algorithm in Phase 0, writer contract in Phase 4.1), see [sprint-contracts.md](/_shared/sprint-contracts.md)
-- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, canonical exemptions), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For context window hygiene (research agents), see [session-lifecycle.md](/_shared/sessions.md)
+- For checkpoint awareness, see [session-lifecycle.md](/_shared/sessions.md)
+- For the carry-forward registry (Reader Algorithm in Phase 0, writer contract in Phase 4.1), see [sprint-contracts.md](/_shared/quality.md)
+- For subagent spawning, agent output contract (success/failure/partial thresholds), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, canonical exemptions), see [/_shared/output.md](/_shared/output.md)
 
 
-All generated stories must satisfy the [Definition of Done](/_shared/sprint-contracts.md). No placeholder acceptance criteria.
+All generated stories must satisfy the [Definition of Done](/_shared/quality.md). No placeholder acceptance criteria.
 
 ---
 
@@ -52,7 +52,7 @@ Execute all phases below in order.
 
 ## Phase 0.0: INPUT GATE — Validate Pipeline Inputs
 
-Hard-fail if required upstream artifacts are missing. Per [session-lifecycle.md](/_shared/session-lifecycle.md):
+Hard-fail if required upstream artifacts are missing. Per [session-lifecycle.md](/_shared/sessions.md):
 
 ```bash
 PIPELINE_MISSING=()
@@ -62,7 +62,7 @@ for input in \
   [ -s "$input" ] || PIPELINE_MISSING+=("$input")
 done
 if [ "${#PIPELINE_MISSING[@]}" -gt 0 ]; then
-  echo "BLOCK: missing pipeline inputs (see /_shared/session-lifecycle.md §sprint-plan):" >&2
+  echo "BLOCK: missing pipeline inputs (see /_shared/sessions.md §sprint-plan):" >&2
   printf '  - %s\n' "${PIPELINE_MISSING[@]}" >&2
   echo "Greenfield order: bootstrap → research → roadmap → sprint-plan." >&2
   exit 1
@@ -73,7 +73,7 @@ fi
 
 ## Phase 0: CONTEXT — Load Project State
 
-0. **Register session.** Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and agent spawn.
+0. **Register session.** Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and agent spawn.
 1. **Locate registry files.**
    ```
    Glob: **/sprint-registry.json, **/roadmap-registry.json, **/epic-registry.json, **/epics/**/*.md
@@ -87,7 +87,7 @@ fi
    Read root `package.json` (if exists) and any workspace config (`pnpm-workspace.yaml`, `nx.json`, `turbo.json`).
 5. **Load sprint history.** Read `sprint-registry.json` to determine last completed sprint number. If none, this is Sprint 1.
 6. **Check incomplete stories.** Search story files from previous sprints with `status: incomplete` or `status: in-progress`.
-7. **Check STATE.md.** If a previous sprint has `STATE.md`, read it for blocked stories. See [session-lifecycle.md](/_shared/session-lifecycle.md).
+7. **Check STATE.md.** If a previous sprint has `STATE.md`, read it for blocked stories. See [session-lifecycle.md](/_shared/sessions.md).
 8. **Read carry-forward registry** (`.cc-sessions/carry-forward.jsonl`). Reduce to latest-wins by `id`:
    ```bash
    jq -s 'group_by(.id) | map(sort_by(.ts) | reduce .[] as $x ({}; . * $x)) | map(select(.status == "active" or .status == "partial"))' \
@@ -97,7 +97,7 @@ fi
 
    Also read `sprints/sprint-${SPRINT_NUMBER}-planning-inputs.json` if it exists — previous sprint review may have auto-injected entries via Invariant 4. Every entry MUST be addressed in the story set.
 
-   Carry-forward state lives in the registry, not `epic-registry.json`'s `status` field — a parent epic can be `done` while child entries are still `active` or `partial`. See [sprint-contracts.md](/_shared/sprint-contracts.md).
+   Carry-forward state lives in the registry, not `epic-registry.json`'s `status` field — a parent epic can be `done` while child entries are still `active` or `partial`. See [sprint-contracts.md](/_shared/quality.md).
 
    **Rollover escalation:** `rollover_count >= 3` → MUST NOT auto-inject; escalate to human review (log blocker; autonomy=full: log and exit cleanly). See Error Recovery.
 
@@ -133,7 +133,7 @@ mkdir -p "${SPRINT_DIR}/research"
 
 ### 1.4 Write Sprint Manifest
 
-Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-lifecycle.md](/_shared/session-lifecycle.md) §File-Based Locking Protocol. Write `${SPRINT_DIR}/manifest.json`: `sprint`, `status: planning`, `created`, `epics[]`, `carry_forward[]`, `story_count`.
+Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-lifecycle.md](/_shared/sessions.md) §File-Based Locking Protocol. Write `${SPRINT_DIR}/manifest.json`: `sprint`, `status: planning`, `created`, `epics[]`, `carry_forward[]`, `story_count`.
 
 ### 1.5 Sync with GitHub Issues
 
@@ -145,7 +145,7 @@ Acquire `${SPRINT_DIR}/manifest.json.lock` per [session-lifecycle.md](/_shared/s
 
 ### 2.0 Select Dispatch Mode (capability gate)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 3-4 agent pool — no DAG, no worktree, no cross-session resume.
+Per [agent-orchestration.md](/_shared/agents.md). Both paths produce identical findings files under `${SESSION_TMP_DIR}/`; only the orchestration mechanism differs. Flat 3-4 agent pool — no DAG, no worktree, no cross-session resume.
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -191,9 +191,9 @@ Per-spawn parameters:
 - `prompt`: template from references/main.md "Agent Prompt Templates" filled with epic list, stack profile, and output path
 - `run_in_background: true`
 
-Orchestrator synthesizes cross-cutting findings in Phase 2.4 (not peer-to-peer, per [agent-orchestration.md](/_shared/agent-orchestration.md)).
+Orchestrator synthesizes cross-cutting findings in Phase 2.4 (not peer-to-peer, per [agent-orchestration.md](/_shared/agents.md)).
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). Each prompt MUST include: max 15 file reads, max 8 web searches (0 for codebase-analyst), max 250-line output, 5-minute wall-clock budget, write-as-you-go instruction.
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)). Each prompt MUST include: max 15 file reads, max 8 web searches (0 for codebase-analyst), max 250-line output, 5-minute wall-clock budget, write-as-you-go instruction.
 
 **Required agents:**
 
@@ -215,7 +215,7 @@ Each prompt (template in references/main.md): selected epics (IDs, titles, descr
 
 ### 2.4 Collect Research
 
-Wait for all agents. **Run canonical Agent Output Contract validator** from [agent-orchestration.md](/_shared/agent-orchestration.md) §8 — classifies each output as SUCCESS / PARTIAL / MALFORMED / EMPTY / MISSING / TIMEOUT and applies standard gate threshold (N=3 → ABORT at MISSING_COUNT ≥ 2; N=4 → ABORT at MISSING_COUNT ≥ 2).
+Wait for all agents. **Run canonical Agent Output Contract validator** from [agent-orchestration.md](/_shared/agents.md) §8 — classifies each output as SUCCESS / PARTIAL / MALFORMED / EMPTY / MISSING / TIMEOUT and applies standard gate threshold (N=3 → ABORT at MISSING_COUNT ≥ 2; N=4 → ABORT at MISSING_COUNT ≥ 2).
 
 ```bash
 EXPECTED_OUTPUTS=(
@@ -225,7 +225,7 @@ EXPECTED_OUTPUTS=(
 )
 # Add infra-analyst.md if spawned.
 
-# Run /_shared/agent-orchestration.md §8 validator (classify_output + standard gate).
+# Run /_shared/agents.md §8 validator (classify_output + standard gate).
 # On ABORT: stop Phase 2 and report.
 # On survivor singleton: retry failed agent once with narrower scope (one most-critical epic only).
 # On PARTIAL: per §8, queue narrow retries for items in MISSING list.
@@ -327,10 +327,10 @@ If ACs uncovered: attempt generation 3×. If still uncovered, offer: (1) waive, 
 
 *(Autonomy `high`/`full`: auto-waive uncovered ACs. Fix for CAP-133 silent-drop in `docs/_research/2026-04-08_sprint-carryforward-registry.md`.)*
 
-**Auto-waiver procedure (autonomy ∈ {high, full})** — all four writes required (jsonl schemas in [sprint-contracts.md](/_shared/sprint-contracts.md) §Writers #3 — `sprint-plan` auto-waivers; manifest carry_forward alone reintroduces CAP-133 silent-drop):
+**Auto-waiver procedure (autonomy ∈ {high, full})** — all four writes required (jsonl schemas in [sprint-contracts.md](/_shared/quality.md) §Writers #3 — `sprint-plan` auto-waivers; manifest carry_forward alone reintroduces CAP-133 silent-drop):
 
 1. Add uncovered ACs to sprint manifest `carry_forward` + `waived_ac_count`/`reason_waivers`.
-2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl`. Precompute `coverage = actual / target`. Schema: [sprint-contracts.md](/_shared/sprint-contracts.md).
+2. Append `auto_waived` + `progress` lines to `.cc-sessions/carry-forward.jsonl`. Precompute `coverage = actual / target`. Schema: [sprint-contracts.md](/_shared/quality.md).
 3. Record touched ids in manifest `registry_entries_touched` (sprint-review Invariant 2 cross-checks).
 4. Log `decision` event to activity feed.
 
@@ -365,7 +365,7 @@ Record in story frontmatter as `github_issue: <number>`.
 
 ### 4.5 Update Sprint Registry
 
-**Registry Lock — `sprint-registry.json`**: Before writing, acquire file-based lock per [session-lifecycle.md](/_shared/session-lifecycle.md):
+**Registry Lock — `sprint-registry.json`**: Before writing, acquire file-based lock per [session-lifecycle.md](/_shared/sessions.md):
 1. CHECK if `sprint-registry.json.lock` exists — if stale (session completed/failed or >4h old with dead PID), delete it.
 2. ACQUIRE by writing `sprint-registry.json.lock` with `{ "session_id": "${SESSION_ID}", "acquired": "<ISO-8601>" }`.
 3. VERIFY by re-reading — confirm it contains YOUR `SESSION_ID`. If not, wait up to 60s (check every 5s), then ABORT with conflict report.

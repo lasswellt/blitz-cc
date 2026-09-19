@@ -14,7 +14,7 @@ description: |
 tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 50
-# Sonnet per /_shared/agent-orchestration.md — standard implementation work.
+# Sonnet per /_shared/agents.md — standard implementation work.
 model: sonnet
 memory: project
 # Spawned several times per sprint: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
@@ -37,7 +37,7 @@ Read the assigned story. In one paragraph, state:
 2. **Tradeoffs** — if >1 implementation path exists (e.g., self-hosted vs. hosted runner, secret manager vs. CI secret), name them and pick one with rationale.
 3. **Surgical scope** — list the files you expect to touch. Every file must trace to story acceptance_checks.
 
-Emit as the first lines of your output. If a change touches production deploy, IAM/permissions, secrets management, or a new cloud service, emit ESCALATE per [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) Tier 3 BEFORE writing config.
+Emit as the first lines of your output. If a change touches production deploy, IAM/permissions, secrets management, or a new cloud service, emit ESCALATE per [/_shared/quality.md](/_shared/quality.md) Tier 3 BEFORE writing config.
 
 ### Implementation rules (every story)
 
@@ -145,7 +145,7 @@ Before considering your work complete, verify:
 
 ## Anti-Mock Enforcement (NON-NEGOTIABLE)
 
-Every config file you write must be complete and functional. See [Definition of Done](/_shared/sprint-contracts.md).
+Every config file you write must be complete and functional. See [Definition of Done](/_shared/quality.md).
 
 **BANNED PATTERNS** — if any of these appear in your config, the work is not done:
 
@@ -172,7 +172,7 @@ purpose (why this trigger scope, why this permission, why this pinned SHA).
 New environment variables must be documented in `.env.example` with a one-line
 description of what they configure.
 
-### Deviation Handling (follow /_shared/sprint-contracts.md)
+### Deviation Handling (follow /_shared/quality.md)
 - **Auto-fix**: missing config keys with obvious defaults, broken CI syntax, lint failures.
 - **Report via DEVIATION**: new environment variables needed, non-production security-rule adjustments, added CI cache steps.
 - **Escalate via ESCALATE (never auto-fix)**: production deployment changes, IAM/permission changes, secrets management, new cloud services, destructive IaC plans.

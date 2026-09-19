@@ -8,7 +8,7 @@ argument-hint: "<scope> | --fix | --scan-only | --fix-all | --deep | --loop | --
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -16,8 +16,8 @@ argument-hint: "<scope> | --fix | --scan-only | --fix-all | --deep | --loop | --
 All grep patterns, auto-fix strategies, severity rules, state schemas, and convention discovery details are in `references/main.md` (same directory as this file). **Read it on-demand** — only load the specific section you need for the current phase. Do NOT read the entire file at once.
 
 ## Additional Resources
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
-- For `/loop` vs `/schedule` mechanics behind `--loop`, see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
+- For `/loop` vs `/schedule` mechanics behind `--loop`, see [/_shared/sessions.md](/_shared/sessions.md)
 
 
 
@@ -50,7 +50,7 @@ Iterative code improvement using **Observe-Diff-Act-Report**. 30 static checks +
 ## Phase 0: SETUP
 
 ### 0.0 Register Session
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration and [terse-output.md](/_shared/output.md). Generate SESSION_ID, create `.cc-sessions/${SESSION_ID}/tmp/`, check for conflicts, log `skill_start`.
 
 ### 0.1 Parse Arguments
 
@@ -108,7 +108,7 @@ Scanning is delegated to worker agents so the skill itself stays lightweight and
 
 ### Check Summary Table
 
-The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from `/_shared/check-registry.json` (o2-*). code-sweep applies them under its ratchet (distinct from the gate per [quality-engine.md](/_shared/quality-engine.md)); keep the patterns in sync.
+The placeholder/anti-mock checks (`placeholder-throw`, `placeholder-returns`, `todo-fixme`) source their patterns from `/_shared/check-registry.json` (o2-*). code-sweep applies them under its ratchet (distinct from the gate per [quality-engine.md](/_shared/quality.md)); keep the patterns in sync.
 
 | Tier | ID | Category | Fixable |
 |------|----|----------|---------|

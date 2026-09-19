@@ -253,7 +253,7 @@ done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/n
 # ---------------------------------------------------------------
 # 9. Plugin workflows — workflows/*.js parse, meta literal first, no
 #    resume-breaking calls (Date.now / Math.random / new Date() / import()).
-#    Contract: skills/_shared/agent-orchestration.md §Plugin workflows (E-045).
+#    Contract: skills/_shared/agents.md §Plugin workflows (E-045).
 # ---------------------------------------------------------------
 echo "Checking plugin workflows..."
 WORKFLOWS_DIR="$PLUGIN_ROOT/workflows"

@@ -109,4 +109,4 @@ Adapted from Anthropic's account of running CI once agents write most of the cod
 - **Runner's own graph.** Import analysis is the test runner's problem (or, here, a 60-line static resolver with the same resolution rules); we do not add a second module system.
 - **Calibration is mandatory.** Selection without a periodic full run drifts toward false confidence. Sprint close and the nightly job are the two points where the full population is measured and `escaped_failures` is written back into the selector's own inputs.
 
-Related: `skills/_shared/quality-engine.md` §Advisory metrics and §Verification stack; `skills/sprint-review/SKILL.md` §1.3; `hooks/scripts/heartbeat.sh`.
+Related: `skills/_shared/quality.md` §Advisory metrics and §Verification stack; `skills/sprint-review/SKILL.md` §1.3; `hooks/scripts/heartbeat.sh`.

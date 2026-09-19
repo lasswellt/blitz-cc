@@ -9,13 +9,13 @@ argument-hint: "<prepare|verify|publish|rollback> [version]"
 disable-model-invocation: true
 ---
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For conventional commit patterns, changelog templates, and rollback procedures, see [references/main.md](references/main.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -45,13 +45,13 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **NEVER delete remote tags without user confirmation.** Rollback of remote tags is destructive and requires explicit consent.
 
-8. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/sprint-contracts.md).
+8. **NEVER leave placeholder code behind.** All release artifacts must be fully formed. See [Definition of Done](/_shared/quality.md).
 
 ---
 
 ## Phase 0: PARSE — Determine Mode
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition and decision point.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition and decision point.
 
 Extract from `$ARGUMENTS`:
 
@@ -150,7 +150,7 @@ Wait for confirmation. If declined, suggest minor bump.
 ```
 Rules: prepend new section below header; create `CHANGELOG.md` if absent; strip commit prefixes; capitalize first word; link short hash to GitHub if remote available; omit empty sections.
 
-4. **Generate release notes** — terse-technical per [/_shared/terse-output.md](/_shared/terse-output.md). Reuse CHANGELOG bullets verbatim. **LITE intensity** for breaking-change descriptions (migration reasoning needed). Migration instructions: full sentences + commands preserved exactly.
+4. **Generate release notes** — terse-technical per [/_shared/output.md](/_shared/output.md). Reuse CHANGELOG bullets verbatim. **LITE intensity** for breaking-change descriptions (migration reasoning needed). Migration instructions: full sentences + commands preserved exactly.
 ```bash
 cat > ${SESSION_TMP_DIR}/release-notes.md << 'NOTES'
 <release notes — same as changelog section without version header>

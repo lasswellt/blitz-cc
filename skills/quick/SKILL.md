@@ -8,7 +8,7 @@ compatibility: ">=2.1.71"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
@@ -72,4 +72,4 @@ Make a small, targeted change without sprint planning, session registration, or 
 - **Max 5 files.** If the change requires more, suggest `fix-issue`, `refactor`, or `sprint-dev` instead.
 - **No new packages.** If the change requires `npm install`, suggest `research` or `sprint-plan` instead.
 - **No new directories.** If the change requires new architecture, suggest `bootstrap` or `sprint-plan` instead.
-- **Follow [Definition of Done](/_shared/sprint-contracts.md).** Even in quick mode, no placeholder code, no TODO stubs, no empty handlers.
+- **Follow [Definition of Done](/_shared/quality.md).** Even in quick mode, no placeholder code, no TODO stubs, no empty handlers.

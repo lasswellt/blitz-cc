@@ -9,15 +9,15 @@ argument-hint: "[--fix|--check] [--scope global|project|all]"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For conflict catalog schema and detailed pattern list, see [references/main.md](references/main.md)
-- For session protocol, see [session-lifecycle.md](/_shared/session-lifecycle.md)
+- For session protocol, see [session-lifecycle.md](/_shared/sessions.md)
 - For the research driving this skill, see `docs/_research/2026-04-16_plugin-agent-strategy.md`
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -43,7 +43,7 @@ Scan the user's `~/.claude/CLAUDE.md` and project `./CLAUDE.md` for rules that c
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration and [terse-output.md](/_shared/terse-output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration and [terse-output.md](/_shared/output.md). Generate `SESSION_ID`, set `SESSION_TMP_DIR=".cc-sessions/${SESSION_ID}/tmp/"`, log `skill_start`.
 
 ### 0.1 Parse Arguments
 

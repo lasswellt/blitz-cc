@@ -21,8 +21,8 @@ Stack profile auto-detected from `package.json`, `tailwind.config.*`, `vite.conf
 
 - DESIGN.md spec (Google Labs, Apache 2.0): https://github.com/google-labs-code/design.md
 - Design tone palette + NEVER list (relocated from the retired heuristics file): [`references-regrounded.md` §8.1](../../docs/integrations/impeccable/references-regrounded.md)
-- Token-budget protocol: [`/_shared/agent-orchestration.md`](/_shared/agent-orchestration.md)
-- Definition of done: [`/_shared/sprint-contracts.md`](/_shared/sprint-contracts.md)
+- Token-budget protocol: [`/_shared/agents.md`](/_shared/agents.md)
+- Definition of done: [`/_shared/quality.md`](/_shared/quality.md)
 
 ---
 
@@ -34,7 +34,7 @@ Reads a brownfield project's existing design system and emits `DESIGN.md`. Runs 
 
 ## Phase 0: SESSION
 
-Follow [`session-lifecycle.md`](/_shared/session-lifecycle.md). Register session.
+Follow [`session-lifecycle.md`](/_shared/sessions.md). Register session.
 
 ## Phase 1: SOURCE DETECTION
 

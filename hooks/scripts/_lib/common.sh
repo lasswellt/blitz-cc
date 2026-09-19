@@ -110,7 +110,7 @@ blitz_log_event() {
 #
 # Best-effort DATA-LOSS GUARD: a background session edits inside its own
 # `.claude/worktrees/<id>` worktree, where uncommitted work lives. Native agent
-# view auto-isolates background sessions there (see worktree-lifecycle.md
+# view auto-isolates background sessions there (see agents.md §6
 # §Interop), so the same `.claude/worktrees/` dir now holds BOTH blitz
 # `Agent({isolation:"worktree"})` worktrees AND native background-session
 # worktrees. Callers (worktree-prune, cleanup) MUST skip any worktree whose
@@ -282,7 +282,7 @@ blitz_session_record_path() {
 # blitz_session_record_find sid
 # Print the path of the record that belongs to sid: the canonical path when it
 # exists, else the first legacy record `.cc-sessions/<anything>.json` whose
-# `.claude_session_id == sid` (skill-written records, session-lifecycle.md §3).
+# `.claude_session_id == sid` (skill-written records, sessions.md §2).
 # Prints nothing and returns 1 when no record exists.
 blitz_session_record_find() {
   local sid="${1:-}" canonical dir f

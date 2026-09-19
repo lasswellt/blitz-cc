@@ -8,14 +8,14 @@ argument-hint: "<type: project|feature|package> <name>"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For pipeline artifact contracts (what bootstrap produces for sprint-plan/sprint-dev), see [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md)
+- For pipeline artifact contracts (what bootstrap produces for sprint-plan/sprint-dev), see [/_shared/sessions.md](/_shared/sessions.md)
 - For package install policy (always resolve to registry latest, never invent versions from training memory), see [/_shared/security.md](/_shared/security.md). Applies to every `pnpm add` / `npm install` issued during scaffold.
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -35,7 +35,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 1. **NEVER overwrite existing files without explicit user confirmation.** If a file already exists at a planned path, ask the user whether to skip or overwrite.
 
-2. **NEVER generate placeholder/stub code.** All generated code must be functional. No `TODO`, `FIXME`, empty function bodies, or `throw new Error('not implemented')`. See [Definition of Done](/_shared/sprint-contracts.md).
+2. **NEVER generate placeholder/stub code.** All generated code must be functional. No `TODO`, `FIXME`, empty function bodies, or `throw new Error('not implemented')`. See [Definition of Done](/_shared/quality.md).
 
 3. **NEVER install packages without user confirmation for major additions.** Minor dev dependencies (types, test utils) are acceptable; new frameworks or large libraries require explicit consent.
 
@@ -51,7 +51,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Bootstrap Type
 
@@ -278,7 +278,7 @@ Bootstrap Complete: <type> "<name>"
 
 ### 5.2 Roadmap Pipeline Handoff
 
-Per [/_shared/session-lifecycle.md](/_shared/session-lifecycle.md) §bootstrap, `sprint-plan` Phase 0 hard-fails without `docs/roadmap/roadmap-registry.json` + `docs/roadmap/epic-registry.json`. Silent absence is the failure mode — so for greenfield (`project` mode) initialize empty stubs:
+Per [/_shared/sessions.md](/_shared/sessions.md) §bootstrap, `sprint-plan` Phase 0 hard-fails without `docs/roadmap/roadmap-registry.json` + `docs/roadmap/epic-registry.json`. Silent absence is the failure mode — so for greenfield (`project` mode) initialize empty stubs:
 
 ```bash
 mkdir -p docs/roadmap

@@ -15,7 +15,7 @@ tools: Read, Glob, Grep, Bash
 # capability — keep read-only in use; do NOT add WebFetch/network/MCP egress. Posture: /_shared/security.md §5.
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
 maxTurns: 15
-# Sonnet by default per /_shared/agent-orchestration.md routing matrix. For genuinely
+# Sonnet by default per /_shared/agents.md routing matrix. For genuinely
 # heavy multi-system architectural reasoning (cross-package dependency overhauls,
 # security-architecture review), the spawning skill MAY override to opus.
 model: sonnet
@@ -93,7 +93,7 @@ project name. Detect everything dynamically:
 - Flag functions with empty bodies, no-op event handlers (`() => {}`), or `return {}` / `return []` as placeholder returns.
 - Identify store actions that return hardcoded data instead of calling real APIs.
 - Check that every feature path is wired end-to-end (frontend, data layer, backend — not just one layer).
-- Cross-reference with [Definition of Done](/_shared/sprint-contracts.md).
+- Cross-reference with [Definition of Done](/_shared/quality.md).
 
 ## Output Format
 
@@ -149,7 +149,7 @@ Based on findings, recommend follow-up skills:
 ## Collaboration Hints
 
 When spawned as part of a team (e.g., by `audit` or `sprint-review`):
-- Return findings as your final text response — the orchestrator extracts them; never write files (READ-ONLY, per [/_shared/agent-orchestration.md](/_shared/agent-orchestration.md) §Agent Output Contract)
+- Return findings as your final text response — the orchestrator extracts them; never write files (READ-ONLY, per [/_shared/agents.md](/_shared/agents.md) §Agent Output Contract)
 - Use severity prefixes consistently so the orchestrator can aggregate across agents
 - Keep findings atomic: one issue per finding block (do not combine multiple issues)
 - Include a confidence level (High/Medium/Low) for each finding — helps the orchestrator prioritize

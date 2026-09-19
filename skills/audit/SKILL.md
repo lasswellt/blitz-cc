@@ -8,17 +8,17 @@ compatibility: ">=2.1.71"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For agent prompt templates, pillar checklists, severity schema, and report templates, see [references/main.md](references/main.md)
-- For context window hygiene (10 parallel agents), see [session-lifecycle.md](/_shared/session-lifecycle.md)
-- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agent-orchestration.md](/_shared/agent-orchestration.md)
-<!-- import: from _shared/skill-cross-references.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agent-orchestration.md)
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For context window hygiene (10 parallel agents), see [session-lifecycle.md](/_shared/sessions.md)
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agent-orchestration.md](/_shared/agents.md)
+<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
+- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agent-orchestration.md](/_shared/agents.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -38,7 +38,7 @@ Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents. 
 
 ### 0.0 Register Session
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Create Working Directories
 
@@ -100,7 +100,7 @@ If found, note the date and key findings for comparison.
 
 ### 1.0 Select Dispatch Mode (capability gate)
 
-Per [agent-orchestration.md](/_shared/agent-orchestration.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
+Per [agent-orchestration.md](/_shared/agents.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
 
 ```bash
 case "${BLITZ_DISPATCH:-auto}" in
@@ -125,7 +125,7 @@ Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The
 `prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
 inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
 `Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
-hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agent-orchestration.md)
+hard-fail. Resume semantics + concurrency cap: [agent-orchestration.md](/_shared/agents.md)
 §Workflow Dispatch Contract.
 
 - Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
@@ -144,9 +144,9 @@ Per-spawn parameters:
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 
-Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [agent-orchestration.md](/_shared/agent-orchestration.md)).
+Cross-pillar findings synthesized by orchestrator in Phase 2 from output files (not peer-to-peer, per [agent-orchestration.md](/_shared/agents.md)).
 
-**Weight class**: Medium (per [agent-orchestration.md](/_shared/agent-orchestration.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
+**Weight class**: Medium (per [agent-orchestration.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
 
 Every agent receives:
 1. The inventory JSON (inline, not a file path).
@@ -249,13 +249,13 @@ Cross-agent deduplication:
 
 ### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
 
-Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agent-orchestration.md](/_shared/agent-orchestration.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
+Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agent-orchestration.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: [references/main.md](references/main.md) §Recall hardening.
 
 When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
 
 ```js
 // args: { findings:[{key,desc,fileLine}], lenses:['correctness','security','reproduces'], verdictSchema }
-const OS = 'OUTPUT STYLE: terse-technical per /_shared/terse-output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
+const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
 const judged = await parallel(args.findings.map(f => () =>
   parallel(args.lenses.map(lens => () =>
     agent(`${OS}\n\nRe-read ${f.fileLine}. REFUTE via the ${lens} lens: "${f.desc}". Default refuted=true if not reproducible.`,
@@ -296,7 +296,7 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
-**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/html-template-helper.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` ONLY — never `audit-DATE-epics.md` (machine `scope:` block) or `audit-DATE-index.json`; those keep feeding `roadmap extend` via the `**/*.md` glob. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
@@ -358,7 +358,7 @@ For each theme, write a proposed epic using the format from `references/main.md`
 
 ### 3.3a Emit `scope:` YAML frontmatter on `-epics.md`
 
-Every `audit-YYYYMMDD-epics.md` file MUST open with a `scope:` YAML frontmatter block above the `# Proposed Epics` heading. One entry per non-`complete` `proposed_epics[]` item. This is the canonical contract for `/blitz:roadmap extend` ingestion — see [/_shared/sprint-contracts.md](/_shared/sprint-contracts.md) §Writers.
+Every `audit-YYYYMMDD-epics.md` file MUST open with a `scope:` YAML frontmatter block above the `# Proposed Epics` heading. One entry per non-`complete` `proposed_epics[]` item. This is the canonical contract for `/blitz:roadmap extend` ingestion — see [/_shared/quality.md](/_shared/quality.md) §Writers.
 
 Skip emission for any epic whose `status: "complete"` (idempotent reruns of `audit` MUST NOT duplicate registry entries on already-shipped work).
 

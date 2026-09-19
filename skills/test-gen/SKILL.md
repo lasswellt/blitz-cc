@@ -8,15 +8,15 @@ argument-hint: "<file-path>"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/project-context.md §Canonical block — Project Context with stack detection -->
+<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For Vitest/Jest patterns, Vue component testing, and Firestore rules testing, see [references/main.md](references/main.md)
-- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`), see [/_shared/quality-engine.md](/_shared/quality-engine.md)
+- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`), see [/_shared/quality.md](/_shared/quality.md)
 - For Spec Fix Mode (HARD_SPEC classifier, verification-first oracle template, per-spec turn cap) when fixing failing specs, see [`agents/test-writer.md`](/agents/test-writer.md) §Spec Fix Mode
-- For output style (terse-technical, preservation rules), see [/_shared/terse-output.md](/_shared/terse-output.md)
+- For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 
 
@@ -30,7 +30,7 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ## Phase 0: PARSE TARGET — Identify What to Test
 
-Follow [session-lifecycle.md](/_shared/session-lifecycle.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/terse-output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [session-lifecycle.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [terse-output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 Extract target file path from `$ARGUMENTS`. If not provided, ask the user. Validate:
 ```bash
@@ -190,7 +190,7 @@ Structure: imports → mock setup → describe block per export → nested descr
 
 ### 3.4 Test Integrity Gate
 
-Every generated test must verify real behavior. See [Definition of Done](/_shared/sprint-contracts.md).
+Every generated test must verify real behavior. See [Definition of Done](/_shared/quality.md).
 
 **BANNED in generated tests:**
 - `expect(true).toBe(true)` or equivalent no-op assertions

@@ -194,7 +194,7 @@ if echo "$STAGED_FILES" | grep -qE '^skills/_shared/check-registry\.json$'; then
     if [[ "$REG_EXIT" -ne 0 ]]; then
       echo "" >&2
       echo "$REG_OUTPUT" >&2
-      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/quality-engine.md)." >&2
+      echo "BLOCKED: check-registry.json schema violations (see skills/_shared/quality.md)." >&2
       exit 2
     fi
   fi
