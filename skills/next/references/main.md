@@ -68,7 +68,7 @@ HEARTBEAT_OK
   ├─ inbox:    clean · sessions waiting: 0
   ├─ DECISION: row 1 — blocked task needs a human: checkout-v2/T-007 (test-assertion-suspect)
   │    Ruling needed: review src/cart/total.test.ts; fix the assertion or reword the spec, then
-  │    `scripts/tasks.sh set checkout-v2 T-007 status=open blocked_reason=`
+  │    `scripts/tasks.sh set checkout-v2 T-007 status=open blocked_reason= attempts=0`
   ├─ Notified:  PushNotification (no channel reply tool loaded)
   ├─ progress.md: Ruling line appended · Commit: feat(loop): tick — row 1: escalate checkout-v2 T-007
   └─ LOOP_ESCALATE

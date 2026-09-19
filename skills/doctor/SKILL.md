@@ -15,7 +15,7 @@ compatibility: ">=2.1.271"
 
 # Doctor
 
-One skill for "is blitz installed correctly, is this project set up for it, and what should I fix". Three surfaces, five phases:
+One skill for "is blitz installed correctly, is this project set up for it, and what should I fix". The surfaces:
 
 | Surface | Phase | Writes |
 |---|---|---|
@@ -152,11 +152,11 @@ for f in docs/plans/*/tasks.json; do [ -f "$f" ] || continue
   jq -e '."$schema"=="blitz-tasks/1.0"' "$f" >/dev/null || echo "D-312 $f: bad \$schema"
   jq -r '.tasks[] | select(.status=="done" and (.passes!=true or .last_verify.ok!=true)) | .id' "$f" | sed "s|^|D-312 $f done-without-evidence |"
   jq -r '.tasks[] | select(((.verify // []) | length)==0) | .id' "$f" | sed "s|^|D-312 $f empty-verify |"
-  jq -r '.tasks[] | select((.origin // "") | test("^(plan|audit|check|issue:[0-9]+)$") | not) | .id' "$f" | sed "s|^|D-313 $f unknown-origin |"
+  jq -r '.tasks[] | select((.origin // "") | test("^(plan|audit|check|learn|issue:[0-9]+)$") | not) | .id' "$f" | sed "s|^|D-313 $f unknown-origin |"
 done
 ```
 
-`D-312` is `FAIL`: a `done` task without `passes ∧ last_verify.ok` means something bypassed `tasks.sh` (`tasks-guard.sh` disabled, or a hand edit under `BLITZ_TASKS_GUARD_OFF=1`). Remediation: `scripts/tasks.sh set <plan> <id> status=open` then `scripts/tasks.sh verify <plan> <id>`; doctor never rewrites `tasks.json` directly. `D-313` is `WARN`: `startup-validate.sh` rejects unknown `origin` values, so the task will be quarantined at the next start; set it with `tasks.sh set <plan> <id> notes="origin was <x>"` and re-add with a known origin.
+`D-312` is `FAIL`: a `done` task without `passes ∧ last_verify.ok` means something bypassed `tasks.sh` (`tasks-guard.sh` disabled, or a hand edit under `BLITZ_TASKS_GUARD_OFF=1`). Remediation: `scripts/tasks.sh set <plan> <id> status=open attempts=0` then `scripts/tasks.sh verify <plan> <id>`; doctor never rewrites `tasks.json` directly. `D-313` is `WARN`: `startup-validate.sh` rejects unknown `origin` values, so the task will be quarantined at the next start; set it with `tasks.sh set <plan> <id> notes="origin was <x>"` and re-add with a known origin.
 
 ---
 

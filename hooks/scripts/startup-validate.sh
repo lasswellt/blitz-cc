@@ -77,7 +77,7 @@ for f in "$SESSIONS_DIR"/*.json; do
   fi
   # Schema floor: a session file must carry session_id + status.
   case "$base" in
-    developer-profile.json|HANDOFF.json) : ;; # known non-session shapes
+    HANDOFF.json) : ;; # known non-session shape
     *) jq -e '.session_id and .status' "$f" >/dev/null 2>&1 || report "SCHEMA: $base missing session_id/status" ;;
   esac
   scan_obj "$(cat "$f")" "$base" || true
@@ -100,6 +100,8 @@ if [ -d "$PLANS_DIR" ]; then
     [ "$undone" != "0" ] && report "CONTRACT: $rel has $undone task(s) marked done without passing evidence (done ⇒ passes)"
     unk=$(jq -r '[.tasks[] | select((.origin // "plan") | test("^(plan|audit|check|learn|issue:[0-9]+)$") | not)] | length' "$tj" 2>/dev/null || echo 0)
     [ "$unk" != "0" ] && report "PROVENANCE: $rel has $unk task(s) with an unknown origin"
+    noverify=$(jq -r '[.tasks[] | select(((.verify // []) | length) == 0)] | length' "$tj" 2>/dev/null || echo 0)
+    [ "$noverify" != "0" ] && report "CONTRACT: $rel has $noverify task(s) with an empty verify[] (no executable check)"
     jq -c '.tasks[] | {id, title, notes}' "$tj" 2>/dev/null | while IFS= read -r line; do
       scan_obj "$line" "$rel:$(printf '%s' "$line" | jq -r .id)" || true
     done
@@ -122,7 +124,7 @@ if [ -f "$FEED" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     printf '%s' "$line" | jq empty 2>/dev/null || continue
-    # message is the skill-written free-text field — the injection surface (orchestrator.md:146).
+    # message is the skill-written free-text field — the injection surface (security.md TB-2).
     msg=$(printf '%s' "$line" | jq -r '.message // ""' 2>/dev/null || true)
     if printf '%s' "$msg" | grep -qiE "$INJECTION_RX"; then
       report "INJECTION MARKER in activity-feed message — cap/quarantine before echo"

@@ -52,8 +52,8 @@ Check catalog, migration field maps, the `/verify` seed, and the conflict-catalo
 | D-309 | `git check-ignore -q docs/sweeps/ratchet.json` | FAIL | delete the `docs/sweeps/` line from `.gitignore`; `git add docs/sweeps/ratchet.json` | yes |
 | D-310 | `test -d docs/plans && test -d docs/solutions` | WARN | `mkdir -p docs/plans docs/solutions` | yes |
 | D-311 | `git check-ignore -q .cc-sessions/x` fails | FAIL | append `.cc-sessions/` to `.gitignore` | yes |
-| D-312 | `tasks.json`: `$schema` ≠ `blitz-tasks/1.0`; `status: done` without `passes ∧ last_verify.ok`; empty `verify[]` | FAIL | `tasks.sh set <plan> <id> status=open` then `tasks.sh verify <plan> <id>`; re-add tasks with checks | no |
-| D-313 | `origin` ∉ `{plan, audit, check, issue:<n>}` | WARN | note the old value, re-add through `tasks.sh add … --origin plan` | no |
+| D-312 | `tasks.json`: `$schema` ≠ `blitz-tasks/1.0`; `status: done` without `passes ∧ last_verify.ok`; empty `verify[]` | FAIL | `tasks.sh set <plan> <id> status=open attempts=0` then `tasks.sh verify <plan> <id>`; re-add tasks with checks | no |
+| D-313 | `origin` ∉ `{plan, audit, check, learn, issue:<n>}` | WARN | note the old value, re-add through `tasks.sh add … --origin plan` | no |
 
 Settings precedence for D-304…D-306: `.claude/settings.local.json` over `.claude/settings.json` over `~/.claude/settings.json`; the finding names the file the key would be added to (project `.claude/settings.json` by default, so the whole team inherits it).
 

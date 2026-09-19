@@ -94,3 +94,38 @@ teardown() { teardown_fake_repo; }
   run bash "$TASKS" set demo T-001 bogus=1
   [ "$status" -eq 2 ]
 }
+
+@test "set status=open attempts=0 unblocks a circuit-breaker task (breaker skipped on explicit status)" {
+  bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true"
+  bash "$TASKS" set demo T-001 attempts=3 >/dev/null
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "blocked" ]
+  run bash "$TASKS" set demo T-001 status=open blocked_reason= attempts=0
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "open" ]
+  [ "$(jq -r '.tasks[0].blocked_reason' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "null" ]
+  # a bare attempts bump with no explicit status still trips the breaker
+  bash "$TASKS" set demo T-001 attempts=3 >/dev/null
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "blocked" ]
+}
+
+@test "list --status and --json filter and emit an array" {
+  bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true"
+  bash "$TASKS" add demo --id T-002 --title "b" --verify-cmd "true"
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run bash "$TASKS" list demo --status done --json
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r 'length')" = "1" ]
+  [ "$(printf '%s' "$output" | jq -r '.[0].id')" = "T-001" ]
+  run bash "$TASKS" list demo --status open
+  [[ "$output" == *"T-002"* ]]
+  [[ "$output" != *"T-001"* ]]
+}
+
+@test "add rejects an unknown origin and accepts learn and issue:N" {
+  run bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" --origin sprint
+  [ "$status" -eq 2 ]
+  run bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" --origin learn
+  [ "$status" -eq 0 ]
+  run bash "$TASKS" add demo --id T-002 --title "b" --verify-cmd "true" --origin issue:42
+  [ "$status" -eq 0 ]
+}

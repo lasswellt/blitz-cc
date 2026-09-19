@@ -306,7 +306,7 @@ jq -n --arg sel "$SELECTED" --arg until "build ${SLUG} ${ID}" '{
   checks: [
     {name: "tsc",   cmd: "npx tsc --noEmit --pretty false", timeout: 180},
     {name: "tests", cmd: ("npx vitest run --reporter=dot " + $sel), timeout: 300}
-  ], blocks: 0, max_blocks: 6, until: $until }' > "$GATE_DIR/gate.json"
+  ], blocks: 0, max_blocks: 4, until: $until }' > "$GATE_DIR/gate.json"
 ```
 
 Skip the `tests` check when the selector returns nothing. The hook stands down on `LOOP_DONE`, `LOOP_ESCALATE`, `LOOP_DEFER`, `BLOCKED:`, `ESCALATE:`. **Disarm (`rm -f "$GATE_DIR/gate.json"`) after every `tasks.sh verify`, before every marker, and on every early exit** — a leftover gate blocks the next unrelated turn until `max_blocks`. Never wire a prompt-type Stop hook; a user `/goal` is one already.

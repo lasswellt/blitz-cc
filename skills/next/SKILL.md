@@ -113,7 +113,7 @@ Pick the lowest matching row; `next-state.sh` already computed it, this phase on
 |---|---|---|---|
 | 0 | `inbox_pending > 0` after triage, or `sessions_waiting > 0`, or `kill_switch` | the pending items | `LOOP_DEFER` |
 | 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}) | the escalation (plan, id, reason, `last_verify.tail`) | notify (§4 order), then `LOOP_ESCALATE` |
-| 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | `Skill({ skill: "blitz:build", args: "<slug>" })` for `next_task` |
+| 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | `Skill({ skill: "blitz:build", args: "<slug> --autonomous" })` for `next_task` |
 | 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | `Skill({ skill: "blitz:check", args: "--scope plan <slug> --fix" })` |
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`; `Skill({ skill: "blitz:learn", args: "<slug>" })`; move to `docs/plans/archive/<date>-<slug>/`; print `Ready: /blitz:ship --plan <slug>` |
 | 5 | nothing open | `LOOP_DONE` | `ScheduleWakeup stop:true` (self-paced only) + `LOOP_DONE` |
@@ -150,6 +150,7 @@ Setting autonomy = full only suppresses blitz's OWN confirmation prompts — it 
 
 ```bash
 export BLITZ_DISPATCH=agent   # loop-safe: child fan-out skills take the Agent() path (no Workflow confirm prompt)
+export BLITZ_AUTONOMOUS=1     # build/check run to completion without task-boundary stops; build arms its own gate
 ```
 
 Loop-only: interactive `/blitz:next` leaves `BLITZ_DISPATCH` at its default (`auto`). Consistent with [agents.md](/_shared/agents.md)'s dispatch gate: `auto` / `workflow` / `agent`.
@@ -163,9 +164,9 @@ GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
 case "$ROW" in
   2)  # build: tsc + selected tests
     SELECTED=$("${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
-    jq -n --arg sel "$SELECTED" --arg u "build ${SLUG} ${TASK}" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},{name:"tests",cmd:("npx vitest run --reporter=dot "+$sel),timeout:300}],blocks:0,max_blocks:6,until:$u}' > "$GATE_DIR/gate.json" ;;
+    jq -n --arg sel "$SELECTED" --arg u "build ${SLUG} ${TASK}" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},{name:"tests",cmd:("npx vitest run --reporter=dot "+$sel),timeout:300}],blocks:0,max_blocks:4,until:$u}' > "$GATE_DIR/gate.json" ;;
   3)  # check --fix: tsc + lint
-    jq -n --arg u "check ${SLUG} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},{name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:6,until:$u}' > "$GATE_DIR/gate.json" ;;
+    jq -n --arg u "check ${SLUG} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},{name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$u}' > "$GATE_DIR/gate.json" ;;
   *) rm -f "$GATE_DIR/gate.json" ;;   # rows 0/1/4/5: learn, archive, defer, escalate — no gate
 esac
 ```

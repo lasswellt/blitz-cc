@@ -3,7 +3,7 @@
 #
 # Sibling of skill-frontmatter-validate.sh. Validates agents/*.md against the
 # plugin-agent contract. The forbidden-field check enforces a constraint
-# documented in .cc-sessions/KNOWLEDGE.md: Claude Code silently strips
+# documented in skills/_shared/agents.md §1: Claude Code silently strips
 # `hooks:`, `mcpServers:`, and `permissionMode:` from plugin agent frontmatter
 # (they only work in `~/.claude/agents/`), so leaving them in the file produces
 # a silently-broken agent with no warning.
@@ -120,7 +120,7 @@ validate_one() {
   local forbidden
   for forbidden in hooks mcpServers permissionMode; do
     if printf '%s\n' "$fm" | grep -qE "^${forbidden}:"; then
-      fail "$rel" "forbidden field '${forbidden}:' — silently stripped by Claude Code in plugin agents (see .cc-sessions/KNOWLEDGE.md). Move to ~/.claude/agents/ if needed."
+      fail "$rel" "forbidden field '${forbidden}:' — silently stripped by Claude Code in plugin agents (see skills/_shared/agents.md §1). Move to ~/.claude/agents/ if needed."
     fi
   done
 

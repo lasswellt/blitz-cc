@@ -166,7 +166,7 @@ Arm the Stop gate first, disarm before the report ([loop.md](/_shared/loop.md) �
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
 jq -n --arg until "check ${SLUG:-diff} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},
-  {name:"lint",cmd:"npx eslint . --max-warnings=-1",timeout:180}],blocks:0,max_blocks:6,until:$until}' > "$GATE_DIR/gate.json"
+  {name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$until}' > "$GATE_DIR/gate.json"
 # … fixes …
 rm -f "$GATE_DIR/gate.json"    # before Phase 5 and on every early exit
 ```

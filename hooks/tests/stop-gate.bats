@@ -54,8 +54,8 @@ write_gate() {  # write_gate '<checks json array>' [blocks] [max]
   [ "$status" -eq 0 ]
 }
 
-@test "max_blocks above 7 is clamped under the platform cap" {
-  write_gate '[{"name":"fail","cmd":"exit 1"}]' 7 20
+@test "max_blocks above 4 is clamped under the platform's 5-block cap" {
+  write_gate '[{"name":"fail","cmd":"exit 1"}]' 4 20
   run_hook "stop-gate.sh" '{"session_id":"s1"}'
   [ "$status" -eq 0 ]
   feed_events | grep -q gate_exhausted

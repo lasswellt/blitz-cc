@@ -158,7 +158,7 @@ Monitor(command: "tail -f ${SESSION_TMP_DIR}/wave-<N>.log | grep --line-buffered
 
 Every watch has a deadline (max 30 min; use `timeout: 600` under `-p`; `persistent` no longer exists). Re-arm at every wave boundary. Agents on the Agent path do not write that log — the orchestrator appends a line per reply it receives — so the tail is a wake-up, not the source of truth; `ListAgents` polling every 2-3 turns covers a deadline that expires mid-wave. The Workflow barrier replaces Monitor inside a wave.
 
-Stuck detection per agent: no reply by wall-clock + 30 s → `SendMessage(to: "dev-<ID>", message: "STATUS?")`; nothing in 90 s → classify `MISSING` → `BLOCKED circuit-breaker`, `attempts+=1`; do not wait further and do not block the barrier on it.
+Stuck detection per agent: no reply by wall-clock + 30 s → `SendMessage(to: "dev-<ID>", message: "STATUS?")`; nothing in 90 s → classify `MISSING` → `BLOCKED circuit-breaker`, `attempts=+1`; do not wait further and do not block the barrier on it.
 
 ### Sequential merge
 

@@ -60,3 +60,16 @@ spec() { mkdir -p "$BLITZ_PLANS_DIR/$1"; printf -- '---\nstatus: %s\npriority: %
   ns; [ "$(printf '%s' "$output" | jq -r .active_plan)" = "high" ]
   [ "$(printf '%s' "$output" | jq -r '.paused_plans[0]')" = "off" ]
 }
+
+@test "active plans order by priority, then created, then slug; plan_priority is null off rows 2-4" {
+  mkdir -p "$BLITZ_PLANS_DIR/older" "$BLITZ_PLANS_DIR/newer"
+  printf -- '---\nstatus: active\npriority: P1\ncreated: 2026-09-18\n---\n' > "$BLITZ_PLANS_DIR/newer/spec.md"
+  printf -- '---\nstatus: active\npriority: P1\ncreated: 2026-09-01\n---\n' > "$BLITZ_PLANS_DIR/older/spec.md"
+  bash "$TASKS" add newer --id T-001 --title "a" --verify-cmd "true" >/dev/null
+  bash "$TASKS" add older --id T-001 --title "a" --verify-cmd "true" >/dev/null
+  ns; [ "$(printf '%s' "$output" | jq -r .active_plan)" = "older" ]
+  [ "$(printf '%s' "$output" | jq -r .plan_priority)" = "1" ]
+  rm -rf "$BLITZ_PLANS_DIR/older" "$BLITZ_PLANS_DIR/newer"
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "5" ]
+  [ "$(printf '%s' "$output" | jq -r '.plan_priority')" = "null" ]
+}

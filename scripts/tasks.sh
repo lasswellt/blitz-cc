@@ -5,7 +5,7 @@
 #   tasks.sh init   <plan>
 #   tasks.sh list   <plan> [--status open|in_progress|done|blocked] [--json]
 #   tasks.sh add    <plan> --id T-001 --title "..." [--role backend|frontend|infra|test]
-#                   [--files a,b] [--depends T-000,T-002] [--origin plan|audit|check|issue:N]
+#                   [--files a,b] [--depends T-000,T-002] [--origin plan|audit|check|learn|issue:N]
 #                   --verify-cmd "cmd"[::timeout] (repeatable) [--test-only-ok] [--notes "..."]
 #   tasks.sh set    <plan> <id> key=value ...   keys: status blocked_reason notes role title attempts (N or +1)
 #   tasks.sh verify <plan> <id> [--dry]         runs verify[] in order; writes passes + last_verify
@@ -26,7 +26,7 @@ fi
 TEST_RUNNER_RX='(vitest|jest|npm (run )?test|pnpm test|yarn test|pytest|go test|cargo test|bats )'
 ISO() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 die() { echo "tasks.sh: $*" >&2; exit 2; }
-usage() { sed -n '2,20p' "$0"; exit 2; }
+usage() { sed -n '2,18p' "$0"; exit 2; }
 
 plan_file() {
   local plan="$1"
@@ -79,6 +79,7 @@ cmd_add() {
   [ -n "$id" ] && [ -n "$title" ] || die "add needs --id and --title"
   echo "$id" | grep -qE '^T-[0-9]{3,}$' || die "id '$id' must look like T-001"
   case "$role" in backend|frontend|infra|test) ;; *) die "role '$role' must be backend|frontend|infra|test";; esac
+  echo "$origin" | grep -qE '^(plan|audit|check|learn|issue:[0-9]+)$' || die "origin '$origin' must be plan|audit|check|learn|issue:<n>"
   [ "${#verify[@]}" -gt 0 ] || die "add refuses a task with no --verify-cmd: every task carries an executable check"
   if [ "$test_only_ok" -eq 0 ]; then
     local non_test=0 v
@@ -110,9 +111,12 @@ cmd_set() {
   local plan="$1" id="$2"; shift 2
   local f; f=$(plan_file "$plan"); require_file "$f"
   jq -e --arg id "$id" '.tasks[] | select(.id == $id)' "$f" >/dev/null || { echo "tasks.sh: no task $id in $plan" >&2; exit 3; }
-  local kv key val json; json=$(cat "$f")
+  local kv key val json explicit=0; json=$(cat "$f")
   for kv in "$@"; do
     key="${kv%%=*}"; val="${kv#*=}"
+    case "$key" in
+      status|blocked_reason) explicit=1;;
+    esac
     case "$key" in
       status)
         case "$val" in open|in_progress|blocked) ;;
@@ -133,8 +137,9 @@ cmd_set() {
       *) die "unknown key '$key'";;
     esac
   done
-  # circuit breaker: 3 failed attempts without a pass -> blocked
-  json=$(printf '%s' "$json" | jq --arg id "$id" '(.tasks[] | select(.id==$id)) |= (if ((.attempts // 0) >= 3 and .passes == false and .status != "blocked" and .status != "done") then .status = "blocked" | .blocked_reason = (.blocked_reason // "circuit-breaker") else . end)')
+  # circuit breaker: 3 failed attempts without a pass -> blocked. Skipped when this call set
+  # status or blocked_reason explicitly (the operator's unblock recipe: status=open attempts=0).
+  [ "$explicit" -eq 1 ] || json=$(printf '%s' "$json" | jq --arg id "$id" '(.tasks[] | select(.id==$id)) |= (if ((.attempts // 0) >= 3 and .passes == false and .status != "blocked" and .status != "done") then .status = "blocked" | .blocked_reason = (.blocked_reason // "circuit-breaker") else . end)')
   atomic_write "$f" "$(printf '%s' "$json" | bump)"
   jq -r --arg id "$id" '.tasks[] | select(.id==$id) | "\(.id) status=\(.status) attempts=\(.attempts) blocked_reason=\(.blocked_reason // "-")"' "$f"
 }

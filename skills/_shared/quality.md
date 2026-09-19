@@ -8,7 +8,7 @@ How blitz decides that work is done, what `check` runs, and what can flip a verd
 
 | Rule | Enforced by |
 |---|---|
-| Only `scripts/tasks.sh` writes `docs/plans/*/tasks.json` (`list\|set\|verify\|add`, atomic rename) | `hooks/scripts/tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on that path |
+| Only `scripts/tasks.sh` writes `docs/plans/*/tasks.json` (`init\|add\|list\|set\|verify\|next`, atomic rename) | `hooks/scripts/tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on that path |
 | `tasks.sh verify <plan> <id>` runs every `verify[].cmd` under its `timeout`, writes `passes` and `last_verify {ts, ok, failed, tail}` (200-char evidence tail) | the only path to `passes: true` |
 | `status: done ⇒ passes ∧ last_verify.ok` | `tasks.sh set … status=done` refuses otherwise; `startup-validate.sh` flags a violating row |
 | `verify[]` non-empty; behavior tasks carry ≥1 non-test check | `plan` rejects the task; `tasks.sh add` refuses a task with no `--verify-cmd` and, without `--test-only-ok`, one whose only checks are test runs |
@@ -347,8 +347,8 @@ Four layers, one owner and one kind of verdict each. They compose; none replaces
 | Layer | Mechanism | Owner | Decides |
 |---|---|---|---|
 | Deterministic gate | `hooks/scripts/stop-gate.sh` + `.cc-sessions/sessions/<sid>/gate.json`; tests from `scripts/test-selector.sh` | blitz Stop hook | tsc / selected tests / ratchet quick-check pass |
-| Goal evaluator | `/goal <plan DoD>` (bundled prompt-type Stop hook, Haiku, 8-block cap, idle check-ins from 30 min) | user; `next --loop` prints the line once | condition met / not yet / impossible |
+| Goal evaluator | `/goal <plan DoD>` (bundled prompt-type Stop hook: a separate evaluator judges the transcript; counts against the platform's 5-block `stopHookBlockCap`) | user; `next --loop` prints the line once | condition met / not yet / impossible |
 | Adversarial | `agents/critic.md --mode reject` on the diff, fresh context, no Write/Edit | `check` Phase 3 | LGTM / REJECT |
 | App-level | `/verify` recipe recorded at `.claude/skills/verify/SKILL.md` (bundled, user-only); `check` reads and replays it | user | the app runs and behaves |
 
-The gate is a no-op without `gate.json`; `max_blocks` stays under the platform's 8-consecutive-block cap; the plugin never wires a prompt-type Stop hook (it would collide with a user `/goal`). "Selected tests pass" means the sibling + import-graph + journal-history set; the full suite runs once at `check` to measure what the selector missed.
+The gate is a no-op without `gate.json`; `max_blocks` (4) stays under the platform's 5-consecutive-block cap; the plugin never wires a prompt-type Stop hook (it would collide with a user `/goal`). "Selected tests pass" means the sibling + import-graph + journal-history set; the full suite runs once at `check` to measure what the selector missed.

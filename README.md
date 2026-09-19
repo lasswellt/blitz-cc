@@ -109,7 +109,8 @@ The rest of the catalog (`audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, 
     { "cmd": "npx vitest run src/server/health.test.ts --reporter=dot", "timeout": 300 },
     { "cmd": "! grep -nE 'TODO|return \\{\\}' src/server/health.ts", "timeout": 10 }
   ],
-  "passes": false, "status": "open", "attempts": 0, "origin": "plan" }
+  "passes": false, "status": "open", "blocked_reason": null, "attempts": 0,
+  "last_verify": { "ts": "", "ok": false, "failed": "", "tail": "" }, "origin": "plan", "notes": "" }
 ```
 
 - `tasks.sh add` refuses an empty `verify[]` and a test-only `verify[]` unless `--test-only-ok` is stated.

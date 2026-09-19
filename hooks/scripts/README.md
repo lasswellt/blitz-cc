@@ -46,7 +46,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 
 | Script | Called by | Purpose |
 |---|---|---|
-| `startup-validate.sh` | `session-start.sh`, `config-change.sh` | shape + injection scan of `.cc-sessions/*.json`, `docs/plans/*/tasks.json` (`done ⇒ passes`, known `origin`), `docs/solutions/*.md`, feed tail; quarantine findings to the inbox |
+| `startup-validate.sh` | `session-start.sh`, `config-change.sh` | shape + injection scan of `.cc-sessions/*.json`, `docs/plans/*/tasks.json` (`done ⇒ passes`, known `origin`, non-empty `verify[]`), `docs/solutions/*.md`, feed tail; quarantine findings to the inbox |
 | `check-registry-validate.sh` | `pre-commit-validate.sh`, CI | schema lint for `skills/_shared/check-registry.json` |
 | `critic-gemini.sh` | `agents/critic.md` when `BLITZ_USE_GEMINI_CRITIC=1` or `BLITZ_DUAL_CRITIC=1` | cross-model critic pass via the Gemini CLI (`BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`) |
 

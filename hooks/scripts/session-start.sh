@@ -59,7 +59,7 @@ fi
 # --- Containment: pre-trust field sanitization (TB-1, AP-1) ---
 # This hook runs at SessionStart and echoes project-local .cc-sessions/ fields into
 # Claude's context. Those files are UNTRUSTED inbound data (a cloned repo controls them),
-# so every echoed free-text field is capped at 200 chars (parity with orchestrator.md:146)
+# so every echoed free-text field is capped at 200 chars (security.md TB-2 echo cap)
 # and injection-scanned — replaced with a quarantine marker on a hit. This hook NEVER
 # eval/sources project-controlled content; it only parses (jq) and echoes sanitized text.
 # Canonical posture: /_shared/security.md §3 TB-1 + /_shared/security.md.
@@ -87,6 +87,8 @@ if [ -f "$HANDOFF" ]; then
     HANDOFF_BRANCH=$(jq -r '.branch // "unknown"' "$HANDOFF" 2>/dev/null | sanitize || echo "unknown")
     HANDOFF_UNCOMMITTED_COUNT=$(jq -r '.uncommitted | length' "$HANDOFF" 2>/dev/null || echo 0)
     HANDOFF_LAST=$(jq -r '.last_activity // ""' "$HANDOFF" 2>/dev/null | sanitize || echo "")
+    HANDOFF_GATE=$(jq -r '.gate // "none"' "$HANDOFF" 2>/dev/null | sanitize || echo "none")
+    HANDOFF_NEVER_EDIT=$(jq -r '(.never_edit // []) | join("; ")' "$HANDOFF" 2>/dev/null | sanitize || echo "")
     cat <<EOF
 [blitz] HANDOFF detected (compaction-resume artifact):
   plan/task:   $HANDOFF_PLAN
@@ -94,6 +96,9 @@ if [ -f "$HANDOFF" ]; then
   branch:      $HANDOFF_BRANCH
   uncommitted: $HANDOFF_UNCOMMITTED_COUNT files
   last action: $HANDOFF_LAST
+  gate:        $HANDOFF_GATE (still armed; disarm only before a terminal marker)
+  never edit:  ${HANDOFF_NEVER_EDIT:-docs/plans/*/tasks.json (scripts/tasks.sh only); docs/plans/*/progress.md (main thread only)}
+  tests:       mock only true externals; never mock src/; a task is done only when tasks.sh verify passes
 
 To continue prior work: read .cc-sessions/HANDOFF.json (full context), then
 restate the in-flight task in ≤3 sentences and resume from the next dispatch.

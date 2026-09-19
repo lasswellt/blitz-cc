@@ -43,7 +43,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
   "passes": false, "status": "open|in_progress|done|blocked",
   "blocked_reason": null,   // hard_spec|oracle-underivable|test-assertion-suspect|scope-expansion-needed|circuit-breaker|dependency-missing|ratchet:<metric>
   "attempts": 0, "last_verify": {"ts":"","ok":false,"failed":"","tail":""},
-  "origin": "plan|audit|check|issue:<n>", "notes": "" }
+  "origin": "plan|audit|check|learn|issue:<n>", "notes": "" }
 ```
 
 | Field | Notes |
@@ -53,7 +53,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 | `passes` | written only by `tasks.sh verify`; mirrors `last_verify.ok` |
 | `last_verify.tail` | ≤200 chars of the failing command's output (evidence, not a summary) |
 | `blocked_reason` | see the vocabulary below; `ratchet:<metric>` names the quality metric that regressed |
-| `origin` | provenance; `startup-validate.sh` rejects unknown values |
+| `origin` | provenance: `plan`, `audit`, `check`, `learn`, or `issue:<n>`; `tasks.sh add` and `startup-validate.sh` reject anything else |
 
 ### `blocked_reason` vocabulary
 
@@ -72,7 +72,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 ```yaml
 ---
 status: active      # active | paused | done
-priority: P1        # P0 | P1 | P2 (next-state.sh sorts P0 first; a bare integer is also accepted)
+priority: P1        # P0 | P1 | P2 (next-state.sh sorts P0 first, then created, then slug; a bare integer is also accepted)
 created: 2026-09-19
 ship: manual        # auto | manual — auto lets ship run without a confirmation prompt; the loop still never dispatches ship
 ---
@@ -108,7 +108,7 @@ Hook- or script-enforced; prose alone is not a control.
 | Only `scripts/tasks.sh` writes `tasks.json` | `tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on `docs/plans/*/tasks.json` |
 | `status: done` ⇒ `passes == true` ∧ `last_verify.ok == true` | `tasks.sh set … status=done` refuses otherwise; `tasks.sh verify` is the only path that flips `passes` |
 | Main thread only: `tasks.json` and `progress.md` are on every dev agent's never-edit list; `build` writes them at task boundaries on the main branch | `dev` frontmatter + `pre-edit-guard.sh`; `pre-compact-snapshot.sh` carries the never-edit list through compaction |
-| `attempts` increments per failed build attempt; `blocked` at 3 or on `ESCALATE:` | `build` via `tasks.sh set … attempts+=1` |
+| `attempts` increments per failed build attempt; `blocked` at 3 or on `ESCALATE:` | `build` via `tasks.sh set … attempts=+1`; the breaker is skipped when the same call sets `status` or `blocked_reason` explicitly (the unblock recipe is `set … status=open attempts=0`) |
 | Fix rounds ≤3 on the same `dev` (sonnet); rounds 4–5 spawn a fresh `dev` on opus; round 5 adjudicates to `blocked` with a `Ruling:` | `build` |
 | Kill switch: while `.cc-sessions/STOP` exists every tool call is denied | `kill-switch.sh` (PreToolUse `*`) |
 | `tasks.json` and `docs/solutions/*.md` are scanned at startup (shape, ids, injection, quarantine) | `startup-validate.sh` |
@@ -121,14 +121,16 @@ Hook- or script-enforced; prose alone is not a control.
 
 ### `scripts/tasks.sh`
 
-Atomic (write to temp, `mv`), exit 0/1, one JSON document per line on stdout where output is structured.
+Atomic (write to temp, `mv`). Exit 0 ok, 1 verify failed, 2 usage or contract error, 3 plan or task not found. Timeouts ride on the command as `cmd::<seconds>` (default 120). `BLITZ_PLANS_DIR` overrides `docs/plans`.
 
 | Command | Effect |
 |---|---|
-| `tasks.sh list <plan> [--status s]` | prints tasks (id, status, passes, attempts, blocked_reason), filtered by status when given |
-| `tasks.sh add <plan> --id T-004 --title "…" --files a.ts,b.ts --verify-cmd "<cmd>" [--verify-cmd …] [--depends T-001,T-002] [--role r] [--origin o]` | appends a task; refuses an empty `verify[]` or a duplicate id; `--verify-cmd` is repeatable, `--timeout` applies to the preceding command |
-| `tasks.sh set <plan> <id> key=value …` | updates `status`, `blocked_reason`, `notes`, `attempts+=1`; refuses `status=done` unless `passes ∧ last_verify.ok`; bumps `updated` |
-| `tasks.sh verify <plan> <id>` | runs `verify[]` in order under each `timeout`; writes `passes` and `last_verify {ts, ok, failed, tail}`; exit 0 when all pass, 1 otherwise; never touches `status` |
+| `tasks.sh init <plan>` | creates an empty `tasks.json` (`blitz-tasks/1.0`) for the slug |
+| `tasks.sh list <plan> [--status s] [--json]` | prints tasks (id, status, pass/fail, attempts, title), filtered by status when given; `--json` prints the array |
+| `tasks.sh add <plan> --id T-004 --title "…" --files a.ts,b.ts --verify-cmd "<cmd>[::<seconds>]" [--verify-cmd …] [--depends T-001,T-002] [--role r] [--origin o] [--notes …] [--test-only-ok]` | appends a task; refuses an empty `verify[]`, a duplicate id, a bad role or origin, and a test-only `verify[]` without `--test-only-ok` |
+| `tasks.sh set <plan> <id> key=value …` | updates `status`, `blocked_reason`, `notes`, `title`, `role`, `attempts=N` or `attempts=+1`; refuses `status=done` unless `passes ∧ last_verify.ok`; refuses `passes` and `last_verify`; bumps `updated` |
+| `tasks.sh verify <plan> <id> [--dry]` | runs `verify[]` in order under each timeout; writes `passes` and `last_verify {ts, ok, failed, tail}`; flips `status` to `done` on pass and back to `in_progress` when a previously done task fails; exit 0 when all pass, 1 otherwise |
+| `tasks.sh next <plan>` | prints the first `in_progress` task, else the first `open` task whose `depends_on` are all `done`, as one JSON object; empty when none |
 
 `<plan>` is the slug (`docs/plans/<slug>/tasks.json`). Everything else — skills, `critic`, `check`, humans — goes through this script.
 
@@ -137,21 +139,31 @@ Atomic (write to temp, `mv`), exit 0/1, one JSON document per line on stdout whe
 Prints one JSON object and exits 0; no side effects.
 
 ```json
-{ "active_plan": "<slug>|null", "next_task": "T-003|null",
+{ "row": 2, "reason": "open work in <slug>",
+  "active_plan": "<slug>|null", "plan_priority": 1,
+  "next_task": {"id":"T-003","title":"…","role":"backend","files":[…],"verify":[…],"attempts":0},
+  "in_progress": ["T-003"],
   "blocked": [{"plan":"<slug>","id":"T-002","reason":"hard_spec"}],
-  "paused_plans": ["audit-2026-09-19"],
-  "inbox_pending": 0, "live_sessions_waiting": 0, "check_stale": true }
+  "escalate": [{"plan":"<slug>","id":"T-002","reason":"hard_spec"}],
+  "paused_plans": ["audit-2026-09-19"], "done_plans_unarchived": [],
+  "check_stale": true, "check_result": "none",
+  "inbox_pending": 0, "sessions_waiting": 0, "kill_switch": false }
 ```
+
+Flags: `--plans-dir <dir>`, `--sessions-dir <dir>`, `--no-agent-view` (skip `claude agents --json`; bats and CI use it).
 
 | Field | Meaning |
 |---|---|
-| `active_plan` | first `spec.md` with `status: active` (by `priority`, then `created`) |
-| `next_task` | first `in_progress` task, else first `open` task whose `depends_on` are all `done` |
-| `blocked` | every `blocked` task across active plans with its reason |
-| `paused_plans` | plans `next` skips (`audit` output stays paused until a human activates it) |
+| `row`, `reason` | the lowest matching row (table below) and why |
+| `active_plan`, `plan_priority` | first `spec.md` with `status: active` (by `priority`, then `created`, then slug); priority is `null` on rows 0, 1, 5 |
+| `next_task` | first `in_progress` task, else first `open` task whose `depends_on` are all `done`, as an object; `null` off row 2 |
+| `in_progress` | ids in progress in the active plan |
+| `blocked`, `escalate` | every `blocked` task across active plans with its reason; `escalate` is the subset whose reason needs a human |
+| `paused_plans`, `done_plans_unarchived` | plans `next` skips (`audit` output stays paused until a human activates it); done plans still under `docs/plans/` |
+| `check_stale`, `check_result` | no `check-report.md` with PASS at or after the last task change; the report's `result` or `none` |
 | `inbox_pending` | pending `inbox.jsonl` lines after triage |
-| `live_sessions_waiting` | live session records with `waitingFor ≠ null` ([sessions.md](/_shared/sessions.md)) |
-| `check_stale` | no `check-report.md` with PASS newer than the last task change |
+| `sessions_waiting` | live session records with `waitingFor ≠ null` ([sessions.md](/_shared/sessions.md)) |
+| `kill_switch` | `.cc-sessions/STOP` exists |
 
 ---
 
@@ -161,10 +173,12 @@ Prints one JSON object and exits 0; no side effects.
 
 ```json
 { "checks": [ {"name": "tsc", "cmd": "npx tsc --noEmit", "timeout": 120} ],
-  "blocks": 0, "max_blocks": 6, "until": "<phase label>" }
+  "blocks": 0, "max_blocks": 4, "until": "<phase label>" }
 ```
 
-Armed, every check runs in order; the first failure blocks the turn from ending (exit 2, reason plus a 200-char output tail on stderr) and increments `blocks`. When every check passes, `blocks` resets to 0 and the turn ends. The gate stands down (exit 0) when no gate file exists, stdin `stop_hook_active` is true, `last_assistant_message` carries a terminal marker (`LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:`), or `blocks ≥ max_blocks` (logged `gate_exhausted`). `max_blocks` defaults to 6 so blitz never reaches the platform's own 8-consecutive-block cap.
+`last_failed` is hook-owned: `stop-gate.sh` writes the failing check's name and tail on a block and clears it on pass.
+
+Armed, every check runs in order; the first failure blocks the turn from ending (exit 2, reason plus a 200-char output tail on stderr) and increments `blocks`. When every check passes, `blocks` resets to 0 and the turn ends. The gate stands down (exit 0) when no gate file exists, stdin `stop_hook_active` is true, `last_assistant_message` carries a terminal marker (`LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:`), or `blocks ≥ max_blocks` (logged `gate_exhausted`). `max_blocks` defaults to 4: the platform stops honoring Stop-hook blocks after 5 in a row (`stopHookBlockCap`, `CLAUDE_STOP_HOOK_BLOCK_CAP`), and a user `/goal` shares that count, so the gate always exhausts first and logs it.
 
 ### Arming table
 
@@ -182,12 +196,12 @@ jq -n --arg sel "$SELECTED" --arg until "build ${SLUG} ${TASK}" '{
   checks: [
     {name: "tsc",   cmd: "npx tsc --noEmit --pretty false", timeout: 180},
     {name: "tests", cmd: ("npx vitest run --reporter=dot " + $sel), timeout: 300}
-  ], blocks: 0, max_blocks: 6, until: $until }' > "$GATE_DIR/gate.json"
+  ], blocks: 0, max_blocks: 4, until: $until }' > "$GATE_DIR/gate.json"
 # … work …
 rm -f "$GATE_DIR/gate.json"   # before any LOOP_* marker or early return
 ```
 
-Interactive runs never write the file. Never wire a prompt-type Stop hook in the plugin: a user `/goal` is itself a prompt-type Stop hook and the two would fight; the gate already stands down on `stop_hook_active`, though a user `/goal` still counts against the 8-block cap.
+Interactive runs never write the file. Never wire a prompt-type Stop hook in the plugin: a user `/goal` is itself a prompt-type Stop hook and the two would fight; the gate already stands down on `stop_hook_active`. `/goal` is the loop controller (a separate evaluator judging the transcript); the gate is the evidence layer (commands that must pass). Both count against the platform's 5-block cap.
 
 ---
 
@@ -197,7 +211,7 @@ Interactive runs never write the file. Never wire a prompt-type Stop hook in the
 
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
-| 0 | `inbox_pending > 0` after triage, or `live_sessions_waiting > 0` | the pending items | `LOOP_DEFER` |
+| 0 | `kill_switch`, or `inbox_pending > 0` after triage, or `sessions_waiting > 0` | the pending items | `LOOP_DEFER` |
 | 1 | a task is `blocked` with reason ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`} | the escalation | notify, then `LOOP_ESCALATE` |
 | 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | dispatch `build <slug>` for `next_task` |
 | 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | dispatch `check` |
@@ -272,8 +286,8 @@ Each rung has one owner and one kind of verdict; they compose, none replaces ano
 | Rung | Mechanism | Owner | Verdict |
 |---|---|---|---|
 | Prompt-level check | the skill's own checklist and `tasks.sh verify` output read before claiming done | the running skill | claim |
-| `/goal` | prompt-type Stop hook: Haiku evaluator on the transcript, 8-block cap, idle check-ins from 30 min doubling | user pastes the line; blitz prints it | condition met / not yet / impossible |
-| `stop-gate.sh` | deterministic: `gate.json` checks (tsc, selected tests, lint) | blitz Stop hook | pass / block (≤6) |
+| `/goal` | prompt-type Stop hook: a separate evaluator judges the transcript each turn; counts against the platform's 5-block cap; survives compaction; works under `-p` | user pastes the line; blitz prints it | condition met / not yet / impossible |
+| `stop-gate.sh` | deterministic: `gate.json` checks (tsc, selected tests, lint) | blitz Stop hook | pass / block (≤4) |
 | `critic` | fresh-context evaluator, no `Write`/`Edit`, `omitClaudeMd`; `--mode reject` (opus) for gates, `--mode survey` (sonnet) for `check`; runs `tasks[].verify[]` through `tasks.sh` | `check`, `build` fix rounds | LGTM / REJECT, JSON findings |
 | Bundled `/verify` | the platform's user-only skill; its recorded recipe lives at `.claude/skills/verify/SKILL.md` and `check` reads it for the app-level run | user | the app runs and behaves |
 

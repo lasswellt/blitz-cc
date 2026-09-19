@@ -27,7 +27,7 @@ phase('Audit')
 log(`audit-sweep: dispatching ${args.roster.length} pillar agent(s) as one barrier`)
 
 const findings = await parallel(args.roster.map(a => () =>
-  agent(a.prompt, { label: a.name, phase: 'Audit', model: 'sonnet', schema: args.findingsSchema })))
+  agent(a.prompt, { label: a.name, phase: 'Audit', agentType: 'general-purpose', model: 'sonnet', schema: args.findingsSchema })))
 
 const agents = findings.map((f, i) => ({ name: args.roster[i].name, ok: f !== null, result: f }))
 const failed = agents.filter(a => !a.ok).map(a => a.name)

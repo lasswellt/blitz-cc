@@ -116,3 +116,11 @@ teardown() { teardown_fake_repo; }
   printf '%s' "$output" | grep -q "hello feed"
   [ "$(cat .cc-sessions/context-char-count)" = "0" ]
 }
+
+@test "compaction resume re-pins the gate path and never-edit list from HANDOFF" {
+  jq -n '{phase:"build demo",plan:"demo",task:"T-003",branch:"main",uncommitted:[],last_activity:"x",gate:".cc-sessions/sessions/s1/gate.json",never_edit:["docs/plans/*/tasks.json (scripts/tasks.sh only)","docs/plans/*/progress.md (main thread only)"]}' > .cc-sessions/HANDOFF.json
+  run_hook "session-start.sh" '{"session_id":"s1","source":"compact"}'
+  printf '%s' "$output" | grep -q "gate:        .cc-sessions/sessions/s1/gate.json"
+  printf '%s' "$output" | grep -q "never edit:  docs/plans/\*/tasks.json"
+  printf '%s' "$output" | grep -q "never mock src/"
+}
