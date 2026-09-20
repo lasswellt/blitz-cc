@@ -460,3 +460,57 @@ Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at
 | `--min-confidence high\|low` | advisory gate band; default `high` (≥0.8) for diff/plan, `low` for repo. Reject-authority rows bypass it |
 | `--baseline <metric>` | grandfather one ratchet metric on an existing project (`stale_worktree_branch_count`) |
 | `--force` | re-run plan scope over a fresh PASS (`check-report.md` at `HEAD`) |
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+## Phase 0: SCOPE
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/common.sh"
+BASE="${BLITZ_BASE:-$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo origin/main)}"
+case "$SCOPE" in
+  diff) CHANGED=$( { git diff --name-only "$BASE"...HEAD; git diff --name-only; git ls-files -o --exclude-standard; } | sort -u) ;;
+  plan) PLAN_DIR="docs/plans/${SLUG}"; [ -f "$PLAN_DIR/tasks.json" ] || { echo "BLOCKED: no tasks.json for ${SLUG}"; exit 1; }
+        CHANGED=$( { jq -r '.tasks[].files[]' "$PLAN_DIR/tasks.json"
+                     git log --format=%H --grep="Task: ${SLUG}/" | xargs -r git show --name-only --format= ; } | sort -u) ;;
+  repo) CHANGED=$(git ls-files) ;;
+esac
+printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BASE"...HEAD > "${SESSION_TMP_DIR}/check.patch"
+```
+
+- Plan scope reads `spec.md` and `plan.md` first (the critic grades spec compliance against them) and the `progress.md` tail (last 20 lines) for rulings that bound the review.
+- **Prior PASS re-run**: plan scope with a `check-report.md` whose `result: PASS` and `ref` equal `HEAD` and is newer than `tasks.json` `updated` → print `already PASS at <sha>` and stop; never overwrite a fresh PASS.
+- **App-level recipe**: if `.claude/skills/verify/SKILL.md` exists (the bundled `/verify` records its recipe there) read it; its steps are the e2e procedure for Phase 2.3. Absent → Phase 2.3 falls back to route smoke only.
+- Changed packages (monorepo): `references/main.md` §Changed package detection; gates run per changed package, else at root.
+- `--only <lane>` → jump to §Only. Otherwise the full pipeline: Phase 1 → 2 → (3 with `--fix`) → 4 → 5.
+- Record `[check] scope=<s> base=<sha> files=<n> loc=<n>`; LOC > 2000 switches the Phase 2 fan-out to sequential (`BLITZ_REVIEW_SEQUENTIAL=1` forces it).
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+## Phase 2: SEMANTIC LANE
+
+Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5` and must survive **FP-verification** (re-read the cited code, reproduce against actual behavior, attach the excerpt) before it is reported. No evidence → dropped. FP-verification never raises confidence; only aggregation does, and `check` does not aggregate (`audit` does).
+
+### 2.1 Survey fan-out
+
+One `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2. Lens roster, prompts and the sequential fallback above 2000 LOC: this file §2.1 Survey fan-out.
+
+### 2.2 Collect
+
+Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
+
+### 2.3 App-level verification
+
+Runs only when the change touches a rendered surface. Procedure: this file §2.3 App-level verification.
+
+### 2.4 `--mutation` (optional)
+
+Off by default; a sampling mutation run over the changed files. Setup and thresholds: this file §2.4 `--mutation`.

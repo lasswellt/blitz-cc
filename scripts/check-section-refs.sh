@@ -84,6 +84,17 @@ for fp in glob.glob("skills/*/references/main.md") + glob.glob("skills/_shared/*
         if re.search(r'\]\(' + re.escape(f"{parent}/{base}") + r'\)', line):
             bad.append(f"{fp}:{i}: links to itself as {parent}/{base}; a moved section kept its old relative path")
 
+# 3c. A relative path inside references/ that still has SKILL.md's depth. A
+# moved section's "../../docs/x.md" and "references/y.md" were both correct one
+# directory up; neither is here. Link checking finds these, but only for paths
+# that happen to miss — this names the pattern.
+for fp in glob.glob("skills/*/references/*.md"):
+    for i, line in enumerate(open(fp).read().split("\n"), 1):
+        if re.search(r'\]\(references/', line):
+            bad.append(f"{fp}:{i}: 'references/...' inside references/ — a moved section kept SKILL.md's depth")
+        if re.search(r'\]\(\.\./\.\./(docs|skills|agents|hooks|scripts)/', line):
+            bad.append(f"{fp}:{i}: '../../' inside references/ reaches skills/, not the repo root — use '../../../'")
+
 # 4. A doubled or unspaced citation, the 3.2.0 retarget signature.
 for fp in glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):

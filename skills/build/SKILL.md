@@ -69,15 +69,7 @@ No plan, no agents: do the work on the main thread. Entry conditions are in Phas
 
 ### T.1 Baseline and conventions (once per invocation)
 
-1. Inventory: `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -30`; read the root `package.json` and workspace config.
-2. Build health; catalog pre-existing errors so agents are not blamed for them:
-   ```bash
-   npm run type-check 2>&1 | tail -20
-   npm run build 2>&1 | tail -20
-   ```
-   **Gate:** build succeeds or pre-existing errors are cataloged before any spawn.
-3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE — do not recreate**. This block goes verbatim into every spawn prompt (item 3 of the spec; see [references/main.md](references/main.md) §Spawn prompt template).
-4. Read `docs/plans/<slug>/plan.md` and the tail of `progress.md` (last 20 lines): they are the recovery map. Trust them and `git log --grep 'Task: <slug>/'` over any recollection, especially after compaction (`HANDOFF.json` names the plan, task, gate path, and never-edit list).
+Read once per invocation, not per task: stack profile, test command, never-edit additions. Commands: [references/main.md](references/main.md) §T.1 Baseline and conventions.
 
 ### T.2 The loop
 
@@ -89,13 +81,7 @@ Edits `tasks.json` (`tasks-guard.sh` denies it) or `progress.md`; reads another 
 
 ### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md) §8)
 
-| Round | Who | How |
-|---|---|---|
-| 1-3 | same `dev-<ID>` (sonnet) | `SendMessage(to: "dev-<ID>", message: "verify item <n> failing: <200-char tail>; fix <file> only")` — state remaining work explicitly, never a bare "continue"; one failing item per message |
-| 4-5 | fresh `dev` on opus | new `Agent(subagent_type: "blitz:dev", model: "opus")`, full 11-item spec plus the `progress.md` tail (last 3 verify tails and rulings) |
-| after 5 | main thread | adjudicate (§T.5) |
-
-Each round: `set attempts=+1` on failure, re-run `tasks.sh verify`, append the verify line. At `attempts == 3` `tasks.sh set` flips the task to `blocked` with `circuit-breaker`; under `--autonomous` or `next --loop` the loop continues with rounds 4-5 only when `BLITZ_FIX_ROUNDS_MAX` (default 5) allows, else moves to the next ready task. Never retry an unchanged prompt; each round changes at least the evidence tail. Stuck: no reply within 8 min + 30 s → `SendMessage STATUS?`; no answer in 90 s → `MISSING`, treat as `BLOCKED circuit-breaker`.
+Rounds 1–3 resume the same `dev` by name; 4–5 spawn fresh on opus; adjudicate at 5 with a `Ruling:` in `progress.md`. Round table and resume payload: [references/main.md](references/main.md) §T.4 Fix loop.
 
 ### T.5 Circuit breaker and rulings
 

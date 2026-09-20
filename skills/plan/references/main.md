@@ -212,3 +212,32 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 - Minimum for a `role: test` task: the test row alone with `--test-only-ok`, plus `--notes "test-only: <why no non-test check applies>"`.
 - Order rows cheapest first (`grep` → `tsc` → unit test → emulator → Playwright); `tasks.sh verify` stops at the first failure and the 200-char tail is what `build` reads.
 - Quote patterns for the shell that `tasks.sh verify` runs (`bash -c`); escape `{` `}` `|` inside `grep -E` alternations as shown.
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 3.1.1 Bulk-task guard (SPIDR check)
+
+After drafting each task but **before** accepting it, run the bulk-task guard (catches the "migrate 130 files via glob" anti-pattern).
+
+**Reject or split** any task matching either criterion:
+
+1. **File-count heuristic** (two-band):
+   - `task.files.length > 5` AND the plan class is not `spike` — **mandatory split**.
+   - `task.files.length` in `{4, 5}` — **soft warn**: append a `decision` line to the activity feed; allow only if no other task shares a parent directory with it.
+   - `task.files.length` in `{1, 2, 3}` — **green**.
+
+2. **Horizontal-scope language** — title or notes matches (case-insensitive):
+   - `/all \w+ (files|components|modals|routes|tests|pages)/`
+   - `/(via|using) (pattern|glob|regex)/`
+   - `/across the codebase/`
+   - `/every (file|component|store|route|test)/`
+   - `/bulk (migrate|refactor|update|rename)/`
+
+**Handling a match:**
+- **Interactive:** pause. Offer a SPIDR Data-axis split (one task per parent directory) or downgrade the plan class to `spike`.
+- **`--autonomous`:** auto-split by nearest parent directory; recursively split while a batch still has > 8 files. Each batch gets a `grep -c` verify that counts the migrated pattern in that directory, e.g. `[ "$(grep -rlE '<new-pattern>' src/<dir> | wc -l)" -ge <n> ]::30`. If there is no concrete file list, downgrade to spike. Append one `decision` feed line per split.
+- **Never auto-accept a bulk task.** List every split in `plan.md` §Risks.

@@ -399,16 +399,60 @@ EOF
   # FIRST 5,000 TOKENS. Markdown puts terminal phases last, so an over-cap body
   # loses its verdict, gate, report and recovery — exactly what a long session
   # needs, and a long session is when compaction fires.
+  #
+  # 15,000 B = 5,000 tokens at 3.0 bytes/token, the pessimistic ratio for
+  # table- and code-dense markdown. The cap is in bytes because only
+  # `messages.count_tokens` counts Claude tokens accurately and that needs a
+  # credential; scripts/count-tokens.sh does it where one exists. tiktoken is
+  # not a substitute — it is OpenAI's and undercounts Claude.
   local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
   local over=0 f b
   for f in "$root"/skills/*/SKILL.md; do
     b=$(awk 'f{print} /^---$/{c++; if(c==2) f=1}' "$f" | wc -c | tr -d ' ')
-    if [ "$b" -gt 18000 ]; then
+    if [ "$b" -gt 15000 ]; then
       echo "over cap: $f (${b}B)" >&2
       over=1
     fi
   done
   [ "$over" -eq 0 ]
+}
+
+@test "no skill relies on a favourable tokenizer ratio" {
+  # A body is safe only while Claude's real bytes-per-token on its content
+  # stays ABOVE body_bytes / 5000. Assert that crossover never reaches 3.0,
+  # the pessimistic floor for this kind of markdown.
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  local bad=0 f b
+  for f in "$root"/skills/*/SKILL.md; do
+    b=$(awk 'f{print} /^---$/{c++; if(c==2) f=1}' "$f" | wc -c | tr -d ' ')
+    # crossover >= 3.0 means b >= 15000
+    if [ "$b" -ge 15000 ]; then
+      echo "crossover at or above 3.0 B/tok: $f (${b}B)" >&2
+      bad=1
+    fi
+  done
+  [ "$bad" -eq 0 ]
+}
+
+@test "no local BPE tokenizer is used or vendored" {
+  # tiktoken / gpt-tokenizer are OpenAI's; they undercount Claude by ~15-20% on
+  # prose and more on code. The only accurate counter is messages.count_tokens.
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  # Match USE, not mention: this repo documents the prohibition in prose, and a
+  # bare name match would flag its own warnings.
+  run grep -rnE "(^|[^a-z_])(import|require\(|from)[[:space:]'\"(]*(tiktoken|gpt-?tokenizer)|pip install[^|]*tiktoken|\"(tiktoken|gpt-tokenizer)\"[[:space:]]*:" \
+    --include='*.sh' --include='*.js' --include='*.mjs' --include='*.json' --include='*.py' \
+    "$root/scripts" "$root/hooks" "$root/skills" "$root/agents" "$root/workflows"
+  [ -z "$output" ]
+}
+
+@test "count-tokens.sh exits 3 and says so when no credential is available" {
+  local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
+  run env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN \
+    bash "$root/scripts/count-tokens.sh" "$root/skills/todo/SKILL.md"
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"no usable credential"* ]]
+  [[ "$output" == *"UNVERIFIED"* ]]
 }
 
 @test "terminal phases sit inside the 5,000-token cut point" {

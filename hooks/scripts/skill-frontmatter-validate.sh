@@ -17,7 +17,7 @@
 #   5. effort: optional; only on slash-only skills (low|medium|high|xhigh|max)
 #   6. allowed-tools: present unless disable-model-invocation: true
 #   7. argument-hint: present if SKILL.md body references "$1"/"$@"/positional args
-#   8. Body size ≤ 18,000 B (~4,500 tok) — under the 5,000-token compaction re-attach cap
+#   8. Body size ≤ 15,000 B — under the 5,000-token compaction re-attach cap at 3.0 B/tok
 #   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
 #  11. a pinned model: discloses its cache cost in the body
@@ -156,15 +156,31 @@ validate_one() {
   # and the recovery — exactly what a long session needs, and a long session is
   # when compaction fires.
   #
-  # 18,000 bytes ~= 4,500 tokens at 4 bytes/token, leaving headroom because
-  # table- and code-dense markdown tokenizes nearer 3.5 bytes/token, i.e. the
-  # estimate understates. Push the overflow to references/ and keep the closing
-  # phases in the body.
+  # THE CAP IS IN BYTES BECAUSE THE REAL COUNT NEEDS A NETWORK CALL.
+  #
+  # Only `POST /v1/messages/count_tokens` counts Claude tokens accurately, and
+  # it is model-specific. There is no offline Claude tokenizer to install, and
+  # tiktoken/gpt-tokenizer must NOT be substituted: they are OpenAI's, and
+  # undercount Claude by ~15-20% on prose and more on code — precisely the
+  # content here. `scripts/count-tokens.sh` does it properly where a credential
+  # exists; this hook runs on every edit, so it uses a byte proxy calibrated
+  # against the worst plausible ratio.
+  #
+  # Derivation. The platform cuts a re-attached skill at 5,000 tokens. English
+  # prose runs ~3.6-4.0 bytes/token for Claude; markdown dense with tables,
+  # code blocks, paths and CLI flags runs denser, ~3.0-3.5. Taking 3.0 as the
+  # pessimistic floor, a body stays under 5,000 tokens when it is under
+  # 5,000 x 3.0 = 15,000 bytes. The earlier 18,000 cap assumed 4.0 bytes/token
+  # and was therefore unsafe for exactly the skills it was meant to protect.
+  #
+  # Replace this with measurement when a credential is available:
+  #   scripts/count-tokens.sh --calibrate
+  # prints the observed bytes-per-token and the safe cap at the worst ratio.
   local body_bytes body_tokens
   body_bytes=$(printf '%s' "$body" | wc -c | tr -d ' ')
   body_tokens=$(( body_bytes / 4 ))
-  if [ "$body_bytes" -gt "${BLITZ_SKILL_BODY_CAP:-18000}" ]; then
-    fail "$rel" "body is ${body_bytes}B (~${body_tokens} tok), over the ${BLITZ_SKILL_BODY_CAP:-18000}B (~4,500 tok) cap; the platform keeps only the first 5,000 tokens of a re-attached skill after compaction. Move mid-body detail to references/ and keep the closing phases (gate, verdict, report, recovery) in the body"
+  if [ "$body_bytes" -gt "${BLITZ_SKILL_BODY_CAP:-15000}" ]; then
+    fail "$rel" "body is ${body_bytes}B (~${body_tokens} tok), over the ${BLITZ_SKILL_BODY_CAP:-15000}B cap (5,000 tokens at 3.0 B/tok, the pessimistic ratio for dense markdown); the platform keeps only the first 5,000 tokens of a re-attached skill after compaction. Move mid-body detail to references/ and keep the closing phases (gate, verdict, report, recovery) in the body"
   fi
 
   # 9. Task/Todo tools are gated off on Claude 5 models and never part of the v3 contract.

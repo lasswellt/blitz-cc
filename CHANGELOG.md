@@ -10,6 +10,37 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.5.0] — 2026-09-20 · measure tokens properly; the 3.4.0 cap was unsafe
+
+3.4.0 claimed six skill bodies now fit the 5,000-token compaction cap. The claim rested on a bytes÷4 estimate, and bytes÷4 is wrong in the unsafe direction for this content.
+
+### Fixed
+- **The 18,000-byte cap assumed 4.0 bytes/token and was therefore too loose.** For Claude, English prose runs ~3.6–4.0 B/tok; markdown dense with tables, code blocks, paths and CLI flags runs ~3.0–3.5. A body is safe only while Claude's real ratio stays **above** `body_bytes / 5000`. After 3.4.0 the worst crossover was **3.50 B/tok** (`audit`), meaning eight skills were still over the cap under any plausible dense-markdown ratio. The cap is now **15,000 B** (5,000 tokens at 3.0 B/tok, the pessimistic floor) and nine skills were cut further. Worst crossover is now **2.98 B/tok**.
+
+  | Skill | 3.4.0 crossover | now |
+  |---|---|---|
+  | `audit` | 3.50 B/tok | **2.81** |
+  | `onboard` | 3.49 | **2.63** |
+  | `ui-build` | 3.46 | **2.28** |
+  | `research` | 3.42 | **2.98** |
+  | `check` | 3.40 | **2.78** |
+  | `next` | 3.31 | **2.73** |
+  | `doctor` | 3.25 | **2.98** |
+  | `build` | 3.22 | **2.86** |
+  | `plan` | 2.99 | **2.73** |
+
+  Verbatim as before: 15 more sections moved into `references/`, and a line-level check confirms nothing was lost.
+- Five relative paths broke in the move: three self-links to `references/main.md` from inside it, one `../../docs/…` that reaches `skills/` rather than the repo root from one level deeper, and one sibling addressed as `references/x.md` from inside `references/`. `check-section-refs.sh` now names the whole class rather than the instances.
+
+### Added
+- **`scripts/count-tokens.sh`** — authoritative counts via `messages.count_tokens`, the only accurate counter for Claude (counts are model-specific). Caches by content hash in `.cc-sessions/token-counts.json` so unchanged files cost nothing. `--calibrate` prints measured bytes-per-token and the safe cap at the worst observed ratio, which is how the 15,000 B proxy should eventually be replaced with a measurement. Exits 3 with byte estimates clearly marked `UNVERIFIED` when no credential is available, rather than silently degrading.
+- CI runs the real count when `ANTHROPIC_API_KEY` is present and skips otherwise, so forks are not broken by a missing secret.
+- Four tests: the byte cap, a crossover assertion (no skill may depend on a ratio at or above 3.0), the credential-absent behaviour of the counter, and a guard that **no local BPE tokenizer is ever used**.
+
+### Notes
+- **`tiktoken` and `gpt-tokenizer` are prohibited, not merely discouraged.** They are OpenAI's tokenizer and undercount Claude by ~15–20% on prose and by more on code — exactly the content measured here. Anthropic publishes no offline tokenizer for current models, so an exact count requires a credential and a network call; everything else in this repo is a calibrated proxy and is labelled as one. The guard test matches *use* (`import`, `require`, a dependency entry), not mention, so the prohibition can be documented in prose.
+- The token figures in this repository remain **unverified estimates** until someone runs `scripts/count-tokens.sh --calibrate` with a credential. The margins above are derived from a pessimistic assumed ratio, not measurement.
+
 ## [3.4.0] — 2026-09-19 · skill bodies fit the compaction budget
 
 Six skills were silently truncated after every compaction. Validation passed the whole time, because the guard measured the wrong thing.
@@ -25,6 +56,8 @@ Six skills were silently truncated after every compaction. Validation passed the
   | `build` | 6,230 | **4,025** | −35% |
   | `research` | 5,961 | **4,280** | −28% |
   | `next` | 4,898 | **4,142** | −15% |
+
+  **These figures are bytes÷4 estimates, not measured token counts, and 3.5.0 shows the margin they implied was not real.**
 
   Every terminal phase now sits between ~2,840 and ~4,172 tokens, comfortably inside the cut point. The restructure is verbatim: 22 sections moved into `references/`, each replaced by a contract summary and a pointer at its original position, and a line-level check confirms nothing was lost from any of the six.
 

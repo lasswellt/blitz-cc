@@ -43,30 +43,7 @@ Without flags `doctor` is read-only: it prints findings, a remediation per findi
 
 ## Phase 1: PLUGIN STRUCTURE
 
-Run in order; each command is one finding on non-zero exit.
-
-```bash
-P="${CLAUDE_PLUGIN_ROOT:-.}"
-bash "$P/scripts/validate-plugin-structure.sh"                         # D-101 plugin layout
-jq -e . "$P/hooks/hooks.json" >/dev/null                               # D-102 hooks.json parses
-jq -r '.. | .command? // empty' "$P/hooks/hooks.json" | grep -oE 'scripts/[^ "]+\.sh' | sort -u | while read -r s; do
-  f="$P/hooks/$s"
-  [ -f "$f" ] || { echo "MISSING $s"; continue; }
-  [ -x "$f" ] || echo "NOT-EXECUTABLE $s"
-  head -1 "$f" | grep -q '^#!' || echo "NO-SHEBANG $s"
-done                                                                   # D-103 hook scripts
-bash "$P/hooks/scripts/skill-frontmatter-validate.sh" --all </dev/null # D-104 SKILL.md lint (+ cumulative description budget)
-bash "$P/hooks/scripts/agent-frontmatter-validate.sh" --all </dev/null # D-105 agents
-bash "$P/hooks/scripts/markdown-link-validate.sh" </dev/null           # D-106 links
-bash "$P/scripts/gen-catalog.sh" --check                               # D-107 catalog fresh, no dead /blitz: refs
-for d in "$P"/skills/*/; do [ -f "$d/SKILL.md" ] || echo "NO-SKILL-MD $d"; done   # D-108
-```
-
-`D-103` misses are `FAIL` (`chmod +x hooks/scripts/<name>.sh` is the fix, `fix:auto`). `D-104`/`D-105` violations are `FAIL`; a cumulative-description figure above 14 000 chars is `WARN`. `D-107` is `WARN` (run `scripts/gen-catalog.sh`).
-
-`detect-stack.sh` must print something (`D-109`): an empty result means stack-dependent skills (`build`, `check`) will guess commands.
-
----
+D-101…D-105: the plugin's own files load, hook scripts are executable, and no skill or agent lists a gated Task tool. Scans: [references/main.md](references/main.md) §Phase 1 PLUGIN STRUCTURE.
 
 ## Phase 2: SESSION STATE
 

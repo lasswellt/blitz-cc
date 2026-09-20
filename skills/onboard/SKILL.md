@@ -119,32 +119,7 @@ Package mode plans `packages/<name>/{package.json, tsconfig.json, vitest.config.
 
 ### G3 IMPLEMENT — Generate real files
 
-Create the files from G2 in order. Every file is complete ([references/main.md](references/main.md) §File Templates):
-
-- **Manifests**: `package.json` with `scripts` for `dev`, `build`, `test` (`vitest run`), `type-check` (`vue-tsc --noEmit` or `tsc --noEmit`), `lint`. Install with the package manager, no version pins (`pnpm add <pkg>`, `pnpm add -D <pkg>`), then verify the resolved versions per the package policy.
-- **App shell**: `app.vue`/`App.vue` with real markup; `pages/index.vue` or a router with one route; a Pinia store in setup syntax with `loading`/`error` state; one `useAsync` composable returning `{ data, loading, error, execute }`; a `types/index.ts` exporting the domain model.
-- **Tests**: AAA pattern, factory functions, at least one meaningful assertion per file. Firebase projects get an emulator-backed rules test (`@firebase/rules-unit-testing`) and `firebase emulators:exec "vitest run"` as the `test:rules` script.
-- **Loop directories**: `mkdir -p docs/plans docs/solutions` with a `.gitkeep` in each. These are what `plan`, `build`, `learn` read and write ([loop.md](/_shared/loop.md) §Artifacts).
-- **Settings**: write `.claude/settings.json` if absent, or print the merge suggestion if present:
-
-```json
-{ "worktree": { "baseRef": "head" }, "subagentPromptCacheTtl": "1h" }
-```
-
-`worktree.baseRef: "head"` is required for `/blitz:build --parallel`; the default `fresh` branches from `origin/<default>` and drops uncommitted state.
-
-- **Project rules**: write `CLAUDE.md` (or append to `AGENTS.md` when the repo already uses one; Claude Code reads `AGENTS.md` when `CLAUDE.md` is absent) with the stack line, the three commands (`type-check`, `test`, `lint`), and this `## Testing` block verbatim. One sentence of mocking policy in the agent config file is what drove agent-authored mock additions to near zero in the field:
-
-```markdown
-## Testing
-- Never mock modules under `src/`; mock only true externals (network, clock, randomness, third-party SaaS) at the wire.
-- Firestore rules and functions run against the emulator (`firebase emulators:exec`), never a mock SDK.
-- A change is done when `docs/plans/<slug>/tasks.json` says so (`scripts/tasks.sh verify`), not when a test passes.
-```
-
-- **`.gitignore`**: append (do not duplicate) `.cc-sessions/`, `.claude/worktrees/`, `node_modules/`, `dist/`, `.output/`, `.nuxt/`, `coverage/`, `.env*` (keep `.env.example`).
-- **README.md**: name, stack line, the three scripts, and the blitz entry points (`/blitz:plan`, `/blitz:build`, `/blitz:check`).
-- **Barrel exports** (package mode): if the workspace uses `index.ts` barrels, append the new package's exports rather than creating a second barrel.
+Writes the real files the onboarding produces, never placeholders. File list and templates: [references/main.md](references/main.md) §G3 IMPLEMENT.
 
 ### G4 VERIFY — Type-check, lint, test
 
@@ -216,20 +191,7 @@ If `source-files.txt` is empty: write a minimal `CODEBASE-MAP.md` ("empty reposi
 
 ### M2 DIMENSIONS — Four `Explore` agents, one message
 
-Spawn all four in **a single assistant message** so they run concurrently. `Explore` is read-only and returns text ([agents.md](/_shared/agents.md) §1.2), so each agent replies with its findings and the main thread writes `${SESSION_TMP_DIR}/map-<dimension>.md`.
-
-| Agent | Dimension | Reads | File cap |
-|---|---|---|---|
-| `map-technology` | stack, frameworks, dependencies, runtime, monorepo layout | configs first | 12 |
-| `map-architecture` | directory layers, routing, state, API integration, boundaries, entry points | `dir-tree.txt`, entry files | 15 |
-| `map-quality` | `strict`, test-to-source ratio, lint config, naming, error/loading states, docs, CI | tests, configs, CI | 10 |
-| `map-concerns` | auth, validation, secrets, headers, perf, a11y, i18n, logging, env config | middleware, server, env | 10 |
-
-For each: `Agent({ subagent_type: "Explore", model: "haiku", description: "onboard map <dimension>", prompt })`. The prompt is the dimension template in [references/main.md](references/main.md) §Dimension Agent Prompt, with `{{DIMENSION}}`, `{{INVENTORY_DIR}}`, `{{FILE_CAP}}`, `{{STACK_PROFILE}}` (the Project Context block above), and `{{CHECKLIST}}` (the matching list in §Dimension Checklists) filled in. Medium class: 25 tool calls, ≤250 output lines, 5 minutes. The reply ends with `SCORE: n/5` and one `CONFIRMATION:` line.
-
-Each dimension prompt carries the navigation ladder: **`LSP` first** (workspace symbol search, `goToDefinition`, `findReferences`) for any named symbol, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive — no server for that language, a missing binary, or a cloud session, where Claude Code does not start plugin language servers. Mapping a codebase by grepping and reading whole files is the single largest avoidable context cost in this skill.
-
-Write each reply verbatim to its `map-*.md` as it arrives. If a reply is empty or has no `SCORE:` line, retry that dimension once with the file cap halved.
+Four read-only `Explore` agents (haiku), all dispatched in one message, each writing its `map-*.md` verbatim as it returns. Dimension roster, prompts and caps: [references/main.md](references/main.md) §M2 DIMENSIONS.
 
 ### M3 GATE and SYNTHESIZE
 

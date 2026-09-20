@@ -673,3 +673,96 @@ echo "[audit] security: registry sec-* rows$( [ "$SEC_PLUGIN" = 1 ] && echo ' + 
 Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared/check-registry.json), `lane==deterministic ∧ consolidated_target∈{audit,both}`) across the codebase — grep/tsc/import-graph, zero-FP — and write to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. The deterministic and semantic lanes catch **disjoint** bug classes (ianlpaterson 38-task) — a deleted test has no semantic signature; a wrong answer-key has no structural one — so run both. Detail: this file §Recall hardening.
 
 **Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:check --only design`). Vendored rows share one **key-free** `npx impeccable detect --json` run (filter by `detection.filter`); the provider-gated tells route through `agents/design-critic.md`'s gemini CLI (`BLITZ_GEMINI_BIN`), the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: this file §Phase 1.D2.
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 1.0 Select Dispatch Mode (capability gate)
+
+Per [agents.md](/_shared/agents.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
+
+```bash
+case "${BLITZ_DISPATCH:-auto}" in
+  agent)    USE_WORKFLOW=false ;;
+  workflow) USE_WORKFLOW=true ;;                 # force; error if Workflow tool absent
+  *)        USE_WORKFLOW=maybe ;;                # auto: use Workflow iff tool present
+esac
+echo "[audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
+```
+
+- **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §1.1-W (Workflow path).
+- **else, or on ANY `Workflow` failure** → fall back to §1.1 (`Agent()` path). Never hard-fail.
+- Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
+- All filesystem I/O (Phase 0 inventory, Phase 2 report, ratchet.json, activity-feed) stays in this skill's main-thread Bash — the `Workflow` script touches none of it (hybrid wrapper boundary).
+
+### 2.7 Copy Report to Project
+
+Copy the consolidated report into the project:
+```bash
+REPORT_DIR="docs/audits"
+mkdir -p "${REPORT_DIR}"
+cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
+```
+
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
+[ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html "${REPORT_DIR}/audit-$(date +%Y%m%d).md" untrusted
+```
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 3.3 Write the Plan
+
+```bash
+AUDIT_DATE=$(date +%Y-%m-%d); PLAN="audit-${AUDIT_DATE}"; PLAN_DIR="docs/plans/${PLAN}"
+mkdir -p "$PLAN_DIR"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" init "$PLAN"
+STATUS=paused; [ "${AUDIT_PLAN_FLAG:-0}" = 1 ] && STATUS=active     # --plan activates immediately
+cat > "${PLAN_DIR}/spec.md" <<EOS
+---
+status: ${STATUS}
+priority: P2
+created: ${AUDIT_DATE}
+ship: manual
+---
+# Audit ${AUDIT_DATE}
+
+## Goal
+Resolve the ${THEME_COUNT} themes found by /blitz:audit (${TOTAL} findings: ${C}C/${H}H/${M}M/${L}L; agents ${OK}/${N}). Report: docs/audits/audit-$(date +%Y%m%d).md (gitignored; this file is the tracked summary).
+
+## Findings summary
+| Task | Pillar | Impact | Findings (file:line) |
+|---|---|---|---|
+| T-001 | … | … | … |
+
+Health: Architecture NN · Performance NN · Security NN · Maintainability NN · Robustness NN. Coverage boundary: <§2.8 block, one line>.
+Security: <registry sec-* rows run; claude-security delegated | one-line recommendation from §1.2>.
+
+## Out of scope
+- Findings with no executable check (notes, not tasks): <finding — file:line — why no check>
+- Pillars/lanes not run: <from coverage_boundary>
+EOS
+```
+
+Then one `tasks.sh add` per theme, in impact order:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$PLAN" --id T-001 \
+  --title "Security: validate input in auth middleware" --role backend \
+  --files "functions/src/middleware/auth.ts,functions/src/schemas/user.ts" --origin audit \
+  --verify-cmd "! grep -rnE 'req\.body\.[a-zA-Z]+ *(as|!)' functions/src/middleware/auth.ts::60" \
+  --notes "det-17 + sec-a/sec-b agreed; Critical; report §Security #3"
+```
+
+- `--depends` only for a real ordering (a schema task before the handler that consumes it); default none so `build --parallel` can fan out on disjoint `files`.
+- Same-day rerun: `tasks.sh list "$PLAN"` first; skip a theme whose title already exists, continue ids from max+1, never rewrite `spec.md` frontmatter (a human may have flipped `status`).
+- Append to `docs/plans/BACKLOG.md` nothing; the notes in `spec.md` are the parking lot.

@@ -122,26 +122,7 @@ Each task is completable by one `dev` in one fresh-context session: **1–3 file
 
 ### 3.1.1 Bulk-task guard (SPIDR check)
 
-After drafting each task but **before** accepting it, run the bulk-task guard (catches the "migrate 130 files via glob" anti-pattern).
-
-**Reject or split** any task matching either criterion:
-
-1. **File-count heuristic** (two-band):
-   - `task.files.length > 5` AND the plan class is not `spike` — **mandatory split**.
-   - `task.files.length` in `{4, 5}` — **soft warn**: append a `decision` line to the activity feed; allow only if no other task shares a parent directory with it.
-   - `task.files.length` in `{1, 2, 3}` — **green**.
-
-2. **Horizontal-scope language** — title or notes matches (case-insensitive):
-   - `/all \w+ (files|components|modals|routes|tests|pages)/`
-   - `/(via|using) (pattern|glob|regex)/`
-   - `/across the codebase/`
-   - `/every (file|component|store|route|test)/`
-   - `/bulk (migrate|refactor|update|rename)/`
-
-**Handling a match:**
-- **Interactive:** pause. Offer a SPIDR Data-axis split (one task per parent directory) or downgrade the plan class to `spike`.
-- **`--autonomous`:** auto-split by nearest parent directory; recursively split while a batch still has > 8 files. Each batch gets a `grep -c` verify that counts the migrated pattern in that directory, e.g. `[ "$(grep -rlE '<new-pattern>' src/<dir> | wc -l)" -ge <n> ]::30`. If there is no concrete file list, downgrade to spike. Append one `decision` feed line per split.
-- **Never auto-accept a bulk task.** List every split in `plan.md` §Risks.
+Refuses a task list that is one story sliced by file rather than by behaviour. SPIDR test: [references/main.md](references/main.md) §3.1.1 Bulk-task guard.
 
 ### 3.2 Verify checks
 

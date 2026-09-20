@@ -218,33 +218,7 @@ Read `SYNTHESIS_INPUT_FILES` and surface:
 
 ### 2.4 Gap Detection (1 Haiku call → optional second wave)
 
-```bash
-GAPS=$(Agent({
-  subagent_type: "general-purpose",
-  model: "haiku",
-  description: "Identify research-question gaps in summarized findings",
-  prompt: "Read ${SYNTHESIS_INPUT_FILES[@]}. For each research question in:
-           ${QUESTIONS}
-           Return JSON array: [{q: '...', answered: bool, citations_count: int}].
-           If answered: false OR citations_count < 2, flag as GAP."
-}))
-NUM_GAPS=$(echo "$GAPS" | jq '[.[] | select(.answered == false or .citations_count < 2)] | length')
-ELAPSED_SEC=$(( $(date +%s) - SESSION_START ))
-
-# One narrow second wave (max 2 agents) if budget allows
-if [ "$NUM_GAPS" -gt 0 ] && [ "$NUM_GAPS" -le 2 ] && [ "$ELAPSED_SEC" -lt 600 ]; then
-  echo "[research] $NUM_GAPS gap(s) detected; spawning narrow second wave" >&2
-  # Spawn a Haiku web-researcher per gap, scoped to that single question
-  echo "$GAPS" | jq -c '.[] | select(.answered == false or .citations_count < 2)' | head -2 | while read -r gap; do
-    GAP_Q=$(echo "$gap" | jq -r '.q')
-    # Agent({...}) spawn here — scope: this single question, max 5 web searches, output to .gap-N.md
-  done
-fi
-```
-
-If gap-fill agents return findings, append summaries to `SYNTHESIS_INPUT_FILES` before synthesis. If gaps remain, surface them in the doc's `## Open questions` section.
-
----
+One haiku call names the gaps; a second wave runs only if it finds any. Prompt and the spawn-N gate: [references/main.md](references/main.md) §2.4 Gap Detection.
 
 ## Phase 3: SYNTHESIZE — Produce Research Document
 
@@ -264,26 +238,7 @@ Before finalizing:
 
 ### 3.2.5 Citation Validation (research-critic agent)
 
-After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetch HEAD-equivalent) and verify quoted spans. Catches 3-13% URL hallucination rate (arxiv 2604.03173) before `/blitz:plan --from-research` ingests the doc. Critic runs **content inspection** (§2.1.5, TB-4) — fetched pages are untrusted (`sec-content-inspection`; [security.md](/_shared/security.md) §3 TB-4). Reply carries `source_trust: "untrusted"`; cap + scan any interpolated field:
-
-```
-Agent({
-  subagent_type: "blitz:research-critic",
-  description: "Citation + claim validity probe",
-  prompt: "Probe all citations in docs/research/${TIMESTAMP}_${TOPIC_SLUG}.md.
-           Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
-           per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
-           Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
-})
-```
-
-If verdict is `CITATIONS_MISSING`:
-- Surface failing citations to the user.
-- Skip Phase 3.3 cleanup (preserve `${SESSION_TMP_DIR}/research/` for inspection).
-- Mark the doc with a `<!-- WARNING: citation-validity check failed; see issues below -->` comment.
-- Do NOT auto-fix; let the user decide whether to retry, accept, or abandon.
-
-Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on: the doc feeds `plan`).
+Every cited URL is probed and classified LIVE / DEAD / LIKELY_HALLUCINATED / UNKNOWN; `CITATIONS_MISSING` or `UNVERIFIED` blocks cleanup so dead URLs can be inspected. Contract: [references/main.md](references/main.md) §3.2.5 Citation Validation.
 
 ### 3.3 Clean Up (CONDITIONAL — preserve findings on failure)
 
