@@ -264,11 +264,19 @@ if [[ -d "$WORKFLOWS_DIR" ]]; then
     wf_count=$((wf_count + 1))
     rel_path="${wf#"$PLUGIN_ROOT"/}"
     if command -v node >/dev/null 2>&1; then
-      if node --check "$wf" >/dev/null 2>&1; then
+      # The runtime evaluates a workflow inside an async wrapper, so top-level
+      # await and top-level return are part of the contract. node --check on the
+      # raw file detects the `export` as ESM and rejects both, so check the
+      # wrapped form instead (reported line numbers shift by one).
+      wf_dir=$(mktemp -d 2>/dev/null || mktemp -d -t blitz-wf)
+      wf_tmp="$wf_dir/check.js"
+      { printf '(async()=>{\n'; sed 's/^export[[:space:]]\+//' "$wf"; printf '\n})()\n'; } > "$wf_tmp"
+      if node --check "$wf_tmp" >/dev/null 2>&1; then
         check_pass "$rel_path parses (node --check)"
       else
-        check_fail "$rel_path has a syntax error (node --check)"
+        check_fail "$rel_path has a syntax error (node --check): $(node --check "$wf_tmp" 2>&1 | grep -m1 -E 'Error' || true)"
       fi
+      rm -rf "$wf_dir"
     else
       check_warn "$rel_path: node not found, skipping syntax check"
     fi

@@ -16,11 +16,15 @@ fm() {  # fm <file> <key> — frontmatter scalar (single line), quotes stripped
   awk -v k="$2" 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit} NR>1 && index($0, k":")==1 {sub("^" k ":[ ]*",""); gsub(/^"|"$/,""); print; exit}' "$1"
 }
 fm_desc() {  # description may be a block scalar (|) on agents: take first paragraph
-  awk 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit}
+  # Truncation uses bash substring, not `cut -c`: cut counts bytes and would
+  # slice a multibyte character in half, emitting U+FFFD into the catalog.
+  local d
+  d=$(awk 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit}
        /^description: *\|/ {blk=1; next}
        blk && /^  / {sub(/^  /,""); if ($0=="") exit; printf "%s ", $0; next}
        blk && !/^  / {exit}
-       /^description:/ {sub(/^description:[ ]*/,""); gsub(/^"|"$/,""); print; exit}' "$1" | sed 's/ *$//' | cut -c1-240
+       /^description:/ {sub(/^description:[ ]*/,""); gsub(/^"|"$/,""); print; exit}' "$1" | sed 's/ *$//')
+  printf '%s\n' "${d:0:240}"
 }
 
 render() {
