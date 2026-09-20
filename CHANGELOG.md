@@ -10,6 +10,19 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.6.0] — 2026-09-20 · two validators were wrong about valid input; README rewritten
+
+### Fixed
+- **`validate-plugin-structure.sh` rejected every workflow script.** It ran `node --check` on `workflows/*.js` raw. A workflow legally uses top-level `await` and top-level `return` because the runtime evaluates it inside an async wrapper, so node — treating the file as a module on the strength of its `export` — failed all three with `Illegal return statement`. The check now parses the wrapped form and quotes node's error when it genuinely fails. Stripping `export` alone is not enough: that fixes `return` and then trips on `await`.
+- **`gen-catalog.sh` truncated descriptions with `cut -c1-240`, which counts bytes.** It sliced the em dash in `test-writer`'s description in half. The mangled bytes were already committed in `docs/CATALOG.md`, so `--check` reported a staleness that regenerating could never resolve — the buggy generator reproduced it every run. Truncation is by character now, and the catalog is regenerated.
+
+### Changed
+- **README rewritten.** It opens with the failure mode the plugin exists to prevent — an agent reporting success it did not earn — and states the four invariants that replace self-report with structure, each next to the thing that enforces it. The enforcement layer is now organised by hook event rather than by guard name, the `next` decision rows are stated in full, and the shared-protocol section documents the `.reference.md` split. No behaviour changed.
+- **`marketplace.json` still described the plugin as Vue/Nuxt/Firebase-only.** `plugin.json` was repositioned as language-agnostic in 3.x and the marketplace entry was never updated, so the storefront copy contradicted the toolchain table. Both descriptions now lead with the polyglot loop and mention the Vue/Nuxt/Firebase lanes as depth on top.
+
+### Notes
+- Validators and the bats suite are green on this release: all six exit 0, `bats hooks/tests/` is 271/271.
+
 ## [3.5.1] — 2026-09-20 · reconcile the three token measurements
 
 ### Fixed

@@ -21,9 +21,49 @@ research → plan → build → check → ship · structural "done" · anti-shor
 
 ---
 
-## What is Blitz?
+## The problem this solves
 
-Blitz turns Claude Code into a development loop that can run unattended without lying to you about what it finished. A plan is a JSON feature list with a `passes` bit per task; a task is done only when its verify commands ran and passed; the file that records that cannot be hand-edited; a critic with no write access and no memory of the build has to sign off before anything reaches PASS. Everything else in the plugin exists to keep those four facts true while Claude works.
+An agent left to work unattended will report success it did not earn. It writes the test that passes, stubs the function the test calls, marks the task complete, and tells you it is done. Nothing in the transcript is false exactly — it just isn't evidence.
+
+Blitz replaces self-report with structure. Four invariants hold while Claude works, and every skill, hook and script in this plugin exists to keep them true:
+
+| Invariant | Enforced by |
+|---|---|
+| A task is done only when its verify commands exited 0 | `scripts/tasks.sh` is the only writer of `status: done` |
+| The record of what passed cannot be hand-edited | `tasks-guard.sh` denies `Write`, `Edit` and shell writes to `tasks.json` |
+| Tests are never the only evidence | `tasks.sh add` refuses an empty or test-only `verify[]` |
+| Nothing reaches PASS without an adversarial read | the `critic` agent: fresh context, no write tools, looking for one reason to reject |
+
+The rest is consequence. Dev agents get one task each and never see the ledger. A Stop hook refuses to end a build turn while the type-check fails. `touch .cc-sessions/STOP` denies every tool call until you remove it.
+
+Design decisions and the evidence behind them: [`docs/reviews/2026-09-19_v3-agentic-restructure/`](docs/reviews/2026-09-19_v3-agentic-restructure/README.md).
+
+---
+
+## Install
+
+```
+/plugin marketplace add lasswellt/blitz-cc
+/plugin install blitz@blitz
+```
+
+Pin the version and leave auto-update off for any plugin that runs hooks; read the diff before upgrading. For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
+
+**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, the Gemini CLI for a cross-model critic, the `claude-security` plugin for verified security findings.
+
+```bash
+/blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY
+/blitz:onboard                      # map an existing repo, write CLAUDE.md and the stack profile
+/blitz:plan "add a health endpoint" # → docs/plans/health-endpoint/{spec,plan,progress}.md + tasks.json
+/blitz:build health-endpoint        # next open task, fresh dev agent, verify gate
+/blitz:check --scope plan health-endpoint --fix
+/blitz:ship --plan health-endpoint  # slash-only: version, changelog, tag, archive
+/blitz:next --loop                  # or hand the wheel over and let it pick each tick
+```
+
+---
+
+## The loop
 
 ```mermaid
 flowchart LR
@@ -37,85 +77,34 @@ flowchart LR
   S --> L[/blitz:learn/] -. docs/solutions .-> P
 ```
 
-Design choices, and the evidence behind them, are in [`docs/reviews/2026-09-19_v3-agentic-restructure/`](docs/reviews/2026-09-19_v3-agentic-restructure/README.md):
-
-- **One task per fresh context.** `build` spawns one `dev` agent per task and gives it only the task, its files, and the never-edit list. Parallel waves are opt-in and only over tasks with disjoint files.
-- **Tests are not the only signal.** Every task carries at least one non-test verify command (grep, shell, e2e) beside its test command, because every frontier model saturates visible tests while failing held-out ones.
-- **Done is structural.** Only `scripts/tasks.sh` writes `tasks.json`; a `PreToolUse` hook denies every other path. A Stop-hook gate refuses to end a build turn until type-check and the selected tests pass.
-- **Persistent state is treated as memory.** `tasks.json` and `docs/solutions/` drive later work, so they are schema-checked and injection-scanned at session start and carry an `origin`.
-- **A kill switch.** `touch .cc-sessions/STOP` denies every tool call until removed.
-
----
-
-## Quick Start
-
-```
-/plugin marketplace add lasswellt/blitz-cc
-/plugin install blitz@blitz
-```
-
-Pin the version you install and leave auto-update off for plugins that run hooks; review the diff before upgrading. Local development: `claude --plugin-dir ./blitz-cc` then `/reload-plugins`.
-
-```bash
-/blitz:doctor                      # plugin, session state, and project setup; prints Overall: HEALTHY
-/blitz:onboard                     # map an existing codebase, write CLAUDE.md and the stack profile
-/blitz:plan "add a health endpoint" # spec.md, plan.md, tasks.json under docs/plans/<slug>/
-/blitz:build health-endpoint       # next open task, fresh dev agent, verify gate
-/blitz:check --scope plan health-endpoint --fix
-/blitz:ship --plan health-endpoint # slash-only: version, changelog, tag, archive the plan
-/blitz:next --loop                 # or let the loop pick the next tick itself
-```
-
-**Prerequisites:** Claude Code ≥ 2.1.271 (floors in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3, jq. Hooks run through bash: on native Windows install Git Bash or use WSL, or the guards fail open. Optional: Playwright MCP for `browse`, `ui-build`, `ui-audit`; Gemini CLI for the cross-model critic; the `claude-security` plugin for verified security findings.
-
-## Supported Stacks
-
-The loop itself is language-neutral: a plan is JSON, a verify command is a shell command, and "done" is an exit code. What varies per language is which formatter, linter and typechecker the hooks run, and that comes from a **data table**, not from code. Adding a language means adding rows to `templates/toolchain.default.json`, never editing a script.
-
-| Stack | Detected by | Format | Lint | Typecheck (ratchet) |
-|---|---|---|---|---|
-| Node / TypeScript | `package.json`, `tsconfig.json` | prettier, biome | eslint, biome | `tsc`, `vue-tsc` |
-| Python | `pyproject.toml`, `setup.cfg`, `requirements.txt` | ruff, black | ruff, flake8 | mypy, pyright |
-| Rust | `Cargo.toml` | rustfmt | clippy | `cargo check` |
-| Go | `go.mod` | gofmt | `go vet` | `go build` |
-| JVM | `pom.xml`, `build.gradle` | spotless | — | gradle |
-| Ruby | `Gemfile` | rubocop | rubocop | — |
-| .NET | `*.csproj`, `*.sln` | `dotnet format` | — | `dotnet build` |
-| Deno, PHP, Elixir, Swift | `deno.json`, `composer.json`, `mix.exs`, `Package.swift` | see the table | | |
-
-A row is used only when its stack marker is present, its config exists, and its tool answers a probe, so a missing tool is a silent skip rather than a failure. `scripts/toolchain.sh explain` prints what resolves in the current repo; `/blitz:doctor` flags a stack with no typecheck row, because that stack has no ratchet.
-
-Override with `.blitz-toolchain.json` at your repo root:
-
-```json
-{ "disable": ["python-ruff"], "prefer": { "format": ["python-black"] } }
-```
-
-`disable` drops rows by id; `prefer` reorders preference within a lane. It cannot supply a `cmd`: the checkout is untrusted inbound data ([security.md](skills/_shared/security.md) TB-1), and an argv read from repo content would be arbitrary execution on every edit.
-
-**Code intelligence.** `.lsp.json` configures language servers for TypeScript, Python, Rust and Go, giving Claude `goToDefinition`, `findReferences` and workspace symbol search instead of grep-and-read-the-whole-file. You install the binaries; each one's path is a `/config` option you can repoint or clear. Two caveats: Claude Code does not start plugin language servers in cloud sessions, and when two enabled plugins declare the same extension the first registered wins.
-
-**Framework-specific extras.** Beyond the language lanes, blitz ships deeper support for Vue 3 / Nuxt 3 / Firebase: adapter detection for Tailwind, Quasar and Vuetify, Firestore rules and Cloud Functions conventions, and the design-quality lanes behind `ui-build` and `ui-audit`. Those check-registry rows are tagged `stacks: ["node"]` and are skipped elsewhere, so a Go or Python repo never runs them.
-
-`scripts/detect-stack.sh` reports the language stacks and resolved lanes fresh on every call; the framework profile below that is cached to `.cc-sessions/stack-profile.cache` for an hour.
-
----
-
-## The Loop
-
-| Skill | Does | Writes |
+| Skill | What it does | What it writes |
 |---|---|---|
-| `research` | parallel investigators plus a citation critic; `--codebase` answers "how does this repo do X" read-only | `docs/research/` |
-| `plan` | classifies the ask (spike, bounded, architectural), interviews unless `--autonomous`, reads `docs/solutions/` and `BACKLOG.md`, emits tasks with verify commands per stack | `docs/plans/<slug>/{spec,plan,progress}.md`, `tasks.json` |
-| `build` | inline for a one-sentence change; otherwise one `dev` per task, fix rounds ≤3 then a fresh opus agent, circuit breaker at 3 attempts; `--parallel` waves; `--issue N` | code, `progress.md`, task state via `tasks.sh` |
-| `check` | tsc, lint, full tests, build, registry detectors, test-impact analysis, anti-mock, `tasks.sh verify` per task, critic survey then adversarial critic; `--fix`, `--comment` (PR inline comments), `--security` | `check-report.md` |
-| `next` | deterministic Observe (`scripts/next-state.sh`), one row, one dispatch; `--loop` is headless-safe and ends with `LOOP_DONE` | commits with a `Task:` trailer |
-| `ship` | slash-only, pinned model: gates, version, changelog, tag, archive the plan, run `learn` | release commit, `docs/plans/archive/` |
-| `learn` | mines rulings, check reports, and `Task:` commits into reusable solutions | `docs/solutions/<slug>.md` |
+| `research` | parallel investigators plus a citation critic; `--codebase` answers "how does this repo do X" without writing | `docs/research/` |
+| `plan` | classifies the ask (spike, bounded, architectural), interviews unless `--autonomous`, mines `docs/solutions/` and the backlog, emits tasks carrying verify commands for the detected stack | `docs/plans/<slug>/` |
+| `build` | inline for a one-sentence change; otherwise one `dev` agent per task, fix rounds capped then escalated to a fresh opus agent, circuit breaker at three attempts, opt-in `--parallel` waves, `--issue N` | code, `progress.md`, task state via `tasks.sh` |
+| `check` | typecheck, lint, tests, build, registry detectors, test-impact analysis, anti-mock, `tasks.sh verify` per task, a critic survey and then the adversarial gate; `--fix`, `--comment`, `--security` | `check-report.md` |
+| `next` | deterministic observation via `scripts/next-state.sh`, one row, one dispatch; `--loop` is headless-safe | commits carrying a `Task:` trailer |
+| `ship` | slash-only, pinned model: gates, version, changelog, tag, archive, then `learn` | release commit, `docs/plans/archive/` |
+| `learn` | mines rulings, check reports and `Task:` commits into reusable solutions | `docs/solutions/<slug>.md` |
 
-`next --loop` rows, in tie-break order: inbox pending or a session waiting for input → `LOOP_DEFER`; a task blocked on a spec question → `LOOP_ESCALATE` (channel reply, push notification, or inbox); open work → `build`; all tasks done and no fresh PASS → `check`; PASS → mark done, `learn`, archive, print `Ready: /blitz:ship`; nothing open → `LOOP_DONE`. Run it under `/loop`, a Routine, or `claude -p` with a fresh session per tick; `doctor --loop-md` writes the `.claude/loop.md` that makes bare `/loop` do this.
+Everything else — `audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-health`, `perf-profile`, `browse`, `ui-build`, `ui-audit`, `onboard`, `sessions`, `todo`, `doctor` — is generated from frontmatter into [`docs/CATALOG.md`](docs/CATALOG.md), which is the only inventory that cannot drift.
 
-The rest of the catalog (`audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-health`, `perf-profile`, `browse`, `ui-build`, `ui-audit`, `onboard`, `sessions`, `todo`, `doctor`) is generated from frontmatter into [`docs/CATALOG.md`](docs/CATALOG.md).
+### Unattended ticks
+
+`next` reads the world with a script, not a vibe, then takes the lowest row that matches:
+
+| # | Condition | `--loop` does |
+|---|---|---|
+| 0 | kill switch, inbox pending after triage, or a session waiting on input | `LOOP_DEFER` |
+| 1 | a task blocked on a spec question the model cannot answer | notify, then `LOOP_ESCALATE` |
+| 2 | an `in_progress` task, or an `open` task whose dependencies are `done` | dispatch `build` |
+| 3 | every task `done`, check report stale | dispatch `check` |
+| 4 | check report PASS and fresh | mark done, run `learn`, archive, print `Ready: /blitz:ship` |
+| 5 | nothing open | `LOOP_DONE` |
+
+Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled fire cannot release anything. Run the loop under `/loop`, a cloud Routine, or `claude -p` with a fresh session per tick; `doctor --loop-md` writes the `.claude/loop.md` that makes a bare `/loop` do this.
+
+---
 
 ## Structural "done"
 
@@ -131,65 +120,119 @@ The rest of the catalog (`audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, 
   "last_verify": { "ts": "", "ok": false, "failed": "", "tail": "" }, "origin": "plan", "notes": "" }
 ```
 
-- `tasks.sh add` refuses an empty `verify[]` and a test-only `verify[]` unless `--test-only-ok` is stated.
-- `tasks.sh verify` runs the commands under `timeout`, records a 200-char evidence tail, and is the only path to `status: done`.
-- `hooks/scripts/tasks-guard.sh` denies `Write`, `Edit`, and shell writes to `docs/plans/*/tasks.json`; `startup-validate.sh` quarantines a malformed or injected task file before it is read.
-- Dev agents never see `tasks.json` or `progress.md` as editable; both are updated on the main thread at task boundaries.
+The second verify command is the point. Every frontier model saturates the tests it can see while failing held-out ones, so each task carries at least one non-test check — a grep, a shell assertion, an e2e run — beside its test command. `tasks.sh verify` runs them under `timeout`, records a truncated evidence tail, and is the only path to `status: done`.
 
-## Anti-shortcut hooks
-
-Six `PreToolUse` guards and one `PostToolUse` type-check ratchet stop the shortcuts an autonomous coder reaches for, at the tool boundary, each with a logged override: `--no-verify`, destructive git on a dirty tree, destructive SQL outside a migration, test deletion, `as any` insertion, test disabling, type-error regression. Two more protect the loop's state: `tasks-guard.sh` and `kill-switch.sh`. Command guards match `Bash|PowerShell`.
-
-## Critics
-
-`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no Write or Edit, looking for one reason to REJECT on the final diff. `critic --mode survey` is the lens (spec compliance first, then code quality) that `check` fans out before the gate. `research-critic` verifies citations; `design-critic` judges UI through Playwright. Set `BLITZ_USE_GEMINI_CRITIC=1` to route the reject critic through Gemini, or `BLITZ_DUAL_CRITIC=1` to require both.
-
-## How check and audit share one registry
-
-`skills/_shared/check-registry.json` holds every detector: a deterministic lane (grep, AST, tsc, git, import graph) whose findings may flip a verdict, and a semantic lane whose findings only annotate. `check` is precision-biased and runs on every diff; `audit` is recall-biased, runs before a release, aggregates independent passes, refutes each finding in a panel, and emits its survivors as `docs/plans/audit-<date>/tasks.json` so the loop can work them. `doctor --review-md` exports the P0/P1 rows as a `REVIEW.md` for hosted Claude Code Review.
-
-## CI and hosted review
-
-`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed runs `/blitz:check --scope diff --comment` on every pull request and posts inline comments through the GitHub inline-comment tool. The plugin's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and, when an API key is present, the advisory `claude plugin eval` suite in `evals/`.
+Persistent state is treated as memory, because it is: `tasks.json` and `docs/solutions/` steer later work, so they carry an `origin`, are schema-checked and injection-scanned at session start, and a malformed or poisoned task file is quarantined before anything reads it.
 
 ---
 
-## Architecture
+## The enforcement layer
+
+Hooks fire at the tool boundary, where argument beats none. Each guard below blocks the call and logs an override path rather than arguing in prose.
+
+| Event | What runs |
+|---|---|
+| `PreToolUse` | kill switch · `tasks.json` guard · `--no-verify` · destructive git on a dirty tree · destructive SQL outside a migration · test deletion · `as any` insertion · test disabling · commit-time validators |
+| `PostToolUse` | format · impacted tests · skill and agent frontmatter · the type-error ratchet |
+| `Stop` / `StopFailure` | the gate: a build turn cannot end while its typecheck or selected tests fail |
+| `SessionStart` / `SessionEnd` | session records, activity feed, startup validation and quarantine |
+| `PreCompact` | `HANDOFF.json` — plan, task, gate path, never-edit list |
+| `SubagentStart` | the spawn invariant, byte-identical for every dev and critic agent |
+| `Notification` / `PermissionDenied` / `ConfigChange` / `WorktreeRemove` | inbox lines and cleanup |
+
+The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.md); the authoring contract is `.claude/rules/hooks.md`; the bats suite under `hooks/tests/` covers each guard's block, its pass-through and its escape hatch.
+
+### Critics
+
+`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no write tools, reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright. `BLITZ_USE_GEMINI_CRITIC=1` routes the reject critic through Gemini; `BLITZ_DUAL_CRITIC=1` demands both models agree.
+
+### One registry, two lanes
+
+`skills/_shared/check-registry.json` holds every detector once. The deterministic lane (grep, AST, tsc, git, import graph) may flip a verdict; the semantic lane only annotates. `check` is precision-biased and runs on every diff. `audit` is recall-biased, runs before a release, aggregates independent passes, refutes each finding in a panel, and emits the survivors as a plan the loop can work. `doctor --review-md` exports the P0/P1 rows for hosted Claude Code Review.
+
+---
+
+## Polyglot by data, not by code
+
+The loop is language-neutral: a plan is JSON, a verify command is a shell command, and "done" is an exit code. Only the tooling varies, and that lives in a table — `templates/toolchain.default.json`. Adding a language means adding rows, never editing a script.
+
+| Stack | Detected by | Format | Lint | Typecheck (ratchet) |
+|---|---|---|---|---|
+| Node / TypeScript | `package.json`, `tsconfig.json` | prettier, biome | eslint, biome | `tsc`, `vue-tsc` |
+| Python | `pyproject.toml`, `setup.cfg`, `requirements.txt` | ruff, black | ruff, flake8 | mypy, pyright |
+| Rust | `Cargo.toml` | rustfmt | clippy | `cargo check` |
+| Go | `go.mod` | gofmt | `go vet` | `go build` |
+| JVM | `pom.xml`, `build.gradle` | spotless | — | gradle |
+| Ruby | `Gemfile` | rubocop | rubocop | — |
+| .NET | `*.csproj`, `*.sln` | `dotnet format` | — | `dotnet build` |
+| Deno, PHP, Elixir, Swift | `deno.json`, `composer.json`, `mix.exs`, `Package.swift` | see the table | | |
+
+A row fires only when its marker is present, its config exists and its tool answers a probe, so a missing tool is a silent skip rather than a red build. `scripts/toolchain.sh explain` prints what resolves here; `/blitz:doctor` flags a stack with no typecheck row, because that stack has no ratchet.
+
+Override at your repo root with `.blitz-toolchain.json`:
+
+```json
+{ "disable": ["python-ruff"], "prefer": { "format": ["python-black"] } }
+```
+
+`disable` drops rows by id, `prefer` reorders a lane. Neither can supply a `cmd`: a checkout is untrusted inbound data ([security.md](skills/_shared/security.md), TB-1), and an argv read from repo content would be arbitrary execution on every edit.
+
+**Framework depth.** Beyond the language lanes, blitz ships deeper support for Vue 3 / Nuxt 3 / Firebase — adapter detection for Tailwind, Quasar and Vuetify, Firestore rules and Cloud Functions conventions, and the design-quality lanes behind `ui-build` and `ui-audit`. Those registry rows are tagged `stacks: ["node"]`, so a Go or Python repo never runs them.
+
+**Code intelligence.** `.lsp.json` wires language servers for TypeScript, Python, Rust and Go, giving Claude `goToDefinition`, `findReferences` and workspace symbol search instead of grep-and-read-the-whole-file. You install the binaries; each path is a `/config` option you can repoint or clear. Two caveats: plugin language servers do not start in cloud sessions, and when two enabled plugins claim the same extension, the first registered wins.
+
+---
+
+## Layout
 
 ```
 blitz-cc/
 ├── .claude-plugin/        plugin.json · marketplace.json · compat.json (version floors)
-├── skills/<name>/         SKILL.md (+ references/, assets/), auto-discovered as /blitz:<name>
-├── skills/_shared/        loop.md · sessions.md · agents.md · quality.md · security.md · output.md
+├── skills/<name>/         SKILL.md (+ references/, assets/) — auto-discovered as /blitz:<name>
+├── skills/_shared/        loop · sessions · agents · quality · security · output protocols
 │                          check-registry.json · design-criteria.md
 ├── agents/                dev · critic · test-writer · research-critic · design-critic
-├── hooks/hooks.json       event wiring; hooks/scripts/ (README.md is the index); hooks/tests/ (bats)
-├── scripts/               tasks.sh · next-state.sh · gen-catalog.sh · gen-review-md.sh · detect-stack.sh · validators
-├── workflows/             build-wave.js · review-fanout.js · audit-sweep.js
-├── templates/             blitz-check.yml · loop.md (written by doctor)
+├── hooks/                 hooks.json (event wiring) · scripts/ (README.md indexes them) · tests/ (bats)
+├── scripts/               tasks.sh · next-state.sh · toolchain.sh · detect-stack.sh · gen-catalog.sh · validators
+├── workflows/             build-wave · review-fanout · audit-sweep
+├── templates/             blitz-check.yml · loop.md · toolchain.default.json
 ├── evals/                 claude plugin eval cases
 └── output-styles/         terse-technical.md (forced while the plugin is enabled)
 ```
 
-Runtime artifacts a project keeps: `docs/plans/<slug>/` (tracked), `docs/solutions/` (tracked), `docs/plans/BACKLOG.md` (tracked), `.cc-sessions/` (gitignored: session records, inbox, activity feed, `HANDOFF.json`, `ratchet.json`, test journal, `STOP`).
+A project using blitz keeps `docs/plans/<slug>/`, `docs/solutions/` and `docs/plans/BACKLOG.md` in git, and `.cc-sessions/` out of it — session records, inbox, activity feed, `HANDOFF.json`, the ratchet baseline, the test journal, and `STOP`.
 
-## Hooks
+Each shared protocol is one file per concern: `loop.md` (artifacts, task schema, decision rows, gates), `sessions.md` (records, inbox, mailbox, conflict matrix), `agents.md` (roster, spawn spec, fix rounds, parallelism, worktrees), `quality.md` (definition of done, registry, ratchet, verification stack), `security.md` (trust boundaries TB-1…TB-5, memory poisoning, kill switch, supply chain), `output.md` (terse output, feed and inbox line schemas). Each has a `.reference.md` sibling holding the long tail, so a skill loads the contract without the appendix.
 
-Hooks are the enforcement layer: they fire on tool calls the model cannot talk its way past. Beyond the guards above they format, lint, and run impacted tests after edits, arm and check the Stop gate, record session start and end, write `HANDOFF.json` before compaction (plan, task, gate path, never-edit list), validate frontmatter and links on commit, and log notifications and permission denials to the inbox. The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.md); the authoring contract is `.claude/rules/hooks.md`.
+### Environment flags
 
-Environment flags read by the scripts: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_TIA_DISABLE`, `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_SKIP_BRANCH_CLEANUP`, `BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`. Flags read by skills: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_REVIEW_SEQUENTIAL`.
+Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_TIA_DISABLE`, `BLITZ_DISABLE_SPAWN_INVARIANT`. Worktrees and branches: `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_SKIP_BRANCH_CLEANUP`. Critics and dispatch: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`, `BLITZ_FIX_ROUNDS_MAX`. Every disable flag logs its use.
 
-## Shared protocols
+---
 
-One file per concern under `skills/_shared/`: `loop.md` (artifacts, `tasks.json` schema, `next` rows, gates, `/loop`, Routines, Projects), `sessions.md` (records, inbox, mailbox, conflict matrix, messaging), `agents.md` (roster, spawn spec, status enum, fix rounds, parallelism policy, worktrees), `quality.md` (definition of done, registry, ratchet, verification stack), `security.md` (trust boundaries TB-1 to TB-5, memory poisoning, kill switch, supply chain), `output.md` (terse output, feed and inbox line schemas).
+## CI and hosted review
+
+`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed, running `/blitz:check --scope diff --comment` on each pull request and posting findings as inline comments. This repo's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and — when an API key is present — the advisory `claude plugin eval` cases in [`evals/`](evals/README.md).
 
 ## Contributing
 
-Run the validators before committing; the pre-commit hook runs them again: `hooks/scripts/skill-frontmatter-validate.sh --all`, `hooks/scripts/agent-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `scripts/validate-plugin-structure.sh`, `scripts/check-version-sync.sh`, `scripts/gen-catalog.sh --check`, `bats hooks/tests/`. Skill and agent authoring rules live in `.claude/rules/skills.md`. After every model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
+Run the validators before you commit; the pre-commit hook runs them again and blocks on drift:
+
+```bash
+hooks/scripts/skill-frontmatter-validate.sh --all
+hooks/scripts/agent-frontmatter-validate.sh --all
+hooks/scripts/markdown-link-validate.sh --all
+scripts/validate-plugin-structure.sh
+scripts/check-version-sync.sh
+scripts/gen-catalog.sh --check
+bats hooks/tests/
+```
+
+Authoring rules live in `.claude/rules/skills.md` and `.claude/rules/hooks.md`; they load automatically when you touch `skills/**`, `agents/**` or `hooks/**`. After adding, removing or renaming a component, run `scripts/gen-catalog.sh` and commit the catalog — prose never carries an inventory. After each model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
 
 ## Acknowledgments
 
-The clarification-gate principles are adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). Effectiveness research behind the two-lane registry is cited in `docs/consolidation/review-audit/effectiveness-research.md`; the sources behind the v3 loop are in `docs/reviews/2026-09-19_v3-agentic-restructure/sources.md`.
+The clarification-gate principles are adapted from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). The effectiveness research behind the two-lane registry is cited in [`docs/consolidation/review-audit/effectiveness-research.md`](docs/consolidation/review-audit/effectiveness-research.md); the sources behind the loop are in [`docs/reviews/2026-09-19_v3-agentic-restructure/sources.md`](docs/reviews/2026-09-19_v3-agentic-restructure/sources.md).
 
 ## License
 

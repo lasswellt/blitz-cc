@@ -1,7 +1,7 @@
 {
   "name": "blitz",
   "metadata": {
-    "description": "Production-grade development skills for Vue.js, Nuxt, and GCP Firebase projects with quality gates, release management, and self-improvement"
+    "description": "Language-agnostic agentic development loop for Claude Code: research, plan, build, check, ship, with structural done, anti-shortcut hooks and an adversarial critic"
   },
   "owner": {
     "name": "lasswellt"
@@ -10,8 +10,8 @@
     {
       "name": "blitz",
       "source": "./",
-      "description": "Agentic development loop for Vue/Nuxt + Firebase: plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs.",
-      "version": "3.5.1"
+      "description": "Agentic development loop for any stack: research → plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs. Deeper Vue/Nuxt/Firebase lanes when that stack is detected.",
+      "version": "3.6.0"
     }
   ]
 }
