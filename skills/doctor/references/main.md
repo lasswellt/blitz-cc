@@ -305,12 +305,6 @@ Each flag writes exactly one file, never overwrites without saying so, and print
 
 After each write: `INFO` finding with the path, and a feed `decision` line.
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ## Phase 1: PLUGIN STRUCTURE
 
 Run in order; each command is one finding on non-zero exit.

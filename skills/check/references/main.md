@@ -461,12 +461,6 @@ Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at
 | `--baseline <metric>` | grandfather one ratchet metric on an existing project (`stale_worktree_branch_count`) |
 | `--force` | re-run plan scope over a fresh PASS (`check-report.md` at `HEAD`) |
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ## Phase 0: SCOPE
 
 ```bash
@@ -488,12 +482,6 @@ printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BA
 - Changed packages (monorepo): `references/main.md` §Changed package detection; gates run per changed package, else at root.
 - `--only <lane>` → jump to §Only. Otherwise the full pipeline: Phase 1 → 2 → (3 with `--fix`) → 4 → 5.
 - Record `[check] scope=<s> base=<sha> files=<n> loc=<n>`; LOC > 2000 switches the Phase 2 fan-out to sequential (`BLITZ_REVIEW_SEQUENTIAL=1` forces it).
-
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
 
 ## Phase 2: SEMANTIC LANE
 

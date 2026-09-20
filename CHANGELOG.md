@@ -10,6 +10,22 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.5.1] — 2026-09-20 · reconcile the three token measurements
+
+### Fixed
+- Six `references/main.md` files carried 2–3 duplicate `## Moved from SKILL.md` headings, one per run of the section mover. Consolidated, and `check-section-refs.sh` now fails on a repeat so it cannot happen a third time.
+
+### Notes
+- **Three distinct loads were being reported as one number.** A skill invocation costs differently depending on what it reaches for, and the three do not move together:
+
+  | | `/blitz:build` | `/blitz:check` | Governs |
+  |---|---|---|---|
+  | Post-compaction re-attach (body only, **hard cap 5,000**) | **3,569 tok** | **3,475 tok** | Whether the skill keeps its verdict, gate and report after a summary |
+  | Typical (skill + the protocol contracts it names) | 13,652 | 7,658 | What a normal invocation costs |
+  | Worst (+ its own `references/main.md`) | 20,176 | 15,889 | An invocation that opens every link |
+
+  The audit's Phase 2 target was written against the **worst** column, which moving body content into `references/` cannot improve — the bytes are relocated inside the same sum. That move is exactly what fixes the re-attach cap, the only column the platform actually enforces. 3.4.0 and 3.5.0 optimised the first column while the third was being quoted, which is why `check` looked like it regressed from 14,138 to 16,025 tokens while its real truncation risk halved. Recorded in the audit with the full reconciliation.
+
 ## [3.5.0] — 2026-09-20 · measure tokens properly; the 3.4.0 cap was unsafe
 
 3.4.0 claimed six skill bodies now fit the 5,000-token compaction cap. The claim rested on a bytes÷4 estimate, and bytes÷4 is wrong in the unsafe direction for this content.

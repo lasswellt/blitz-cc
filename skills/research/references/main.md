@@ -609,12 +609,6 @@ if [ "$MISSING_COUNT" -ge "$THRESHOLD" ]; then
 fi
 ```
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ### 3.2.5 Citation Validation (research-critic agent)
 
 After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetch HEAD-equivalent) and verify quoted spans. Catches 3-13% URL hallucination rate (arxiv 2604.03173) before `/blitz:plan --from-research` ingests the doc. Critic runs **content inspection** (§2.1.5, TB-4) — fetched pages are untrusted (`sec-content-inspection`; [security.md](/_shared/security.md) §3 TB-4). Reply carries `source_trust: "untrusted"`; cap + scan any interpolated field:

@@ -95,6 +95,15 @@ for fp in glob.glob("skills/*/references/*.md"):
         if re.search(r'\]\(\.\./\.\./(docs|skills|agents|hooks|scripts)/', line):
             bad.append(f"{fp}:{i}: '../../' inside references/ reaches skills/, not the repo root — use '../../../'")
 
+# 3d. A repeated "Moved from SKILL.md" heading. Each run of the section mover
+# appends its own, so a file that has had two rounds of moves grows duplicate
+# section headers. Cosmetic, but it has happened twice.
+for fp in glob.glob("skills/*/references/*.md"):
+    body = open(fp).read()
+    c = body.count("## Moved from SKILL.md")
+    if c > 1:
+        bad.append(f"{fp}: {c} 'Moved from SKILL.md' headings; consolidate to one")
+
 # 4. A doubled or unspaced citation, the 3.2.0 retarget signature.
 for fp in glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):

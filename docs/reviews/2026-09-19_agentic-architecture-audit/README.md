@@ -2,7 +2,7 @@
 title: "blitz-cc agentic architecture audit — worktree contract, token economics, language agnosticism"
 date: 2026-09-19
 status: implemented
-shipped_in: 3.0.2, 3.1.0, 3.2.0, 3.3.0, 3.3.1
+shipped_in: 3.0.2, 3.1.0, 3.2.0, 3.3.0, 3.3.1, 3.3.2, 3.3.3, 3.4.0, 3.5.0
 plugin_version_reviewed: 3.0.1
 cc_version_verified_against: 2.1.277
 scope: manifest, concurrency/worktrees, token economics, language agnosticism, quality gates
@@ -488,14 +488,26 @@ All five phases shipped. Outcome per phase:
 |---|---|---|
 | 0 — Hotfix | 3.0.2 | `WorktreeCreate` deregistered, handler deleted, guard relocated to `doctor` D-314 / `build` Phase 0.4, `agents.md` §6 corrected, 7 regression tests |
 | 1 — Language agnosticism | 3.1.0 | `toolchain.sh` + a 34-row table across 11 stacks; the ratchet verified blocking a `mypy` and a `cargo check` regression; test guards widened to 8 ecosystems; `stacks[]` on all 97 registry rows |
-| 2 — Token economics | 3.2.0, 3.3.2 | Protocol load **32,631 → 9,892 tok (69%)**. Whole-invocation `build` 41,571 → **16,313**, `check` 47,296 → **15,036**. The ≤12K/≤14K targets are **not met** — see the note below |
+| 2 — Token economics | 3.2.0, 3.3.2, 3.4.0, 3.5.0 | Protocol load **32,631 → 9,892 tok (69%)**. Whole-invocation `build` 41,571 → **16,313**, `check` 47,296 → **15,036**. The ≤12K/≤14K targets are **not met** — see the note below |
 | 3 — Cache and routing | 3.2.0 | `spawn-invariant.md` via `SubagentStart`, `cacheTtl: 1h` on all five agents, haiku deterministic lane, model-disclosure rule (which caught `migrate`) |
 | 4 — Semantic intelligence | 3.1.0 | `.lsp.json` + `lspServers` for TypeScript, Python, Rust, Go, each binary a `userConfig` option; `doctor` D-316/D-317 |
 | 5 — Gate hardening | 3.3.0 | `last_verify.runs[]` evidence, `detection.exit` contract per row, `check-report.json`. F-14 closed without change: measured at ~156 ms for all eight guards, a consolidation rewrite is not justified |
 
 A completeness pass after the five phases found six things the migration had claimed but not wired, all closed in 3.3.1: `check`'s own gate table was still hardcoded to `npm`/`npx` (the hooks went polyglot in 3.1.0 and the gate did not, so a Rust repo ran the pipeline with three empty gates); `README.md` still sold the plugin as "tuned for Vue/Nuxt + Firebase"; the LSP capability shipped with no skill telling Claude to prefer it over grep; `det-11`/`det-12` referenced a `BLITZ_PROBE_FILE` variable set nowhere; whole-project lanes resolved to the wrong stack's tool; and the haiku deterministic lane existed in the routing matrix but was never wired into `check`. The lesson is the obvious one: a phase is not done because its headline change landed, and "did we cover everything" deserves a re-read of the acceptance column rather than an answer from memory.
 
-**Phase 2's numeric targets were set wrong and are not met.** They were written before the work and conflated two things: the protocol load F-06 measured, and the skill body F-06 never touched. On F-06's actual subject, the five protocols `build` loads went **32,631 → 9,892 tokens, a 69% cut**. But `build/SKILL.md` is 6,421 tokens on its own, so a ≤12K whole-invocation budget leaves ~5,600 tokens for five protocol contracts, about 4.5 KB each against 6.1–9.3 KB today. Reaching it means cutting contract content that skills obey, to hit a number this document invented. `check` is over for a related reason: Phases 3 and 5 deliberately *added* to `check/SKILL.md` (toolchain-driven gates, the haiku dispatch, the exit-code contract). Restating the target against the measured floor, or trimming the skill bodies as separate work, is the honest next step; quietly shrinking the contracts is not.
+**Phase 2's target measured the wrong thing, and three different numbers were being conflated.** A skill invocation has three distinct loads, and they do not move together:
+
+| | `/blitz:build` | `/blitz:check` | What it governs |
+|---|---|---|---|
+| **Post-compaction re-attach** (body only, hard cap 5,000) | **3,569 tok** | **3,475 tok** | Whether the skill keeps its verdict, gate and report after a summary |
+| **Typical** (skill + the protocol contracts it names) | 13,652 | 7,658 | What a normal invocation costs |
+| **Worst** (+ its own `references/main.md`) | 20,176 | 15,889 | An invocation that opens every link |
+
+The ≤12K / ≤14K targets were written against the **worst** column. That column cannot be improved by moving body content into `references/` — the bytes are relocated inside the same sum — and moving them there is precisely what fixes the re-attach cap, which is the only one of the three the platform enforces. 3.4.0 and 3.5.0 optimised the first column and I kept reporting the third, which is why `check` appeared to regress from 14,138 to 16,025 while its actual truncation risk fell by half.
+
+Where things stand: the enforced cap is met with margin on every skill (worst crossover 2.98 B/tok against a ~3.0 pessimistic floor); the typical load is down from a pre-split 32,631 tok of protocol to 9,892; the worst-case column is unchanged by design. The remaining honest target, if one is wanted, is the **typical** column, and the lever there is the skill bodies themselves, which the audit never scoped.
+
+**Phase 2's numeric targets as originally written are not met.** They were written before the work and conflated two things: the protocol load F-06 measured, and the skill body F-06 never touched. On F-06's actual subject, the five protocols `build` loads went **32,631 → 9,892 tokens, a 69% cut**. But `build/SKILL.md` is 6,421 tokens on its own, so a ≤12K whole-invocation budget leaves ~5,600 tokens for five protocol contracts, about 4.5 KB each against 6.1–9.3 KB today. Reaching it means cutting contract content that skills obey, to hit a number this document invented. `check` is over for a related reason: Phases 3 and 5 deliberately *added* to `check/SKILL.md` (toolchain-driven gates, the haiku dispatch, the exit-code contract). Restating the target against the measured floor, or trimming the skill bodies as separate work, is the honest next step; quietly shrinking the contracts is not.
 
 Three bugs surfaced during implementation that the audit had not found, all now fixed: the ratchet blocked the first edit in any repo with pre-existing diagnostics (baseline defaulted to `0` rather than "no floor recorded"); stack markers were newline-joined inside a line-based read loop, so only each stack's first marker was ever tested; and a first pass at the exit-code contract split pipelines on `|` and mis-read the pipes inside grep's own regexes.
 

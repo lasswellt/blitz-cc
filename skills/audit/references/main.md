@@ -674,12 +674,6 @@ Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared
 
 **Design pillar (`--pillar design`):** also select `pillar == design` rows — Layer 0 (`adapter: universal`) always; Layer 1/2 gated by the `scripts/detect-stack.sh` adapter; `reconciliation.relaxFor` suppresses per stack (firing logic identical to `/blitz:check --only design`). Vendored rows share one **key-free** `npx impeccable detect --json` run (filter by `detection.filter`); the provider-gated tells route through `agents/design-critic.md`'s gemini CLI (`BLITZ_GEMINI_BIN`), the pillar's **semantic** aggregator over rendered screenshots (not the 10 code passes). Detail: this file §Phase 1.D2.
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ### 1.0 Select Dispatch Mode (capability gate)
 
 Per [agents.md](/_shared/agents.md). Two dispatch paths produce identical findings files under `${AUDIT_RUN}/findings/`; only the orchestration mechanism differs. The 10-agent flat pool is the canonical `Workflow` pilot (no DAG, no worktree, no cross-session resume).
@@ -713,12 +707,6 @@ cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).m
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
 [ "${BLITZ_OUTPUT_FORMAT:-md}" = html ] && emit_html "${REPORT_DIR}/audit-$(date +%Y%m%d).md" untrusted
 ```
-
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
 
 ### 3.3 Write the Plan
 

@@ -153,12 +153,6 @@ Detail moved out of the skill body so it stays under the compaction re-attach ca
 
 If `--loop` is not specified, fall through to suggest mode (Phases 0, 0.5, 1, 2 — no dispatch).
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ## Phase 0.5: INBOX TRIAGE
 
 `.cc-sessions/inbox.jsonl` is the attention queue hooks feed ([sessions.reference.md](/_shared/sessions.reference.md) §4 Inbox). Triage it first so a stuck session never hides behind a "next phase" recommendation:

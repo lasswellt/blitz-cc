@@ -363,12 +363,6 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --status open --json 
 
 Fall back to sequential, with the reason printed, when any of these fails: `worktree.baseRef ≠ "head"`; a stale agent branch ahead of `origin/HEAD` (unless `BLITZ_ALLOW_WORKTREE_COLLISION=1`); a `WorktreeCreate` hook in project settings; fewer than 3 open ready tasks with pairwise-disjoint `files` (exact path match; a shared barrel or config file disqualifies both); another live session on the plan; `--parallel` absent. Cap is 4 concurrent agents per wave.
 
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
-
 ### T.1 Baseline and conventions (once per invocation)
 
 1. Inventory: `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -30`; read the root `package.json` and workspace config.
@@ -380,12 +374,6 @@ Detail moved out of the skill body so it stays under the compaction re-attach ca
    **Gate:** build succeeds or pre-existing errors are cataloged before any spawn.
 3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE — do not recreate**. This block goes verbatim into every spawn prompt (item 3 of the spec; see this file §Spawn prompt template).
 4. Read `docs/plans/<slug>/plan.md` and the tail of `progress.md` (last 20 lines): they are the recovery map. Trust them and `git log --grep 'Task: <slug>/'` over any recollection, especially after compaction (`HANDOFF.json` names the plan, task, gate path, and never-edit list).
-
----
-
-## Moved from SKILL.md (body size)
-
-Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
 
 ### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md) §8)
 
