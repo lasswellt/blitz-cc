@@ -10,6 +10,31 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.7.0] — 2026-09-20 · the cross-model critic takes any model family
+
+### Added
+- **`hooks/scripts/critic-external.sh` — the Cross-Model Critic is provider-pluggable.** It was Gemini-only. It now hands the critic agent's body to any of three non-Claude CLIs and holds each to the same JSON reply contract and the same exit codes (0 LGTM, 2 REJECT, 1 failure):
+
+  | Provider | CLI | Default model | Prompt delivery |
+  |---|---|---|---|
+  | `gemini` | Google Gemini CLI | `gemini-2.5-pro` | stdin |
+  | `agy` | Antigravity | `gemini-3.1-pro-high` | argv, `--disable-slash-commands` |
+  | `copilot` | GitHub Copilot CLI | `auto` | argv, no tools granted |
+
+  Selection: `BLITZ_CRITIC_PROVIDER=<p>` replaces the in-Claude critic, `BLITZ_CRITIC_PANEL=agy,copilot` fans out to several, `BLITZ_DUAL_CRITIC=1` pairs in-Claude with the external one. `BLITZ_USE_GEMINI_CRITIC=1` keeps working as an alias for the gemini provider.
+- **Panel rule: any REJECT blocks.** A blindspot only needs one family to catch it, so a single rejection fails the gate. A provider that cannot answer is recorded in `errors[]` and never decides the verdict alone; when *no* provider answers, the run exits 1 rather than reporting a clean gate. The merged reply carries `{verdict, rule, summary, issues, providers[], errors[]}`.
+- **Per-provider configuration.** `BLITZ_<P>_BIN`, `BLITZ_<P>_MODEL` and `BLITZ_<P>_FLAGS` for `GEMINI`, `AGY` and `COPILOT`. Flags stay newline-split, never space-split — one env value must not be able to inject a second flag such as a system-prompt override that returns LGTM unconditionally.
+- **An oversize prompt is handed over as a file.** Linux caps a single argv string at 128 KiB (`MAX_ARG_STRLEN`) and neither `agy` nor `copilot` reads the prompt from stdin, so a large diff would have died with `E2BIG`. Above `BLITZ_CRITIC_ARG_CAP` (default 100,000 bytes) the prompt is written to the run's temp dir and passed by reference with `--add-dir`.
+- **`hooks/tests/critic-external.bats`** — 14 cases: per-provider verdict mapping, the argv contract for each CLI (copilot is never given `--allow-all-tools`; agy always gets `--disable-slash-commands`), flag-injection resistance, the oversize-prompt fallback, and all four panel outcomes.
+
+### Changed
+- **`critic-gemini.sh` is now a shim** that pins `critic-external.sh --provider gemini`. Its flags, env vars and exit codes are unchanged and its original test suite passes against it untouched.
+- `agents/critic.md` §8, `agents/research-critic.md`, `agents/design-critic.md`, `skills/check` and the hook index describe provider selection rather than a Gemini path.
+
+### Notes
+- Verified live against both new CLIs, not only stubs: `agy` and `copilot` each rejected a function whose body contradicted its documented contract, and the panel merged both rejections with `rule: any-reject-blocks`.
+- Validators all exit 0; `bats hooks/tests/` is 285/285.
+
 ## [3.6.0] — 2026-09-20 · two validators were wrong about valid input; README rewritten
 
 ### Fixed

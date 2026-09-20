@@ -169,7 +169,8 @@ When a cross-model second opinion on these tells is wanted, reuse the **critic's
 # Same env as agents/critic.md §5 (CMC). No new key/config.
 GEMINI_BIN="${BLITZ_GEMINI_BIN:-gemini}"
 GEMINI_MODEL="${BLITZ_GEMINI_MODEL:-gemini-2.5-pro}"
-# hooks/scripts/critic-gemini.sh --mode design wraps this for the design lane.
+# hooks/scripts/critic-external.sh --mode design wraps this for the design lane
+# (provider gemini | agy | copilot; vision needs a multimodal one).
 ```
 
 If `$GEMINI_BIN` is unavailable, skip the gemini provider tells and note it in `coverage_boundary` — never silently pass them. Tunable via `BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS` (identical to the critic). Requires `@google/gemini-cli` installed + authenticated.

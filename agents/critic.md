@@ -303,17 +303,21 @@ Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/age
 
 ---
 
-## 8. Cross-model critic (CMC) — optional Gemini variant
+## 8. Cross-model critic (CMC) — optional external providers
 
-Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-gemini.sh` lifts this agent's body verbatim, pipes it to the Gemini CLI, and emits the same reply contract.
+Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-external.sh` lifts this agent's body verbatim, hands it to a non-Claude CLI, and emits the same reply contract. Providers: `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI).
 
 Selection at `check` Phase 4.3:
 
 | Env var | Mode |
 |---|---|
 | (unset) | In-Claude critic only (cheapest) |
-| `BLITZ_USE_GEMINI_CRITIC=1` | Replace in-Claude critic with Gemini |
-| `BLITZ_DUAL_CRITIC=1` | Run both; require both LGTM (highest signal, ~2× cost) |
+| `BLITZ_CRITIC_PROVIDER=<p>` | Replace in-Claude critic with that provider |
+| `BLITZ_USE_GEMINI_CRITIC=1` | Legacy alias for `BLITZ_CRITIC_PROVIDER=gemini` |
+| `BLITZ_CRITIC_PANEL=agy,copilot` | Fan out to several families; **any REJECT blocks** |
+| `BLITZ_DUAL_CRITIC=1` | Pair in-Claude with the external one; require both LGTM (highest signal, ~2× cost) |
+
+A panel is the strictest setting and the most expensive: one CLI call per provider, serially. A provider that cannot answer is recorded in `errors[]` and does not decide the verdict on its own; when no provider answers, the run fails closed (exit 1) rather than reporting a clean gate.
 
 **Routing rule (when to pay for dual), tied to the self-critique paradox:**
 
@@ -323,4 +327,4 @@ Selection at `check` Phase 4.3:
 | Semantic / judgment findings (§2.9, advisory set, survey Stage 2) | **`BLITZ_DUAL_CRITIC=1` recommended** | home-model blind spots bite hardest here; external/merged critic improves robustness (arxiv 2406.07188; 2604.19049 CMC) |
 | Pre-release audit gate (`ship`) | **`BLITZ_DUAL_CRITIC=1`** | recall context; cost of a false LGTM is highest |
 
-Requires `@google/gemini-cli` installed (`npm i -g @google/gemini-cli`) and authenticated. Override binary via `BLITZ_GEMINI_BIN`, model via `BLITZ_GEMINI_MODEL` (default `gemini-2.5-pro`).
+Each provider needs its own CLI installed and authenticated: `npm i -g @google/gemini-cli` for `gemini`, the Antigravity CLI for `agy`, the GitHub Copilot CLI for `copilot`. Per provider, `BLITZ_<P>_BIN` overrides the binary and `BLITZ_<P>_MODEL` the model — defaults `gemini-2.5-pro`, `gemini-3.1-pro-high`, `auto`. `BLITZ_<P>_FLAGS` appends flags, one per line: the value is never space-split, so a single env value cannot inject a second flag such as a system-prompt override that returns LGTM unconditionally.

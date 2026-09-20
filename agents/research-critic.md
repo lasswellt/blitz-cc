@@ -27,9 +27,10 @@ maxTurns: 30
 # WebFetch HEAD probes are deterministic; quote-substring matching is too. Only the
 # claim-grounding spot-check (§2.4) requires LLM judgment, and those findings are
 # advisory rather than blocker. Cross-Model Critic (CMC) per arxiv 2604.19049 is
-# implemented as the optional Gemini path: BLITZ_USE_GEMINI_CRITIC=1 routes through
-# `hooks/scripts/critic-gemini.sh --mode research`; BLITZ_DUAL_CRITIC=1 runs both
-# and requires both PASS. See agents/critic.md §5 for the mode matrix.
+# implemented as the optional external path: BLITZ_CRITIC_PROVIDER=agy|copilot|gemini
+# routes through `hooks/scripts/critic-external.sh --mode research`,
+# BLITZ_CRITIC_PANEL fans out to several, and BLITZ_DUAL_CRITIC=1 runs both the
+# in-Claude and external critics and requires both PASS. See agents/critic.md §8.
 model: sonnet
 # Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
 # the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.

@@ -49,7 +49,7 @@ Design decisions and the evidence behind them: [`docs/reviews/2026-09-19_v3-agen
 
 Pin the version and leave auto-update off for any plugin that runs hooks; read the diff before upgrading. For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
 
-**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, the Gemini CLI for a cross-model critic, the `claude-security` plugin for verified security findings.
+**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, or GitHub Copilot CLI), the `claude-security` plugin for verified security findings.
 
 ```bash
 /blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY
@@ -144,7 +144,18 @@ The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.m
 
 ### Critics
 
-`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no write tools, reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright. `BLITZ_USE_GEMINI_CRITIC=1` routes the reject critic through Gemini; `BLITZ_DUAL_CRITIC=1` demands both models agree.
+`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no write tools, reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright.
+
+A critic from a different model family catches blindspots the home model has on its own work, so the gate can be routed outside Claude entirely. `hooks/scripts/critic-external.sh` lifts the critic agent's body verbatim and hands it to a non-Claude CLI — `gemini` (Gemini CLI), `agy` (Antigravity), or `copilot` (GitHub Copilot CLI) — holding it to the same JSON reply contract and the same exit codes.
+
+| Setting | Effect |
+|---|---|
+| (unset) | in-Claude critic only |
+| `BLITZ_CRITIC_PROVIDER=agy` | that provider replaces the in-Claude reject critic |
+| `BLITZ_CRITIC_PANEL=agy,copilot` | both run; **any REJECT blocks** |
+| `BLITZ_DUAL_CRITIC=1` | in-Claude plus the external one; both must say LGTM |
+
+Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line — never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate.
 
 ### One registry, two lanes
 
@@ -206,7 +217,7 @@ Each shared protocol is one file per concern: `loop.md` (artifacts, task schema,
 
 ### Environment flags
 
-Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_TIA_DISABLE`, `BLITZ_DISABLE_SPAWN_INVARIANT`. Worktrees and branches: `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_SKIP_BRANCH_CLEANUP`. Critics and dispatch: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_DUAL_CRITIC`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`, `BLITZ_FIX_ROUNDS_MAX`. Every disable flag logs its use.
+Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_TIA_DISABLE`, `BLITZ_DISABLE_SPAWN_INVARIANT`. Worktrees and branches: `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_SKIP_BRANCH_CLEANUP`. Critics and dispatch: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_CRITIC_PROVIDER`, `BLITZ_CRITIC_PANEL`, `BLITZ_DUAL_CRITIC`, `BLITZ_USE_GEMINI_CRITIC` (legacy alias), `BLITZ_CRITIC_ARG_CAP`, `BLITZ_GEMINI_BIN|MODEL|FLAGS`, `BLITZ_AGY_BIN|MODEL|FLAGS`, `BLITZ_COPILOT_BIN|MODEL|FLAGS`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_FIX_ROUNDS_MAX`. Every disable flag logs its use.
 
 ---
 
