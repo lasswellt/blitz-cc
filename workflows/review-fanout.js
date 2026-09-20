@@ -48,7 +48,7 @@ if (args.sequential) {
     agent(a.prompt, { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', schema: args.surveySchema })))
 }
 const missing = reviews.filter(f => f === null).length
-if (missing) log(`review-fanout: ${missing} survey lens(es) returned null (skill applies the /_shared/agents.md §4.4 fan-out gate)`)
+if (missing) log(`review-fanout: ${missing} survey lens(es) returned null (skill applies the /_shared/agents.reference.md §4.4 fan-out gate)`)
 
 // Adversarial critic (MODE: reject), schema-validated (replaces jq parse of LGTM|REJECT).
 phase('Critic')

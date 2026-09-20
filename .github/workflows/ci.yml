@@ -33,6 +33,24 @@ jobs:
       - name: Markdown links + anchors
         run: bash hooks/scripts/markdown-link-validate.sh
 
+      - name: Section references resolve
+        run: bash scripts/check-section-refs.sh
+
+      # Authoritative skill-body token counts. The byte cap in
+      # skill-frontmatter-validate.sh is a calibrated proxy; this is the real
+      # measurement. Skipped without a credential rather than failing, because
+      # forks and PRs from outside the repo have no secret.
+      - name: Skill body token counts (advisory)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          pip install --quiet anthropic
+          bash scripts/count-tokens.sh --calibrate
+          bash scripts/count-tokens.sh --skills | awk -F'\t' '$1 > 5000 {
+            print "OVER THE 5,000-TOKEN COMPACTION CAP: " $2 " (" $1 " tokens)"; bad=1
+          } END { exit bad }'
+
       - name: CLAUDE.md size guard (<=200 lines)
         run: test "$(wc -l < CLAUDE.md)" -le 200
 

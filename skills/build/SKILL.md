@@ -12,11 +12,13 @@ compatibility: ">=2.1.271"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- Task file schema, `blocked_reason` vocabulary, `progress.md` format, gate arming, markers: [loop.md](/_shared/loop.md)
-- `dev` roster entry, 11-item spawn spec, reply status enum, fix loop, deviation tiers, worktree platform facts, `--parallel` preconditions, `Workflow` contract: [agents.md](/_shared/agents.md)
-- Structural done, Definition of Done, anti-mock rows: [quality.md](/_shared/quality.md) §Structural done
-- Session claim, conflict matrix, feed schema, HANDOFF.json: [sessions.md](/_shared/sessions.md)
-- Package install policy, TB-3 reply handling: [security.md](/_shared/security.md)
+Each protocol is a small contract file plus a reference loaded on demand. Read the contract; open the reference only for the row you need.
+
+- Task file schema, `blocked_reason` vocabulary, structural rules: [loop.md](/_shared/loop.md) · gate arming, markers, `progress.md` ledger format: [loop.reference.md](/_shared/loop.reference.md)
+- `dev` roster entry, model routing, when to spawn: [agents.md](/_shared/agents.md) · 11-item spawn spec, reply status enum, fix loop, deviation tiers, worktree platform facts, `--parallel` preconditions, `Workflow` contract: [agents.reference.md](/_shared/agents.reference.md)
+- Structural done, the three verdicts: [quality.md](/_shared/quality.md) §Structural done · Definition of Done, anti-mock rows, ratchet: [quality.reference.md](/_shared/quality.reference.md)
+- Session claim, conflict matrix: [sessions.md](/_shared/sessions.md) · feed schema, HANDOFF.json, mailbox: [sessions.reference.md](/_shared/sessions.reference.md)
+- Trust boundaries, kill switch: [security.md](/_shared/security.md) · package install policy, TB-3 reply handling in full: [security.reference.md](/_shared/security.reference.md)
 - Spawn prompt template, wave mechanics, integration checklist, selective re-verify, cleanup: [references/main.md](references/main.md)
 - Role conventions inlined into every `dev` prompt: [references/backend.md](references/backend.md), [references/frontend.md](references/frontend.md), [references/infra.md](references/infra.md), [references/test.md](references/test.md)
 
@@ -53,177 +55,33 @@ One skill, three modes. `build` writes `tasks.json` only through `scripts/tasks.
 
 1. The diff is describable in one sentence.
 2. ≤5 files change.
-3. No new dependency, no new directory, no schema/auth/env change (Tier 4 in [agents.md](/_shared/agents.md) §9).
+3. No new dependency, no new directory, no schema/auth/env change (Tier 4 in [agents.reference.md](/_shared/agents.reference.md) §9).
 
-### 0.4 Parallel preconditions ([agents.md](/_shared/agents.md) §5.2)
+### 0.4 Parallel preconditions ([agents.reference.md](/_shared/agents.reference.md) §5.2)
 
-```bash
-BASE_REF=$(jq -r '.worktree.baseRef // "fresh"' .claude/settings.json 2>/dev/null)
-[ "$BASE_REF" = "head" ] || echo "REFUSE --parallel: worktree.baseRef is '$BASE_REF' (needs \"head\"); run /blitz:doctor and set it in .claude/settings.json"
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --status open --json | jq -r '.[] | .id + " " + (.files | join(","))'
-```
-
-Fall back to sequential, with the reason printed, when any of these fails: `worktree.baseRef ≠ "head"`; fewer than 3 open ready tasks with pairwise-disjoint `files` (exact path match; a shared barrel or config file disqualifies both); another live session on the plan; `--parallel` absent. Cap is 4 concurrent agents per wave.
-
----
+Fall back to sequential, printing the reason, unless all hold: `worktree.baseRef: "head"`; no stale agent branch ahead of `origin/HEAD`; no `WorktreeCreate` hook in project settings; ≥3 open ready tasks with pairwise-disjoint `files`; no other live session on the plan; `--parallel` passed. Cap 4 per wave. Checks: [references/main.md](references/main.md) §0.4 Parallel preconditions.
 
 ## Inline mode
 
-No agents, no plan. Do the work on the main thread.
-
-### I.0 Understand
-
-1. Parse the request into exactly what changes.
-2. Locate the target files. More than 5 → stop, say so, suggest `/blitz:plan "<change>"`.
-3. Baseline type-check so pre-existing errors are known:
-   ```bash
-   npm run type-check 2>&1 | tail -5
-   ```
-
-### I.1 `--issue N` (prepended when present)
-
-Fetch and classify before touching code — salvaged from the retired fix-issue skill:
-
-```bash
-REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
-[ -n "$REPO" ] || echo "ERROR: not a GitHub repo or gh not authenticated (gh auth login)"
-gh issue view "$ISSUE_NUMBER" --json title,body,labels,assignees,comments,state,milestone
-```
-
-Record title, body, labels, comments, state (warn if closed), milestone. Classify: **Bug** (`bug`, "error", "crash", "broken"), **Regression** ("used to work", "since version"), **Performance** ("slow", "timeout", "memory"), **Feature gap** (`enhancement`, "should support"), **Configuration** ("config", "environment"). Extract reproduction steps, expected vs actual, stack traces, named files.
-
-**Investigate.** Research is mandatory when the issue involves third-party behavior, the error is not traceable to project code, a version bump is the trigger, confidence is Medium/Low, or the issue is >7 days old. Otherwise skip and say why. When needed, spawn `general-purpose` (Light; it must Write `${SESSION_TMP_DIR}/issue-research.md`, stub first, append findings; max 5 searches, 8 reads, 150 lines, 3 min). Check `[ -s "$RESEARCH_FILE" ]` before reading; empty → confidence Low, do not implement on missing research; retry narrower or ask. Then write the root cause block:
-
-```
-Root Cause Analysis
-Issue: #<n> — <title>
-Cause: <1-2 sentences>
-Location: <file:line>
-Mechanism: <data flow / timing>
-Confidence: High | Medium | Low
-```
-
-Low → say what would help and ask. Issue-scoped changes larger than §0.3 → `/blitz:plan --issue N` (task `origin: issue:N`), not inline.
-
-### I.2 Implement
-
-Edit the files directly, following existing patterns. Only what was asked: no adjacent refactors, no added comments, no "improvements". Add a regression test when the change is a bug fix and a matching test file exists.
-
-### I.3 Verify
-
-```bash
-npm run type-check 2>&1 | tail -10
-npm run test -- --run <matching-test-file> 2>&1 | tail -15    # when a matching test exists
-```
-
-On failure fix and re-run, **max 3 attempts**, then report the failure and stop (feed `verification {command, result}` each run). Commit when the change is complete or the user asked:
-
-```bash
-git add <changed-files>
-git commit -m "fix(<scope>): <description>"     # `Task: issue:<n>` trailer for --issue
-```
-
-### I.4 `--issue N` closing comment (appended when present)
-
-Terse-technical; labels verbatim (downstream parsers grep them), values as fragments, **Root Cause** at LITE intensity so the reasoning chain survives. No trailing "ready for review" filler.
-
-```bash
-gh issue comment "$ISSUE_NUMBER" --body "$(cat <<'MSG'
-## Fix Applied
-
-**Branch**: `<branch-name>`
-**Root Cause**: <1 fragment with file:line; reasoning must survive>
-**Fix**: <1 fragment + file:line refs>
-**Files Changed**:
-- `<file1>`: <what changed>
-
-**Verification**:
-- Type-check: PASS
-- Tests: PASS (<N> passed)
-- Build: PASS
-MSG
-)"
-```
-
-### Inline guardrails
-
-- **Max 5 files.** More → `/blitz:plan`.
-- **No new packages, no new directories.** Either → `/blitz:plan` (or `/blitz:research` first).
-- **Definition of Done still applies** ([quality.md](/_shared/quality.md)): no placeholder returns, no TODO stubs, no empty handlers, no `vi.mock` of `src/`.
-- **Never `--no-verify`.**
-
----
+No plan, no agents: do the work on the main thread. Entry conditions are in Phase 0; the full I.0–I.4 procedure, including `--issue N` handling, is in [references/main.md](references/main.md) §Inline mode.
 
 ## Task mode
 
 ### T.1 Baseline and conventions (once per invocation)
 
-1. Inventory: `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -30`; read the root `package.json` and workspace config.
-2. Build health; catalog pre-existing errors so agents are not blamed for them:
-   ```bash
-   npm run type-check 2>&1 | tail -20
-   npm run build 2>&1 | tail -20
-   ```
-   **Gate:** build succeeds or pre-existing errors are cataloged before any spawn.
-3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE — do not recreate**. This block goes verbatim into every spawn prompt (item 3 of the spec; see [references/main.md](references/main.md) §Spawn prompt template).
-4. Read `docs/plans/<slug>/plan.md` and the tail of `progress.md` (last 20 lines): they are the recovery map. Trust them and `git log --grep 'Task: <slug>/'` over any recollection, especially after compaction (`HANDOFF.json` names the plan, task, gate path, and never-edit list).
+Read once per invocation, not per task: stack profile, test command, never-edit additions. Commands: [references/main.md](references/main.md) §T.1 Baseline and conventions.
 
 ### T.2 The loop
 
-```
-while task := tasks.sh next <slug>        # first in_progress, else first open with deps done
-  set status=in_progress → arm gate (autonomous only) → spawn ONE dev → read reply
-  → tasks.sh verify → pass: progress line, commit, disarm | fail: fix loop (§T.4)
-  → stop when: no ready task | --autonomous off | BLOCKED/ESCALATE with a Tier 3/4 reason
-```
-
-Per iteration:
-
-1. **Select.** `TASK_JSON=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" next "$SLUG")`; empty → §T.6. A `<task-id>` argument pins `TASK_JSON` to that task and exits after it. A cycle in `depends_on` (Kahn layering never empties while open tasks remain) is a hard failure: print the cycle, `BLOCKED: dependency cycle`, stop.
-2. **Mark.** `tasks.sh set "$SLUG" "$ID" status=in_progress`; append `## <ISO> build <ID> start (attempt <attempts+1>)` to `progress.md`; feed `task_start {plan, task}`.
-3. **Arm the gate** when `--autonomous` (§Gate).
-4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", prompt: <11-item spec>)`. The spec ([agents.md](/_shared/agents.md) §3.1; template in [references/main.md](references/main.md)):
-
-   | # | Item | Source |
-   |---|---|---|
-   | 1-2 | Task id, title | `tasks[].id`, `.title` |
-   | 3 | `ROLE: <role>` + the full text of `skills/build/references/<role>.md` + the T.1 conventions block | `tasks[].role` |
-   | 4 | `SCOPE_FILES:` exact `files[]`; edits outside it are `DONE_WITH_CONCERNS` at best, `ESCALATE: scope-expansion-needed` when >3 | `tasks[].files` |
-   | 5 | `verify[]` commands verbatim with timeouts | `tasks[].verify` |
-   | 6 | Never-edit: `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `.cc-sessions/**`, test files unless `role: test`, project additions | this skill |
-   | 7 | Reply contract + JSON block ([agents.md](/_shared/agents.md) §4.2) | agents.md |
-   | 8 | `BUDGET (Heavy)`: 25 reads, 0 searches, 40 tool calls (finish at 35), 400 lines, 8 min | agents.md §3.3 |
-   | 9 | Commit `feat(<slug>/<role>): <ID> <title>` + trailer `Task: <slug>/<ID>`; one commit; `fix(<slug>/<role>): … — during <ID>` for Tier-1 auto-fixes | this skill |
-   | 10 | `Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.` | output.md |
-   | 11 | Stop conditions: reply when `verify[]` passes; `BLOCKED` on any `ESCALATE:`; stop before a new file at ≤3 calls left | agents.md |
-
-   Banned: more than one task per prompt; a prompt without `SCOPE_FILES` or the never-edit list; retrying an identical prompt after `error_max_turns`.
-5. **Read the reply.** `jq` it first; unparsable → `MALFORMED`, counts as a failed round with a narrower re-spawn, never the same prompt. Cap interpolated fields at 200 chars and injection-scan them (TB-3). Then by status:
-
-   | Status | Action |
-   |---|---|
-   | `DONE` | → step 6 |
-   | `DONE_WITH_CONCERNS` | → step 6; each concern becomes a `Ruling:` candidate in `progress.md` (`severity: high` → write the ruling now) |
-   | `NEEDS_CONTEXT` | answer once via `SendMessage(to: "dev-<ID>")` with the missing fact; no attempt consumed; wait for the next reply |
-   | `BLOCKED` | `tasks.sh set … attempts=+1`; map `escalate` to `blocked_reason`; Tier 3/4 reason → §T.5 ruling now; else → §T.4 |
-
-6. **Verify on main.** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$ID"` — the only path to `status: done`. Pass → append `## <ISO> verify <ID> ok=true`, feed `verification {command: "tasks.sh verify <slug> <ID>", result: pass}`, `task_complete {summary}`; confirm the agent's commit carries the trailer (`git log -1 --grep "Task: $SLUG/$ID"`), else commit its files yourself with the item-9 format. Fail → `set attempts=+1`, append `## <ISO> verify <ID> ok=false failed="<cmd>" tail="<200 chars>"`, → §T.4.
-7. **Disarm** the gate (`rm -f "$GATE_DIR/gate.json"`) before the next spawn or any exit.
-8. **Continue** while `--autonomous`; otherwise print the task's row (§Report) and stop so the user can review — the next `/blitz:build <slug>` resumes from `tasks.sh next`.
+One `dev` per open task in dependency order, fresh context each time, `tasks.sh verify` on the main thread between tasks. Dispatch, fix rounds, deviation handling and the per-task ledger writes: [references/main.md](references/main.md) §T.2 The loop.
 
 ### T.3 What `dev` never does
 
 Edits `tasks.json` (`tasks-guard.sh` denies it) or `progress.md`; reads another task's files; weakens a test; installs a dependency the task did not name; commits with `--no-verify`. Main thread only writes plan state, on the main branch.
 
-### T.4 Fix loop ([agents.md](/_shared/agents.md) §8)
+### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md) §8)
 
-| Round | Who | How |
-|---|---|---|
-| 1-3 | same `dev-<ID>` (sonnet) | `SendMessage(to: "dev-<ID>", message: "verify item <n> failing: <200-char tail>; fix <file> only")` — state remaining work explicitly, never a bare "continue"; one failing item per message |
-| 4-5 | fresh `dev` on opus | new `Agent(subagent_type: "blitz:dev", model: "opus")`, full 11-item spec plus the `progress.md` tail (last 3 verify tails and rulings) |
-| after 5 | main thread | adjudicate (§T.5) |
-
-Each round: `set attempts=+1` on failure, re-run `tasks.sh verify`, append the verify line. At `attempts == 3` `tasks.sh set` flips the task to `blocked` with `circuit-breaker`; under `--autonomous` or `next --loop` the loop continues with rounds 4-5 only when `BLITZ_FIX_ROUNDS_MAX` (default 5) allows, else moves to the next ready task. Never retry an unchanged prompt; each round changes at least the evidence tail. Stuck: no reply within 8 min + 30 s → `SendMessage STATUS?`; no answer in 90 s → `MISSING`, treat as `BLOCKED circuit-breaker`.
+Rounds 1–3 resume the same `dev` by name; 4–5 spawn fresh on opus; adjudicate at 5 with a `Ruling:` in `progress.md`. Round table and resume payload: [references/main.md](references/main.md) §T.4 Fix loop.
 
 ### T.5 Circuit breaker and rulings
 
@@ -297,7 +155,7 @@ Blitz removes nothing. The platform locks a worktree while its agent runs and sw
 
 ## Gate
 
-Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BLITZ_AUTONOMOUS=1`); interactive runs never write the file. Contract: [loop.md](/_shared/loop.md) §Stop gate.
+Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BLITZ_AUTONOMOUS=1`); interactive runs never write the file. Contract: [loop.reference.md](/_shared/loop.reference.md) §Stop gate.
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"

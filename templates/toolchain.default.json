@@ -1,0 +1,928 @@
+{
+  "$schema": "blitz-toolchain/1.0",
+  "$comment": "Shipped toolchain table. Rows are DATA: hooks resolve a lane + file extension to an argv and exec it. Adding a language means adding rows, never adding a script. A project may disable rows or reorder preference via .blitz-toolchain.json, but may NOT supply a cmd: per security.md TB-1 the checkout is untrusted inbound data, and an argv from repo content would be arbitrary execution. Row order within a lane is preference order; the first row whose stack is present, whose match hits the file, whose `when` files exist, and whose `probe` succeeds, wins.",
+  "stacks": [
+    {
+      "id": "node",
+      "markers": [
+        "package.json",
+        "tsconfig.json",
+        "jsconfig.json"
+      ]
+    },
+    {
+      "id": "deno",
+      "markers": [
+        "deno.json",
+        "deno.jsonc"
+      ]
+    },
+    {
+      "id": "python",
+      "markers": [
+        "pyproject.toml",
+        "setup.cfg",
+        "setup.py",
+        "requirements.txt",
+        "Pipfile"
+      ]
+    },
+    {
+      "id": "rust",
+      "markers": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "id": "go",
+      "markers": [
+        "go.mod"
+      ]
+    },
+    {
+      "id": "jvm",
+      "markers": [
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts"
+      ]
+    },
+    {
+      "id": "ruby",
+      "markers": [
+        "Gemfile",
+        "*.gemspec"
+      ]
+    },
+    {
+      "id": "dotnet",
+      "markers": [
+        "*.csproj",
+        "*.fsproj",
+        "*.sln"
+      ]
+    },
+    {
+      "id": "php",
+      "markers": [
+        "composer.json"
+      ]
+    },
+    {
+      "id": "elixir",
+      "markers": [
+        "mix.exs"
+      ]
+    },
+    {
+      "id": "swift",
+      "markers": [
+        "Package.swift"
+      ]
+    }
+  ],
+  "lanes": {
+    "format": [
+      {
+        "id": "node-biome",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|json|jsonc|css)$",
+        "when": [
+          "biome.json",
+          "biome.jsonc"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "biome",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "biome",
+          "format",
+          "--write",
+          "{file}"
+        ]
+      },
+      {
+        "id": "node-prettier",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|vue|svelte|css|scss|less|json|jsonc|md|mdx|html|ya?ml|graphql)$",
+        "when": [
+          ".prettierrc",
+          ".prettierrc.js",
+          ".prettierrc.cjs",
+          ".prettierrc.mjs",
+          ".prettierrc.json",
+          ".prettierrc.yaml",
+          ".prettierrc.yml",
+          ".prettierrc.toml",
+          "prettier.config.js",
+          "prettier.config.cjs",
+          "prettier.config.mjs",
+          "prettier.config.ts"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "prettier",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "prettier",
+          "--write",
+          "{file}"
+        ]
+      },
+      {
+        "id": "node-prettier-dep",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|vue|svelte|css|scss|less|json|jsonc|md|mdx|html|ya?ml|graphql)$",
+        "whenDep": [
+          "prettier"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "prettier",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "prettier",
+          "--write",
+          "{file}"
+        ]
+      },
+      {
+        "id": "deno-fmt",
+        "stack": "deno",
+        "match": "\\.(ts|tsx|js|jsx|json|jsonc|md)$",
+        "probe": [
+          "deno",
+          "--version"
+        ],
+        "cmd": [
+          "deno",
+          "fmt",
+          "{file}"
+        ]
+      },
+      {
+        "id": "python-ruff",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "ruff",
+          "--version"
+        ],
+        "cmd": [
+          "ruff",
+          "format",
+          "{file}"
+        ]
+      },
+      {
+        "id": "python-black",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "black",
+          "--version"
+        ],
+        "cmd": [
+          "black",
+          "--quiet",
+          "{file}"
+        ]
+      },
+      {
+        "id": "rust-fmt",
+        "stack": "rust",
+        "match": "\\.rs$",
+        "probe": [
+          "rustfmt",
+          "--version"
+        ],
+        "cmd": [
+          "rustfmt",
+          "--edition",
+          "2021",
+          "{file}"
+        ]
+      },
+      {
+        "id": "go-fmt",
+        "stack": "go",
+        "match": "\\.go$",
+        "probe": [
+          "gofmt",
+          "-h"
+        ],
+        "probeAllowExit": true,
+        "cmd": [
+          "gofmt",
+          "-w",
+          "{file}"
+        ]
+      },
+      {
+        "id": "ruby-rubocop",
+        "stack": "ruby",
+        "match": "\\.(rb|rake)$",
+        "probe": [
+          "rubocop",
+          "--version"
+        ],
+        "cmd": [
+          "rubocop",
+          "--autocorrect",
+          "--format",
+          "quiet",
+          "{file}"
+        ]
+      },
+      {
+        "id": "dotnet-format",
+        "stack": "dotnet",
+        "match": "\\.(cs|fs|vb)$",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "format",
+          "--include",
+          "{file}",
+          "--verbosity",
+          "quiet"
+        ]
+      },
+      {
+        "id": "php-cs-fixer",
+        "stack": "php",
+        "match": "\\.php$",
+        "probe": [
+          "php-cs-fixer",
+          "--version"
+        ],
+        "cmd": [
+          "php-cs-fixer",
+          "fix",
+          "{file}"
+        ]
+      },
+      {
+        "id": "elixir-fmt",
+        "stack": "elixir",
+        "match": "\\.(ex|exs)$",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "format",
+          "{file}"
+        ]
+      },
+      {
+        "id": "swift-format",
+        "stack": "swift",
+        "match": "\\.swift$",
+        "probe": [
+          "swift-format",
+          "--version"
+        ],
+        "cmd": [
+          "swift-format",
+          "--in-place",
+          "{file}"
+        ]
+      }
+    ],
+    "lint": [
+      {
+        "id": "node-biome-lint",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts)$",
+        "when": [
+          "biome.json",
+          "biome.jsonc"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "biome",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "biome",
+          "lint",
+          "--write",
+          "{file}"
+        ]
+      },
+      {
+        "id": "node-eslint",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|vue|svelte)$",
+        "when": [
+          ".eslintrc",
+          ".eslintrc.js",
+          ".eslintrc.cjs",
+          ".eslintrc.mjs",
+          ".eslintrc.json",
+          ".eslintrc.yaml",
+          ".eslintrc.yml",
+          "eslint.config.js",
+          "eslint.config.cjs",
+          "eslint.config.mjs",
+          "eslint.config.ts"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "eslint",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "eslint",
+          "--fix",
+          "{file}"
+        ]
+      },
+      {
+        "id": "node-eslint-dep",
+        "stack": "node",
+        "match": "\\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|vue|svelte)$",
+        "whenDep": [
+          "eslint"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "eslint",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "eslint",
+          "--fix",
+          "{file}"
+        ]
+      },
+      {
+        "id": "deno-lint",
+        "stack": "deno",
+        "match": "\\.(ts|tsx|js|jsx)$",
+        "probe": [
+          "deno",
+          "--version"
+        ],
+        "cmd": [
+          "deno",
+          "lint",
+          "{file}"
+        ]
+      },
+      {
+        "id": "python-ruff-check",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "ruff",
+          "--version"
+        ],
+        "cmd": [
+          "ruff",
+          "check",
+          "--fix",
+          "{file}"
+        ]
+      },
+      {
+        "id": "python-flake8",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "flake8",
+          "--version"
+        ],
+        "cmd": [
+          "flake8",
+          "{file}"
+        ]
+      },
+      {
+        "id": "rust-clippy",
+        "stack": "rust",
+        "match": "\\.rs$",
+        "probe": [
+          "cargo",
+          "clippy",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "clippy",
+          "--quiet",
+          "--message-format",
+          "short"
+        ]
+      },
+      {
+        "id": "go-vet",
+        "stack": "go",
+        "match": "\\.go$",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "vet",
+          "./..."
+        ]
+      },
+      {
+        "id": "ruby-rubocop-lint",
+        "stack": "ruby",
+        "match": "\\.(rb|rake)$",
+        "probe": [
+          "rubocop",
+          "--version"
+        ],
+        "cmd": [
+          "rubocop",
+          "--format",
+          "quiet",
+          "{file}"
+        ]
+      },
+      {
+        "id": "php-stan",
+        "stack": "php",
+        "match": "\\.php$",
+        "probe": [
+          "phpstan",
+          "--version"
+        ],
+        "cmd": [
+          "phpstan",
+          "analyse",
+          "--no-progress",
+          "{file}"
+        ]
+      },
+      {
+        "id": "elixir-credo",
+        "stack": "elixir",
+        "match": "\\.(ex|exs)$",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "credo",
+          "--strict"
+        ]
+      }
+    ],
+    "typecheck": [
+      {
+        "id": "node-vue-tsc",
+        "stack": "node",
+        "match": "\\.(ts|tsx|vue|mts|cts)$",
+        "when": [
+          "tsconfig.json"
+        ],
+        "whenDep": [
+          "vue-tsc"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "vue-tsc",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "vue-tsc",
+          "--incremental",
+          "--noEmit",
+          "--pretty",
+          "false"
+        ],
+        "counter": "regex:error TS[0-9]+",
+        "scopeProbe": [
+          "npx",
+          "--no-install",
+          "vue-tsc",
+          "--listFilesOnly"
+        ]
+      },
+      {
+        "id": "node-tsc",
+        "stack": "node",
+        "match": "\\.(ts|tsx|mts|cts)$",
+        "when": [
+          "tsconfig.json"
+        ],
+        "probe": [
+          "npx",
+          "--no-install",
+          "tsc",
+          "--version"
+        ],
+        "cmd": [
+          "npx",
+          "--no-install",
+          "tsc",
+          "--incremental",
+          "--noEmit",
+          "--pretty",
+          "false"
+        ],
+        "counter": "regex:error TS[0-9]+",
+        "scopeProbe": [
+          "npx",
+          "--no-install",
+          "tsc",
+          "--listFilesOnly"
+        ]
+      },
+      {
+        "id": "deno-check",
+        "stack": "deno",
+        "match": "\\.(ts|tsx)$",
+        "probe": [
+          "deno",
+          "--version"
+        ],
+        "cmd": [
+          "deno",
+          "check",
+          "{file}"
+        ],
+        "counter": "regex:^(error|TS[0-9]+)"
+      },
+      {
+        "id": "python-mypy",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "mypy",
+          "--version"
+        ],
+        "cmd": [
+          "mypy",
+          "--no-error-summary",
+          "--no-color-output",
+          "--hide-error-context",
+          "."
+        ],
+        "counter": "regex: error: "
+      },
+      {
+        "id": "python-pyright",
+        "stack": "python",
+        "match": "\\.(py|pyi)$",
+        "probe": [
+          "pyright",
+          "--version"
+        ],
+        "cmd": [
+          "pyright",
+          "--outputjson"
+        ],
+        "counter": "regex:\"severity\": *\"error\""
+      },
+      {
+        "id": "rust-check",
+        "stack": "rust",
+        "match": "\\.rs$",
+        "probe": [
+          "cargo",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "check",
+          "--quiet",
+          "--message-format",
+          "short"
+        ],
+        "counter": "regex:^[^[:space:]]+:[0-9]+:[0-9]+: error"
+      },
+      {
+        "id": "go-build",
+        "stack": "go",
+        "match": "\\.go$",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "build",
+          "./..."
+        ],
+        "counter": "regex:^[^[:space:]]+\\.go:[0-9]+:"
+      },
+      {
+        "id": "jvm-gradle",
+        "stack": "jvm",
+        "match": "\\.(java|kt|kts|scala)$",
+        "when": [
+          "gradlew"
+        ],
+        "probe": [
+          "./gradlew",
+          "--version"
+        ],
+        "cmd": [
+          "./gradlew",
+          "--quiet",
+          "compileJava"
+        ],
+        "counter": "regex:^e: |error:"
+      },
+      {
+        "id": "dotnet-build",
+        "stack": "dotnet",
+        "match": "\\.(cs|fs|vb)$",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "build",
+          "--nologo",
+          "--verbosity",
+          "quiet"
+        ],
+        "counter": "regex:: error [A-Z]+[0-9]+:"
+      },
+      {
+        "id": "elixir-compile",
+        "stack": "elixir",
+        "match": "\\.(ex|exs)$",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "compile",
+          "--warnings-as-errors"
+        ],
+        "counter": "regex:^\\*\\* \\(|error:"
+      }
+    ],
+    "test": [
+      {
+        "id": "node-npm-test",
+        "stack": "node",
+        "match": ".*",
+        "when": [
+          "package.json"
+        ],
+        "probe": [
+          "npm",
+          "--version"
+        ],
+        "cmd": [
+          "npm",
+          "test",
+          "--silent"
+        ]
+      },
+      {
+        "id": "deno-test",
+        "stack": "deno",
+        "match": ".*",
+        "probe": [
+          "deno",
+          "--version"
+        ],
+        "cmd": [
+          "deno",
+          "test",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "python-pytest",
+        "stack": "python",
+        "match": ".*",
+        "probe": [
+          "pytest",
+          "--version"
+        ],
+        "cmd": [
+          "pytest",
+          "-q"
+        ]
+      },
+      {
+        "id": "rust-test",
+        "stack": "rust",
+        "match": ".*",
+        "probe": [
+          "cargo",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "test",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "go-test",
+        "stack": "go",
+        "match": ".*",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "test",
+          "./..."
+        ]
+      },
+      {
+        "id": "ruby-rspec",
+        "stack": "ruby",
+        "match": ".*",
+        "probe": [
+          "rspec",
+          "--version"
+        ],
+        "cmd": [
+          "rspec",
+          "--format",
+          "progress"
+        ]
+      },
+      {
+        "id": "jvm-gradle-test",
+        "stack": "jvm",
+        "match": ".*",
+        "when": [
+          "gradlew"
+        ],
+        "probe": [
+          "./gradlew",
+          "--version"
+        ],
+        "cmd": [
+          "./gradlew",
+          "--quiet",
+          "test"
+        ]
+      },
+      {
+        "id": "dotnet-test",
+        "stack": "dotnet",
+        "match": ".*",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "test",
+          "--nologo",
+          "--verbosity",
+          "quiet"
+        ]
+      },
+      {
+        "id": "elixir-test",
+        "stack": "elixir",
+        "match": ".*",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "test"
+        ]
+      }
+    ],
+    "build": [
+      {
+        "id": "node-npm-build",
+        "stack": "node",
+        "match": ".*",
+        "when": [
+          "package.json"
+        ],
+        "probe": [
+          "npm",
+          "--version"
+        ],
+        "cmd": [
+          "npm",
+          "run",
+          "build",
+          "--silent"
+        ]
+      },
+      {
+        "id": "rust-build",
+        "stack": "rust",
+        "match": ".*",
+        "probe": [
+          "cargo",
+          "--version"
+        ],
+        "cmd": [
+          "cargo",
+          "build",
+          "--quiet"
+        ]
+      },
+      {
+        "id": "go-build-all",
+        "stack": "go",
+        "match": ".*",
+        "probe": [
+          "go",
+          "version"
+        ],
+        "cmd": [
+          "go",
+          "build",
+          "./..."
+        ]
+      },
+      {
+        "id": "jvm-gradle-build",
+        "stack": "jvm",
+        "match": ".*",
+        "when": [
+          "gradlew"
+        ],
+        "probe": [
+          "./gradlew",
+          "--version"
+        ],
+        "cmd": [
+          "./gradlew",
+          "--quiet",
+          "build",
+          "-x",
+          "test"
+        ]
+      },
+      {
+        "id": "dotnet-build-all",
+        "stack": "dotnet",
+        "match": ".*",
+        "probe": [
+          "dotnet",
+          "--version"
+        ],
+        "cmd": [
+          "dotnet",
+          "build",
+          "--nologo",
+          "--verbosity",
+          "quiet"
+        ]
+      },
+      {
+        "id": "elixir-build",
+        "stack": "elixir",
+        "match": ".*",
+        "probe": [
+          "mix",
+          "--version"
+        ],
+        "cmd": [
+          "mix",
+          "compile"
+        ]
+      }
+    ]
+  }
+}

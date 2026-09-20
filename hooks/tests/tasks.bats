@@ -129,3 +129,116 @@ teardown() { teardown_fake_repo; }
   run bash "$TASKS" add demo --id T-002 --title "b" --verify-cmd "true" --origin issue:42
   [ "$status" -eq 0 ]
 }
+
+# --- per-command verify evidence (3.3.0) -----------------------------------
+
+@test "verify records per-command evidence on success" {
+  bash "$TASKS" add demo --id T-001 --title t --verify-cmd 'echo hello' --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run jq -r '.tasks[0].last_verify.runs | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "2" ]
+  run jq -r '.tasks[0].last_verify.runs[0] | "\(.exit) \(.tail)"' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "0 hello" ]
+  run jq -r '.tasks[0].last_verify.runs[0] | has("duration_ms") and has("recorded_at")' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "true" ]
+}
+
+@test "verify records the failing command's evidence and stops there" {
+  bash "$TASKS" add demo --id T-002 --title t \
+    --verify-cmd 'echo "boom" >&2; exit 3' --verify-cmd 'echo never' --origin plan >/dev/null
+  run bash "$TASKS" verify demo T-002
+  [ "$status" -ne 0 ]
+  # Only the command that ran is recorded; the one after the failure is not.
+  run jq -r '.tasks[0].last_verify.runs | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "1" ]
+  run jq -r '.tasks[0].last_verify.runs[0].exit' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" = "3" ]
+  run jq -r '.tasks[0].last_verify.runs[0].tail' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [[ "$output" == *boom* ]]
+}
+
+@test "verify evidence tail is capped" {
+  bash "$TASKS" add demo --id T-003 --title t \
+    --verify-cmd 'head -c 9000 /dev/zero | tr "\0" "x"; true' --origin plan >/dev/null
+  BLITZ_VERIFY_EVIDENCE_CAP=500 bash "$TASKS" verify demo T-003 >/dev/null
+  run jq -r '.tasks[0].last_verify.runs[0].tail | length' "$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$output" -le 500 ]
+}
+
+@test "every deterministic registry row carries an exit contract or is prose" {
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '[.checks[]
+    | select(.lane=="deterministic")
+    | select((.id|IN("det-17","det-18")) | not)
+    | select(.detection.exit == null) | .id] | join(",")' "$reg"
+  [ -z "$output" ]
+}
+
+@test "a grep-tailed detector passes on exit 1, not exit 0" {
+  # `grep` exits 1 when it finds nothing, which is the PASS case for a
+  # detector hunting for a bad pattern. Reading it as "non-zero means fail"
+  # inverts every grep row in the registry.
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '.checks[] | select(.id=="det-05") | .detection.exit.pass | join(",")' "$reg"
+  [ "$output" = "1" ]
+  run jq -r '.checks[] | select(.id=="det-01") | .detection.exit.pass | join(",")' "$reg"
+  [ "$output" = "0" ]
+}
+
+@test "counter rows take their verdict from stdout, not the exit code" {
+  local reg="$HOOKS_DIR/../../skills/_shared/check-registry.json"
+  run jq -r '.checks[] | select(.id=="det-03") | .detection.exit.verdict' "$reg"
+  [ "$output" = "stdout" ]
+}
+
+# --- selective post-merge re-verify -----------------------------------------
+
+@test "verify --changed re-verifies only tasks whose files the paths touch" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" add demo --id T-002 --title b --files py/b.py --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" add demo --id T-003 --title c --files docs/c.md --verify-cmd 'true' --origin plan >/dev/null
+  for i in T-001 T-002 T-003; do bash "$TASKS" verify demo "$i" >/dev/null; done
+  run bash "$TASKS" verify demo --changed src/a.rs py/b.py
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"2 task(s) re-verified"* ]]
+  [[ "$output" != *"T-003"* ]]
+}
+
+@test "verify --changed catches a break that survived a clean merge" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs \
+    --verify-cmd 'test -f ok.flag' --origin plan >/dev/null
+  touch ok.flag
+  bash "$TASKS" verify demo T-001 >/dev/null
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "done" ]
+  # A textually clean merge can still break a task semantically.
+  rm ok.flag
+  run bash "$TASKS" verify demo --changed src/a.rs
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"T-001"* ]]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "in_progress" ]
+  [ "$(jq -r '.tasks[0].passes' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "false" ]
+}
+
+@test "verify --changed matches by directory prefix in both directions" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/api --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run bash "$TASKS" verify demo --changed src/api/handler.rs
+  [[ "$output" == *"1 task(s) re-verified"* ]]
+}
+
+@test "verify --changed is a no-op when no done task owns the paths" {
+  bash "$TASKS" add demo --id T-001 --title a --files src/a.rs --verify-cmd 'true' --origin plan >/dev/null
+  bash "$TASKS" verify demo T-001 >/dev/null
+  run bash "$TASKS" verify demo --changed unrelated/x.txt
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"nothing to re-verify"* ]]
+}
+
+@test "verify --changed with no paths is a usage error" {
+  # The plan must exist first, or require_file exits 3 (not found) before the
+  # path check is ever reached.
+  bash "$TASKS" init demo >/dev/null
+  run bash "$TASKS" verify demo --changed
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"needs at least one path"* ]]
+}

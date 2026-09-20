@@ -10,6 +10,199 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.5.1] — 2026-09-20 · reconcile the three token measurements
+
+### Fixed
+- Six `references/main.md` files carried 2–3 duplicate `## Moved from SKILL.md` headings, one per run of the section mover. Consolidated, and `check-section-refs.sh` now fails on a repeat so it cannot happen a third time.
+
+### Notes
+- **Three distinct loads were being reported as one number.** A skill invocation costs differently depending on what it reaches for, and the three do not move together:
+
+  | | `/blitz:build` | `/blitz:check` | Governs |
+  |---|---|---|---|
+  | Post-compaction re-attach (body only, **hard cap 5,000**) | **3,569 tok** | **3,475 tok** | Whether the skill keeps its verdict, gate and report after a summary |
+  | Typical (skill + the protocol contracts it names) | 13,652 | 7,658 | What a normal invocation costs |
+  | Worst (+ its own `references/main.md`) | 20,176 | 15,889 | An invocation that opens every link |
+
+  The audit's Phase 2 target was written against the **worst** column, which moving body content into `references/` cannot improve — the bytes are relocated inside the same sum. That move is exactly what fixes the re-attach cap, the only column the platform actually enforces. 3.4.0 and 3.5.0 optimised the first column while the third was being quoted, which is why `check` looked like it regressed from 14,138 to 16,025 tokens while its real truncation risk halved. Recorded in the audit with the full reconciliation.
+
+## [3.5.0] — 2026-09-20 · measure tokens properly; the 3.4.0 cap was unsafe
+
+3.4.0 claimed six skill bodies now fit the 5,000-token compaction cap. The claim rested on a bytes÷4 estimate, and bytes÷4 is wrong in the unsafe direction for this content.
+
+### Fixed
+- **The 18,000-byte cap assumed 4.0 bytes/token and was therefore too loose.** For Claude, English prose runs ~3.6–4.0 B/tok; markdown dense with tables, code blocks, paths and CLI flags runs ~3.0–3.5. A body is safe only while Claude's real ratio stays **above** `body_bytes / 5000`. After 3.4.0 the worst crossover was **3.50 B/tok** (`audit`), meaning eight skills were still over the cap under any plausible dense-markdown ratio. The cap is now **15,000 B** (5,000 tokens at 3.0 B/tok, the pessimistic floor) and nine skills were cut further. Worst crossover is now **2.98 B/tok**.
+
+  | Skill | 3.4.0 crossover | now |
+  |---|---|---|
+  | `audit` | 3.50 B/tok | **2.81** |
+  | `onboard` | 3.49 | **2.63** |
+  | `ui-build` | 3.46 | **2.28** |
+  | `research` | 3.42 | **2.98** |
+  | `check` | 3.40 | **2.78** |
+  | `next` | 3.31 | **2.73** |
+  | `doctor` | 3.25 | **2.98** |
+  | `build` | 3.22 | **2.86** |
+  | `plan` | 2.99 | **2.73** |
+
+  Verbatim as before: 15 more sections moved into `references/`, and a line-level check confirms nothing was lost.
+- Five relative paths broke in the move: three self-links to `references/main.md` from inside it, one `../../docs/…` that reaches `skills/` rather than the repo root from one level deeper, and one sibling addressed as `references/x.md` from inside `references/`. `check-section-refs.sh` now names the whole class rather than the instances.
+
+### Added
+- **`scripts/count-tokens.sh`** — authoritative counts via `messages.count_tokens`, the only accurate counter for Claude (counts are model-specific). Caches by content hash in `.cc-sessions/token-counts.json` so unchanged files cost nothing. `--calibrate` prints measured bytes-per-token and the safe cap at the worst observed ratio, which is how the 15,000 B proxy should eventually be replaced with a measurement. Exits 3 with byte estimates clearly marked `UNVERIFIED` when no credential is available, rather than silently degrading.
+- CI runs the real count when `ANTHROPIC_API_KEY` is present and skips otherwise, so forks are not broken by a missing secret.
+- Four tests: the byte cap, a crossover assertion (no skill may depend on a ratio at or above 3.0), the credential-absent behaviour of the counter, and a guard that **no local BPE tokenizer is ever used**.
+
+### Notes
+- **`tiktoken` and `gpt-tokenizer` are prohibited, not merely discouraged.** They are OpenAI's tokenizer and undercount Claude by ~15–20% on prose and by more on code — exactly the content measured here. Anthropic publishes no offline tokenizer for current models, so an exact count requires a credential and a network call; everything else in this repo is a calibrated proxy and is labelled as one. The guard test matches *use* (`import`, `require`, a dependency entry), not mention, so the prohibition can be documented in prose.
+- The token figures in this repository remain **unverified estimates** until someone runs `scripts/count-tokens.sh --calibrate` with a credential. The margins above are derived from a pessimistic assumed ratio, not measurement.
+
+## [3.4.0] — 2026-09-19 · skill bodies fit the compaction budget
+
+Six skills were silently truncated after every compaction. Validation passed the whole time, because the guard measured the wrong thing.
+
+### Fixed
+- **The skill-body cap was a line count, and lines are not what the platform measures.** `check` passed the 500-line rule at 295 lines while being 40% over the limit that actually bites. After auto-compaction Claude Code re-attaches the most recent invocation of each skill keeping only the **first 5,000 tokens** of each, sharing a 25,000-token budget across them. Six bodies exceeded it, and because markdown puts terminal phases last, what was being cut was the ending: `check` lost **Phase 5 VERDICT AND REPORT**, `build` lost the **Gate, Recovery and Report**, `doctor` lost `--fix` and REPORT, `audit` lost all of Phase 3, `research` lost citation validation and REPORT. Exactly what a long session needs, and a long session is when compaction fires. This is the failure mode [security.md](skills/_shared/security.md) already cites: constraints dropped by summarization are violated 30–59% of the time.
+
+  | Skill | Before | After | Cut |
+  |---|---|---|---|
+  | `audit` | 6,975 tok | **4,370** | −37% |
+  | `check` | 6,973 | **4,248** | −39% |
+  | `doctor` | 6,270 | **4,059** | −35% |
+  | `build` | 6,230 | **4,025** | −35% |
+  | `research` | 5,961 | **4,280** | −28% |
+  | `next` | 4,898 | **4,142** | −15% |
+
+  **These figures are bytes÷4 estimates, not measured token counts, and 3.5.0 shows the margin they implied was not real.**
+
+  Every terminal phase now sits between ~2,840 and ~4,172 tokens, comfortably inside the cut point. The restructure is verbatim: 22 sections moved into `references/`, each replaced by a contract summary and a pointer at its original position, and a line-level check confirms nothing was lost from any of the six.
+
+- Six links in `references/main.md` files resolved to `references/references/main.md`. They arrived with the moved sections, where the relative path had been correct.
+
+### Changed
+- `skill-frontmatter-validate.sh` check 8 is now a byte budget (18,000 B ≈ 4,500 tok, `BLITZ_SKILL_BODY_CAP`) instead of a 500-line cap, with headroom because table- and code-dense markdown tokenizes nearer 3.5 bytes/token than 4, so the estimate understates. The failure message names the remedy: move mid-body detail out, keep the closing phases in.
+- `check-section-refs.sh` gains a self-link rule: a file linking to itself by its own basename is what a section move leaves behind.
+
+### Added
+- Two tests: every `SKILL.md` body under the cap, and the closing sections specifically inside the 5,000-token cut point. The second matters more — "under the cap" does not by itself guarantee the ending survives.
+
+## [3.3.3] — 2026-09-19 · reference integrity + the polyglot eval
+
+A sweep of what none of the earlier passes had looked at.
+
+### Fixed
+- **30 section citations stopped resolving when the protocols split.** The head/reference split moved sections between files, and `agents.md §3`, `security.md §5`, `sessions.md §9` and 27 more kept naming the head after their section had moved. `markdown-link-validate.sh` passed the whole time, because in every case the *link* resolved and only the `§N` beside it was wrong. Retargeted across 10 skills, 5 agents and one workflow, plus 14 bare `(§N)` self-references inside the heads.
+- **Markdown links injected into a fenced ASCII tree** in `sessions.md`, where they do not render and wreck the alignment. Now plain `(reference §9)` prose.
+- Two protocol heads had drifted over their byte caps (`loop.md` 9,559 B, `agents.md` 8,233 B) from content this release cycle added. The cap did its job and blocked the commit; the detail moved to the references rather than the caps moving.
+
+### Added
+- **`scripts/check-section-refs.sh`** — asserts every `§N` citation resolves in the file it names, catches the `)§44.1` / `)§RatchetRatchet` doubling signature, and flags a protocol link inside a fenced block. Wired into CI and `pre-commit-validate.sh`. Three separate rounds of this class of breakage shipped past link validation; it needed its own check. Deliberately narrow on the fenced-link rule: a fence often holds a *template of output a skill writes*, where markdown links are correct, so only `_shared` protocol links are flagged.
+- **`evals/polyglot-ratchet`** — the eval suite's 8th case and the first that is not Node-shaped. A Python + Rust repo with **no `package.json`** and a real type error in each language. Graders assert the toolchain resolver ran, that `npm`/`npx`/`tsc`/`eslint` were **not** run against a repo with no Node project, and that both diagnostics were reported rather than fixed. Every previous eval would have passed while the loop silently regressed to Node-only.
+
+## [3.3.2] — 2026-09-19 · acceptance-criteria pass
+
+A criterion-by-criterion re-test of the migration plan. Phases 0, 1, 3, 4 and 5 now pass on evidence; Phase 2's numeric targets do not, and the reason is recorded rather than engineered around.
+
+### Fixed
+- **37 mangled section citations across 12 files**, shipped in 3.2.0. The mechanical link retarget emitted its capture group twice and swallowed the preceding space, producing `)§44.1` where `) §4.1` was meant, and `)§RatchetRatchet` for `) §Ratchet`. Link validation passed throughout, because the link resolved and only the trailing prose was wrong. `markdown-link-validate.sh` now fails on the pattern, with a mutation test proving the guard fires.
+- **The spawn prompt never actually shrank.** 3.2.0 moved the invariant spec into `SubagentStart` and left the same content pasted in `build/references/main.md`, so every spawn carried it twice. The template now holds only each item's variable half (the project's own never-edit additions, the `--parallel` branch line): **3,928 → 1,917 bytes, a 51% cut**, with the standing 4.7 KB arriving from the hook identically every time. The package-install rule moved into the invariant with it.
+- `security.md` head compacted from 11,286 to 6,108 bytes: one rule row per trust boundary, with each boundary's enforcement detail moved to the reference. Lossless, checked line by line.
+
+### Added
+- **`tasks.sh verify <plan> --changed <paths>`** — selective post-merge re-verify, the Phase 5 acceptance criterion, which did not exist. After a parallel wave merges, it re-runs only the `done` tasks whose `files[]` the merged paths touch. A clean textual merge is not a semantic one, and `git merge-tree` cannot see the difference. A failing task is demoted to `in_progress` and enters the fix queue; untouched tasks are not re-run. Verified end to end on a mixed Rust + Python two-branch wave: both touched tasks re-verified with their own checkers, the third skipped, and a break planted after the merge correctly caught and demoted.
+- 9 tests: 5 for `verify --changed` (selection, prefix matching in both directions, the caught-break case, the no-op case, the usage error) and 4 for whole-project lane behaviour.
+
+### Notes
+- **Phase 2's ≤12K/≤14K targets are not met** (`build` 16,313, `check` 15,036). They were written before the work and conflated the protocol load F-06 measured with the skill body it never touched. On F-06's actual subject the five protocols `build` loads went **32,631 → 9,892 tokens, a 69% cut**; `build/SKILL.md` alone is 6,421 tokens, so ≤12K would leave ~4.5 KB per protocol contract. Hitting the number means cutting contract content skills obey. Recorded in the audit rather than engineered around.
+
+## [3.3.1] — 2026-09-19 · close the gaps the audit's own implementation left
+
+A completeness pass over 3.0.2–3.3.0 found six things the migration claimed but had not actually wired.
+
+### Fixed
+- **`check`'s own gates were still Node-only.** The gate table hardcoded `npm run type-check`/`npx tsc`, `npm run lint`/`npx eslint` and `npm run build`. 3.1.0 made the *hooks* language-agnostic and left the *gate* behind, so a Python or Rust repo ran the full check pipeline with three empty gates. Gates now come from the toolchain table and run once per detected stack. A lane with no row is recorded `skipped` with its reason, never as a pass.
+- **`README.md` still sold the plugin as "tuned for Vue/Nuxt + Firebase"** in its tagline and a `Supported Stacks` table listing only Vue, Quasar, Vuetify, Firebase, Pinia and VueFire. 3.1.0 rewrote `plugin.json` and left the README, which is the larger storefront. Replaced with the real stack matrix, the `.blitz-toolchain.json` override (documented user-facing for the first time), and the LSP section. The Vue/Nuxt/Firebase support is still there and still real; it is now described as the framework-specific extras it is, tagged `stacks: ["node"]` and skipped elsewhere.
+- **The LSP capability was inert.** 3.1.0 shipped `.lsp.json` and the `LSP` tool but no skill told Claude to prefer it. `research` Phase 2 and `onboard`'s map dimensions now carry the preference ladder: workspace symbol search → `goToDefinition` → `findReferences` first, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive, including in cloud sessions where Claude Code does not start plugin language servers at all.
+- **`det-11`/`det-12` referenced `${BLITZ_PROBE_FILE}`, which was set nowhere.** They happened to work by accident: an empty file argument matched any row. A bare `toolchain.sh run <lane>` now explicitly means "every detected stack's tool", which is what a whole-project check wants in a polyglot repo, and a test asserts no registry row references an undefined variable.
+- **Whole-project lanes were attributed to the wrong stack.** `test` and `build` rows match any extension, so without a stack filter the first stack in table order won every lookup and a Rust repo's test lane resolved to `pytest`. `resolve` takes an optional stack, and `lanes`/`run` use it.
+- The deterministic check lane now actually dispatches to `haiku`. 3.2.0 added the routing-matrix row and never wired it into `check` Phase 1, which also now reads each row's verdict through its `detection.exit` contract instead of "non-zero means fail".
+
+### Added
+- `test` and `build` lanes in the toolchain table (15 rows across 9 stacks), so the full gate set is data-driven, not just format/lint/typecheck.
+- Four tests covering stack attribution, the stack filter, whole-project runs, and the undefined-variable regression.
+
+## [3.3.0] — 2026-09-19 · gate evidence + exit-code contract
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §7 (F-14).
+
+### Added
+- **Per-command verify evidence.** `tasks.sh verify` records `last_verify.runs[]`: one entry per command that actually ran, with `cmd`, `exit`, `duration_ms`, `tail` (capped at 2 KB via `BLITZ_VERIFY_EVIDENCE_CAP`) and `recorded_at`. Before this the record held only the first failing command's 200-char tail, so a reviewer had to re-run the suite to see what a verdict rested on. This is what makes `cannot_verify` a defensible reviewer answer rather than a shrug.
+- **An exit-code contract per deterministic registry row.** "Non-zero means fail" is wrong for most of them: a `grep` detector **passes** when it finds nothing, which is exit 1, and a row ending in `wc -l` always exits 0 so its verdict is the number it prints. Each row now carries `detection.exit`: `{"pass":[0],…}` for a command, `{"pass":[1],…}` for a grep-family tail, or `{"verdict":"stdout"}` for a counter. `det-17` and `det-18` describe operational signals rather than commands and carry no contract. `error` is reported distinctly from `finding`: a detector that cannot run is unknown, and scoring it clean is how a lane goes green on a machine missing the tool.
+- `docs/plans/<slug>/check-report.json` (schema `blitz-check-report/1.0`): the machine-readable sibling of `check-report.md`, with per-lane `selected`/`ran`/`pass`/`finding`/`error` counts, the project's `stacks`, findings, `cannot_verify[]`, the critic verdict and task tallies, so CI and evals assert on a run without parsing prose.
+
+### Notes
+- F-14 (consolidating the six `Bash` PreToolUse guards) is **closed without change**. The audit flagged the fan-out as unmeasured; measured, all eight guards on one non-`git commit` Bash call cost ~156 ms total, about 20 ms each. That does not justify refactoring eight independently tested guards into one dispatcher, and the early-exit paths are already in place.
+
+## [3.2.0] — 2026-09-19 · token economics + cache routing
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §5 (F-06, F-12, F-13, F-15).
+
+### Changed
+- **The six shared protocols split into a contract head and an on-demand reference.** They totalled 141 KB, and one `/blitz:build` that followed its own cross-references pulled ~41.5K tokens of protocol before reading a line of project code — 20% of the window. Each `skills/_shared/<name>.md` now holds only what every consumer must obey and links `<name>.reference.md` for the rest. The split is verbatim: no content was rewritten or dropped, and a line-level check confirms every original line still exists.
+
+  | Path | Before | After |
+  |---|---|---|
+  | `/blitz:build` protocol load | 41,571 tok | **19,154 tok** |
+  | `/blitz:check` protocol load | 47,296 tok | **14,138 tok** |
+  | Six protocol heads | 141,238 B | **50,925 B** |
+
+- `check-registry.json` is queried, never read. The selection contract in [quality.reference.md](skills/_shared/quality.reference.md) now carries a `jq` selector returning only the ids and commands a run needs, instead of pulling 98 KB (~24K tokens) into context to obtain a handful of rows. The selector also drops rows whose `stacks[]` does not match the project, so a Go repository runs 34 of 97 rows rather than all of them.
+- `pre-commit-validate.sh` enforces a byte cap per protocol head and blocks a commit that regrows one, with the remedy in the message. Without it the heads drift back.
+
+### Added
+- `skills/_shared/spawn-invariant.md` and `hooks/scripts/subagent-context.sh`: the invariant half of the `dev`/`test-writer` spawn spec (never-edit list, reply contract and status enum, commit format, output style, stop conditions, mock policy) now arrives through `SubagentStart.additionalContext` instead of being pasted into every prompt. The platform states the injected copy stays in place and leaves the subagent's prompt cache intact, re-injecting only after the subagent's own auto-compaction. The rule it encodes: anything that varies per call goes in the prompt, anything that does not goes in `additionalContext`. A test asserts the block is byte-identical across spawns, because a timestamp or session id in there would defeat the point.
+- `experimental.cacheTtl: 1h` on `critic`, `design-critic` and `research-critic`. Subagents fall outside the main-conversation TTL bucket and get five minutes by default, so a critic re-spawned per fix round paid a cold prefix from round 2 on. All five blitz agents now set it, and a test keeps it that way.
+- Model routing gains a deterministic-lane row: running a registry row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, so it routes to `haiku`; the semantic lane and the verdict stay on the session model.
+- `skill-frontmatter-validate.sh` rule 11: a skill that pins `model:` must disclose the cost in its body. A pinned model makes that turn a model switch with zero cache hits across the whole conversation, which can be the right trade for a rare slash-only skill but must be a stated decision. `ship` already disclosed it; `migrate` did not, and now does.
+
+## [3.1.0] — 2026-09-19 · language agnosticism + code intelligence
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md) §6 (F-07…F-11, F-15).
+
+### Fixed
+- **The type-error ratchet was a silent no-op outside TypeScript.** `post-edit-typecheck-block.sh` opened with `[[ -f tsconfig.json ]] || exit 0`, so the plugin's headline anti-regression mechanism did nothing in Python, Rust, Go, JVM, Ruby or .NET repositories. It now resolves the project's checker from the toolchain table and ratchets its diagnostic count. Verified blocking a `mypy` regression and a `cargo check` regression.
+- **Formatting and linting were JS-only.** `post-edit-format.sh` carried the extension allowlist `ts|tsx|js|jsx|vue|css|scss|json|md|html|ya?ml` and hardcoded prettier/biome/eslint detection across 199 lines. It is now 45 lines that ask the toolchain table and run what comes back.
+- **The anti-shortcut test guards only understood JS test names.** `block-test-disabling.sh` and `block-test-deletion.sh` scoped themselves to `*.test.*` / `*.spec.*`, so `@pytest.mark.skip`, `t.Skip(`, `#[ignore]`, `@Disabled` and `[Ignore]` passed unchallenged, as did deleting `test_auth.py` or `auth_test.go`. Both now recognise the naming conventions of Python, Go, Rust, Ruby, JVM, .NET, Elixir and PHP, and the `blitz:skip-pinned:` escape hatch is accepted behind `#`, `--` and `;` comment openers as well as `//`.
+- **The first edit in any repo with pre-existing diagnostics was blocked.** The baseline read defaulted to `0` rather than "no floor recorded", so the ratchet refused work over errors the edit did not cause. It now records the floor on first run and blocks only on a genuine increase.
+- **Only the first marker of each stack was ever tested.** The detector joined a stack's markers with a newline inside a line-based read loop, so a Python project identified by `setup.cfg` rather than `pyproject.toml` went undetected. Detection now iterates one line per (stack, marker) pair.
+- Registry rows carried JS-only patterns under universal ids: `det-11`/`det-12` shelled out to `npx tsc` and now delegate to the toolchain typecheck lane; `det-03` recognises `unittest.mock`/`@patch`/`Mockito`/`mockall`/`gomock`; `det-09` recognises `raise NotImplementedError`/`unimplemented!`/`todo!`; `det-01`, `det-13` and `det-14` scan `test_*.py`, `*_test.go`, `*_test.rs`, `*_spec.rb`, `*Test.java` and `*Tests.cs` alongside the JS globs.
+- `plugin.json` described the plugin as "Agentic development loop for Vue/Nuxt + Firebase" in a 1,421-character block, and led its keywords with `vue`, `nuxt`, `firebase`. Now 506 characters, loop-first, polyglot keywords.
+
+### Added
+- `templates/toolchain.default.json` (schema `blitz-toolchain/1.0`) and `scripts/toolchain.sh`: 11 stacks and 34 rows across the `format`, `lint` and `typecheck` lanes. Rows are data and the script is the only executor, so adding a language means adding rows, never adding a script. A row is used only when its stack marker is present, its `when`/`whenDep` config exists, and its `probe` command succeeds, so a missing tool is a silent skip rather than a failure.
+- `.blitz-toolchain.json` lets a project `disable` rows or `prefer` an order. It may **not** supply a `cmd`: per [security.md](skills/_shared/security.md) TB-1 the checkout is untrusted inbound data, and an argv read from repo content would be arbitrary execution on every edit. A test asserts a `cmd` planted there is ignored.
+- `.cc-sessions/typecheck-baseline.json` is schema 2, keyed by toolchain row id, so a polyglot repo ratchets each language independently and a Python edit cannot reset the TypeScript floor. Schema-1 files migrate on first write.
+- `stacks[]` on all 97 check-registry rows (`["*"]` or `["node"]`), so `check` can select rows that apply to the project instead of running Vue/Firestore and `npx impeccable` detectors everywhere.
+- `detect-stack.sh` reports `Language stacks` and `Toolchain lanes` computed fresh on every call (the 1 h cache covers only the Node design-adapter profile), and recognises Cargo/Go workspaces, Maven, Gradle, uv, poetry, pipenv, bundler, composer, pytest, cargo test and go test.
+- **LSP servers.** `.lsp.json` + `lspServers` in the manifest configure TypeScript, Python, Rust and Go language servers, giving Claude the `LSP` tool: `goToDefinition`, `findReferences`, hover types and workspace symbol search instead of grep-and-read-the-whole-file. Each server's binary is a `userConfig` option, so it can be pointed at a custom path or cleared to yield to another plugin's server. Two caveats are documented in `doctor` D-317: Claude Code does not start plugin language servers in cloud sessions, and when two enabled servers declare the same extension the first registered wins.
+- `doctor` §3.9: **D-316** (every detected stack resolves a `typecheck` row, else it has no ratchet) and **D-317** (language-server binaries on `PATH`).
+- `hooks/tests/toolchain.bats`: 20 tests covering stack detection, row resolution and its gates, the override schema and its security boundary, the per-lane ratchet across first run / regression / recovery, and the test guards under Python, Go and Rust.
+
+## [3.0.2] — 2026-09-19 · worktree contract fix
+
+Audit: [docs/reviews/2026-09-19_agentic-architecture-audit/README.md](docs/reviews/2026-09-19_agentic-architecture-audit/README.md).
+
+### Fixed
+- **Installing blitz broke git worktrees in the consumer's project (P0).** `hooks.json` registered a `WorktreeCreate` hook whose handler only logged. Per the platform contract, configuring `WorktreeCreate` *replaces* git worktree creation entirely, the hook must print the created directory to stdout, and "if the hook fails or produces no path, worktree creation fails with an error". The handler printed nothing and created nothing, so `claude --worktree`, every `isolation: worktree` subagent (including `build --parallel` waves), and background-session isolation all failed wherever blitz was installed. A registered hook also made the platform skip `.worktreeinclude`, so gitignored `.env` files stopped reaching worktrees. The registration and `hooks/scripts/worktree-create.sh` are removed; blitz registers no `WorktreeCreate` hook.
+- The removed handler read `worktree_path` and `branch` from the event payload. Neither field exists on `WorktreeCreate` (its only event-specific field is `name`), so the stale-branch collision guard was unreachable and had never fired.
+- `agents.md` §6 documented the contract inverted on both events: it claimed `WorktreeCreate` hooks merely "abort creation or override the path", and that `WorktreeRemove` exit codes are ignored. A non-zero `WorktreeRemove` exit fails the removal when the directory still exists; `worktree-remove.sh` always exits 0 and its branch cleanup is best-effort.
+
+### Added
+- `doctor` §3.8: **D-314** (no `worktree-agent-*` / `worktree-build-*` branch ahead of `origin/HEAD`, no foreign `WorktreeCreate` hook in project settings) and **D-315** (`.worktreeinclude` present when the repo has gitignored `.env*` or secrets files, `fix:auto`). This is where the removed collision guard now runs, as a pre-flight rather than a creation veto.
+- `build` Phase 0.4 refuses `--parallel` on a stale agent branch or a foreign `WorktreeCreate` hook and falls back to sequential with the reason printed.
+- `hooks/tests/worktree.bats`: 7 tests keeping `WorktreeCreate` deregistered, asserting `worktree-remove.sh` never exits non-zero, and failing if any hook script reads a `WorktreeCreate` payload. The event had no test coverage before, which is how the P0 shipped.
+- `hooks/scripts/README.md` records the events blitz deliberately does not register, with the contract that makes each one unsafe to observe.
+
 ## [3.0.1] — 2026-09-19 · validation round
 
 Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/2026-09-19_v3-agentic-restructure/README.md) §7. Platform claims re-fetched from code.claude.com (2.1.277), field evidence from June to September 2026 re-checked, and a contract audit across scripts, skills, agents, workflows, and evals.

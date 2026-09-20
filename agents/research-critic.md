@@ -21,7 +21,7 @@ description: |
 tools: Read, Grep, Glob, Bash, WebFetch
 # capability rationale (TB-4 / sec-capability-grant): WebFetch is a deliberate network-EGRESS grant —
 # required to probe cited URLs (§2.1 liveness, §2.1.5 content inspection). It is the one read-only agent
-# that legitimately needs egress; Bash stays read-subset. No Write/Edit/Agent. Posture: /_shared/security.md §5.
+# that legitimately needs egress; Bash stays read-subset. No Write/Edit/Agent. Posture: /_shared/security.reference.md §5.
 maxTurns: 30
 # Sonnet per /_shared/agents.md routing matrix — reasoning + tool-use blend.
 # WebFetch HEAD probes are deterministic; quote-substring matching is too. Only the
@@ -35,6 +35,9 @@ model: sonnet
 # the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true
 background: true
+# Re-spawned per research round; keep the warmed prefix for 1h (Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 # Research-Critic — Adversarial Citation + Claim Reviewer

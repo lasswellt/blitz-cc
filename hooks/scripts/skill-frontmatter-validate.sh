@@ -14,12 +14,13 @@
 #   2. name: present, ≤64 chars, lowercase + digits + hyphens, no "anthropic"/"claude"
 #   3. description: present, non-empty, ≤1024 chars
 #   4. model: present (opus|sonnet|haiku) — required when disable-model-invocation is false or absent
-#   5. effort: present (low|medium|high)
+#   5. effort: optional; only on slash-only skills (low|medium|high|xhigh|max)
 #   6. allowed-tools: present unless disable-model-invocation: true
 #   7. argument-hint: present if SKILL.md body references "$1"/"$@"/positional args
-#   8. Body length ≤ 500 lines (excluding frontmatter)
+#   8. Body size ≤ 15,000 B — under the 5,000-token compaction re-attach cap at 3.0 B/tok
 #   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
+#  11. a pinned model: discloses its cache cost in the body
 
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
@@ -129,14 +130,58 @@ validate_one() {
     [ "$dmi" != "true" ] && fail "$rel" "effort pinned on an invokable skill — remove 'effort:' and state the recommendation in the body (see E-044)"
   fi
 
+  # 11. A pinned model must disclose its cost. A skill whose frontmatter names a
+  # model other than the session's makes that turn a full model switch: the next
+  # request reads the entire conversation history with no cache hits. That can be
+  # the right trade for a rare slash-only skill, but it must be a stated decision,
+  # not an accident, so the body has to say so.
+  if [ -n "$model" ] && [ "$model" != "inherit" ]; then
+    if ! printf '%s' "$body" | grep -qiE 'cache reset|cache miss|uncached|full re-read'; then
+      fail "$rel" "pins 'model: $model' without disclosing the cost — a pinned model makes the turn a model switch with zero cache hits; say so in the body (see skills/ship/SKILL.md)"
+    fi
+  fi
+
   # 10. compatibility
   [ -z "$compat" ] && fail "$rel" "frontmatter missing 'compatibility:'"
   echo "$compat" | grep -qE '^>=[0-9]+\.[0-9]+\.[0-9]+$' || fail "$rel" "compatibility '$compat' must be '>=X.Y.Z'"
 
-  # 8. body length
-  local body_lines
-  body_lines=$(printf '%s\n' "$body" | wc -l)
-  [ "$body_lines" -gt 500 ] && fail "$rel" "body is $body_lines lines (cap 500); push overflow to references/"
+  # 8. body size — a TOKEN budget, not a line count.
+  #
+  # The line cap was the wrong guard: `check` passed it at 295 lines while
+  # being 40% over the limit that actually bites. After auto-compaction Claude
+  # Code re-attaches the most recent invocation of each skill keeping only the
+  # FIRST 5,000 TOKENS of each, sharing a 25,000-token budget across them. A
+  # body past 5,000 tokens is silently truncated, and because markdown puts
+  # terminal phases last, what gets cut is the verdict, the gate, the report
+  # and the recovery — exactly what a long session needs, and a long session is
+  # when compaction fires.
+  #
+  # THE CAP IS IN BYTES BECAUSE THE REAL COUNT NEEDS A NETWORK CALL.
+  #
+  # Only `POST /v1/messages/count_tokens` counts Claude tokens accurately, and
+  # it is model-specific. There is no offline Claude tokenizer to install, and
+  # tiktoken/gpt-tokenizer must NOT be substituted: they are OpenAI's, and
+  # undercount Claude by ~15-20% on prose and more on code — precisely the
+  # content here. `scripts/count-tokens.sh` does it properly where a credential
+  # exists; this hook runs on every edit, so it uses a byte proxy calibrated
+  # against the worst plausible ratio.
+  #
+  # Derivation. The platform cuts a re-attached skill at 5,000 tokens. English
+  # prose runs ~3.6-4.0 bytes/token for Claude; markdown dense with tables,
+  # code blocks, paths and CLI flags runs denser, ~3.0-3.5. Taking 3.0 as the
+  # pessimistic floor, a body stays under 5,000 tokens when it is under
+  # 5,000 x 3.0 = 15,000 bytes. The earlier 18,000 cap assumed 4.0 bytes/token
+  # and was therefore unsafe for exactly the skills it was meant to protect.
+  #
+  # Replace this with measurement when a credential is available:
+  #   scripts/count-tokens.sh --calibrate
+  # prints the observed bytes-per-token and the safe cap at the worst ratio.
+  local body_bytes body_tokens
+  body_bytes=$(printf '%s' "$body" | wc -c | tr -d ' ')
+  body_tokens=$(( body_bytes / 4 ))
+  if [ "$body_bytes" -gt "${BLITZ_SKILL_BODY_CAP:-15000}" ]; then
+    fail "$rel" "body is ${body_bytes}B (~${body_tokens} tok), over the ${BLITZ_SKILL_BODY_CAP:-15000}B cap (5,000 tokens at 3.0 B/tok, the pessimistic ratio for dense markdown); the platform keeps only the first 5,000 tokens of a re-attached skill after compaction. Move mid-body detail to references/ and keep the closing phases (gate, verdict, report, recovery) in the body"
+  fi
 
   # 9. Task/Todo tools are gated off on Claude 5 models and never part of the v3 contract.
   local gated_tool

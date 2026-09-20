@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Tests for hooks/scripts/post-edit-typecheck-block.sh (PostToolUse on Write|Edit)
-# Blocks when the incremental tsc error count REGRESSES vs the stored baseline.
+# Blocks when the typecheck diagnostic count REGRESSES vs the stored baseline.
+# The checker comes from the toolchain table's `typecheck` lane, so this suite
+# covers the TypeScript row; toolchain.bats covers the language-agnostic path.
 # Env opt-out the hook actually reads: BLITZ_DISABLE_TYPECHECK_BLOCK=1.
 #
 # The BLOCK test stands up a throwaway TS project and shims `npx`/`tsc` on PATH
@@ -36,6 +38,9 @@ for a in "\$@"; do case "\$a" in --no-install|-*) ;; *) tool="\$a"; break;; esac
 case "\$tool" in
   vue-tsc) exit 1 ;;
   tsc)
+    # The toolchain resolver probes a row's tool with --version before using
+    # it; a real \`npx tsc --version\` prints a version and exits 0.
+    if printf '%s\n' "\$@" | grep -q -- '--version'; then echo "5.9.0"; exit 0; fi
     if printf '%s\n' "\$@" | grep -q -- '--listFilesOnly'; then echo "$FP"; exit 0; fi
     echo "$FP:1:7 - error TS2322: Type 'string' is not assignable to type 'number'."
     exit 1 ;;
@@ -74,7 +79,7 @@ teardown() {
     "$(fake_ts_edit "$BATS_TEST_TMPDIR/readme.md")"
 }
 
-@test "allows when there is no tsconfig.json (not a TS project)" {
+@test "allows when no typecheck row resolves (no TS project markers)" {
   # Run from a clean temp dir with no tsconfig — hook exits 0 before any tsc work.
   local d; d="$(mktemp -d)"
   local status=0

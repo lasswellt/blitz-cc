@@ -16,13 +16,12 @@ compatibility: ">=2.1.271"
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
 - For context window hygiene, see [sessions.md](/_shared/sessions.md)
 - For how `plan --from-research <doc>` consumes the Recommendation, see [loop.md](/_shared/loop.md) and `skills/plan/SKILL.md`
-- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.md](/_shared/agents.md) §7
+- For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.reference.md](/_shared/agents.reference.md) §7
 <!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
 - For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 All research output must satisfy the [Definition of Done](/_shared/quality.md). No placeholder sections.
-
 
 ---
 
@@ -36,28 +35,7 @@ Two modes:
 
 ## Codebase mode (`--codebase`)
 
-Answer a question about the current codebase from evidence, not memory. Rules:
-
-1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; if `autonomy=high|full`, skip the question and state the assumption in one line.
-2. **Locate.** `Grep` / `Glob` from the most specific term outward (symbol → import sites → routes/config). For a question wider than ~15 files, spawn one `Explore` subagent (read-only, haiku) with the question and a 150-line reply cap; more than one only when the question has independent halves.
-3. **Read before claiming.** Every statement in the answer cites `path:line` you opened in this turn. Quote the load-bearing line verbatim (≤2 lines per cite). No cite → say "not found" rather than guess.
-4. **Trace, don't summarize.** For "how does Y work": entry point → each hop (call, event, store mutation, rule) → side effects, as a numbered chain with one cite per hop. For "where is X": ranked list of candidates, best first, with why.
-5. **No writes.** No `Write`/`Edit`, no scratch files, no `docs/research/` doc, no session registration or feed lines beyond `task_start`/`task_complete`. If the answer reveals work to do, end with one line: `Next: /blitz:plan <slug>` or `/blitz:build <one-sentence diff>`.
-6. **Stop.** Answer ≤40 lines; offer `--codebase` follow-ups only if the user asks.
-
-Output shape:
-
-```
-Answer: <one sentence>
-1. <hop> — path:line — `<verbatim>`
-2. …
-Not verified: <anything inferred rather than read>
-Next: <optional one line>
-```
-
-Everything below is topic research.
-
----
+Read-only: answers "how does this repo do X" with `path:line` cites, no agents, no document written. Procedure and the LSP-first locate ladder: [references/main.md](references/main.md) §Codebase mode.
 
 ## Phase 0: PARSE TOPIC — Understand What to Research
 
@@ -151,28 +129,7 @@ echo "[research] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" 
 
 ### 1.3-W Dispatch via Workflow (opt-in path)
 
-Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a conditional `agent()` in the same script — replacing manual poll (§1.7) + classify (§2.1) + jq-gated second wave with native primitives.
-
-```js
-export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
-// args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
-const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
-const found = await parallel(args.roster.map(a => () =>
-  agent(a.prompt, { label: a.name, phase: 'Investigate',
-    model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
-// One narrow second wave (≤2 agents) for unanswered / under-cited questions
-const gaps = (await agent(args.gapPrompt, { phase: 'GapFill', model: 'haiku', schema: args.gapSchema }))
-  ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
-const gapFills = await parallel(gaps.map(g => () =>
-  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
-return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
-```
-
-- Model routing per token-budget: `codebase-analyst` → sonnet, retrieval agents → haiku.
-- `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
-- Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
-- `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.
-- After the workflow returns, proceed to §2.2 (summarize) → Phase 3 (synthesize) unchanged.
+Opt-in only; the `Agent()` pool above is the default. Script contract and args shape: [references/main.md](references/main.md) §1.3-W Dispatch via Workflow.
 
 ### 1.3 Spawn Agents via Agent Tool (default path)
 
@@ -223,50 +180,7 @@ done
 
 ### 2.1 Classify Outputs (canonical gate from spawn-protocol §8)
 
-Run the standard classifier BEFORE reading findings. MISSING / EMPTY / MALFORMED outputs MUST NOT silently pass through as SUCCESS:
-
-```bash
-EXPECTED_OUTPUTS=(
-  "${SESSION_TMP_DIR}/research/library-docs.md"
-  "${SESSION_TMP_DIR}/research/web-researcher.md"
-  "${SESSION_TMP_DIR}/research/codebase-analyst.md"
-)
-[ "$SPAWN_INFRA" = true ] && EXPECTED_OUTPUTS+=("${SESSION_TMP_DIR}/research/infra-analyst.md")
-
-# classify_output() and gate logic from /_shared/agents.md §8
-classify_output() {
-  local f="$1"
-  if [ ! -f "$f" ]; then echo MISSING; return; fi
-  if [ ! -s "$f" ]; then echo EMPTY; return; fi
-  if grep -q '^PARTIAL: true' "$f"; then
-    grep -q '^COMPLETED:' "$f" && grep -q '^MISSING:' "$f" \
-      && echo PARTIAL || echo MALFORMED
-    return
-  fi
-  echo SUCCESS
-}
-
-declare -A COUNTS=()
-for f in "${EXPECTED_OUTPUTS[@]}"; do
-  c=$(classify_output "$f")
-  COUNTS[$c]=$((${COUNTS[$c]:-0} + 1))
-  echo "$f → $c"
-done
-
-MISSING_COUNT=$(( ${COUNTS[MISSING]:-0} + ${COUNTS[EMPTY]:-0} + ${COUNTS[MALFORMED]:-0} ))
-N=${#EXPECTED_OUTPUTS[@]}
-case $N in
-  1) THRESHOLD=1 ;;
-  2|3) THRESHOLD=2 ;;
-  *) THRESHOLD=$(( (N + 1) / 2 )) ;;
-esac
-
-if [ "$MISSING_COUNT" -ge "$THRESHOLD" ]; then
-  echo "[research] ABORT: $MISSING_COUNT/$N agents failed (threshold $THRESHOLD)" >&2
-  # Do NOT clean up — preserve findings dir for inspection
-  exit 1
-fi
-```
+Every agent reply is classified before it enters synthesis; an unclassified reply is dropped, not trusted ([agents.reference.md](/_shared/agents.reference.md) §4.4). Gate table: [references/main.md](references/main.md) §2.1 Classify Outputs.
 
 ### 2.2 Summarize Each Agent File (Haiku — token saving)
 
@@ -304,61 +218,13 @@ Read `SYNTHESIS_INPUT_FILES` and surface:
 
 ### 2.4 Gap Detection (1 Haiku call → optional second wave)
 
-```bash
-GAPS=$(Agent({
-  subagent_type: "general-purpose",
-  model: "haiku",
-  description: "Identify research-question gaps in summarized findings",
-  prompt: "Read ${SYNTHESIS_INPUT_FILES[@]}. For each research question in:
-           ${QUESTIONS}
-           Return JSON array: [{q: '...', answered: bool, citations_count: int}].
-           If answered: false OR citations_count < 2, flag as GAP."
-}))
-NUM_GAPS=$(echo "$GAPS" | jq '[.[] | select(.answered == false or .citations_count < 2)] | length')
-ELAPSED_SEC=$(( $(date +%s) - SESSION_START ))
-
-# One narrow second wave (max 2 agents) if budget allows
-if [ "$NUM_GAPS" -gt 0 ] && [ "$NUM_GAPS" -le 2 ] && [ "$ELAPSED_SEC" -lt 600 ]; then
-  echo "[research] $NUM_GAPS gap(s) detected; spawning narrow second wave" >&2
-  # Spawn a Haiku web-researcher per gap, scoped to that single question
-  echo "$GAPS" | jq -c '.[] | select(.answered == false or .citations_count < 2)' | head -2 | while read -r gap; do
-    GAP_Q=$(echo "$gap" | jq -r '.q')
-    # Agent({...}) spawn here — scope: this single question, max 5 web searches, output to .gap-N.md
-  done
-fi
-```
-
-If gap-fill agents return findings, append summaries to `SYNTHESIS_INPUT_FILES` before synthesis. If gaps remain, surface them in the doc's `## Open questions` section.
-
----
+One haiku call names the gaps; a second wave runs only if it finds any. Prompt and the spawn-N gate: [references/main.md](references/main.md) §2.4 Gap Detection.
 
 ## Phase 3: SYNTHESIZE — Produce Research Document
 
 ### 3.1 Generate Research Document
 
-Write to:
-```
-docs/research/YYYY-MM-DD_<topic-slug>.md
-```
-
-```bash
-mkdir -p docs/research    # tracked; docs/_research/ is legacy (gitignored) — never write there
-```
-
-**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter, tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections — write full prose.
-
-**Terse exemptions (LITE intensity):** §7 Risks + Open Questions (full sentences + reasoning chain required). Resume terse on next section.
-
-Use the template from `references/main.md`. Required sections:
-
-1. **Summary** — 3-5 sentence executive summary + recommendation.
-2. **Research Questions** — Each question with a concise answer.
-3. **Findings** — By theme (not by agent); each finding must cite its source.
-4. **Compatibility Analysis** — Fit with detected stack: version compat, dependency conflicts, integration complexity.
-5. **Recommendation** — Actionable with rationale; comparison matrix if comparing options. This section is the contract for `/blitz:plan --from-research <doc>`: it must state one `### Decision`, a `### Rationale`, and the affected areas/files so `plan` can derive tasks without re-researching.
-6. **Implementation Sketch** — High-level steps adapted to detected stack: key code patterns, file locations, config changes.
-7. **Risks** — Known risks, mitigations, open questions.
-8. **References** — All cited docs, articles, discussions.
+Writes `docs/research/<date>_<topic>.md` from the collected findings, every claim carrying a citation. Template and section order: [references/main.md](references/main.md) §3.1 Generate Research Document.
 
 ### 3.2 Quality Gates
 
@@ -372,26 +238,7 @@ Before finalizing:
 
 ### 3.2.5 Citation Validation (research-critic agent)
 
-After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetch HEAD-equivalent) and verify quoted spans. Catches 3-13% URL hallucination rate (arxiv 2604.03173) before `/blitz:plan --from-research` ingests the doc. Critic runs **content inspection** (§2.1.5, TB-4) — fetched pages are untrusted (`sec-content-inspection`; [security.md](/_shared/security.md) §3 TB-4). Reply carries `source_trust: "untrusted"`; cap + scan any interpolated field:
-
-```
-Agent({
-  subagent_type: "blitz:research-critic",
-  description: "Citation + claim validity probe",
-  prompt: "Probe all citations in docs/research/${TIMESTAMP}_${TOPIC_SLUG}.md.
-           Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
-           per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
-           Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
-})
-```
-
-If verdict is `CITATIONS_MISSING`:
-- Surface failing citations to the user.
-- Skip Phase 3.3 cleanup (preserve `${SESSION_TMP_DIR}/research/` for inspection).
-- Mark the doc with a `<!-- WARNING: citation-validity check failed; see issues below -->` comment.
-- Do NOT auto-fix; let the user decide whether to retry, accept, or abandon.
-
-Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on: the doc feeds `plan`).
+Every cited URL is probed and classified LIVE / DEAD / LIKELY_HALLUCINATED / UNKNOWN; `CITATIONS_MISSING` or `UNVERIFIED` blocks cleanup so dead URLs can be inspected. Contract: [references/main.md](references/main.md) §3.2.5 Citation Validation.
 
 ### 3.3 Clean Up (CONDITIONAL — preserve findings on failure)
 

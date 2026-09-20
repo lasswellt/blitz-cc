@@ -38,9 +38,15 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 | `notification-log.sh` | `Notification` | routes `needs_input` / `permission` notifications to `inbox.jsonl` |
 | `permission-denied.sh` | `PermissionDenied` | inbox `permission_denied` line; never emits `retry` |
 | `config-change.sh` | `ConfigChange` | re-runs `startup-validate.sh --strict --quiet` |
-| `worktree-create.sh` | `WorktreeCreate` | logs; refuses to reuse a stale `worktree-agent-<hex>` branch (exit 1; `BLITZ_ALLOW_WORKTREE_COLLISION=1`) |
-| `worktree-remove.sh` | `WorktreeRemove` | logs; deletes a merged agent branch (`BLITZ_SKIP_BRANCH_CLEANUP=1`) |
+| `subagent-context.sh` | `SubagentStart` (`^blitz:(dev|test-writer)$`) | injects `skills/_shared/spawn-invariant.md` as `additionalContext`: the invariant half of the 11-item spawn spec. Static by construction — never interpolate a timestamp, session id or command output, or the per-spawn cache benefit is lost. Cannot block a spawn. (`BLITZ_DISABLE_SPAWN_INVARIANT=1`) |
+| `worktree-remove.sh` | `WorktreeRemove` | logs; deletes a merged agent branch (`BLITZ_SKIP_BRANCH_CLEANUP=1`). Always exits 0: a non-zero exit **fails the removal** when the directory still exists. |
 | `markdown-link-validate.sh` | `PreToolUse` on `git commit` | warns on broken relative `.md` links and anchors under `skills/` and `agents/`; CI runs it blocking |
+
+### Events blitz deliberately does not register
+
+| Event | Why not |
+|---|---|
+| `WorktreeCreate` | Configuring it **replaces** the platform's `git worktree` creation entirely. The hook owns the checkout, must print the created directory as the last non-empty line of stdout, and "if the hook fails or produces no path, worktree creation fails with an error". A configured hook also makes the platform skip `.worktreeinclude`. There is no observe-only mode, and its only event-specific input field is `name` (a slug), not `worktree_path` or `branch`. blitz registered a logging-only handler through 3.0.1, which broke `claude --worktree`, every `isolation: worktree` subagent, and background-session isolation in consumer projects. The stale-branch collision guard moved to `doctor` D-314 and `build` Phase 0.4. `hooks/tests/worktree.bats` keeps it deregistered. |
 
 ## Sub-invoked and spawned
 
@@ -48,6 +54,8 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 |---|---|---|
 | `startup-validate.sh` | `session-start.sh`, `config-change.sh` | shape + injection scan of `.cc-sessions/*.json`, `docs/plans/*/tasks.json` (`done ⇒ passes`, known `origin`, non-empty `verify[]`), `docs/solutions/*.md`, feed tail; quarantine findings to the inbox |
 | `check-registry-validate.sh` | `pre-commit-validate.sh`, CI | schema lint for `skills/_shared/check-registry.json` |
+| `../../scripts/count-tokens.sh` | `doctor`, CI, manual | authoritative Claude token counts via `messages.count_tokens`, cached by content hash in `.cc-sessions/token-counts.json`. `--calibrate` prints the measured bytes-per-token and the safe body cap at the worst observed ratio. Exits 3 with clearly-marked byte estimates when no credential is available. **Never substitute tiktoken or any local BPE library**: they are OpenAI's and undercount Claude by ~15-20% on prose and more on code, which is what this repo measures. |
+| `../../scripts/toolchain.sh` | `post-edit-format.sh`, `post-edit-typecheck-block.sh`, `detect-stack.sh`, `doctor` | resolves a lane (`format`/`lint`/`typecheck`) + file extension to an argv from `templates/toolchain.default.json`. The rows are data; this is the only executor. A project may `disable`/`prefer` rows in `.blitz-toolchain.json` but may never supply a `cmd` (TB-1: the checkout is untrusted inbound data). |
 | `critic-gemini.sh` | `agents/critic.md` when `BLITZ_USE_GEMINI_CRITIC=1` or `BLITZ_DUAL_CRITIC=1` | cross-model critic pass via the Gemini CLI (`BLITZ_GEMINI_BIN`, `BLITZ_GEMINI_MODEL`, `BLITZ_GEMINI_FLAGS`) |
 
 ## Conventions

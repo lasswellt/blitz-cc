@@ -212,5 +212,61 @@ if [[ -x "$LINK_SCRIPT" ]]; then
   fi
 fi
 
+# --- Protocol head byte caps (block on regrowth) ---
+# Each skills/_shared/<name>.md is the contract EVERY consumer loads, and its
+# .reference.md is loaded on demand. Without a cap the heads drift back toward
+# the 141 KB the six protocols cost before 3.1.0, when one /blitz:build that
+# followed its own cross-references pulled ~41.5K tokens of protocol before
+# reading a line of project code. Raise a cap only by moving content out.
+PROTO_ROOT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/skills/_shared"
+proto_cap() {
+  local name="$1" cap="$2" f="$PROTO_ROOT/$1.md" size
+  [[ -f "$f" ]] || return 0
+  size=$(wc -c < "$f" | tr -d ' ')
+  if [[ "$size" -gt "$cap" ]]; then
+    echo "" >&2
+    echo "BLOCKED: skills/_shared/$name.md is ${size}B, over its ${cap}B contract cap." >&2
+    echo "  Move the detail into skills/_shared/$name.reference.md and link it from the head." >&2
+    echo "  The head is what every skill loads on every invocation; the reference is on demand." >&2
+    return 1
+  fi
+  return 0
+}
+PROTO_FAIL=0
+proto_cap loop     9500  || PROTO_FAIL=1
+proto_cap agents   8000  || PROTO_FAIL=1
+proto_cap quality  7500  || PROTO_FAIL=1
+proto_cap sessions 10000 || PROTO_FAIL=1
+proto_cap security 12000 || PROTO_FAIL=1
+proto_cap output   7500  || PROTO_FAIL=1
+[[ "$PROTO_FAIL" -eq 1 ]] && exit 2
+
+# Every protocol head must have its reference sibling and point at it.
+for n in loop agents quality sessions security output; do
+  [[ -f "$PROTO_ROOT/$n.md" ]] || continue
+  if [[ ! -f "$PROTO_ROOT/$n.reference.md" ]]; then
+    echo "BLOCKED: skills/_shared/$n.md has no $n.reference.md sibling." >&2
+    exit 2
+  fi
+  if ! grep -q "$n.reference.md" "$PROTO_ROOT/$n.md"; then
+    echo "BLOCKED: skills/_shared/$n.md does not link its reference; the tail would be unreachable." >&2
+    exit 2
+  fi
+done
+
+# --- Section references resolve (block on drift) ---
+# The head/reference split moves sections between files; a "§N" citation can
+# stop resolving while its link still does, which is why link validation alone
+# missed three rounds of this.
+REFS_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}/scripts/check-section-refs.sh"
+if [[ -x "$REFS_SCRIPT" ]]; then
+  REFS_OUT=$("$REFS_SCRIPT" 2>&1) || {
+    echo "" >&2
+    echo "$REFS_OUT" >&2
+    echo "BLOCKED: unresolved section citation(s)." >&2
+    exit 2
+  }
+fi
+
 # No secrets found — allow the commit
 exit 0

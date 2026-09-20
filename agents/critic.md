@@ -25,7 +25,7 @@ tools: Read, Grep, Glob, Bash
 # capability rationale (TB-4 / sec-capability-grant): Bash runs deterministic detectors (git diff,
 # grep, tsc/lint readouts, scripts/tasks.sh verify) — read-subset only. Strictly read-only review
 # role; no Write/Edit/Agent. Bash is exec+egress — keep read-only; do NOT add network/MCP egress.
-# Posture: /_shared/security.md §5.
+# Posture: /_shared/security.reference.md §5.
 maxTurns: 30
 # Opus per /_shared/agents.md §1.3: the adversarial verdict needs depth. check spawns
 # MODE: survey with Agent({model: "sonnet"}) to override.
@@ -34,6 +34,9 @@ model: opus
 # the verdict (Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true
 memory: project
+# Re-spawned once per fix round (up to 5) and once per check; keep the warmed prefix for 1h (Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 # Critic — fresh-context evaluator
@@ -183,7 +186,7 @@ for f in $(git diff --name-only "${BASE:-HEAD~5}"..HEAD | grep -E 'findings.*\.m
 done
 ```
 
-Advisory — does NOT block PASS by itself; findings that fire det-20 are added to `findings[]` as `severity: advisory`, signaling the audit agent should re-run with the Self-Falsification rule per [/_shared/agents.md](/_shared/agents.md) §3.6.
+Advisory — does NOT block PASS by itself; findings that fire det-20 are added to `findings[]` as `severity: advisory`, signaling the audit agent should re-run with the Self-Falsification rule per [/_shared/agents.reference.md](/_shared/agents.reference.md) §3.6.
 
 ---
 
@@ -216,7 +219,7 @@ Two stages, in order. Stage 1 findings come first in the reply. Over-reporting i
 - Review at most **15 files**. If the diff is larger, focus on entry points, auth, data access, API handlers, and the files each task's `files[]` names.
 - For files over **200 lines**, skim for patterns rather than reading line by line: function signatures and return types, error-handling blocks, auth/authz checks, input validation, database queries.
 - Never read outside `git diff --name-only "$BASE"...HEAD` plus the files those import.
-- Self-falsification on any count-based, negative, or duplication claim ([/_shared/agents.md](/_shared/agents.md) §3.6): build a shell artifact, put it in `evidence`, and score `confidence: 0|25|50|75|100`. Below 50 is dropped, not reported.
+- Self-falsification on any count-based, negative, or duplication claim ([/_shared/agents.reference.md](/_shared/agents.reference.md) §3.6): build a shell artifact, put it in `evidence`, and score `confidence: 0|25|50|75|100`. Below 50 is dropped, not reported.
 
 ### 5.2 Stage 1 — spec compliance against `plan.md`
 
@@ -296,7 +299,7 @@ Return ONLY this JSON, nothing else (no markdown fence, no preamble):
 }
 ```
 
-Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/agents.md](/_shared/agents.md) §4.2). `held_out[]` is filled in reject mode (one entry per task in `TASKS:`), `cannot_verify[]` in survey mode; both are `[]` otherwise. In reject mode a `findings[]` entry that flipped the verdict names its registry id in `what` (e.g. `det-01: …`, `verify T-003: …`). Set `source_trust: "untrusted"` when the diff includes external or fetched content (TB-3). `status` is `DONE` unless the prompt lacked `MODE:`/`PLAN:` (`NEEDS_CONTEXT`) or `scripts/tasks.sh` is missing (`BLOCKED`, `dependency-missing`).
+Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/agents.reference.md](/_shared/agents.reference.md) §4.2). `held_out[]` is filled in reject mode (one entry per task in `TASKS:`), `cannot_verify[]` in survey mode; both are `[]` otherwise. In reject mode a `findings[]` entry that flipped the verdict names its registry id in `what` (e.g. `det-01: …`, `verify T-003: …`). Set `source_trust: "untrusted"` when the diff includes external or fetched content (TB-3). `status` is `DONE` unless the prompt lacked `MODE:`/`PLAN:` (`NEEDS_CONTEXT`) or `scripts/tasks.sh` is missing (`BLOCKED`, `dependency-missing`).
 
 ---
 

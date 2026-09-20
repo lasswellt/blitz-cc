@@ -1,25 +1,55 @@
 {
   "name": "blitz",
-  "version": "3.0.1",
-  "description": "Agentic development loop for Vue/Nuxt + Firebase: research, plan, build, check, ship. Plans are JSON feature lists with per-task verify commands; a task is done only when scripts/tasks.sh verified it and a hook denies every other write. One fresh-context dev agent per task, opt-in parallel waves over disjoint files, an adversarial read-only critic before PASS, a shared check registry with deterministic and semantic lanes, test impact analysis, anti-shortcut hooks (no-verify, destructive git, destructive SQL, test deletion, as-any insertion, test disabling, type-error regression), a kill switch, and next --loop for unattended ticks under /loop, Routines, or claude -p. Minimum Claude Code >=2.1.271 (floors in .claude-plugin/compat.json). Optional external tools: Playwright MCP (browse, ui-build, ui-audit, design-critic), Gemini CLI (cross-model critic via BLITZ_USE_GEMINI_CRITIC/BLITZ_DUAL_CRITIC), claude-security plugin.",
+  "version": "3.5.1",
+  "description": "Language-agnostic agentic development loop: research, plan, build, check, ship. Plans are JSON task DAGs with per-task verify commands; a task is done only when scripts/tasks.sh verified it and a hook denies every other write. One fresh-context dev agent per task, opt-in parallel worktree waves, an adversarial read-only critic before PASS, a shared check registry, anti-shortcut hooks, a diagnostic ratchet that works in any language, and next --loop for unattended ticks. Requires Claude Code >=2.1.271.",
   "author": {
     "name": "lasswellt"
   },
   "homepage": "https://github.com/lasswellt/blitz-cc",
   "repository": "https://github.com/lasswellt/blitz-cc",
   "license": "MIT",
+  "lspServers": "./.lsp.json",
+  "userConfig": {
+    "lsp_typescript": {
+      "type": "string",
+      "title": "TypeScript language server",
+      "description": "Binary for .ts/.tsx/.js code intelligence. Install: npm i -g typescript-language-server typescript. Clear this field to let another plugin's TypeScript server win.",
+      "default": "typescript-language-server"
+    },
+    "lsp_python": {
+      "type": "string",
+      "title": "Python language server",
+      "description": "Binary for .py code intelligence. Install: pip install pyright (provides pyright-langserver). Clear this field to opt out.",
+      "default": "pyright-langserver"
+    },
+    "lsp_rust": {
+      "type": "string",
+      "title": "Rust language server",
+      "description": "Binary for .rs code intelligence. Install rust-analyzer via rustup component add rust-analyzer. Clear this field to opt out.",
+      "default": "rust-analyzer"
+    },
+    "lsp_go": {
+      "type": "string",
+      "title": "Go language server",
+      "description": "Binary for .go code intelligence. Install: go install golang.org/x/tools/gopls@latest. Clear this field to opt out.",
+      "default": "gopls"
+    }
+  },
   "keywords": [
-    "vue",
-    "nuxt",
-    "firebase",
-    "development-workflow",
-    "release-management",
-    "documentation",
-    "migration",
-    "performance",
-    "dependency-health",
     "agentic-loop",
+    "verification",
     "tasks",
-    "verification"
+    "dag",
+    "development-workflow",
+    "code-review",
+    "testing",
+    "polyglot",
+    "lsp",
+    "typescript",
+    "python",
+    "rust",
+    "go",
+    "vue",
+    "nuxt"
   ]
 }

@@ -254,3 +254,90 @@ RESPONSIVE:
 - Forms: use `<VForm>`, `<VTextField>`, `<VSelect>` with rules
 - Dialogs: use `<VDialog>` with `v-model`
 - Snackbars: use `<VSnackbar>` — never build custom toast components
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 5.4 Visual Validation + Design-Quality Critique
+
+Use ToolSearch to check for Playwright MCP tools. Design-critic **navigates the live page** before scoring (E2); needs dev server running + Playwright MCP. If Playwright unavailable, fall back to static-screenshot path and warn user that interaction/responsive/console coverage is incomplete (never silently pass interaction-dependent dimensions).
+
+#### 5.4.1 Layout sanity
+
+Navigate to new page/component. Screenshot at 375 / 768 / 1440 widths. Verify: no overflow, no overlapping elements, correct spacing, readable text.
+
+#### 5.4.2 Design-quality critique (vision agent)
+
+**Capability-relative trigger (E4).** The task's `notes` field in `docs/plans/<slug>/tasks.json` (`design_quality: skip|standard|high`; default `standard` when absent or when running without a plan) is the coarse tier, but the evaluator is worth its cost only when the page sits beyond what the model does reliably solo. Trigger:
+
+- `skip` (internal admin pages) — never evaluate.
+- `high` (marketing, landing, customer-facing) — **always** evaluate. Run the bounded refine-vs-pivot loop below.
+- `standard` (most user-facing UI) — evaluate **only if** an edge-of-solo-capability signal fires: (a) **novel aesthetic** — committed tone absent from DESIGN.md/run history; (b) **interaction complexity** — forms, multi-step flows, stateful widgets; (c) **low generator self-confidence** — generator self-reports uncertainty after Phase 4; (d) **deterministic-lane hits** — `npx impeccable detect` returned findings. If none fire, ship solo.
+
+When triggered, spawn `agents/design-critic.md`:
+
+```
+Agent({
+  subagent_type: "blitz:design-critic",
+  description: "Design-quality critique (live nav)",
+  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
+})
+```
+
+**Bounded refine-vs-pivot loop (E2/E3, task notes `design_quality: high`).** After each evaluation, decide strategically — refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
+
+```
+ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
+                                                               # (article ran 5–15; cost-aware midpoint)
+                                                               # budget bound per /_shared/agents.md
+after evaluation N (scores S_N), trend = mean(S_N) - mean(S_{N-1}):   # first iter has no trend → REFINE
+  PASS (all dims ≥7)                          → STOP (ship)
+  trend > +0.5                                → REFINE: feed critique to Phase 4 IMPLEMENT, one
+                                                 revision of the CURRENT tone (surface to user first)
+  N ≥ PIVOT_AFTER (default 4) and trend ≤ +0.5 → PIVOT: abandon current tone, re-enter §3.0.1 and
+                                                 commit to a DIFFERENT untried tone; regenerate
+                                                 carrying forward structure/content, not the failed
+                                                 aesthetic; log the pivot (tone→tone, why) to the feed
+  else                                        → REFINE
+exit: PASS | ceiling reached | all reasonable tones tried → escalate to user (accept / rework / skip)
+```
+
+Track tried tones so each PIVOT picks an untried tone. The escalate exit is the **bound**, not a flat 3.
+
+For task notes `design_quality: standard` (when the trigger fires): report scores; run at most one revision; do not auto-pivot. User decides.
+
+### 3.0 Aesthetic Direction (mandatory; precedes wireframe)
+
+**Brownfield (existing tokens detected in Phase 1.1):** stay native. Reuse project typography, palette, spacing. Skip to §3.0.2.
+
+**Greenfield / no design system:** invoke `frontend-design:frontend-design` if available. Otherwise execute §3.0.1.
+
+#### 3.0.1 Inline tone selection (when frontend-design unavailable)
+
+Pick exactly ONE tone (do not blend):
+
+`brutalist/minimal`, `maximalist`, `retro-futuristic`, `organic/natural`, `luxury/refined`, `playful/toy-like`, `editorial/magazine`, `art-deco`, `soft/pastel`, `industrial`, `dark/moody`, `lo-fi/zine`, `handcrafted/artisanal`
+
+Commit to:
+- **TYPOGRAPHY PAIR**: distinctive display + refined body. **BANNED**: Inter, Roboto, Arial, system-ui as primary, Space Grotesk.
+- **ACCENT COLOR**: one accent unless multi-color system required. **BANNED**: purple-gradient-on-white. Use CSS variables.
+- **MOTION PRINCIPLE** (pick one): `one orchestrated reveal (staggered animation-delay)`, `scattered micro-interactions`, or `none/static`.
+- **COMPOSITION** (pick one): `generous whitespace` or `controlled density`. Asymmetry, overlap, diagonal flow encouraged when serving the tone.
+
+#### 3.0.1.1 Generation rubric — steer with the criteria the evaluator will grade (E1)
+
+Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** as forward steering. Canonical single source: [`/_shared/design-criteria.md`](/_shared/design-criteria.md). Internalize before wireframing:
+
+> The best designs are museum quality. Build to that bar from the first pass.
+> Prompt Adherence · Aesthetic Fit · Visual Polish · UX · **Creative Distinction** (the hardest
+> bar — if it could come from any AI tool circa 2025, it fails). Grade-hardest emphasis:
+> Creative Distinction + Aesthetic Fit.
+
+#### 3.0.2 Document choices to DESIGN.md
+
+Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — template in [references/design-extract.md](design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../../docs/integrations/impeccable/references-regrounded.md)); inline aesthetic greps in the Implementation Gate are superseded by `/blitz:check --only design`.
+
+Brownfield without `DESIGN.md` never reaches this step: Phase 1 already ran the extraction.

@@ -1,6 +1,6 @@
 # Plan — references
 
-Companion to [SKILL.md](../SKILL.md). Two sections: the research-agent prompts that Phase 2 spawns, and the verify-command template table that Phase 3 draws from. Canonical spawn boilerplate (preamble, budget block, write-as-you-go) is in [/_shared/agents.md](/_shared/agents.md) §3; the blocks below inline it so a prompt can be pasted whole.
+Companion to [SKILL.md](../SKILL.md). Two sections: the research-agent prompts that Phase 2 spawns, and the verify-command template table that Phase 3 draws from. Canonical spawn boilerplate (preamble, budget block, write-as-you-go) is in [/_shared/agents.reference.md](/_shared/agents.reference.md) §3; the blocks below inline it so a prompt can be pasted whole.
 
 Variables the main thread substitutes before spawning: `${SLUG}`, `${GOAL}` (the design summary from Phase 1, ≤15 lines), `${OUTCOMES}` (the numbered outcome list), `${STACK_PROFILE}` (the `detect-stack.sh` output), `${CODEBASE_INVENTORY}` (`git ls-files | head -200` or the `onboard` map), `${OUT_DIR}` (`.cc-sessions/sessions/${CLAUDE_SESSION_ID}/plan-${SLUG}`, created with `mkdir -p` first). Resolve every variable with Bash before spawning; never hand an agent a literal placeholder path.
 
@@ -8,7 +8,7 @@ Variables the main thread substitutes before spawning: `${SLUG}`, `${GOAL}` (the
 
 ## Research-agent prompts
 
-**Workload class for every plan researcher: Medium** ([agents.md](/_shared/agents.md) §3.3). Every prompt below opens with this block:
+**Workload class for every plan researcher: Medium** ([agents.reference.md](/_shared/agents.reference.md) §3.3). Every prompt below opens with this block:
 
 ```
 You are a general-purpose agent with Write access. Your task is INCOMPLETE
@@ -16,7 +16,7 @@ if ${OUT_DIR}/research-<name>.md does not exist and is non-empty when you finish
 Resolve any ${VAR} in the path with Bash before your first write; never
 write to a literal placeholder path.
 
-BUDGET (Medium — skills/_shared/agents.md §3.3):
+BUDGET (Medium — skills/_shared/agents.reference.md §3.3):
 - Max file reads: 15
 - Max web searches: 8 (0 for the codebase analyst)
 - Max tool calls: 25 (at 20, finish the current step and reply)
@@ -193,7 +193,7 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 | vitest file | `npx vitest run <file.test.ts> --reporter=dot` | 300 | the task adds or changes a unit/integration test (test runner; needs a partner below) |
 | tsc | `npx tsc --noEmit --pretty false` | 180 | any TypeScript change; cheap, deterministic, non-test |
 | grep_present | `grep -qE '<pattern>' <file>` | 10 | the task introduces a symbol: `export (const\|function\|class) <name>`, a route string `'/api/<path>'`, an env key `<KEY>=` in `.env.example`, a rules `match /<collection>/` |
-| grep_absent | `! grep -nE 'TODO\|return \{\}' <file>` | 10 | every task that writes production code (anti-mock rules, [quality.md](/_shared/quality.md) §Definition of Done); extend the alternation with `Not implemented\|PLACEHOLDER` when the file is new |
+| grep_absent | `! grep -nE 'TODO\|return \{\}' <file>` | 10 | every task that writes production code (anti-mock rules, [quality.reference.md](/_shared/quality.reference.md) §Definition of Done); extend the alternation with `Not implemented\|PLACEHOLDER` when the file is new |
 | Firestore rules | `firebase emulators:exec --only firestore "npx vitest run <rules.test.ts>"` | 600 | `firestore.rules` changes; the test uses `@firebase/rules-unit-testing` and asserts both allow and deny |
 | Cloud Functions | `firebase emulators:exec --only functions,firestore "npx vitest run <file.test.ts>"` | 600 | a callable/trigger changes; the test invokes it against the emulator, not a `vi.mock` of `firebase-admin` |
 | Playwright | `npx playwright test <spec.ts>` | 600 | a user-visible flow changes; counts as non-test e2e evidence |
@@ -212,3 +212,32 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 - Minimum for a `role: test` task: the test row alone with `--test-only-ok`, plus `--notes "test-only: <why no non-test check applies>"`.
 - Order rows cheapest first (`grep` → `tsc` → unit test → emulator → Playwright); `tasks.sh verify` stops at the first failure and the 200-char tail is what `build` reads.
 - Quote patterns for the shell that `tasks.sh verify` runs (`bash -c`); escape `{` `}` `|` inside `grep -E` alternations as shown.
+
+---
+
+## Moved from SKILL.md (body size)
+
+Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
+
+### 3.1.1 Bulk-task guard (SPIDR check)
+
+After drafting each task but **before** accepting it, run the bulk-task guard (catches the "migrate 130 files via glob" anti-pattern).
+
+**Reject or split** any task matching either criterion:
+
+1. **File-count heuristic** (two-band):
+   - `task.files.length > 5` AND the plan class is not `spike` — **mandatory split**.
+   - `task.files.length` in `{4, 5}` — **soft warn**: append a `decision` line to the activity feed; allow only if no other task shares a parent directory with it.
+   - `task.files.length` in `{1, 2, 3}` — **green**.
+
+2. **Horizontal-scope language** — title or notes matches (case-insensitive):
+   - `/all \w+ (files|components|modals|routes|tests|pages)/`
+   - `/(via|using) (pattern|glob|regex)/`
+   - `/across the codebase/`
+   - `/every (file|component|store|route|test)/`
+   - `/bulk (migrate|refactor|update|rename)/`
+
+**Handling a match:**
+- **Interactive:** pause. Offer a SPIDR Data-axis split (one task per parent directory) or downgrade the plan class to `spike`.
+- **`--autonomous`:** auto-split by nearest parent directory; recursively split while a batch still has > 8 files. Each batch gets a `grep -c` verify that counts the migrated pattern in that directory, e.g. `[ "$(grep -rlE '<new-pattern>' src/<dir> | wc -l)" -ge <n> ]::30`. If there is no concrete file list, downgrade to spike. Append one `decision` feed line per split.
+- **Never auto-accept a bulk task.** List every split in `plan.md` §Risks.

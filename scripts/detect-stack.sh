@@ -7,6 +7,25 @@ set -uo pipefail
 CACHE_FILE=".cc-sessions/stack-profile.cache"
 CACHE_TTL=3600  # 1 hour in seconds
 
+# Language stacks come from the toolchain table and are computed fresh on every
+# call, never cached: detection is a handful of file-existence tests, and a
+# cached list would miss a language added minutes ago. Everything below this
+# line is the Node/Vue-specific design-adapter profile, which stays cached.
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLCHAIN="${CLAUDE_PLUGIN_ROOT:-$(cd "$SELF_DIR/.." && pwd)}/scripts/toolchain.sh"
+emit_stacks() {
+  local stacks=""
+  [ -f "$TOOLCHAIN" ] && stacks=$(bash "$TOOLCHAIN" stacks 2>/dev/null | paste -sd, - 2>/dev/null)
+  echo "## Detected Stack Profile"
+  echo "- **Language stacks**: ${stacks:-none detected}"
+  if [ -n "$stacks" ] && [ -f "$TOOLCHAIN" ]; then
+    local lanes
+    lanes=$(bash "$TOOLCHAIN" lanes 2>/dev/null | awk -F'\t' '{printf "%s:%s ", $1, $3}')
+    [ -n "$lanes" ] && echo "- **Toolchain lanes**: ${lanes% }"
+  fi
+}
+emit_stacks
+
 # Check cache: use if exists and not expired
 if [ -f "$CACHE_FILE" ]; then
   if [ "$(uname)" = "Darwin" ]; then
@@ -24,8 +43,6 @@ fi
 
 # Generate fresh detection
 {
-echo "## Detected Stack Profile"
-
 # Framework
 if [ -f "nuxt.config.ts" ] || [ -f "nuxt.config.js" ]; then
   echo "- **Framework**: Nuxt 3"
@@ -108,15 +125,39 @@ elif [ -f "pnpm-workspace.yaml" ]; then
   echo "- **Build System**: pnpm workspaces"
 elif [ -f "turbo.json" ]; then
   echo "- **Build System**: Turborepo"
-else
+elif [ -f "Cargo.toml" ] && grep -q '^\[workspace\]' Cargo.toml 2>/dev/null; then
+  echo "- **Build System**: Cargo workspace"
+elif [ -f "go.work" ]; then
+  echo "- **Build System**: Go workspace"
+elif [ -f "pom.xml" ]; then
+  echo "- **Build System**: Maven"
+elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+  echo "- **Build System**: Gradle"
+elif [ -f "package.json" ]; then
   echo "- **Build System**: Single package"
 fi
 
-# Package manager
+# Package manager / dependency manager
 if [ -f "pnpm-lock.yaml" ]; then echo "- **Package Manager**: pnpm"
 elif [ -f "yarn.lock" ]; then echo "- **Package Manager**: yarn"
+elif [ -f "bun.lockb" ]; then echo "- **Package Manager**: bun"
 elif [ -f "package-lock.json" ]; then echo "- **Package Manager**: npm"
 fi
+if [ -f "uv.lock" ]; then echo "- **Python Deps**: uv"
+elif [ -f "poetry.lock" ]; then echo "- **Python Deps**: poetry"
+elif [ -f "Pipfile.lock" ]; then echo "- **Python Deps**: pipenv"
+elif [ -f "requirements.txt" ]; then echo "- **Python Deps**: pip/requirements.txt"
+fi
+[ -f "Cargo.lock" ] && echo "- **Rust Deps**: cargo"
+[ -f "go.sum" ] && echo "- **Go Deps**: go modules"
+[ -f "Gemfile.lock" ] && echo "- **Ruby Deps**: bundler"
+[ -f "composer.lock" ] && echo "- **PHP Deps**: composer"
+
+# Test runners outside the Node ecosystem
+[ -f "pytest.ini" ] && echo "- **Testing**: pytest"
+grep -qs 'pytest' pyproject.toml 2>/dev/null && echo "- **Testing**: pytest"
+[ -f "Cargo.toml" ] && echo "- **Testing**: cargo test"
+[ -f "go.mod" ] && echo "- **Testing**: go test"
 
 # Validation, testing, state
 if [ -f "package.json" ]; then

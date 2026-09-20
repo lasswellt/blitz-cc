@@ -270,7 +270,7 @@ Hard budget: **10 tool calls per failing spec**. Counter resets when moving to a
    - The HARD_SPEC signals that tripped (if classifier ran)
 3. Do NOT retry without `build` intervention.
 
-Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to `build` for routing (`research --codebase`, operator pairing, or marking the task `blocked` with a `blocked_reason`). Every `ESCALATE:` line you emit lands in the reply's `escalate` field and, for `ESCALATE: oracle-underivable` / `test-assertion-suspect`, becomes the task's `blocked_reason` (`/_shared/agents.md` §4.1). Per `docs/research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
+Why: empirical observation that agents thrash on hard specs (>30 min single-spec investigation) burning tokens without convergence. Budget exhaustion is a feature — it returns control to `build` for routing (`research --codebase`, operator pairing, or marking the task `blocked` with a `blocked_reason`). Every `ESCALATE:` line you emit lands in the reply's `escalate` field and, for `ESCALATE: oracle-underivable` / `test-assertion-suspect`, becomes the task's `blocked_reason` (`/_shared/agents.reference.md` §4.1). Per `docs/research/2026-05-16_agent-complexity-ceiling-spec-fixing.md` per-spec turn cap recommendation.
 
 ## Quality Gates
 

@@ -9,6 +9,8 @@
 #                   --verify-cmd "cmd"[::timeout] (repeatable) [--test-only-ok] [--notes "..."]
 #   tasks.sh set    <plan> <id> key=value ...   keys: status blocked_reason notes role title attempts (N or +1)
 #   tasks.sh verify <plan> <id> [--dry]         runs verify[] in order; writes passes + last_verify
+#   tasks.sh verify <plan> --changed <paths>    re-verifies only the done tasks whose files[] the
+#                                               paths touch (post-merge selective re-verify)
 #   tasks.sh next   <plan>                      prints the first open task whose depends_on are all done
 #
 # Contract (loop.md §Structural rules):
@@ -25,6 +27,15 @@ if [ -z "$PLANS_DIR" ]; then
 fi
 TEST_RUNNER_RX='(vitest|jest|npm (run )?test|pnpm test|yarn test|pytest|go test|cargo test|bats )'
 ISO() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Epoch milliseconds. GNU date does %3N; BSD/macOS does not, so fall back to
+# second resolution rather than emitting the literal "3N".
+NOW_MS() {
+  local ms
+  ms=$(date +%s%3N 2>/dev/null || true)
+  case "$ms" in ''|*[!0-9]*) ms=$(( $(date +%s) * 1000 ));; esac
+  printf '%s' "$ms"
+}
 die() { echo "tasks.sh: $*" >&2; exit 2; }
 usage() { sed -n '2,18p' "$0"; exit 2; }
 
@@ -154,6 +165,9 @@ cmd_verify() {
   n=$(printf '%s' "$task" | jq '.verify | length')
   [ "$n" -gt 0 ] || die "task $id has no verify[] entries"
   local root; root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  # Per-command evidence. Without it a reviewer has to re-run the suite to see
+  # what a verdict rested on, and "cannot_verify" is not a defensible answer.
+  local runs="[]" t0 t1 dur head_out
   i=0
   while [ "$i" -lt "$n" ]; do
     cmd=$(printf '%s' "$task" | jq -r ".verify[$i].cmd")
@@ -163,7 +177,15 @@ cmd_verify() {
     if [ "$dry" -eq 1 ]; then echo "[dry] $cmd (timeout ${tmo}s)"; continue; fi
     out=$(mktemp)
     rc=0
+    t0=$(NOW_MS)
     ( cd "$root" && timeout "$tmo" bash -c "$cmd" ) >"$out" 2>&1 || rc=$?
+    t1=$(NOW_MS); dur=$((t1 - t0)); [ "$dur" -lt 0 ] && dur=0
+    # 2 KB is the difference between "the critic reads the tail" and "the
+    # critic re-runs the suite"; more than that is a log, not evidence.
+    head_out=$(tail -c "${BLITZ_VERIFY_EVIDENCE_CAP:-2000}" "$out" 2>/dev/null || true)
+    runs=$(printf '%s' "$runs" | jq -c --arg cmd "$cmd" --argjson exit "$rc" \
+      --argjson ms "$dur" --arg tail "$head_out" --arg ts "$(ISO)" \
+      '. + [{cmd:$cmd, exit:$exit, duration_ms:$ms, tail:$tail, recorded_at:$ts}]')
     if [ "$rc" -ne 0 ]; then
       failed="$cmd"; tail=$(tail -c 200 "$out" | tr '\n' ' ')
       rm -f "$out"; break
@@ -173,7 +195,8 @@ cmd_verify() {
   [ "$dry" -eq 1 ] && return 0
   local ok=true; [ "$rc" -eq 0 ] || ok=false
   local lv
-  lv=$(jq -nc --arg ts "$(ISO)" --argjson ok "$ok" --arg failed "$failed" --arg tail "$tail" '{ts:$ts,ok:$ok,failed:$failed,tail:$tail}')
+  lv=$(jq -nc --arg ts "$(ISO)" --argjson ok "$ok" --arg failed "$failed" --arg tail "$tail" \
+       --argjson runs "$runs" '{ts:$ts,ok:$ok,failed:$failed,tail:$tail,runs:$runs}')
   local json
   json=$(jq --arg id "$id" --argjson lv "$lv" --argjson ok "$ok" '
     (.tasks[] | select(.id==$id)) |= (.last_verify = $lv | .passes = $ok | .status = (if $ok then "done" else (if .status == "done" then "in_progress" else .status end) end) | .blocked_reason = (if $ok then null else .blocked_reason end))' "$f")
@@ -181,6 +204,55 @@ cmd_verify() {
   if [ "$ok" = true ]; then echo "PASS $plan/$id ($n checks)"; return 0; fi
   echo "FAIL $plan/$id: $failed (rc=$rc) :: $tail" >&2
   return 1
+}
+
+# cmd_verify_changed PLAN PATH...
+#
+# After merging a parallel wave, a clean textual merge is not a semantic one:
+# two tasks can each pass alone and break each other once combined. Re-running
+# every task's verify[] is the safe answer and the slow one. This re-verifies
+# exactly the tasks whose files[] intersect the merged paths, which is the set
+# a merge can have broken.
+#
+# Paths come from `git diff --name-only <base>..HEAD` and are matched against
+# each task's files[] by exact path or by directory prefix.
+cmd_verify_changed() {
+  local plan="$1"; shift
+  local f; f=$(plan_file "$plan"); require_file "$f"
+  [ "$#" -gt 0 ] || die "verify --changed needs at least one path"
+
+  local paths_json; paths_json=$(printf '%s\n' "$@" | jq -R . | jq -sc .)
+  local ids
+  ids=$(jq -r --argjson paths "$paths_json" '
+    .tasks[]
+    | . as $t
+    | select($t.status == "done")
+    | select(($t.files // []) | any(. as $tf
+        | $paths | any(. as $p
+            | $p == $tf
+            or ($tf | endswith("/")) and ($p | startswith($tf))
+            or ($p | startswith($tf + "/"))
+            or ($tf | startswith($p + "/")))))
+    | $t.id' "$f")
+
+  if [ -z "$ids" ]; then
+    echo "verify --changed $plan: no done task owns any of the $# changed path(s); nothing to re-verify"
+    return 0
+  fi
+
+  local id rc=0 n=0 failed=""
+  while IFS= read -r id; do
+    [ -z "$id" ] && continue
+    n=$((n + 1))
+    if cmd_verify "$plan" "$id"; then :; else rc=1; failed="$failed $id"; fi
+  done <<< "$ids"
+
+  if [ "$rc" -eq 0 ]; then
+    echo "verify --changed $plan: $n task(s) re-verified, all pass"
+  else
+    echo "verify --changed $plan: $n task(s) re-verified, FAILED:$failed" >&2
+  fi
+  return "$rc"
 }
 
 cmd_next() {
@@ -199,7 +271,14 @@ case "$cmd" in
   list)   [ $# -ge 1 ] || usage; cmd_list "$@";;
   add)    [ $# -ge 1 ] || usage; cmd_add "$@";;
   set)    [ $# -ge 3 ] || usage; cmd_set "$@";;
-  verify) [ $# -ge 2 ] || usage; cmd_verify "$@";;
+  verify)
+    [ $# -ge 2 ] || usage
+    if [ "${2:-}" = "--changed" ]; then
+      plan="$1"; shift 2; cmd_verify_changed "$plan" "$@"
+    else
+      cmd_verify "$@"
+    fi
+    ;;
   next)   [ $# -ge 1 ] || usage; cmd_next "$@";;
   -h|--help|help) usage;;
   *) die "unknown command '$cmd'";;

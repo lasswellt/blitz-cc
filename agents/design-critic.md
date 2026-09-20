@@ -16,7 +16,7 @@ description: |
 tools: Read, Grep, Glob, Bash, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_hover, mcp__plugin_playwright_playwright__browser_press_key, mcp__plugin_playwright_playwright__browser_type, mcp__plugin_playwright_playwright__browser_resize, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_wait_for, mcp__plugin_playwright_playwright__browser_console_messages
 # capability rationale (TB-4 / sec-capability-grant): Bash drives detect-stack + screenshot/token
 # readouts — read-subset only. Read-only design-review role; no Write/Edit/Agent. Bash is exec+egress —
-# keep read-only; do NOT add network/MCP egress. Posture: /_shared/security.md §5.
+# keep read-only; do NOT add network/MCP egress. Posture: /_shared/security.reference.md §5.
 # Playwright nav subset (E2, docs/integrations/harness-design/design-critic-upgrade.md §2): the
 # evaluator navigates the LIVE local dev server before scoring (controlled local-browser capability,
 # NOT arbitrary internet egress). Read/interact tools only — browser_run_code_unsafe / browser_evaluate
@@ -27,6 +27,9 @@ model: sonnet
 # Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
 # the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true
+# Re-spawned per visual-iteration round; keep the warmed prefix for 1h (Claude Code >=2.1.248).
+experimental:
+  cacheTtl: 1h
 ---
 
 # Design Critic — Vision-Based Aesthetic Scorer
