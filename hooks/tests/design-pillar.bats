@@ -312,3 +312,37 @@ select_design() {  # $1 = primary
   run select_design tailwind
   echo "$output" | grep -q 'design-bounce-easing-static'   # fires where not relaxed
 }
+
+# --- impeccable exit contract ----------------------------------------------
+# impeccable exits 0 with `[]` when clean and 2 with the findings JSON when it
+# finds anything — the inverse of the generic command shape, where 2 means a
+# broken detector. Without a per-row contract every finding is scored `error`.
+
+@test "every row that runs impeccable declares exit 2 as the finding case" {
+  run jq -r '.checks[] | select((.detection.command // "") | test("impeccable detect"))
+             | select(.detection.exit != {"pass":[0],"finding":[2],"error":[1]}) | .id' "$REGISTRY"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ "$(jq '[.checks[] | select((.detection.command // "") | test("impeccable detect"))] | length' "$REGISTRY")" -gt 0 ]
+}
+
+@test "the registry validator rejects an impeccable row without the contract" {
+  jq '(.checks[] | select(.id=="design-side-tab") | .detection) |= del(.exit)' "$REGISTRY" > bad.json
+  run bash "$REPO_ROOT/hooks/scripts/check-registry-validate.sh" "$PWD/bad.json"
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -q 'design-side-tab: runs `impeccable detect`'
+}
+
+@test "the installed impeccable CLI still honours the declared contract" {
+  # Guards the pin: if a future impeccable changes its exit codes, this fails
+  # instead of the design lane silently misreading every run.
+  command -v impeccable >/dev/null || skip "impeccable not installed"
+  printf '<style>.c{border-radius:8px;border-left:4px solid #6366f1}</style><div class="c">x</div>\n' > finding.html
+  printf '<p>plain</p>\n' > clean.html
+  run impeccable detect --json finding.html
+  [ "$status" -eq 2 ]
+  echo "$output" | jq -e 'length > 0'
+  run impeccable detect --json clean.html
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e 'length == 0'
+}

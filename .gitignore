@@ -51,3 +51,6 @@ docs/audits/
 /.blitz-cache/
 firebase-debug.log
 firebase-debug.*.log
+
+# Playwright MCP page snapshots and screenshots (browse, ui-audit, design-critic)
+.playwright-mcp/

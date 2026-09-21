@@ -10,6 +10,21 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.8.1] — 2026-09-20 · impeccable's findings were scored as a broken detector
+
+### Fixed
+- **Every impeccable finding was read as a detector error.** `impeccable detect` exits 0 with `[]` when clean and **2** with the findings JSON when it finds anything. The generic command contract in `quality.reference.md` reads exit 2 as a broken detector, reported as `error`, and none of the 41 impeccable rows declared a contract of their own. Applied as written, any run with findings was discarded as a tool failure and only a clean run ever registered: the semantic design lane could report nothing but green. All 41 rows now carry `{"pass":[0],"finding":[2],"error":[1]}`, the exit-code table has an impeccable row, and the `check` reference says exit 2 is the finding case.
+- **`check-registry-validate.sh` now rejects an impeccable row without that contract**, so a new row cannot reintroduce the bug; pre-commit runs it.
+- `.playwright-mcp/` is gitignored. Playwright MCP writes page snapshots and screenshots into its working directory, so running the browser skills from the plugin repo left untracked artifacts a `git add -A` would commit.
+
+### Added
+- Three design-pillar cases: every impeccable row declares the contract; the validator rejects a row with it removed; and, when impeccable is installed, the real CLI still exits 2 on a finding and 0 on a clean file, so a future impeccable that changes its exit codes fails the suite instead of silently flipping the lane.
+
+### Notes
+- README: Playwright MCP launches Google Chrome by default and fails every browser action when it is absent, which breaks `design-critic`, `browse`, `ui-audit` and `ui-build`'s visual loop. `PLAYWRIGHT_MCP_BROWSER=chromium` plus `PLAYWRIGHT_MCP_EXECUTABLE_PATH` points it at another Chromium; verified with a live `browser_navigate` and `browser_take_screenshot`.
+- The deterministic design lane was re-verified row by row on a real Vue package: all 19 rows run and read correctly through their grep-family contracts.
+- Validators exit 0; `bats hooks/tests/` is 292/292.
+
 ## [3.8.0] — 2026-09-20 · impeccable can be installed once, globally
 
 ### Added

@@ -68,6 +68,19 @@ for c in checks:
     if lane == "semantic" and dt != "semantic":
         errors.append(f"{cid}: semantic lane must use detection.type=='semantic', got {dt!r}")
 
+    # 4a. impeccable exit contract. `impeccable detect` exits 0 with `[]` when
+    #     clean and 2 with the findings JSON when it finds anything — the inverse
+    #     of the generic command shape, where 2 means a broken detector. A row
+    #     without its own contract has every finding scored as `error` and
+    #     discarded, so only a clean run ever registers.
+    if "impeccable detect" in det.get("command", ""):
+        ex = det.get("exit") or {}
+        if ex.get("pass") != [0] or ex.get("finding") != [2]:
+            errors.append(
+                f"{cid}: runs `impeccable detect` but detection.exit is {ex or 'absent'}; "
+                f"it must declare pass:[0], finding:[2] (impeccable exits 2 on findings)"
+            )
+
     # 4b. command executability (advisory WARNINGS — never fails the gate, so
     #     prose-described regex/counter rows and out-of-package script gaps don't
     #     hard-block; surfaces the R3-CR-01/02 class: bare binaries that don't

@@ -1043,7 +1043,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "side-tab"
+        "filter": "side-tab",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1072,7 +1083,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "border-accent-on-rounded"
+        "filter": "border-accent-on-rounded",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1101,7 +1123,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "overused-font"
+        "filter": "overused-font",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1130,7 +1163,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "single-font"
+        "filter": "single-font",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1159,7 +1203,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "flat-type-hierarchy"
+        "filter": "flat-type-hierarchy",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1188,7 +1243,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "gradient-text"
+        "filter": "gradient-text",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1217,7 +1283,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "ai-color-palette"
+        "filter": "ai-color-palette",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1246,7 +1323,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "cream-palette"
+        "filter": "cream-palette",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1275,7 +1363,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "nested-cards"
+        "filter": "nested-cards",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1304,7 +1403,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "monotonous-spacing"
+        "filter": "monotonous-spacing",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1333,7 +1443,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "bounce-easing"
+        "filter": "bounce-easing",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1368,7 +1489,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "dark-glow"
+        "filter": "dark-glow",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1397,7 +1529,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "icon-tile-stack"
+        "filter": "icon-tile-stack",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1426,7 +1569,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "italic-serif-display"
+        "filter": "italic-serif-display",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1455,7 +1609,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "hero-eyebrow-chip"
+        "filter": "hero-eyebrow-chip",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1484,7 +1649,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "repeated-section-kickers"
+        "filter": "repeated-section-kickers",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1513,7 +1689,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "numbered-section-markers"
+        "filter": "numbered-section-markers",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1542,7 +1729,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "em-dash-overuse"
+        "filter": "em-dash-overuse",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1571,7 +1769,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "marketing-buzzword"
+        "filter": "marketing-buzzword",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1600,7 +1809,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "aphoristic-cadence"
+        "filter": "aphoristic-cadence",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1629,7 +1849,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "oversized-h1"
+        "filter": "oversized-h1",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1658,7 +1889,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "extreme-negative-tracking"
+        "filter": "extreme-negative-tracking",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1687,7 +1929,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "broken-image"
+        "filter": "broken-image",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1716,7 +1969,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "gray-on-color"
+        "filter": "gray-on-color",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1745,7 +2009,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "low-contrast"
+        "filter": "low-contrast",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1774,7 +2049,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "layout-transition"
+        "filter": "layout-transition",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1803,7 +2089,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "line-length"
+        "filter": "line-length",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1832,7 +2129,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "cramped-padding"
+        "filter": "cramped-padding",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1861,7 +2169,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "body-text-viewport-edge"
+        "filter": "body-text-viewport-edge",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1890,7 +2209,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "tight-leading"
+        "filter": "tight-leading",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1919,7 +2249,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "skipped-heading"
+        "filter": "skipped-heading",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1948,7 +2289,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "justified-text"
+        "filter": "justified-text",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -1977,7 +2329,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "tiny-text"
+        "filter": "tiny-text",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2006,7 +2369,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "all-caps-body"
+        "filter": "all-caps-body",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2035,7 +2409,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "wide-tracking"
+        "filter": "wide-tracking",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2064,7 +2449,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "text-overflow"
+        "filter": "text-overflow",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2093,7 +2489,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "clipped-overflow-container"
+        "filter": "clipped-overflow-container",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2122,7 +2529,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "gpt-thin-border-wide-shadow"
+        "filter": "gpt-thin-border-wide-shadow",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2159,7 +2577,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "repeating-stripes-gradient"
+        "filter": "repeating-stripes-gradient",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2188,7 +2617,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "theater-slop-phrase"
+        "filter": "theater-slop-phrase",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",
@@ -2217,7 +2657,18 @@
       "detection": {
         "type": "semantic",
         "command": "npx impeccable detect --json ${TARGETS}",
-        "filter": "image-hover-transform"
+        "filter": "image-hover-transform",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "finding": [
+            2
+          ],
+          "error": [
+            1
+          ]
+        }
       },
       "enforcement": [
         "skill:check --only design",

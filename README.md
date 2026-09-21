@@ -49,7 +49,7 @@ Design decisions and the evidence behind them: [`docs/reviews/2026-09-19_v3-agen
 
 Pin the version and leave auto-update off for any plugin that runs hooks; read the diff before upgrading. For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
 
-**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, or GitHub Copilot CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`.
+**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, or GitHub Copilot CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
 
 ```bash
 /blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY

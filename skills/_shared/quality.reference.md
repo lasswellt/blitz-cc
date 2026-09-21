@@ -33,6 +33,7 @@ A deterministic row's verdict comes from its `detection.exit`, never from "non-z
 |---|---|---|
 | Command (`git diff`, `cargo check`, a script) | `{"pass":[0],"finding":[1],"error":[2]}` | Exit 0 passes; 1 is a finding; anything else is a broken detector, reported as `error`, never as a pass |
 | Grep-family tail (`grep`, `git grep`, `rg`) | `{"pass":[1],"finding":[0],"error":[2]}` | Exit 1 (no match) passes; exit 0 (matched) is the finding |
+| impeccable (`npx impeccable detect --json`) | `{"pass":[0],"finding":[2],"error":[1]}` | Exit 0 prints `[]`; exit 2 prints the findings JSON, a result rather than a failure. It inverts the Command shape, which is why these rows carry their own contract and `check-registry-validate.sh` rejects one that does not |
 | Counter (`… \| wc -l`, `jq` of a metric) | `{"verdict":"stdout", "note":"…"}` | Ignore the exit code entirely; the number on stdout is the verdict, compared against the ratchet |
 
 A row with no `exit` key is not evaluated by running it: `det-17` and `det-18` describe operational signals a hook raises, not commands to execute.
