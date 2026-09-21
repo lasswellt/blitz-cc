@@ -10,6 +10,20 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.8.0] — 2026-09-20 · impeccable can be installed once, globally
+
+### Added
+- **The semantic design lane accepts a global impeccable.** `scripts/design/preflight.sh` resolved impeccable only from the project under review, so every UI repo needed its own `npm i -D impeccable@2.3.2` before `check --only design` or `audit --pillar design` could run the semantic rows. It now falls back to a global install at the pin (`npm i -g impeccable@2.3.2`), and the status line records which copy it found: `semantic=OK source=project|global`. The project's own copy still wins, because it is the one `npx` runs; a global copy at the wrong version reports `VERSION_MISMATCH source=global` with a `-g` install hint.
+- The registry rows needed no change: `npx impeccable detect` finds a global bin on `PATH`, verified from a project with no local copy.
+- `BLITZ_IMPECCABLE_GLOBAL_ROOT` overrides the global `node_modules` directory (default `npm root -g`). The design-pillar suite points it at an empty directory, so a machine-wide install cannot satisfy cases that model a bare project, and three new cases cover global-at-pin, global-at-wrong-version, and project-beats-global.
+
+### Changed
+- **The "never global" rationale no longer held.** The recorded decision kept impeccable out of the plugin because its detector was "browser/puppeteer-class". In 2.3.2 puppeteer is an *optional* dependency used only for rendered-URL mode; the file-mode `detect` the registry rows invoke parses HTML/CSS with no browser, verified by running it with puppeteer's Chromium download blocked. It still never ships inside the plugin; a user opting in globally is a different thing from every plugin install dragging it along.
+- `doctor` reports `INFO` only when preflight finds impeccable in neither place, instead of whenever the project's `devDependencies` lack it. `check` and `audit` references describe the two-place resolution.
+
+### Notes
+- Validators exit 0; `bats hooks/tests/` is 289/289.
+
 ## [3.7.1] — 2026-09-20 · an explicit critic flag beats ambient env
 
 ### Fixed

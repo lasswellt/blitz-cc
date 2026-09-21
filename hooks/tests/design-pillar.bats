@@ -16,6 +16,9 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   REGISTRY="$REPO_ROOT/skills/_shared/check-registry.json"
   TMPDIR="$(mktemp -d)"; cd "$TMPDIR"
+  # Hermetic: a machine-wide `npm i -g impeccable` must not satisfy the cases
+  # that model a target project. The global cases point this at a fixture.
+  export BLITZ_IMPECCABLE_GLOBAL_ROOT="$TMPDIR/no-global"
 }
 teardown() { rm -rf "$TMPDIR"; }
 
@@ -179,8 +182,42 @@ scoped_hex() {  # $1 = root dir
   printf '{"name":"impeccable","version":"2.3.2"}' > node_modules/impeccable/package.json
   run bash "$PF" "$PWD"
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q 'semantic=OK'
+  echo "$output" | grep -q 'semantic=OK source=project'
   ! echo "$output" | grep -q 'DESIGN_LANE_UNAVAILABLE'
+}
+
+@test "preflight accepts a global install at the pin when the target has none" {
+  PF="$REPO_ROOT/scripts/design/preflight.sh"
+  [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
+  mkdir -p global/impeccable
+  printf '{"name":"impeccable","version":"2.3.2"}' > global/impeccable/package.json
+  BLITZ_IMPECCABLE_GLOBAL_ROOT="$PWD/global" run bash "$PF" "$PWD"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'semantic=OK source=global'
+  ! echo "$output" | grep -q 'DESIGN_LANE_UNAVAILABLE'
+}
+
+@test "preflight flags a global install at the wrong version with a global hint" {
+  PF="$REPO_ROOT/scripts/design/preflight.sh"
+  [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
+  mkdir -p global/impeccable
+  printf '{"name":"impeccable","version":"2.2.0"}' > global/impeccable/package.json
+  BLITZ_IMPECCABLE_GLOBAL_ROOT="$PWD/global" run bash "$PF" "$PWD"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'semantic=VERSION_MISMATCH source=global'
+  echo "$output" | grep -q 'npm i -g impeccable@2.3.2'
+  echo "$output" | grep -q 'DESIGN_LANE_UNAVAILABLE'
+}
+
+@test "preflight prefers the target project's copy over a global one" {
+  # npx runs a local bin first, so the project's version is the one that executes.
+  PF="$REPO_ROOT/scripts/design/preflight.sh"
+  [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
+  mkdir -p node_modules/impeccable global/impeccable
+  printf '{"name":"impeccable","version":"2.2.0"}' > node_modules/impeccable/package.json
+  printf '{"name":"impeccable","version":"2.3.2"}' > global/impeccable/package.json
+  BLITZ_IMPECCABLE_GLOBAL_ROOT="$PWD/global" run bash "$PF" "$PWD"
+  echo "$output" | grep -q 'semantic=VERSION_MISMATCH source=project'
 }
 
 # --- Adapter detection (TEST-1: parse the DESIGN_ADAPTER token) ------------

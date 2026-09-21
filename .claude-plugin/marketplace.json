@@ -11,7 +11,7 @@
       "name": "blitz",
       "source": "./",
       "description": "Agentic development loop for any stack: research → plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs. Deeper Vue/Nuxt/Firebase lanes when that stack is detected.",
-      "version": "3.7.1"
+      "version": "3.8.0"
     }
   ]
 }
