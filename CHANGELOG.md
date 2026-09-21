@@ -10,6 +10,15 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.7.1] — 2026-09-20 · an explicit critic flag beats ambient env
+
+### Fixed
+- **`critic-external.sh` let `BLITZ_CRITIC_PANEL` override an explicit `--provider`.** 3.7.0 resolved the provider list env-first, so once a panel was set globally in `settings.json` — the recommended way to enable it — every single-provider invocation silently became the full panel. That included `critic-gemini.sh`, which exists precisely to pin `--provider gemini`. Resolution is now flag-first: `--panel`, `--provider`, `BLITZ_CRITIC_PANEL`, `BLITZ_CRITIC_PROVIDER`, then `gemini`.
+- **The critic test suite was not hermetic.** It passed in 3.7.0 only because the release was tested before the panel env existed on the machine. `setup()` now unsets the `BLITZ_CRITIC_*` selection variables, and a regression case pins `--provider copilot` under an ambient `BLITZ_CRITIC_PANEL=agy,copilot` and asserts a single-provider reply.
+
+### Notes
+- Found by running the suite with native bats after enabling the panel globally: the exact configuration 3.7.0 recommends. Validators exit 0; `bats hooks/tests/` is 286/286 with the panel env set.
+
 ## [3.7.0] — 2026-09-20 · the cross-model critic takes any model family
 
 ### Added

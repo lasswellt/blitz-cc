@@ -78,15 +78,20 @@ done
 [ -z "$MODE" ] && { echo "[$SCRIPT_NAME] --mode required (pre-pass | research | design)" >&2; exit 1; }
 case "$MODE" in pre-pass|research|design) ;; *) echo "[$SCRIPT_NAME] invalid mode: $MODE" >&2; exit 1;; esac
 
-# Provider list: --panel beats BLITZ_CRITIC_PANEL beats --provider beats
-# BLITZ_CRITIC_PROVIDER beats the gemini default (back-compat with
-# critic-gemini.sh, which is now a shim over this script).
+# Provider list. An explicit flag always beats ambient env: --panel, then
+# --provider, then BLITZ_CRITIC_PANEL, then BLITZ_CRITIC_PROVIDER, then the
+# gemini default. The order matters — with a panel set globally in settings.json,
+# env-first resolution would silently turn critic-gemini.sh (which passes
+# --provider gemini) or any one-off --provider run into the full panel.
 PROVIDERS=()
-PANEL_LIST="${PANEL:-${BLITZ_CRITIC_PANEL:-}}"
-if [ -n "$PANEL_LIST" ]; then
-  IFS=',' read -r -a PROVIDERS <<< "$PANEL_LIST"
+if [ -n "$PANEL" ]; then
+  IFS=',' read -r -a PROVIDERS <<< "$PANEL"
+elif [ -n "$PROVIDER" ]; then
+  PROVIDERS=("$PROVIDER")
+elif [ -n "${BLITZ_CRITIC_PANEL:-}" ]; then
+  IFS=',' read -r -a PROVIDERS <<< "$BLITZ_CRITIC_PANEL"
 else
-  PROVIDERS=("${PROVIDER:-${BLITZ_CRITIC_PROVIDER:-gemini}}")
+  PROVIDERS=("${BLITZ_CRITIC_PROVIDER:-gemini}")
 fi
 
 for p in "${PROVIDERS[@]}"; do

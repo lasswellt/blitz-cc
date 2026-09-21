@@ -21,6 +21,10 @@ STUB
 }
 
 setup() {
+  # Hermetic: a panel or provider set globally (settings.json env) must not leak
+  # into cases that pin their own selection. Cases that test env selection set
+  # the variable inline.
+  unset BLITZ_CRITIC_PANEL BLITZ_CRITIC_PROVIDER BLITZ_DUAL_CRITIC BLITZ_USE_GEMINI_CRITIC
   STUB_DIR="$(mktemp -d)"
   make_stub agy BLITZ_TEST_AGY_REPLY
   make_stub copilot BLITZ_TEST_COPILOT_REPLY
@@ -144,6 +148,16 @@ run_critic_quiet() {
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.verdict == "LGTM"'
   [ -f "$STUB_DIR/copilot.argv" ]
+  [ ! -f "$STUB_DIR/agy.argv" ]
+}
+
+@test "an explicit --provider beats an ambient BLITZ_CRITIC_PANEL" {
+  # Regression: env-first resolution turned critic-gemini.sh and every one-off
+  # --provider run into the full panel once a panel was set in settings.json.
+  BLITZ_CRITIC_PANEL=agy,copilot BLITZ_TEST_COPILOT_REPLY="$LGTM" \
+    run_critic --provider copilot
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.verdict == "LGTM" and (has("providers") | not)'
   [ ! -f "$STUB_DIR/agy.argv" ]
 }
 
