@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for hooks/scripts/critic-external.sh — the provider-pluggable
-# Cross-Model Critic (gemini | agy | copilot) and its panel rule.
+# Cross-Model Critic (gemini | agy | copilot | codex) and its panel rule.
 # Requires: bats-core (https://github.com/bats-core/bats-core)
 
 load '_helpers'
@@ -28,8 +28,10 @@ setup() {
   STUB_DIR="$(mktemp -d)"
   make_stub agy BLITZ_TEST_AGY_REPLY
   make_stub copilot BLITZ_TEST_COPILOT_REPLY
+  make_stub codex BLITZ_TEST_CODEX_REPLY
   export BLITZ_AGY_BIN="$STUB_DIR/agy"
   export BLITZ_COPILOT_BIN="$STUB_DIR/copilot"
+  export BLITZ_CODEX_BIN="$STUB_DIR/codex"
   LGTM='{"verdict":"LGTM","summary":"ok","issues":[]}'
   REJECT='{"verdict":"REJECT","summary":"bad","issues":[{"severity":"blocker","where":"f.ts","what":"broken"}]}'
 }
@@ -75,6 +77,31 @@ run_critic_quiet() {
   [ "$status" -eq 0 ]
   ! grep -qx -- '--allow-all-tools' "$STUB_DIR/copilot.argv"
   grep -qx -- '--silent' "$STUB_DIR/copilot.argv"
+}
+
+@test "codex provider: REJECT exits 2" {
+  BLITZ_TEST_CODEX_REPLY="$REJECT" run_critic --provider codex
+  [ "$status" -eq 2 ]
+  echo "$output" | jq -e '.issues[0].what == "broken"'
+}
+
+@test "codex runs exec in a read-only sandbox with the prompt on stdin" {
+  # A critic reads and answers; it never gets write access to the repo under
+  # review. Prompt via stdin (`-`) keeps a large diff clear of the argv cap.
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run_critic --provider codex
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.verdict == "LGTM"'
+  [ "$(head -1 "$STUB_DIR/codex.argv")" = "exec" ]
+  grep -A1 -x -- '--sandbox' "$STUB_DIR/codex.argv" | grep -qx 'read-only'
+  [ "$(tail -1 "$STUB_DIR/codex.argv")" = "-" ]
+  ! grep -q -- 'dangerously' "$STUB_DIR/codex.argv"
+  ! grep -qx -- '--model' "$STUB_DIR/codex.argv"
+}
+
+@test "BLITZ_CODEX_MODEL is passed through when set" {
+  BLITZ_CODEX_MODEL=gpt-test BLITZ_TEST_CODEX_REPLY="$LGTM" run_critic --provider codex
+  [ "$status" -eq 0 ]
+  grep -A1 -x -- '--model' "$STUB_DIR/codex.argv" | grep -qx 'gpt-test'
 }
 
 @test "provider flags are newline-split, never space-split" {

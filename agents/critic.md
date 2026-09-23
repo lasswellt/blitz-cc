@@ -305,7 +305,7 @@ Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/age
 
 ## 8. Cross-model critic (CMC) — optional external providers
 
-Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-external.sh` lifts this agent's body verbatim, hands it to a non-Claude CLI, and emits the same reply contract. Providers: `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI).
+Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-external.sh` lifts this agent's body verbatim, hands it to a non-Claude CLI, and emits the same reply contract. Providers: `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI), `codex` (OpenAI Codex CLI).
 
 Selection at `check` Phase 4.3:
 
@@ -327,4 +327,4 @@ A panel is the strictest setting and the most expensive: one CLI call per provid
 | Semantic / judgment findings (§2.9, advisory set, survey Stage 2) | **`BLITZ_DUAL_CRITIC=1` recommended** | home-model blind spots bite hardest here; external/merged critic improves robustness (arxiv 2406.07188; 2604.19049 CMC) |
 | Pre-release audit gate (`ship`) | **`BLITZ_DUAL_CRITIC=1`** | recall context; cost of a false LGTM is highest |
 
-Each provider needs its own CLI installed and authenticated: `npm i -g @google/gemini-cli` for `gemini`, the Antigravity CLI for `agy`, the GitHub Copilot CLI for `copilot`. Per provider, `BLITZ_<P>_BIN` overrides the binary and `BLITZ_<P>_MODEL` the model — defaults `gemini-2.5-pro`, `gemini-3.1-pro-high`, `auto`. `BLITZ_<P>_FLAGS` appends flags, one per line: the value is never space-split, so a single env value cannot inject a second flag such as a system-prompt override that returns LGTM unconditionally.
+Each provider needs its own CLI installed and authenticated: `npm i -g @google/gemini-cli` for `gemini`, the Antigravity CLI for `agy`, the GitHub Copilot CLI for `copilot`, `npm i -g @openai/codex` for `codex`. Per provider, `BLITZ_<P>_BIN` overrides the binary and `BLITZ_<P>_MODEL` the model — defaults `gemini-2.5-pro`, `gemini-3.1-pro-high`, `auto`, and for `codex` the model in `~/.codex/config.toml`. `codex` runs `exec --sandbox read-only --ephemeral` with the prompt on stdin: it can read the repo and run `git`, never write. `BLITZ_<P>_FLAGS` appends flags, one per line: the value is never space-split, so a single env value cannot inject a second flag such as a system-prompt override that returns LGTM unconditionally.

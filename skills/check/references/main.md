@@ -456,7 +456,7 @@ Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at
 | `--fix` | Phase 3 auto-fix loop; arms `gate.json` (tsc + lint) while fixing |
 | `--comment` | post findings as inline PR comments through `mcp__github_inline_comment__create_inline_comment` when the tool is present; else print them |
 | `--mutation` | Stryker mutation run on changed files (off by default; recipe in `references/main.md` §Mutation testing) |
-| `--dual` | `export BLITZ_DUAL_CRITIC=1`: in-Claude critic and `hooks/scripts/critic-external.sh` both must LGTM. `BLITZ_CRITIC_PROVIDER=agy\|copilot\|gemini` picks the external family (default `gemini`; `BLITZ_USE_GEMINI_CRITIC=1` is the legacy alias) and replaces instead of pairs; `BLITZ_CRITIC_PANEL=agy,copilot` runs several and any REJECT blocks |
+| `--dual` | `export BLITZ_DUAL_CRITIC=1`: in-Claude critic and `hooks/scripts/critic-external.sh` both must LGTM. `BLITZ_CRITIC_PROVIDER=agy\|copilot\|codex\|gemini` picks the external family (default `gemini`; `BLITZ_USE_GEMINI_CRITIC=1` is the legacy alias) and replaces instead of pairs; `BLITZ_CRITIC_PANEL=agy,copilot` runs several and any REJECT blocks |
 | `--min-confidence high\|low` | advisory gate band; default `high` (≥0.8) for diff/plan, `low` for repo. Reject-authority rows bypass it |
 | `--baseline <metric>` | grandfather one ratchet metric on an existing project (`stale_worktree_branch_count`) |
 | `--force` | re-run plan scope over a fresh PASS (`check-report.md` at `HEAD`) |

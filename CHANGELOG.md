@@ -10,6 +10,16 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.9.0] — 2026-09-22 · codex joins the cross-model critic
+
+### Added
+- **`codex` critic provider.** `critic-external.sh --provider codex` (or `BLITZ_CRITIC_PROVIDER=codex`, or a panel member such as `BLITZ_CRITIC_PANEL=agy,codex`) hands the critic body to the OpenAI Codex CLI under the same JSON reply contract and exit codes. It runs `codex exec --sandbox read-only --ephemeral --skip-git-repo-check --color never -`: the prompt goes on stdin, so no argv cap applies; the sandbox lets the critic read the repo and run `git` but never write; `--ephemeral` keeps review sessions out of `~/.codex`. `BLITZ_CODEX_BIN`, `BLITZ_CODEX_MODEL` (unset uses the model in `~/.codex/config.toml`) and `BLITZ_CODEX_FLAGS` (newline-split) configure it.
+- Three bats cases: codex verdict mapping, its argv contract (`exec` first, `--sandbox read-only`, stdin `-` last, no `dangerously*` flag, no `--model` unless set), and `BLITZ_CODEX_MODEL` pass-through.
+
+### Notes
+- Verified live on codex-cli 0.156.0, not only stubs: `codex` rejected a `max()` whose comparison was reversed and exited 2.
+- Validators exit 0; `bats hooks/tests/` is 294/295. The one failure, `design-pillar.bats` "the installed impeccable CLI still honours the declared contract", fails identically on 3.8.1 in this environment and is unrelated to the critic.
+
 ## [3.8.1] — 2026-09-20 · impeccable's findings were scored as a broken detector
 
 ### Fixed

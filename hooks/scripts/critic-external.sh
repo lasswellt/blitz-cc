@@ -15,6 +15,7 @@
 #   gemini   — Google Gemini CLI       (prompt on stdin)
 #   agy      — Antigravity CLI         (prompt in argv; --add-dir fallback when large)
 #   copilot  — GitHub Copilot CLI      (prompt in argv; no tools granted)
+#   codex    — OpenAI Codex CLI        (prompt on stdin; read-only sandbox)
 #
 # Modes:
 #   pre-pass — check critic pre-pass (replaces or pairs with agents/critic.md)
@@ -24,8 +25,9 @@
 # Env:
 #   BLITZ_CRITIC_PROVIDER — default provider when --provider is absent (default: gemini)
 #   BLITZ_CRITIC_PANEL    — comma-separated providers; runs each and merges verdicts
-#   BLITZ_<P>_BIN         — override a provider binary (P = GEMINI | AGY | COPILOT)
-#   BLITZ_<P>_MODEL       — model id for that provider
+#   BLITZ_<P>_BIN         — override a provider binary (P = GEMINI | AGY | COPILOT | CODEX)
+#   BLITZ_<P>_MODEL       — model id for that provider (codex: unset uses the
+#                           model in ~/.codex/config.toml)
 #   BLITZ_<P>_FLAGS       — extra flags, one per line (never space-split: a single
 #                           value must not be able to inject a second flag such as
 #                           --system-prompt and force an unconditional LGTM)
@@ -59,7 +61,7 @@ PROVIDER=""
 USE_STDIN=0
 
 usage() {
-  sed -n '2,48p' "$0" | sed 's|^# \{0,1\}||'
+  sed -n '2,49p' "$0" | sed 's|^# \{0,1\}||'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -96,8 +98,8 @@ fi
 
 for p in "${PROVIDERS[@]}"; do
   case "$p" in
-    gemini|agy|copilot) ;;
-    *) echo "[$SCRIPT_NAME] unknown provider: $p (gemini | agy | copilot)" >&2; exit 1 ;;
+    gemini|agy|copilot|codex) ;;
+    *) echo "[$SCRIPT_NAME] unknown provider: $p (gemini | agy | copilot | codex)" >&2; exit 1 ;;
   esac
 done
 
@@ -233,6 +235,22 @@ invoke_provider() {  # invoke_provider <provider> — raw reply on stdout, diagn
       # CLI asks for approval it cannot get and stops, which is the safe end.
       "$bin" --prompt "$ARG_PROMPT" --model "$model" --silent --log-level none \
         ${PROVIDER_EXTRA[@]+"${PROVIDER_EXTRA[@]}"} ${PROVIDER_FLAGS[@]+"${PROVIDER_FLAGS[@]}"}
+      ;;
+    codex)
+      bin="${BLITZ_CODEX_BIN:-codex}"
+      model="${BLITZ_CODEX_MODEL:-}"
+      read_flags BLITZ_CODEX_FLAGS
+      command -v "$bin" >/dev/null 2>&1 || {
+        echo "[$SCRIPT_NAME] codex binary not found: $bin. Install via 'npm i -g @openai/codex' or set BLITZ_CODEX_BIN." >&2
+        return 1; }
+      PROVIDER_EXTRA=()
+      [ -n "$model" ] && PROVIDER_EXTRA=(--model "$model")
+      # Prompt on stdin (`-`), so no argv cap. --sandbox read-only: the critic may
+      # read the repo and run git, never write to it. --ephemeral keeps review
+      # sessions out of ~/.codex; exec prints only the final message on stdout.
+      printf '%s\n' "$FULL_PROMPT" | "$bin" exec --sandbox read-only --ephemeral \
+        --skip-git-repo-check --color never \
+        ${PROVIDER_EXTRA[@]+"${PROVIDER_EXTRA[@]}"} ${PROVIDER_FLAGS[@]+"${PROVIDER_FLAGS[@]}"} -
       ;;
   esac
 }
