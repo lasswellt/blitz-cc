@@ -10,6 +10,18 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.9.2] — 2026-09-22 · a panel REJECT says why
+
+### Fixed
+- **A pre-pass panel REJECT reached the gate with no reason attached.** The panel built each provider's `issues` from `.issues` only. `research-critic` and `design-critic` answer with `issues[]`, but `critic.md` — the pre-pass critic — answers with `findings[]`, so a panel REJECT in pre-pass mode merged to `issues: []` and its reasons survived only under `providers[].raw`. Each provider's reasons are now `issues[]` plus `findings[]`. Present since 3.7.0; the stubs all replied with `issues[]`, so the suite never saw it.
+
+### Added
+- A bats case: a panel member answering with `findings[]` has them in the merged `issues[]` and in its own `providers[]` entry.
+
+### Notes
+- Found by running the installed 3.9.1 live: a panel of agy and codex both rejected a diff that skipped a test, and the merged reply named no issue.
+- Re-verified live: `BLITZ_CRITIC_PANEL=agy,codex` on the same diff now merges both reasons into `issues[]` (exit 2). The new case fails against 3.9.1 and passes here. Validators exit 0; `bats hooks/tests/` is 303/303.
+
 ## [3.9.1] — 2026-09-22 · the external critic can find the plugin
 
 Found by running codex as the critic against a scratch repo end to end. All three bugs hit every external provider, not only codex.

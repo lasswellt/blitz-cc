@@ -355,7 +355,10 @@ if [ "${#PROVIDERS[@]}" -eq 1 ]; then
   esac
 fi
 
-# Panel: every provider runs, then any REJECT blocks. A provider that cannot
+# Panel: every provider runs, then any REJECT blocks. A provider's reasons are
+# its issues[] (research, design) plus findings[] (critic.md pre-pass), so a
+# pre-pass REJECT does not reach the merged reply with no reason attached.
+# A provider that cannot
 # answer is recorded and ignored — one broken CLI must not turn the gate green
 # on its own, nor block a release on its own.
 PANEL_JSON="$WORK/panel.json"
@@ -363,7 +366,7 @@ echo '{"providers":[],"errors":[]}' > "$PANEL_JSON"
 for provider in "${PROVIDERS[@]}"; do
   if run_one "$provider"; then
     jq --arg p "$provider" --slurpfile r "$WORK/$provider.json" \
-      '.providers += [{provider:$p, verdict:($r[0].verdict // "UNKNOWN"), summary:($r[0].summary // ""), issues:($r[0].issues // []), raw:$r[0]}]' \
+      '.providers += [{provider:$p, verdict:($r[0].verdict // "UNKNOWN"), summary:($r[0].summary // ""), issues:(($r[0].issues // []) + ($r[0].findings // [])), raw:$r[0]}]' \
       "$PANEL_JSON" > "$PANEL_JSON.tmp" && mv "$PANEL_JSON.tmp" "$PANEL_JSON"
   else
     jq --arg p "$provider" --arg e "$(tail -c 400 "$WORK/$provider.err" 2>/dev/null || echo 'invocation failed')" \

@@ -270,3 +270,14 @@ run_critic_quiet() {
     run_critic --provider codex
   [ "$status" -eq 1 ]
 }
+
+@test "panel: a pre-pass REJECT carries its findings[] into the merged issues" {
+  # Regression: critic.md answers with findings[], not issues[], and the panel
+  # merged only issues[] — a REJECT reached the gate with no reason attached.
+  BLITZ_TEST_CODEX_REPLY='{"verdict":"REJECT","summary":"bad","findings":[{"severity":"blocker","what":"det-13: test skipped"}]}' \
+    BLITZ_TEST_AGY_REPLY="$REJECT" run_critic --panel codex,agy
+  [ "$status" -eq 2 ]
+  echo "$output" | jq -e '.issues | length == 2'
+  echo "$output" | jq -e '[.issues[].what] | index("det-13: test skipped")'
+  echo "$output" | jq -e '.providers[] | select(.provider == "codex") | .issues | length == 1'
+}
