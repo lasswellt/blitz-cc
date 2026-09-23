@@ -305,7 +305,7 @@ Critics replace `verify`/`commit` with `verdict` and `findings[]` ([/_shared/age
 
 ## 8. Cross-model critic (CMC) — optional external providers
 
-Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-external.sh` lifts this agent's body verbatim, hands it to a non-Claude CLI, and emits the same reply contract. Providers: `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI), `codex` (OpenAI Codex CLI).
+Per arxiv 2604.19049, a critic from a different model family catches blindspots the home model has on its own work. `hooks/scripts/critic-external.sh` lifts this agent's body verbatim, hands it to a non-Claude CLI, and emits the same reply contract. In `pre-pass` mode it builds the `MODE: reject` / `PLAN` / `TASKS` / `BASE` header from `--plan`, `--tasks` and `--base` and inlines `git diff <base>`; every prompt is prefixed with `PLUGIN_ROOT` and where `/_shared/` and `scripts/tasks.sh` resolve, because an external CLI has no `CLAUDE_PLUGIN_ROOT`. Providers: `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI), `codex` (OpenAI Codex CLI).
 
 Selection at `check` Phase 4.3:
 

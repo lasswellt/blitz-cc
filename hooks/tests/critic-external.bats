@@ -13,7 +13,7 @@ make_stub() {  # make_stub <name> <reply-var-name>
   cat > "$STUB_DIR/$1" <<STUB
 #!/usr/bin/env bash
 printf '%s\n' "\$@" > "$STUB_DIR/$1.argv"
-cat >/dev/null 2>/dev/null || true
+cat > "$STUB_DIR/$1.stdin" 2>/dev/null || true
 printf 'Warning: True color (24-bit) support not detected.\n' >&2
 printf '%s\n' "\${$2}"
 STUB
@@ -194,4 +194,79 @@ run_critic_quiet() {
     run bash -c "printf 'review this' | bash '$HOOKS_DIR/critic-gemini.sh' --mode pre-pass --stdin"
   [ "$status" -eq 2 ]
   echo "$output" | jq -e '.verdict == "REJECT"'
+}
+
+@test "every prompt names the plugin paths the critic body cites" {
+  # Regression: without them an external critic stopped BLOCKED
+  # dependency-missing, or cited registry ids it could not look up.
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run_critic --provider codex
+  [ "$status" -eq 0 ]
+  grep -q "^PLUGIN_ROOT: " "$STUB_DIR/codex.stdin"
+  grep -q "skills/_shared/" "$STUB_DIR/codex.stdin"
+  grep -q "scripts/tasks.sh" "$STUB_DIR/codex.stdin"
+  # argv providers get it too
+  BLITZ_TEST_AGY_REPLY="$LGTM" run_critic --provider agy
+  grep -q "^PLUGIN_ROOT: " "$STUB_DIR/agy.argv"
+}
+
+@test "default pre-pass prompt carries the MODE header, plan fields and the diff" {
+  # Regression: the body alone made critic.md answer NEEDS_CONTEXT, no verdict.
+  repo="$(mktemp -d)"
+  git -C "$repo" init -q
+  git -C "$repo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m base
+  base="$(git -C "$repo" rev-parse HEAD)"
+  echo 'export const answer = 41;' > "$repo/a.ts"
+  git -C "$repo" add a.ts
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run bash -c "cd '$repo' && bash '$SCRIPT' --mode pre-pass --provider codex --plan user-profiles --tasks T-001,T-002 --base $base </dev/null"
+  rm -rf "$repo"
+  [ "$status" -eq 0 ]
+  grep -qx "MODE: reject" "$STUB_DIR/codex.stdin"
+  grep -qx "PLAN: user-profiles" "$STUB_DIR/codex.stdin"
+  grep -qx "TASKS: T-001,T-002" "$STUB_DIR/codex.stdin"
+  grep -qx "BASE: $base" "$STUB_DIR/codex.stdin"
+  grep -q "answer = 41" "$STUB_DIR/codex.stdin"
+}
+
+@test "default pre-pass prompt falls back to PLAN: none and HEAD~1" {
+  repo="$(mktemp -d)"
+  git -C "$repo" init -q
+  git -C "$repo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m one
+  git -C "$repo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m two
+  prev="$(git -C "$repo" rev-parse HEAD~1)"
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run bash -c "cd '$repo' && bash '$SCRIPT' --mode pre-pass --provider codex </dev/null"
+  rm -rf "$repo"
+  [ "$status" -eq 0 ]
+  grep -qx "PLAN: none" "$STUB_DIR/codex.stdin"
+  grep -qx "BASE: $prev" "$STUB_DIR/codex.stdin"
+}
+
+@test "default pre-pass prompt without a resolvable base fails closed" {
+  repo="$(mktemp -d)"
+  git -C "$repo" init -q
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run bash -c "cd '$repo' && bash '$SCRIPT' --mode pre-pass --provider codex </dev/null"
+  rm -rf "$repo"
+  [ "$status" -eq 1 ]
+  echo "$output" | grep -q -- '--base required'
+  [ ! -f "$STUB_DIR/codex.argv" ]
+}
+
+@test "research UNVERIFIED blocks (exit 2), it is not a failure" {
+  # Regression: UNVERIFIED was unmapped, so the gate read it as exit 1.
+  BLITZ_TEST_CODEX_REPLY='{"verdict":"UNVERIFIED","summary":"2 of 3 inaccessible","issues":[]}' \
+    run bash -c "printf 'doc' | bash '$SCRIPT' --mode research --provider codex --stdin"
+  [ "$status" -eq 2 ]
+}
+
+@test "panel: an UNVERIFIED member blocks" {
+  BLITZ_TEST_CODEX_REPLY='{"verdict":"UNVERIFIED","summary":"x","issues":[]}' \
+    BLITZ_TEST_AGY_REPLY='{"verdict":"PASS","summary":"ok","issues":[]}' \
+    run bash -c "printf 'doc' | bash '$SCRIPT' --mode research --panel codex,agy --stdin"
+  [ "$status" -eq 2 ]
+  echo "$output" | jq -e '.summary | contains("codex")'
+}
+
+@test "a NEEDS_CONTEXT reply with no verdict fails closed" {
+  BLITZ_TEST_CODEX_REPLY='{"status":"NEEDS_CONTEXT","summary":"MODE missing","verdict":null}' \
+    run_critic --provider codex
+  [ "$status" -eq 1 ]
 }

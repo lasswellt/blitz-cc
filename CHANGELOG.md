@@ -10,6 +10,28 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.9.1] — 2026-09-22 · the external critic can find the plugin
+
+Found by running codex as the critic against a scratch repo end to end. All three bugs hit every external provider, not only codex.
+
+### Fixed
+- **The external critic could not find the plugin.** The critic bodies cite `scripts/tasks.sh` and `/_shared/check-registry.json`, which live in the plugin, not the repo under review, and an external CLI has no `CLAUDE_PLUGIN_ROOT`. Codex answered a clean diff with `BLOCKED` / `dependency-missing` (verdict REJECT), and on a buggy one cited `det-02` (`no-verify-bypass`) for a skipped test instead of `det-13`. Every prompt, `--stdin` included, now opens with `PLUGIN_ROOT` and where `/_shared/` and `scripts/tasks.sh` resolve.
+- **The default pre-pass prompt could never produce a verdict.** Without `--stdin` or `--prompt-file`, `--mode pre-pass` sent the critic body alone; `critic.md` requires a `MODE:` header and answers `NEEDS_CONTEXT` with no verdict, so the gate exited 1 on every run. The default prompt now carries `MODE: reject`, `PLAN`, `TASKS` and `BASE` (new `--plan`, `--tasks`, `--base`; defaults `none`, `none`, the merge-base with `origin/HEAD` else `HEAD~1`) and inlines `git diff <base>`. With no resolvable base it refuses before calling any CLI.
+- **Research `UNVERIFIED` was read as a tool failure.** `research-critic`'s verdicts are `PASS | UNVERIFIED | CITATIONS_MISSING`, and `UNVERIFIED` blocks cleanup, but the exit mapping lacked it: exit 1 "unrecognized verdict" instead of 2. Mapped in the single-provider and panel paths.
+- `critic-gemini.sh`'s header listed three providers.
+- **`design-pillar.bats` failed on a runnable-looking but broken impeccable.** The installed-CLI contract case gated on `command -v impeccable`, which a version-manager shim satisfies even when it cannot start (mise with no global node: exit 1, `No version is set for shim`), so the case read a broken shim as impeccable changing its exit codes. It now also requires `impeccable --version` to run, and skips otherwise. The contract itself still holds on 2.3.2: exit 2 on a finding, 0 on a clean file, verified against the real binary.
+
+### Changed
+- `check` (SKILL and reference) and `critic.md` §8 give the exact pre-pass invocation.
+- `--help` prints the whole header comment instead of a fixed line range that went stale with every edit.
+
+### Added
+- Seven bats cases: plugin paths on stdin and argv providers, the default pre-pass header and diff, the `PLAN: none` / `HEAD~1` fallback, a missing base failing closed, `UNVERIFIED` single and in a panel, and a verdict-less `NEEDS_CONTEXT` reply failing closed. Stubs now record stdin.
+
+### Notes
+- Re-verified live with codex-cli 0.156.0 through the default path, with no hand-built prompt: `--mode pre-pass --base <sha>` gave LGTM on a clean diff (exit 0) and REJECT citing `det-13` on a diff that skipped a test (exit 2); `--mode research` gave UNVERIFIED (exit 2).
+- Validators exit 0; `bats hooks/tests/` is 302/302 when impeccable is runnable, and 301 plus 1 skip on a machine where its shim is not.
+
 ## [3.9.0] — 2026-09-22 · codex joins the cross-model critic
 
 ### Added

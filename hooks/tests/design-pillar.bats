@@ -337,6 +337,10 @@ select_design() {  # $1 = primary
   # Guards the pin: if a future impeccable changes its exit codes, this fails
   # instead of the design lane silently misreading every run.
   command -v impeccable >/dev/null || skip "impeccable not installed"
+  # On PATH is not the same as runnable: a version-manager shim (mise, asdf)
+  # with no version selected exits 1 before impeccable starts, which would
+  # read here as a contract break.
+  impeccable --version >/dev/null 2>&1 || skip "impeccable on PATH but does not run (unresolved shim?)"
   printf '<style>.c{border-radius:8px;border-left:4px solid #6366f1}</style><div class="c">x</div>\n' > finding.html
   printf '<p>plain</p>\n' > clean.html
   run impeccable detect --json finding.html

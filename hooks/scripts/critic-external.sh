@@ -9,6 +9,8 @@
 # Usage:
 #   critic-external.sh --mode <pre-pass|research|design> [--provider NAME]
 #                      [--panel a,b] [--prompt-file PATH] [--target PATH] [--stdin]
+#                      [--plan SLUG] [--tasks IDS] [--base SHA]
+#   critic-external.sh --mode pre-pass --plan user-profiles --tasks T-001,T-002 --base <sha>
 #   echo "<prompt>" | critic-external.sh --mode pre-pass --provider agy --stdin
 #
 # Providers:
@@ -18,7 +20,12 @@
 #   codex    — OpenAI Codex CLI        (prompt on stdin; read-only sandbox)
 #
 # Modes:
-#   pre-pass — check critic pre-pass (replaces or pairs with agents/critic.md)
+#   pre-pass — check critic pre-pass (replaces or pairs with agents/critic.md).
+#              With no --stdin/--prompt-file the prompt is built here: the
+#              MODE: reject / PLAN / TASKS / BASE header critic.md requires,
+#              the agent body, and `git diff BASE` of the working tree.
+#              --plan and --tasks default to none; --base defaults to the
+#              merge-base with origin/HEAD, else HEAD~1.
 #   research — research-skill Phase 3.2.5 (pairs with agents/research-critic.md)
 #   design   — ui-build Phase 5.4.2 (vision; requires a multimodal provider)
 #
@@ -44,9 +51,16 @@
 #
 # Exit:
 #   0   — verdict LGTM | PASS (panel: at least one verdict, none rejecting)
-#   2   — verdict REJECT | CITATIONS_MISSING | REWORK | ITERATE (panel: any of these)
+#   2   — verdict REJECT | CITATIONS_MISSING | UNVERIFIED | REWORK | ITERATE
+#         (panel: any of these)
 #   1   — invocation failure (binary missing, malformed reply, parse error;
-#         panel: no provider produced a valid verdict)
+#         panel: no provider produced a valid verdict; also a NEEDS_CONTEXT or
+#         BLOCKED reply that carries no verdict)
+#
+# Every prompt is prefixed with the plugin's paths: the critic bodies cite
+# scripts/tasks.sh and /_shared/check-registry.json, which live in the plugin,
+# not in the repo under review. Without them the external critic stops with
+# BLOCKED dependency-missing, or cites rule ids it could not look up.
 
 set -euo pipefail
 SCRIPT_NAME="$(basename "$0")"
@@ -59,9 +73,12 @@ TARGET_PATH=""
 PANEL=""
 PROVIDER=""
 USE_STDIN=0
+PLAN=""
+TASKS=""
+BASE=""
 
 usage() {
-  sed -n '2,49p' "$0" | sed 's|^# \{0,1\}||'
+  awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"
 }
 
 while [ "$#" -gt 0 ]; do
@@ -72,6 +89,9 @@ while [ "$#" -gt 0 ]; do
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     --target)      TARGET_PATH="$2"; shift 2 ;;
     --stdin)       USE_STDIN=1; shift ;;
+    --plan)        PLAN="$2"; shift 2 ;;
+    --tasks)       TASKS="$2"; shift 2 ;;
+    --base)        BASE="$2"; shift 2 ;;
     --help|-h)     usage; exit 0 ;;
     *) echo "[$SCRIPT_NAME] unknown arg: $1" >&2; exit 1 ;;
   esac
@@ -123,7 +143,43 @@ else
   esac
   [ ! -f "$AGENT_FILE" ] && { echo "[$SCRIPT_NAME] agent file missing: $AGENT_FILE" >&2; exit 1; }
   PROMPT_BODY="$(awk '/^---$/{c++; next} c>=2{print}' "$AGENT_FILE")"
+  # critic.md answers NEEDS_CONTEXT without its header, so the default
+  # pre-pass prompt carries the header and the diff the in-Claude critic gets.
+  if [ "$MODE" = "pre-pass" ]; then
+    if [ -z "$BASE" ]; then
+      BASE="$(git merge-base HEAD origin/HEAD 2>/dev/null || git rev-parse --verify -q HEAD~1 2>/dev/null || true)"
+    fi
+    [ -z "$BASE" ] && { echo "[$SCRIPT_NAME] --base required: no origin/HEAD merge-base or HEAD~1 here" >&2; exit 1; }
+    PATCH="$(git --no-pager diff "$BASE" 2>/dev/null)" || {
+      echo "[$SCRIPT_NAME] git diff $BASE failed — run from the repo under review" >&2; exit 1; }
+    PROMPT_BODY="MODE: reject
+PLAN: ${PLAN:-none}
+TASKS: ${TASKS:-none}
+BASE: ${BASE}
+
+${PROMPT_BODY}
+
+---
+
+## check.patch (git diff ${BASE})
+
+\`\`\`diff
+${PATCH}
+\`\`\`"
+  fi
 fi
+
+# Plugin paths the agent bodies cite. Prepended on every path, --stdin
+# included: a caller that pipes the critic body in has the same gap.
+PLUGIN_PATHS="PLUGIN_ROOT: ${BLITZ_ROOT}
+Path resolution for this review: \`/_shared/\` is ${BLITZ_ROOT}/skills/_shared/ ;
+\`scripts/tasks.sh\` is ${BLITZ_ROOT}/scripts/tasks.sh ; plan files
+(\`docs/plans/\`, \`docs/sweeps/ratchet.json\`) are relative to the current
+working directory, the repo under review. A missing ratchet baseline means the
+first run: skip ratchet comparisons rather than blocking.
+
+"
+PROMPT_BODY="${PLUGIN_PATHS}${PROMPT_BODY}"
 
 CTX=""
 if [ -n "$TARGET_PATH" ]; then
@@ -291,7 +347,7 @@ if [ "${#PROVIDERS[@]}" -eq 1 ]; then
   case "$VERDICT" in
     LGTM|PASS)
       exit 0 ;;
-    REJECT|CITATIONS_MISSING|REWORK|ITERATE)
+    REJECT|CITATIONS_MISSING|UNVERIFIED|REWORK|ITERATE)
       exit 2 ;;
     *)
       echo "[$SCRIPT_NAME] unrecognized verdict: '$VERDICT' — treating as failure" >&2
@@ -317,7 +373,7 @@ for provider in "${PROVIDERS[@]}"; do
 done
 
 jq '
-  (.providers | map(select(.verdict as $v | ["REJECT","CITATIONS_MISSING","REWORK","ITERATE"] | index($v)))) as $rejecting
+  (.providers | map(select(.verdict as $v | ["REJECT","CITATIONS_MISSING","UNVERIFIED","REWORK","ITERATE"] | index($v)))) as $rejecting
   | {
       verdict: (if ($rejecting | length) > 0 then "REJECT"
                 elif (.providers | length) > 0 then "LGTM"
@@ -334,7 +390,7 @@ jq '
     }' "$PANEL_JSON"
 
 ANSWERED="$(jq -r '.providers | length' "$PANEL_JSON")"
-REJECTED="$(jq -r '[.providers[] | select(.verdict == "REJECT" or .verdict == "CITATIONS_MISSING" or .verdict == "REWORK" or .verdict == "ITERATE")] | length' "$PANEL_JSON")"
+REJECTED="$(jq -r '[.providers[] | select(.verdict == "REJECT" or .verdict == "CITATIONS_MISSING" or .verdict == "UNVERIFIED" or .verdict == "REWORK" or .verdict == "ITERATE")] | length' "$PANEL_JSON")"
 
 if [ "$ANSWERED" -eq 0 ]; then
   echo "[$SCRIPT_NAME] no provider produced a valid verdict" >&2
