@@ -10,6 +10,17 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.9.4] — 2026-09-24 · next-state survives a large plan
+
+### Fixed
+- **`/blitz:next` crashed on a large plan.** `scripts/next-state.sh` passed plan state to jq as one argument (`--argjson`), once per plan and again as the whole array. Linux caps a single argument at 128 KiB (`MAX_ARG_STRLEN`), so a `tasks.json` over that size made jq fail with `Argument list too long` and the Observe step returned nothing. Plan rows now collect in the shell and reach the final jq through stdin. Output shape is unchanged.
+
+### Added
+- A bats case with a `tasks.json` over 128 KiB; it fails on 3.9.3 and passes here.
+
+### Notes
+- Seen in a consumer repo alongside a 312-item inbox, which looked like the cause but was not: the inbox is read from its file and only its count goes to jq. Validators exit 0; `bats hooks/tests/` is 306/306.
+
 ## [3.9.3] — 2026-09-23 · agy can answer headless
 
 ### Fixed

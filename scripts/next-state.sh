@@ -53,8 +53,9 @@ if [ "$USE_AGENT_VIEW" -eq 1 ] && command -v claude >/dev/null 2>&1 && declare -
 fi
 case "$inbox_pending$sessions_waiting" in *[!0-9]*) inbox_pending=0; sessions_waiting=0;; esac
 
-# Scan plans
-plans_json='[]'
+# Scan plans. Rows travel over stdin, never argv: one plan's tasks.json can exceed
+# the 128 KiB per-argument limit (MAX_ARG_STRLEN) and jq then fails with E2BIG.
+plans_rows=''
 if [ -d "$PLANS_DIR" ]; then
   for d in "$PLANS_DIR"/*/; do
     [ -d "$d" ] || continue
@@ -79,12 +80,13 @@ if [ -d "$PLANS_DIR" ]; then
        open_ready:([.tasks[] | select(.status=="open")] as $open | (.tasks | map(select(.status=="done") | .id)) as $done
                    | [$open[] | select(all(.depends_on[]?; . as $x | $done | index($x) != null))] | map({id,title,role,files,verify,attempts})),
        all_done:((.tasks | length) > 0 and all(.tasks[]; .status=="done"))}' "$d/tasks.json" 2>/dev/null) || continue
-    plans_json=$(printf '%s' "$plans_json" | jq -c --argjson r "$row" '. + [$r]')
+    plans_rows+="$row"$'\n'
   done
 fi
 
-jq -nc --argjson plans "$plans_json" --argjson inbox "$inbox_pending" --argjson waiting "$sessions_waiting" --argjson kill "$kill_switch" '
-  ($plans | map(select(.status=="active")) | sort_by(.priority, .created, .slug)) as $active
+printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson waiting "$sessions_waiting" --argjson kill "$kill_switch" '
+  . as $plans
+  | ($plans | map(select(.status=="active")) | sort_by(.priority, .created, .slug)) as $active
   | ([$active[] | .blocked[] as $b | {plan:.slug, id:$b.id, reason:$b.reason}]) as $blocked
   | ([$blocked[] | select(.reason | IN("hard_spec","oracle-underivable","test-assertion-suspect"))]) as $escalate
   | ([$active[] | select((.in_progress | length) > 0 or (.open_ready | length) > 0)] | .[0]) as $work

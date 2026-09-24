@@ -73,3 +73,15 @@ spec() { mkdir -p "$BLITZ_PLANS_DIR/$1"; printf -- '---\nstatus: %s\npriority: %
   ns; [ "$(printf '%s' "$output" | jq -r .row)" = "5" ]
   [ "$(printf '%s' "$output" | jq -r '.plan_priority')" = "null" ]
 }
+
+@test "plans larger than one argv string (128 KiB) still produce state" {
+  spec big active
+  bash "$TASKS" add big --id T-001 --title "a" --verify-cmd "true" >/dev/null
+  head -c 200000 /dev/zero | tr '\0' x > "$BATS_TEST_TMPDIR/pad"
+  jq --rawfile pad "$BATS_TEST_TMPDIR/pad" '.tasks[0].notes = $pad' "$BLITZ_PLANS_DIR/big/tasks.json" > "$BATS_TEST_TMPDIR/tasks.json"
+  mv "$BATS_TEST_TMPDIR/tasks.json" "$BLITZ_PLANS_DIR/big/tasks.json"
+  [ "$(stat -c %s "$BLITZ_PLANS_DIR/big/tasks.json")" -gt 131072 ]
+  ns; [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r .row)" = "2" ]
+  [ "$(printf '%s' "$output" | jq -r .next_task.id)" = "T-001" ]
+}
