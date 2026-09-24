@@ -71,6 +71,25 @@ run_critic_quiet() {
   grep -qx -- '--disable-slash-commands' "$STUB_DIR/agy.argv"
 }
 
+@test "agy gets the repo and the plugin root as workspace dirs" {
+  # agy runs commands in its own scratch workspace; without --add-dir the
+  # critic's git calls fail with "not a git repository".
+  BLITZ_TEST_AGY_REPLY="$LGTM" run_critic --provider agy
+  [ "$status" -eq 0 ]
+  grep -A1 -x -- '--add-dir' "$STUB_DIR/agy.argv" | grep -qx "$(pwd)"
+  grep -A1 -x -- '--add-dir' "$STUB_DIR/agy.argv" | grep -qx "$(cd "$HOOKS_DIR/../.." && pwd)"
+}
+
+@test "agy is told its command limits and never skips permissions" {
+  BLITZ_TEST_AGY_REPLY="$LGTM" run_critic --provider agy
+  [ "$status" -eq 0 ]
+  grep -q '^AGY TOOL LIMITS' "$STUB_DIR/agy.argv"
+  ! grep -q -- 'dangerously' "$STUB_DIR/agy.argv"
+  # The note is agy's alone.
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run_critic --provider codex
+  ! grep -q 'AGY TOOL LIMITS' "$STUB_DIR/codex.stdin"
+}
+
 @test "copilot is never granted tools" {
   # --allow-all-tools would let a critic act on the repo it is reviewing.
   BLITZ_TEST_COPILOT_REPLY="$LGTM" run_critic --provider copilot

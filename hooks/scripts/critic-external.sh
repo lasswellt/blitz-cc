@@ -273,7 +273,26 @@ invoke_provider() {  # invoke_provider <provider> — raw reply on stdout, diagn
       command -v "$bin" >/dev/null 2>&1 || {
         echo "[$SCRIPT_NAME] agy binary not found: $bin. Install the Antigravity CLI or set BLITZ_AGY_BIN." >&2
         return 1; }
+      # Headless agy cannot ask for approval: one command outside the user's
+      # permissions.allow list is auto-denied and the whole run ends with no
+      # reply. Its --sandbox blocks neither writes nor network, so the answer
+      # is a narrow allow-list, not --dangerously-skip-permissions — and a
+      # critic that knows the limit, instead of one that writes a script and
+      # dies. Local to this subshell; other providers keep the plain prompt.
+      FULL_PROMPT="AGY TOOL LIMITS: your command tool runs only single read-only
+commands the user allow-listed (git diff/log/show/status/blame/rev-parse/
+merge-base/ls-files, cat, head, tail, grep, rg, jq, ls, wc). Anything else — a
+script, a heredoc, a pipe, &&, tasks.sh, a verify[] command — is auto-denied and
+ends your run with no verdict. Do not run task verify[] checks or registry
+scripts; judge them from the inlined diff and the files you can read, and say
+so in your summary.
+
+${FULL_PROMPT}"
       prompt_or_pointer
+      # agy runs every command in its own scratch workspace, not the caller's
+      # cwd: without these the critic's `git diff` answers "not a git
+      # repository" and it cannot open tasks.sh or check-registry.json.
+      PROVIDER_EXTRA+=(--add-dir "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" --add-dir "$BLITZ_ROOT")
       # --disable-slash-commands: the diff under review is untrusted text, and a
       # line starting with / would otherwise expand as a slash command.
       "$bin" --print "$ARG_PROMPT" --model "$model" --output-format text \

@@ -10,6 +10,19 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.9.3] — 2026-09-23 · agy can answer headless
+
+### Fixed
+- **agy never produced a verdict.** Three problems stacked up. (1) agy runs every command in its own scratch workspace, not the caller's cwd, so the critic's `git diff` got "not a git repository" and it could not open `tasks.sh` or `check-registry.json`. agy is now given the repo top level and the plugin root with `--add-dir`. (2) Headless agy cannot ask for approval: one command outside the user's `permissions.allow` is auto-denied and the whole run ends with no output. (3) Even with read-only allow-rules, the critic body led agy to write a multi-line script for a registry check, which no prefix rule can match. agy's prompt now opens with its tool limits: single allow-listed read-only commands, no scripts, pipes, `&&`, `tasks.sh` or `verify[]` commands, and task checks judged from the inlined diff. Other providers keep the plain prompt.
+
+### Added
+- Two bats cases: agy gets the repo and the plugin root as `--add-dir`; agy is told its limits, is never passed `--dangerously-skip-permissions`, and codex's prompt carries no agy note.
+
+### Notes
+- **agy needs read-only allow-rules** in `~/.gemini/antigravity-cli/settings.json`, e.g. `"permissions": {"allow": ["command(git diff)", "command(git log)", "command(git show)", "command(cat)", "command(grep)", "command(rg)", "command(jq)", …]}`. Leave out `find` (`-delete`, `-exec`).
+- **Not `--dangerously-skip-permissions`.** A probe with agy's `--sandbox` wrote to the repo and `$HOME` and reached the network, so skipping permissions would hand a model reading untrusted diff text write access. codex keeps running `verify[]` inside its read-only sandbox.
+- Re-verified live in a consumer repo: `--panel agy,codex` returns a verdict from both providers with `errors: []`. Before, agy failed every run with "a tool required the command permission that headless mode cannot prompt for". Validators exit 0; `bats hooks/tests/` is 305/305.
+
 ## [3.9.2] — 2026-09-22 · a panel REJECT says why
 
 ### Fixed
