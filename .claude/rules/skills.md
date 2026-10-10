@@ -12,7 +12,7 @@ Enforced by `hooks/scripts/skill-frontmatter-validate.sh` and `hooks/scripts/age
 
 - Required: `name` (lowercase, digits, hyphens, ≤64), third-person `description` ≤300 chars, triggers first (the platform truncates `description` + `when_to_use` at 1,536 chars per skill, and every listed skill costs context each turn; cumulative budget 8 000 across all skills); `name` equals the directory name, `compatibility: ">=X.Y.Z"`, `allowed-tools` when invokable.
 - `model: inherit` on every model-invokable skill. Pinning a model or `effort` forces a switch on invocation and resets the prompt cache; only skills with `disable-model-invocation: true` may pin. State the recommendation in the body line that starts `> **Session:**`.
-- Body ≤500 lines; overflow goes to `references/main.md`.
+- Body ≤500 lines and ≤15,000 bytes; overflow goes to `references/main.md`. After compaction Claude Code re-attaches the first 5,000 tokens of each invoked skill from a combined 25,000-token pool filled most-recent-first, so a long session that chains more than five large skills drops the oldest entirely: keep each body's closing phases (gate, verdict, report) inside the cap, and prefer a fresh session per `next --loop` tick.
 - Output style is enforced by `output-styles/terse-technical.md` (force-for-plugin). Skills do not repeat an OUTPUT STYLE snippet.
 - Skills that need stack detection include the one-line injection `!`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`` under a `## Project Context` heading.
 - `allowed-tools` never lists `TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet`, or `TodoWrite`: those tools are off on current models. Work is tracked in `docs/plans/<slug>/tasks.json`.

@@ -117,6 +117,7 @@ Degrade to **WARN-only text** (print the conflict line, no message, no `LOOP_DEF
 ├── sessions/<sid>/tmp/         fallback SESSION_TMP_DIR when scratchpad_dir is absent
 ├── activity-feed.jsonl         loop and skill events (reference §9)
 ├── inbox.jsonl                 attention queue (reference §4)
+├── loop-ticks.jsonl            next --loop tick ledger for the loop circuit breaker (loop.reference.md)
 ├── mailbox/<sid>.jsonl         hook/script → session, drained by stop-turn.sh (reference §5)
 ├── HANDOFF.json                PreCompact snapshot, surfaced ≤24 h (reference §7)
 ├── quarantine/                 lines startup-validate.sh refused to load

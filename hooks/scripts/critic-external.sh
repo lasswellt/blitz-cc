@@ -45,14 +45,24 @@
 # Output:
 #   One provider  — that provider's canonical JSON, exactly as the in-Claude
 #                   critic agent would emit it (verdict + issues + summary).
-#   Panel         — {verdict, rule, providers[], issues[], errors[], summary}.
-#                   Rule: any REJECT blocks. A provider that fails to answer is
-#                   recorded in errors[] and does not block on its own.
+#   Panel         — {verdict, rule, providers[], issues[], errors[], summary, redacted}.
+#                   A provider that fails to answer is recorded in errors[] and
+#                   does not decide the verdict on its own.
+#   pre-pass REJECTs are claims, not vetoes: cross-model reviewers run at ~30%
+#   precision (arXiv 2610.01471), so a REJECT exits 3 and check hands the issues
+#   to the in-Claude critic as EXTERNAL_CLAIMS to reproduce (agents/critic.md
+#   §2.8c). BLITZ_CRITIC_EXTERNAL_VETO=1 restores "any REJECT blocks" (exit 2).
+#
+# Secrets: the prompt (diff, target file) is scanned before it leaves the
+# machine. Lines carrying a known credential shape, and every added line of a
+# .env / key / credentials file hunk, are replaced with [REDACTED by blitz];
+# the reply's `redacted` field counts them. BLITZ_CRITIC_NO_REDACT=1 skips it.
 #
 # Exit:
 #   0   — verdict LGTM | PASS (panel: at least one verdict, none rejecting)
-#   2   — verdict REJECT | CITATIONS_MISSING | UNVERIFIED | REWORK | ITERATE
-#         (panel: any of these)
+#   2   — verdict CITATIONS_MISSING | UNVERIFIED | REWORK | ITERATE (research,
+#         design), or REJECT under BLITZ_CRITIC_EXTERNAL_VETO=1
+#   3   — pre-pass REJECT awaiting confirmation by the in-Claude critic
 #   1   — invocation failure (binary missing, malformed reply, parse error;
 #         panel: no provider produced a valid verdict; also a NEEDS_CONTEXT or
 #         BLOCKED reply that carries no verdict)
@@ -226,6 +236,30 @@ character must be `}`. If you cannot satisfy this, return:
 
 FULL_PROMPT="${PROMPT_BODY}${CTX}${JSON_DIRECTIVE}"
 
+# ------------------------------------------------------------ secret redaction
+# The diff goes to another vendor's cloud. Redact credential-shaped lines and the
+# added lines of secret-file hunks before any provider sees it. awk, not sed -E:
+# one pass, portable to BSD awk, and the count comes out of the same pass.
+SECRET_RX='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|glpat-[A-Za-z0-9_-]{20,}|sk-(proj-|ant-)?[A-Za-z0-9_-]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn])[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9/+_.-]{12,}'
+REDACTED=0
+if [ "${BLITZ_CRITIC_NO_REDACT:-0}" != "1" ]; then
+  printf '%s\n' "$FULL_PROMPT" > "$WORK/prompt.raw"
+  awk -v rx="$SECRET_RX" -v cnt="$WORK/redacted.count" '
+    /^diff --git / { secretfile = ($0 ~ /\/(\.env[^ ]*|[^ ]*\.(pem|key|p12|pfx|keystore)|id_(rsa|ed25519|ecdsa)[^ ]*|credentials[^ ]*|\.npmrc|\.pypirc|\.netrc)( |$)/) }
+    {
+      if ((secretfile && $0 ~ /^\+[^+]/) || $0 ~ rx) { print "[REDACTED by blitz]"; n++; next }
+      print
+    }
+    END { print n+0 > cnt }' "$WORK/prompt.raw" > "$WORK/prompt.redacted"
+  REDACTED="$(cat "$WORK/redacted.count" 2>/dev/null || echo 0)"
+  FULL_PROMPT="$(cat "$WORK/prompt.redacted")"
+  [ "$REDACTED" -gt 0 ] && echo "[$SCRIPT_NAME] redacted $REDACTED secret-shaped line(s) before sending the prompt" >&2
+fi
+
+# pre-pass REJECT exit code: 3 (claim to confirm) unless the operator opted into a veto.
+REJECT_EXIT=2
+[ "$MODE" = "pre-pass" ] && [ "${BLITZ_CRITIC_EXTERNAL_VETO:-0}" != "1" ] && REJECT_EXIT=3
+
 # ------------------------------------------------------------------ providers
 # Read a provider's extra flags as a newline-delimited list (one flag per line).
 # Space-splitting would let a single env value inject a second flag — e.g. a
@@ -361,12 +395,15 @@ run_one() {  # run_one <provider> — writes cleaned JSON to $WORK/<provider>.js
 if [ "${#PROVIDERS[@]}" -eq 1 ]; then
   provider="${PROVIDERS[0]}"
   run_one "$provider" || exit 1
-  cat "$WORK/$provider.json"
   VERDICT="$(jq -r '.verdict // empty' "$WORK/$provider.json")"
+  jq --argjson n "$REDACTED" --argjson x "$REJECT_EXIT" \
+    '. + {redacted: $n} + (if .verdict == "REJECT" and $x == 3 then {confirmed: false} else {} end)' "$WORK/$provider.json"
   case "$VERDICT" in
     LGTM|PASS)
       exit 0 ;;
-    REJECT|CITATIONS_MISSING|UNVERIFIED|REWORK|ITERATE)
+    REJECT)
+      exit "$REJECT_EXIT" ;;
+    CITATIONS_MISSING|UNVERIFIED|REWORK|ITERATE)
       exit 2 ;;
     *)
       echo "[$SCRIPT_NAME] unrecognized verdict: '$VERDICT' — treating as failure" >&2
@@ -374,7 +411,7 @@ if [ "${#PROVIDERS[@]}" -eq 1 ]; then
   esac
 fi
 
-# Panel: every provider runs, then any REJECT blocks. A provider's reasons are
+# Panel: every provider runs, then any REJECT counts (pre-pass: as a claim, exit 3). A provider's reasons are
 # its issues[] (research, design) plus findings[] (critic.md pre-pass), so a
 # pre-pass REJECT does not reach the merged reply with no reason attached.
 # A provider that cannot
@@ -394,13 +431,15 @@ for provider in "${PROVIDERS[@]}"; do
   fi
 done
 
-jq '
+jq --argjson n "$REDACTED" --argjson x "$REJECT_EXIT" '
   (.providers | map(select(.verdict as $v | ["REJECT","CITATIONS_MISSING","UNVERIFIED","REWORK","ITERATE"] | index($v)))) as $rejecting
   | {
       verdict: (if ($rejecting | length) > 0 then "REJECT"
                 elif (.providers | length) > 0 then "LGTM"
                 else "UNKNOWN" end),
-      rule: "any-reject-blocks",
+      rule: (if $x == 3 then "reject-needs-confirmation" else "any-reject-blocks" end),
+      confirmed: (if ($rejecting | length) > 0 and $x == 3 then false else null end),
+      redacted: $n,
       summary: (if ($rejecting | length) > 0
                 then (($rejecting | map(.provider) | join(", ")) + " rejected")
                 elif (.providers | length) > 0
@@ -418,5 +457,9 @@ if [ "$ANSWERED" -eq 0 ]; then
   echo "[$SCRIPT_NAME] no provider produced a valid verdict" >&2
   exit 1
 fi
-[ "$REJECTED" -gt 0 ] && exit 2
+if [ "$REJECTED" -gt 0 ]; then
+  # Research/design verdicts (CITATIONS_MISSING …) still block outright.
+  [ "$MODE" = "pre-pass" ] && exit "$REJECT_EXIT"
+  exit 2
+fi
 exit 0

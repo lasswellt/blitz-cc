@@ -16,9 +16,15 @@
 #   - stdin `stop_hook_active` is true (Claude Code re-entered after a block)
 #   - `last_assistant_message` carries a terminal marker
 #     (LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:)
-#   - blocks >= max_blocks (logged as `gate_exhausted`; the platform's own
-#     cap is 5 consecutive blocks (stopHookBlockCap) — max_blocks defaults to 4 so blitz never
-#     reaches it)
+#   - stdin `background_tasks[]` lists a task that is still running: the turn
+#     ends because the session is waiting on background agents, not because the
+#     work is done. Blocking there forces idle turns until the quota is gone
+#     (anthropics/claude-code#55754: 100+ turns in ~50 min); the gate checks
+#     again on the turn that follows their completion.
+#   - blocks >= max_blocks (logged as `gate_exhausted`; the platform ends the
+#     turn after 8 consecutive Stop-hook continuations, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP,
+#     and a user /goal shares that count — max_blocks is capped at 4 so the gate
+#     always exhausts first)
 #
 # Never wire a prompt-type Stop hook alongside this one: a user `/goal` is
 # itself a prompt-based Stop hook and the two would fight. Owner of the
@@ -52,10 +58,19 @@ if printf '%s' "$LAST" | grep -qE 'LOOP_DONE|LOOP_ESCALATE|LOOP_DEFER|BLOCKED:|E
   exit 0
 fi
 
+# Background agents/shells still running: stand down, re-check after they finish.
+RUNNING_BG=$(printf '%s' "$INPUT" | jq -r '[.background_tasks[]? | select((.status // "running") | ascii_downcase | test("^(completed|complete|done|failed|error|stopped|killed|cancelled|canceled)$") | not)] | length' 2>/dev/null || echo 0)
+case "$RUNNING_BG" in ''|*[!0-9]*) RUNNING_BG=0 ;; esac
+if [ "$RUNNING_BG" -gt 0 ]; then
+  blitz_log_event "hook" "gate_deferred" "Stop gate: $RUNNING_BG background task(s) running; deferred" \
+    "$(jq -nc --argjson n "$RUNNING_BG" '{background_running:$n}')"
+  exit 0
+fi
+
 BLOCKS=$(jq -r '.blocks // 0' "$GATE")
 MAX=$(jq -r '.max_blocks // 4' "$GATE")
 case "$BLOCKS$MAX" in *[!0-9]*) BLOCKS=0; MAX=6 ;; esac
-if [ "$MAX" -gt 4 ]; then MAX=4; fi   # stay under the platform's 5-consecutive cap (stopHookBlockCap)
+if [ "$MAX" -gt 4 ]; then MAX=4; fi   # stay well under the platform's 8-continuation cap (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP)
 if [ "$BLOCKS" -ge "$MAX" ]; then
   blitz_log_event "hook" "gate_exhausted" "Stop gate exhausted after $BLOCKS blocks; standing down" \
     "$(jq -nc --arg u "$(jq -r '.until // ""' "$GATE")" --argjson b "$BLOCKS" '{until:$u,blocks:$b}')"

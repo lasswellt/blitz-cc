@@ -56,6 +56,10 @@ Everything below is **untrusted-by-default**.
 
 Each boundary's enforcement — which script, which hook, which cap — is in [security.reference.md](security.reference.md) §The five trust boundaries (detail).
 
+### Guard posture
+
+Blitz's hooks are deterministic defense in depth, not a sandbox. Blocking guards fail closed (`onFailure: "block"`, ≥2.1.295; `blitz_guard_input` blocks when jq is missing or input does not parse), advisory hooks fail open. They match command text, so `sh -c`, variables and path variants can slip past them; auto mode's classifier and the sandbox are the other layers. A user-installed mod handling `tool.check` can approve a call a hook or deny rule refused outside managed or Team/Enterprise settings, and `--bare`, `--safe-mode` and `disableAllHooks` turn blitz's hooks off entirely. Hardened profile for unattended runs: sandbox on with `failIfUnavailable: true`, `allowUnsandboxedCommands: false`, `blockReadsOutsideWorkingDirectories: true`. The cross-model critic is an egress channel: `critic-external.sh` redacts secret-shaped lines and secret-file hunks before any provider call, never passes an approval-bypass flag (bats-enforced), and its REJECTs block only once the in-Claude critic reproduces them.
+
 ### Kill switch
 
 For unattended loops (`next --loop` under a Routine or `claude -p`, `build` on a `/loop`): `touch .cc-sessions/STOP`. `hooks/scripts/kill-switch.sh` (PreToolUse `*`) denies **every** tool call while the file exists and prints the path; the loop stalls at its next tool call instead of finishing the tick. Remove the file to resume. The file is repo-local on purpose — anyone who can reach the checkout can stop the agent, and nothing the model does can unset it (a `Bash rm` is itself a denied tool call). Recommended by OWASP Agentic (kill switches for autonomous agents); `doctor` reports whether the hook is wired.

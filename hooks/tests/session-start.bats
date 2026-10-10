@@ -124,3 +124,32 @@ teardown() { teardown_fake_repo; }
   printf '%s' "$output" | grep -q "never edit:  docs/plans/\*/tasks.json"
   printf '%s' "$output" | grep -q "never mock src/"
 }
+
+version_shim() {  # version_shim <version> — claude --version prints it, everything else agent-view JSON
+  cat > "$FAKE_REPO/bin/claude" <<SH
+#!/usr/bin/env bash
+[ "\$1" = "--version" ] && { echo "$1 (Claude Code)"; exit 0; }
+printf '%s' "\${FAKE_AGENTS_JSON:-[]}"
+SH
+  chmod +x "$FAKE_REPO/bin/claude"
+}
+
+@test "Claude Code below compat.json cc_min: one-line warning" {
+  version_shim 2.1.200
+  run_hook "session-start.sh" '{"session_id":"v1","source":"startup"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"older than blitz's floor"* ]]
+}
+
+@test "Claude Code at or above cc_min: no version warning" {
+  version_shim 9.9.999
+  run_hook "session-start.sh" '{"session_id":"v2","source":"startup"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"older than blitz's floor"* ]]
+}
+
+@test "agent teams flag: notice that blitz keeps dev agents as subagents" {
+  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 run_hook "session-start.sh" '{"session_id":"t1","source":"startup"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"agent teams are on"* ]]
+}

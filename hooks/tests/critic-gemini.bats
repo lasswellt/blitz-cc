@@ -43,9 +43,9 @@ run_critic() {
   echo "$output" | jq -e '.verdict == "LGTM"'
 }
 
-@test "REJECT reply exits 2 with clean JSON" {
+@test "pre-pass REJECT reply exits 3 with clean JSON" {
   run_critic '{"verdict":"REJECT","summary":"bad","issues":[{"severity":"blocker","where":"x","what":"broken"}]}'
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.verdict == "REJECT"'
 }
 
@@ -53,7 +53,7 @@ run_critic() {
   # The issue's suggested brace-counting backstop would truncate this reply at
   # the in-string `}`. The line-based guard must keep it intact.
   run_critic '{"verdict":"REJECT","summary":"s","issues":[{"severity":"blocker","where":"f.ts","what":"unbalanced } brace in user code"}]}'
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.issues[0].what == "unbalanced } brace in user code"'
 }
 

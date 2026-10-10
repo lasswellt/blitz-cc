@@ -10,8 +10,15 @@
 #     "in_progress": [id...], "blocked": [{plan,id,reason}], "escalate": [{plan,id,reason}],
 #     "paused_plans": [slug...], "done_plans_unarchived": [slug...],
 #     "check_stale": bool, "check_result": "PASS|CONDITIONAL|FAIL|none",
-#     "inbox_pending": N, "sessions_waiting": N, "kill_switch": bool
+#     "inbox_pending": N, "sessions_waiting": N, "kill_switch": bool,
+#     "loop_breaker": {open, reason, no_progress, same_error}
 #   }
+#
+# Loop circuit breaker (row 1): reads .cc-sessions/loop-ticks.jsonl, one line per
+# `next --loop` tick ({row, plan, task, progress, error}), written by next Phase 4.
+# Opens after BLITZ_LOOP_NO_PROGRESS_MAX (3) trailing build/check ticks with no
+# progress, or BLITZ_LOOP_SAME_ERROR_MAX (5) trailing ticks with the same error.
+# A line {"reset": true} (a human ruled) discards every earlier tick.
 #
 # Usage: next-state.sh [--plans-dir DIR] [--sessions-dir DIR] [--no-agent-view]
 set -uo pipefail
@@ -53,6 +60,29 @@ if [ "$USE_AGENT_VIEW" -eq 1 ] && command -v claude >/dev/null 2>&1 && declare -
 fi
 case "$inbox_pending$sessions_waiting" in *[!0-9]*) inbox_pending=0; sessions_waiting=0;; esac
 
+NP_MAX="${BLITZ_LOOP_NO_PROGRESS_MAX:-3}"; SE_MAX="${BLITZ_LOOP_SAME_ERROR_MAX:-5}"
+case "$NP_MAX$SE_MAX" in *[!0-9]*) NP_MAX=3; SE_MAX=5;; esac
+loop_breaker='{"open":false,"reason":null,"no_progress":0,"same_error":0}'
+if [ -f "$SESSIONS_DIR/loop-ticks.jsonl" ]; then
+  loop_breaker=$(jq -Rsc --argjson np "$NP_MAX" --argjson se "$SE_MAX" '
+    [split("\n")[] | select(length > 0) | (try fromjson catch null) | select(type == "object")] as $all
+    | ($all | map(.reset == true) | rindex(true)) as $r
+    | (if $r == null then $all else $all[($r + 1):] end) as $ticks
+    | [$ticks[] | select(.row == 2 or .row == 3)] as $work
+    | ($work | reverse) as $rev
+    | (($rev | map(.progress == true) | index(true)) // ($rev | length)) as $no_progress
+    | ($rev[0].error // null) as $last_err
+    | (if $last_err == null or $last_err == "" then 0
+       else (($rev | map(.error == $last_err) | index(false)) // ($rev | length)) end) as $same_error
+    | {no_progress: $no_progress, same_error: $same_error,
+       open: ($no_progress >= $np or $same_error >= $se),
+       reason: (def safe: tostring | gsub("[^A-Za-z0-9_.:/ -]"; "") | .[0:120];   # ledger is repo state (TB-1)
+                if $no_progress >= $np then "\($no_progress) build/check ticks in a row made no progress (last: \($rev[0].plan // "?" | safe)/\($rev[0].task // "plan" | safe))"
+                elif $same_error >= $se then "same error \($same_error) ticks in a row: \($last_err | safe)"
+                else null end)}' "$SESSIONS_DIR/loop-ticks.jsonl" 2>/dev/null) \
+    || loop_breaker='{"open":false,"reason":null,"no_progress":0,"same_error":0}'
+fi
+
 # Scan plans. Rows travel over stdin, never argv: one plan's tasks.json can exceed
 # the 128 KiB per-argument limit (MAX_ARG_STRLEN) and jq then fails with E2BIG.
 plans_rows=''
@@ -84,7 +114,7 @@ if [ -d "$PLANS_DIR" ]; then
   done
 fi
 
-printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson waiting "$sessions_waiting" --argjson kill "$kill_switch" '
+printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson waiting "$sessions_waiting" --argjson kill "$kill_switch" --argjson breaker "$loop_breaker" '
   . as $plans
   | ($plans | map(select(.status=="active")) | sort_by(.priority, .created, .slug)) as $active
   | ([$active[] | .blocked[] as $b | {plan:.slug, id:$b.id, reason:$b.reason}]) as $blocked
@@ -96,11 +126,12 @@ printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson wa
       kill_switch: $kill, inbox_pending: $inbox, sessions_waiting: $waiting,
       paused_plans: [$plans[] | select(.status=="paused") | .slug],
       done_plans_unarchived: [$plans[] | select(.status=="done") | .slug],
-      blocked: $blocked, escalate: $escalate
+      blocked: $blocked, escalate: $escalate, loop_breaker: $breaker
     }
   | if $kill then . + {plan_priority:null, row:0, reason:"kill switch .cc-sessions/STOP present", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
     elif ($inbox > 0 or $waiting > 0) then . + {plan_priority:null, row:0, reason:"inbox pending or a session is waiting for input", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
     elif ($escalate | length) > 0 then . + {plan_priority:null, row:1, reason:"blocked task needs a human: \($escalate[0].plan)/\($escalate[0].id) (\($escalate[0].reason))", active_plan:$escalate[0].plan, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
+    elif $breaker.open then . + {plan_priority:null, row:1, reason:"loop circuit breaker: \($breaker.reason)", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
     elif $work != null then . + {row:2, reason:"open work in \($work.slug)", active_plan:$work.slug, plan_priority:$work.priority,
           next_task:(if ($work.in_progress | length) > 0 then ($work.tasks[] | select(.id == $work.in_progress[0]) | {id,title,role,files,verify,attempts}) else $work.open_ready[0] end),
           in_progress:$work.in_progress, check_stale:$work.check_stale, check_result:$work.check_result}

@@ -56,9 +56,9 @@ run_critic_quiet() {
   echo "$output" | jq -e '.verdict == "LGTM"'
 }
 
-@test "agy provider: REJECT exits 2" {
+@test "agy provider: pre-pass REJECT exits 3 (claim to confirm)" {
   BLITZ_TEST_AGY_REPLY="$REJECT" run_critic --provider agy
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.issues[0].what == "broken"'
 }
 
@@ -98,9 +98,9 @@ run_critic_quiet() {
   grep -qx -- '--silent' "$STUB_DIR/copilot.argv"
 }
 
-@test "codex provider: REJECT exits 2" {
+@test "codex provider: pre-pass REJECT exits 3 (claim to confirm)" {
   BLITZ_TEST_CODEX_REPLY="$REJECT" run_critic --provider codex
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.issues[0].what == "broken"'
 }
 
@@ -148,12 +148,12 @@ run_critic_quiet() {
   grep -q 'critic-prompt.md' "$STUB_DIR/agy.argv"
 }
 
-@test "panel: any REJECT blocks, and the merged JSON names the rejecter" {
+@test "panel: any REJECT needs confirmation, and the merged JSON names the rejecter" {
   BLITZ_TEST_AGY_REPLY="$LGTM" BLITZ_TEST_COPILOT_REPLY="$REJECT" \
     run_critic --panel agy,copilot
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.verdict == "REJECT"'
-  echo "$output" | jq -e '.rule == "any-reject-blocks"'
+  echo "$output" | jq -e '.rule == "reject-needs-confirmation"'
   echo "$output" | jq -e '.providers | length == 2'
   echo "$output" | jq -e '.summary | contains("copilot")'
   echo "$output" | jq -e '.issues[0].what == "broken"'
@@ -185,7 +185,7 @@ run_critic_quiet() {
 @test "BLITZ_CRITIC_PANEL selects the panel without a flag" {
   BLITZ_CRITIC_PANEL=agy,copilot BLITZ_TEST_AGY_REPLY="$REJECT" \
     BLITZ_TEST_COPILOT_REPLY="$LGTM" run_critic
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.providers | length == 2'
 }
 
@@ -211,7 +211,7 @@ run_critic_quiet() {
   make_stub gemini BLITZ_TEST_GEMINI_REPLY
   BLITZ_GEMINI_BIN="$STUB_DIR/gemini" BLITZ_TEST_GEMINI_REPLY="$REJECT" \
     run bash -c "printf 'review this' | bash '$HOOKS_DIR/critic-gemini.sh' --mode pre-pass --stdin"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.verdict == "REJECT"'
 }
 
@@ -295,8 +295,55 @@ run_critic_quiet() {
   # merged only issues[] — a REJECT reached the gate with no reason attached.
   BLITZ_TEST_CODEX_REPLY='{"verdict":"REJECT","summary":"bad","findings":[{"severity":"blocker","what":"det-13: test skipped"}]}' \
     BLITZ_TEST_AGY_REPLY="$REJECT" run_critic --panel codex,agy
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 3 ]
   echo "$output" | jq -e '.issues | length == 2'
   echo "$output" | jq -e '[.issues[].what] | index("det-13: test skipped")'
   echo "$output" | jq -e '.providers[] | select(.provider == "codex") | .issues | length == 1'
+}
+
+@test "BLITZ_CRITIC_EXTERNAL_VETO=1 restores any-REJECT-blocks (exit 2)" {
+  BLITZ_CRITIC_EXTERNAL_VETO=1 BLITZ_TEST_AGY_REPLY="$REJECT" run_critic_quiet --provider agy
+  [ "$status" -eq 2 ]
+  BLITZ_CRITIC_EXTERNAL_VETO=1 BLITZ_TEST_AGY_REPLY="$LGTM" BLITZ_TEST_COPILOT_REPLY="$REJECT" \
+    run_critic_quiet --panel agy,copilot
+  [ "$status" -eq 2 ]
+  echo "$output" | jq -e '.rule == "any-reject-blocks"'
+}
+
+@test "pre-pass REJECT reply is marked unconfirmed for the in-Claude critic" {
+  BLITZ_TEST_AGY_REPLY="$LGTM" BLITZ_TEST_COPILOT_REPLY="$REJECT" run_critic_quiet --panel agy,copilot
+  [ "$status" -eq 3 ]
+  echo "$output" | jq -e '.rule == "reject-needs-confirmation" and .confirmed == false and (.issues | length) == 1'
+}
+
+@test "research-mode verdicts still block outright (exit 2)" {
+  BLITZ_TEST_AGY_REPLY='{"verdict":"CITATIONS_MISSING","summary":"dead","issues":[]}' \
+    run bash -c "printf 'review this' | bash '$SCRIPT' --mode research --stdin --provider agy 2>/dev/null"
+  [ "$status" -eq 2 ]
+}
+
+@test "secrets are redacted before the prompt reaches a provider" {
+  local body
+  body=$'diff --git a/src/app.ts b/src/app.ts\n+const k = "AKIAABCDEFGHIJKLMNOP";\n+const ok = 1;\ndiff --git a/.env b/.env\n+DATABASE_URL=postgres://u:p@h/db\n+FEATURE=on\n+api_key = "abcdefghijklmnop1234"'
+  BLITZ_TEST_CODEX_REPLY="$LGTM" run bash -c "printf '%s' \"\$1\" | bash '$SCRIPT' --mode pre-pass --stdin --provider codex 2>/dev/null" _ "$body"
+  [ "$status" -eq 0 ]
+  ! grep -q 'AKIAABCDEFGHIJKLMNOP' "$STUB_DIR/codex.stdin"
+  ! grep -q 'postgres://u:p@h/db' "$STUB_DIR/codex.stdin"
+  ! grep -q 'FEATURE=on' "$STUB_DIR/codex.stdin"
+  ! grep -q 'abcdefghijklmnop1234' "$STUB_DIR/codex.stdin"
+  grep -q 'const ok = 1;' "$STUB_DIR/codex.stdin"
+  grep -q 'REDACTED by blitz' "$STUB_DIR/codex.stdin"
+  echo "$output" | jq -e '.redacted == 4'
+}
+
+@test "BLITZ_CRITIC_NO_REDACT=1 sends the prompt unchanged" {
+  BLITZ_CRITIC_NO_REDACT=1 BLITZ_TEST_CODEX_REPLY="$LGTM" \
+    run bash -c "printf '+k=AKIAABCDEFGHIJKLMNOP' | bash '$SCRIPT' --mode pre-pass --stdin --provider codex 2>/dev/null"
+  [ "$status" -eq 0 ]
+  grep -q 'AKIAABCDEFGHIJKLMNOP' "$STUB_DIR/codex.stdin"
+}
+
+@test "no provider is ever invoked with an approval-bypass flag" {
+  ! grep -nE -- '--(yolo|dangerously[-a-z]*|yes-always|allow-all-tools|full-auto)' "$SCRIPT" \
+    | grep -vE '^[0-9]+:[[:space:]]*#'
 }

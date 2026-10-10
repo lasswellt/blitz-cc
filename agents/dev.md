@@ -172,7 +172,7 @@ Tier-1 auto-fixes commit separately as `fix(<slug>/<role>): <what> — during T-
 
 ## Reply contract
 
-Stop conditions: reply when `verify[]` passes; reply `BLOCKED` on any `ESCALATE:`; stop before starting a new file when ≤3 tool calls remain and reply `BLOCKED` with `blocked_reason: circuit-breaker` listing what landed.
+Stop conditions: reply when a `verify[]` run made after your last edit passes; reply `BLOCKED` on any `ESCALATE:`; stop before starting a new file when ≤3 tool calls remain and reply `BLOCKED` with `blocked_reason: circuit-breaker` listing what landed.
 
 End your output with exactly one status line, then the JSON block:
 

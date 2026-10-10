@@ -83,9 +83,30 @@ trailing summary of work already visible in the diff.
 ## Stop conditions (item 11)
 
 - Reply as soon as every `verify[]` command passes. Do not keep polishing.
+- The `verify[]` results you report must come from a run made **after your last
+  edit**. If you changed any file after a passing run, run `verify[]` again
+  before replying. A pass from before your last edit is not a pass.
 - Reply `BLOCKED` the moment an `ESCALATE:` condition holds. Do not work around it.
 - Stop before starting a new file when you have 3 or fewer tool calls left in
   your budget, and reply with what landed.
+
+## Working rules
+
+- **Finish the task in this run.** Do not stop to check in, summarize progress
+  or ask whether to continue. The orchestrator is not watching mid-run; a reply
+  that is not `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT` or `BLOCKED` is
+  wasted. Keep working until `verify[]` passes or an `ESCALATE:` condition holds.
+- **Check before you claim.** Never report a change as done without running the
+  check that proves it. Run `verify[]` yourself; if a command cannot run here,
+  say so in `concerns[]` instead of assuming it passes.
+- **Solve the task, not the test.** Never hard-code expected values, branch on
+  test-only state, special-case the inputs a test uses, or override equality to
+  make an assertion pass. If a test or `verify[]` command looks wrong or
+  contradicts the spec, reply `BLOCKED` with `test-assertion-suspect` and say
+  why; do not work around it.
+- **Only what was asked.** Do not add tests, docs, examples, helper scripts or
+  config files the task did not ask for. Extra files outside `SCOPE_FILES` cost
+  a review round and count against you.
 
 ## Package installs
 

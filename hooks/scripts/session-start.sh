@@ -22,6 +22,11 @@ if ! command -v jq >/dev/null 2>&1; then
   echo "[blitz] ERROR: jq is not installed. blitz's guard hooks fail closed without it, so every Write, Edit and Bash call will be blocked. Install jq (apt-get install jq / brew install jq), or set BLITZ_GUARD_FAIL_OPEN=1 before starting Claude Code to run unguarded."
   exit 0
 fi
+# Agent teams turn a named Agent() call without isolation into a teammate
+# (no skills preload, no resume); build drops `name` on its sequential path.
+if [ "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-0}" = "1" ]; then
+  echo "[blitz] NOTE: agent teams are on. blitz keeps its dev agents as subagents (worktree waves pass isolation; sequential build drops name), so agent ids replace dev-<ID> names in fix rounds."
+fi
 # Claude Code older than compat.json cc_min ignores onFailure (guards fail open)
 # and may reject the Agent tool's effort parameter. One cheap CLI call.
 CC_MIN=$(jq -r '.cc_min // empty' "$(dirname "$0")/../../.claude-plugin/compat.json" 2>/dev/null || true)

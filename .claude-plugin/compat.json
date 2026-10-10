@@ -9,7 +9,7 @@
     "cross_session_messaging": "2.1.224",
     "notify_when_idle": "2.1.236",
     "goal_checkins": "2.1.234",
-    "skill_doctor": "2.1.252",
+    "skill_doctor": "2.1.261",
     "plugin_eval": "2.1.269",
     "workflow_max_concurrent_agents": "2.1.269",
     "monitor_deadline_only": "2.1.271",

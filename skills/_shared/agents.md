@@ -17,7 +17,7 @@ Platform facts cite code.claude.com and the Claude Code changelog at 2.1.296 (Oc
 |---|---|---|---|---|
 | `blitz:dev` | sonnet · medium; opus · high on fix rounds 4–5 | Read, Write, Edit, Bash, Glob, Grep, ToolSearch | Implements one task from `tasks.json` | Role passed in the prompt as `ROLE: backend\|frontend\|infra\|test`, with `skills/build/references/<role>.md` inlined below it. `experimental.cacheTtl: 1h`. |
 | `blitz:test-writer` | sonnet · medium | Read, Write, Edit, Bash, Glob, Grep | Writes or fixes tests for one task | Verification-first oracle ([agents.reference.md](agents.reference.md) §3.6); `ESCALATE: oracle-underivable` maps to `blocked_reason`. Anti-mock guidance from [quality.md](/_shared/quality.md). `experimental.cacheTtl: 1h`. |
-| `blitz:critic` | `--mode reject`: opus · high; `--mode survey`: sonnet · medium | Read, Grep, Glob, Bash (read subset) | Fresh-context evaluator | No Write/Edit. `omitClaudeMd: true`, `memory: project`. Runs `tasks[].verify[]` through `scripts/tasks.sh verify`. Reject must emit `LGTM` before `check` reports PASS. Prompted to flag only correctness and requirement gaps; style findings are parked. |
+| `blitz:critic` | `--mode reject`: opus · high (medium on small green diffs); `--mode survey`: sonnet · medium | Read, Grep, Glob, Bash (read subset) | Fresh-context evaluator | No Write/Edit. `omitClaudeMd: true`, `memory: project`. Runs `tasks[].verify[]` through `scripts/tasks.sh verify`. Reject must emit `LGTM` before `check` reports PASS. Prompted to flag only correctness and requirement gaps; style findings are parked. |
 | `blitz:research-critic` | sonnet · medium | Read, Grep, Glob, Bash, WebFetch | Refutes research claims against sources | The only blitz agent with WebFetch. Every reply is `source_trust: untrusted`. |
 | `blitz:design-critic` | sonnet · medium | Read, Grep, Glob, Bash, Playwright MCP | Evaluates rendered UI against `design-criteria.md` | Browser via Playwright MCP only; no source edits. |
 
@@ -53,7 +53,7 @@ Sonnet 5.5 is half the price of Opus 5.5 on input and output and half again on c
 | Deterministic check-lane collection (`det-*`, `check:*`) | haiku | low | Running a registry row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement. Keep the semantic lane and the verdict on the session model. |
 | Retrieval research (`library-docs`, `web-researcher`, `infra-analyst`), gap-fill | haiku | medium | Multi-step search. Anthropic documents Haiku 5.5 at `low` skipping searches and stopping early in long agent prompts; `medium` roughly halves early stopping. Put today's date in the prompt and keep it under 100K tokens (the price steps up 5×). |
 | Build (`dev`), test-writer, `critic --mode survey`, research-critic, design-critic, `codebase-analyst` | sonnet | medium | Sufficient for implementation and survey-grade review |
-| `critic --mode reject`, fix rounds 4–5 | opus | high | Adversarial verdict and stuck-loop recovery need depth |
+| `critic --mode reject`, fix rounds 4–5 | opus | high; reject critic `medium` on a diff ≤200 lines with every deterministic gate green and no risky path (`check` references §Critic effort) | Adversarial verdict and stuck-loop recovery need depth. Escalate a stuck Sonnet to Opus rather than raising Sonnet to `xhigh`/`max`: Sonnet 5.5 at max used ~60% more output tokens than Opus 5.5 and cost more per task |
 | Main thread running `build` / `check` / `next --loop` | operator's choice (`claude --model opus --effort high` recommended; `--model sonnet` for cost-bound loops) | — | Heavy reasoning is delegated; the main thread routes |
 
 Effort is set per spawn: agent frontmatter `effort:`, the Agent tool's `effort` parameter (≥2.1.292), or `agent(..., {effort})` in a Workflow script. A spawn that omits it inherits the session effort, so an `--effort high` main thread would run every haiku collector at high. Fix rounds 4–5 pass `model: "opus", effort: "high"` together.
@@ -70,7 +70,7 @@ Cost controls that apply to every spawn:
 
 ### 1.4 What subagents never receive
 
-Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, the Task tools, or `TodoWrite`; `agent-frontmatter-validate.sh` rejects an agent file that lists one. Subagents cannot spawn subagents: every fan-out originates on the main thread. Subagents do not inherit skills; one needed on every run goes in `skills:` frontmatter ([agents.reference.md](agents.reference.md) §3).
+Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, the Task tools, or `TodoWrite`; `agent-frontmatter-validate.sh` rejects an agent file that lists one. The platform lets subagents spawn subagents up to three layers below the main conversation; blitz does not: no blitz agent lists `Agent`, so every fan-out originates on the main thread, which owns state and the §4.4 gate. An operator who wants the platform to enforce that for every agent sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`. Subagents do not inherit skills; one needed on every run goes in `skills:` frontmatter ([agents.reference.md](agents.reference.md) §3).
 
 ### 1.5 Visibility: background agents, workflows, teams
 
@@ -84,12 +84,15 @@ Blitz fan-outs run where the operator can watch them in Claude Code's own views 
 | Monitor rows (≥2.1.284) | What each event printed | `build --parallel` greps the wave log for `DONE`/`BLOCKED`/`NEEDS_CONTEXT` lines that start with the task id, so each row reads `T-004 DONE`. |
 | Phase one-liner | One status line per boundary in the transcript and the agents-view preview | Orchestrators print `<skill> <phase> N/M · k/n done` at each boundary (`build wave 2/3 · 3/4 done`). |
 
-**Agent teams (opt-in).** With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` every session has one implicit team (≥2.1.178): an `Agent()` call with `name` spawns a teammate, which shows in the agents panel and `ListAgents`, takes `SendMessage` mid-run, and returns its final answer in the idle notification. Blitz uses teammates only where a mid-run message is worth the cost:
+**Names are for resume and visibility, not teams.** `SendMessage(to: "<name>")` resumes a completed named subagent in the background with its context intact, and it does not need agent teams. `build` names every `dev` `dev-<ID>` so fix rounds 1–3 and `NEEDS_CONTEXT` answers go back to the same agent.
 
-- `build --parallel` names each `dev` `dev-<ID>` so a `NEEDS_CONTEXT` reply is answered with `SendMessage(to: "dev-<ID>")` and the same agent resumes.
-- `research` and `audit` may name their investigators for visibility; the reply contract and §4.4 gate are unchanged.
+**Agent teams (opt-in, and a trap for named spawns).** With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` an `Agent()` call that passes `name` launches a *teammate* instead of a subagent, unless it is a fork or passes `isolation`. A teammate does not get the agent definition's `skills` preload and an in-process teammate cannot be resumed. So:
 
-Teams are off by default and blitz never turns them on: the platform puts a team at several times the tokens of one session, and sequential single-agent stays the default (§2 rule 4). Without the flag, the `description` label carries the row.
+- `build --parallel` passes `isolation: "worktree"` with `name`, which keeps every wave `dev` a subagent whether or not teams are on.
+- Every other named spawn (sequential `build`, fix rounds) checks the flag: when it is `1`, omit `name` and address the agent by the agent id the `Agent()` result returns. `session-start.sh` prints a one-line notice when the flag is set.
+- `research`, `audit`, `check` and `doc-gen` do not pass `name`; their `description` label carries the row.
+
+Teams stay off by default and blitz never turns them on: the platform puts a team at about 7× the tokens of one session in plan mode and recommends subagents for sequential, dependency-heavy work like a task DAG (§2 rule 4).
 
 ---
 

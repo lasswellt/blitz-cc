@@ -10,6 +10,34 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.11.0] — 2026-10-10 · guarantees that no longer fail silently
+
+Implements the P0 and P1 recommendations of [docs/research/2026-10-10_agentic-loop-alignment](docs/research/2026-10-10_agentic-loop-alignment/README.md) (eight research notes, 253 sources).
+
+### Changed (breaking)
+- **Floor is Claude Code 2.1.296** (was 2.1.271). 3.10.0 already passed the Agent tool's `effort` parameter (2.1.292) on every spawn, and this release relies on `onFailure: "block"` (2.1.295). `session-start.sh` warns when the running Claude Code is older; `doctor` D-110 reports it.
+- **Blocking guards fail closed.** Every blocking PreToolUse guard (`kill-switch`, `tasks-guard`, `pre-edit-guard`, `block-test-deletion`, `block-test-disabling`, `block-as-any-insertion`, `block-no-verify`, `block-destructive-git`, `block-destructive-sql`) is wired with `onFailure: "block"`, so a crash or timeout blocks the call instead of letting it through. Each guard calls the new `blitz_guard_input`, which exits 2 when jq is missing or the payload is not JSON; before, `block-destructive-sql.sh` and its siblings allowed everything when jq was absent. `BLITZ_GUARD_FAIL_OPEN=1` in the launch environment restores the old behaviour. Advisory hooks stay fail-open. `session-start.sh` prints a loud error when jq is missing.
+- **External critic REJECTs are claims, not vetoes.** `critic-external.sh --mode pre-pass` exits 3 on a REJECT (single provider or panel); `check` hands the issues to the in-Claude reject critic as `EXTERNAL_CLAIMS:` and only reproduced claims block. Cross-model reviewers measured about 28.6% precision. `BLITZ_CRITIC_EXTERNAL_VETO=1` restores exit 2. Research and design modes are unchanged.
+
+### Added
+- **Secret redaction before the external critic.** Credential-shaped lines (AWS, GitHub, GitLab, OpenAI/Anthropic-style keys, Slack, Google API keys, JWTs, private keys, `password=`/`token=` assignments) and every added line of a `.env`/key/credentials file hunk are replaced with `[REDACTED by blitz]` before any provider call; the reply carries `redacted`. `BLITZ_CRITIC_NO_REDACT=1` skips it. A bats case fails if an approval-bypass flag (`--yolo`, `--dangerously-*`, `--yes-always`, `--allow-all-tools`, `--full-auto`) ever appears.
+- **Loop circuit breaker.** `next --loop` appends a line per tick to `.cc-sessions/loop-ticks.jsonl`; `next-state.sh` opens the breaker (row 1, `LOOP_ESCALATE`) after 3 build/check ticks with no progress or 5 with the same error (`BLITZ_LOOP_NO_PROGRESS_MAX`, `BLITZ_LOOP_SAME_ERROR_MAX`). `{"reset": true}` clears it. The shell-loop runner now carries `--max-turns` and `--max-budget-usd`.
+- **Stop gate defers while background work runs.** `stop-gate.sh` stands down (`gate_deferred`) when the Stop payload's `background_tasks[]` lists a running task, instead of forcing idle turns (anthropics/claude-code#55754).
+- **Reject critic lists every finding; `check` derives the verdict.** Findings carry `authority` and `confirmed`; `check` computes REJECT from confirmed reject-authority findings with `jq` and logs a mismatch with the critic's own verdict. New critic §2.8b flags test literals hard-coded into source and test-only branches; §2.8c confirms external claims.
+- **Critic effort scales with risk**: `high` at plan scope, over 200 changed lines, on risky paths or red gates; Opus `medium` otherwise.
+- **Dev contract (spawn invariant)**: report a `verify[]` run made after the last edit; finish in one run without checking in; never claim done without the check; never hard-code or special-case a test (reply `test-assertion-suspect`); no unrequested tests, docs or files.
+- **Evals**: `spec-conflict-canary` (a test that contradicts the spec must end `test-assertion-suspect`, untouched) and `critic-false-block` (a correct implementation must PASS); read both as rates over `--runs 5`+.
+- `doctor` D-110 (Claude Code floor, jq). `hooks/tests/guard-fail-closed.bats`.
+
+### Fixed
+- **Sequential `build` no longer turns `dev` into a teammate** when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`: a named `Agent()` without `isolation` becomes a teammate that loses its `skills` preload and cannot be resumed, so the sequential path drops `name` and uses the agent id. `agents.md` §1.5 no longer says `SendMessage` needs teams; it does not.
+- **Haiku retrieval agents run at `medium`** with today's date and a one-search-per-question floor: Anthropic documents Haiku 5.5 at `low` skipping searches and stopping early. Single-shot collectors and triage stay `low`; `onboard` mapping moves to `medium`.
+- Stop-hook cap facts: the platform ends the turn after 8 consecutive continuations (`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`), not 5. `max_blocks` stays capped at 4.
+- `agents.md` §1.4 states nesting as blitz policy (the platform allows three layers); `compat.json` `skill_doctor` floor is 2.1.261; the skill contract documents the 25,000-token combined re-attach pool.
+
+### Notes
+- Validators exit 0; `bats hooks/tests/` is 329/329. The two new eval cases were exercised up to their fixtures (canary unsatisfiable, known-good verifies); they have not been scored on a live account.
+
 ## [3.10.0] — 2026-10-10 · the 5.5 models and the platform's own views
 
 Aligns blitz with Claude Code 2.1.278–2.1.296: the Claude 5.5 models, per-spawn effort, and the background-agent, workflow and agent-team views that now show what a fan-out is doing.

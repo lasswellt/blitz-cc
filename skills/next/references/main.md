@@ -140,7 +140,7 @@ Detail moved out of the skill body so it stays under the compaction re-attach ca
 | Bare `/loop` | Reads `.claude/loop.md`, written by `/blitz:doctor --loop-md` (`/blitz:next --loop`) | as above | as above | Same semantics as the two rows above |
 | Desktop scheduled task | Claude Desktop, local machine | Survives session restart; needs the machine on | 1 min | Overnight local runs |
 | Routine (cloud) | Fresh session per fire, no permission prompts | Machine-independent | **1 hour** | Nightly CI, weekly sweeps — pair with `crossSessionInbound: hold` (TB-5) |
-| Shell loop | `while :; do claude -p "/blitz:next --loop" \| tee -a loop.log \| grep -q LOOP_DONE && break; done` | Fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; `crossSessionInbound: accept` for `-p` workers |
+| Shell loop | `while :; do claude -p "/blitz:next --loop" --max-turns 80 --max-budget-usd 8 \| tee -a loop.log \| grep -qE 'LOOP_DONE\|LOOP_ESCALATE' && break; done` | Fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; `crossSessionInbound: accept` for `-p` workers |
 
 **Fresh session per tick is preferred.** Every model degrades with context length and compaction can erase constraints; `tasks.json`, `progress.md`, and git are the memory. A Routine, the shell loop, or a Projects thread beats one long `/loop` session. Inside a long session, `pre-compact-snapshot.sh` writes `HANDOFF.json` (plan, task, gate path, never-edit list) so a compacted session resumes the same task.
 

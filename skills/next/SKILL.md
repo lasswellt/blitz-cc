@@ -34,7 +34,8 @@ One deterministic script supplies every fact; do not re-derive them from `tasks.
 
 ```bash
 STATE=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh")
-echo "$STATE" | jq -c '{row, reason, active_plan, next_task: (.next_task.id // null), blocked, escalate, paused_plans, inbox_pending, sessions_waiting, kill_switch, check_stale}'
+echo "$STATE" | jq -c '{row, reason, active_plan, next_task: (.next_task.id // null), blocked, escalate, paused_plans, inbox_pending, sessions_waiting, kill_switch, check_stale, loop_breaker}'
+HEAD_START=$(git rev-parse HEAD); DONE_START=$(cat docs/plans/*/tasks.json 2>/dev/null | jq -s '[.[].tasks[]? | select(.status=="done")] | length')   # --loop: Phase 4 ledger
 ```
 
 | Field | Meaning |
@@ -48,6 +49,7 @@ echo "$STATE" | jq -c '{row, reason, active_plan, next_task: (.next_task.id // n
 | `sessions_waiting` | live session records with `waitingFor ≠ null` |
 | `kill_switch` | `.cc-sessions/STOP` exists — row 0; every tool call is already denied, print `LOOP_DEFER` and exit |
 | `check_stale` | no `check-report.md` with PASS newer than the last `tasks.json` change |
+| `loop_breaker` | `{open, reason}` from `.cc-sessions/loop-ticks.jsonl`: open after 3 build/check ticks with no progress or 5 with the same error → row 1 |
 
 `--plan <slug>` overrides `active_plan` for rows 2–4; if that plan is `paused` or `done`, say so and fall through to row 5. Re-run the script after Phase 0.5 so `inbox_pending` reflects triage.
 
@@ -64,7 +66,7 @@ Pick the lowest matching row; `next-state.sh` already computed it, this phase on
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
 | 0 | `inbox_pending > 0` after triage, or `sessions_waiting > 0`, or `kill_switch` | the pending items | `LOOP_DEFER` |
-| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}) | the escalation (plan, id, reason, `last_verify.tail`) | notify (§4 order), then `LOOP_ESCALATE` |
+| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}), or `loop_breaker.open` | the escalation (plan, id, reason, `last_verify.tail`) | notify (§4 order), then `LOOP_ESCALATE` |
 | 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | `Skill({ skill: "blitz:build", args: "<slug> --autonomous" })` for `next_task` |
 | 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | `Skill({ skill: "blitz:check", args: "--scope plan <slug> --fix" })` |
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`; `Skill({ skill: "blitz:learn", args: "<slug>" })`; move to `docs/plans/archive/<date>-<slug>/`; print `Ready: /blitz:ship --plan <slug>` |
@@ -178,7 +180,7 @@ Do NOT continue to another row in the same tick. Single-tick semantics is load-b
 
 ## Phase 4: REPORT (--loop only)
 
-Print a concise tick report; per-row examples in [references/main.md](references/main.md#tick-report-examples---loop). Disarm the gate first: `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"`. Append `task_complete` to the feed with `{summary: "<row>: <label>"}`.
+Print a concise tick report; per-row examples in [references/main.md](references/main.md#tick-report-examples---loop). Disarm the gate first: `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"`. Append `task_complete` to the feed with `{summary: "<row>: <label>"}`. Append the tick to the breaker ledger ([loop.reference.md](/_shared/loop.reference.md) §Loop circuit breaker): `progress` is true when the done-task count rose or the tick changed a file outside `docs/plans/` and `.cc-sessions/`; `error` is `<task>:<blocked_reason or last_verify.failed>` for row 2, `check:<result>` for row 3, else null.
 
 ### Markers
 
