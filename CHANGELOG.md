@@ -20,6 +20,9 @@ _Nothing yet._
 - `ui-audit`'s dev smoke test (`run-fixture.sh` and its fixtures) moves from the shipped skill folder to `hooks/tests/fixtures/ui-audit/`, and its `npx http-server` fallback is pinned to 14.1.1. Cisco's scanner read a server-starting script inside a skill whose `allowed-tools` grant no shell as a capability mismatch.
 - `.claude-plugin/icon.png` (1024×1024): the listing icon, a lightning bolt drawn as a task graph whose last node is a passed check (blitz's task DAG and verify gate). The directory keeps the first icon it is given.
 
+### Fixed
+- **CI was red on `main` since 3.9.2.** GitHub Actions sets `CI=true`, and `post-edit-typecheck-block.sh` stands down in CI by design, so the four typecheck-ratchet bats cases tested nothing there and failed. `toolchain.bats` now unsets `CI` in `setup()`, a new case pins the CI stand-down, and `scripts/ci-local.sh` runs bats with `CI=true` as GitHub does.
+
 ### Notes
 - Kept on purpose: the name `blitz` (`NAME_CONFUSABLE`, `NAME_EQUALS_GITHUB_OWNER` are advisory; renaming would break every `/blitz:*` command and existing install).
 - Whether `allowed-tools` expands `${CLAUDE_PLUGIN_ROOT}` inside a `Bash(...)` rule was not verified live; if it does not, those script calls prompt instead of running silently.

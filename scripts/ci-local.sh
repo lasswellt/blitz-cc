@@ -56,7 +56,7 @@ if [ "$FAST" -eq 0 ]; then
   if [ -z "$BATS" ]; then
     echo "FAIL  bats not installed (CI installs it; locally: apt-get install bats or npm i -g bats)"; FAILED+=("bats missing")
   else
-    step "Hook tests (bats)"             "$BATS" hooks/tests/
+    step "Hook tests (bats, CI=true)"    env CI=true "$BATS" hooks/tests/   # GitHub Actions sets CI=true
     step "Link resolver tests"           bash hooks/scripts/tests/test-link-resolver.sh
   fi
 fi
