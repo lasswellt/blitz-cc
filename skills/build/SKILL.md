@@ -112,7 +112,7 @@ Kahn layering on `depends_on` over open tasks: wave 0 = no unmet deps; wave N = 
 Mark every task in the wave `in_progress` and append its start line. Then:
 
 - **Workflow path** when the `Workflow` tool is present and `BLITZ_DISPATCH != agent`: call `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` — `prompt` is the 11-item spec, `replySchema` the §4.2 JSON. It returns `{ wave, tasks: [{id, ok, result}] }`; `result: null` = the agent died → treat as `BLOCKED circuit-breaker`. Any failure (tool absent, not allowed in `-p`, script error) → Agent path, never hard-fail. Feed `task_start.detail.dispatch: "workflow"|"agent"`.
-- **Agent path**: one `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", isolation: "worktree", prompt: <spec>)` per task, all launched before waiting. Item 9 adds: branch label `build/<slug>/<role>`; commit inside the worktree.
+- **Agent path**: one `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", isolation: "worktree", run_in_background: true, prompt: <spec>)` per task, all launched before waiting. Item 9 adds: branch label `build/<slug>/<role>`; commit inside the worktree.
 
 Arm the gate under `--autonomous` with `until: "build <slug> wave <N>"`.
 

@@ -537,8 +537,8 @@ Spawn all 10 agents using the `Agent` tool, all in **a single assistant message*
 
 Per-spawn parameters:
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
-- `description: audit <agent-name>`
+- `model: sonnet`, `effort: medium` (explicit — inheritance would run every pillar on the operator's model and effort)
+- `description: audit <agent-name>` (row label in `/tasks` and the agents view; [agents.md](/_shared/agents.md) §1.5)
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 
@@ -602,7 +602,7 @@ const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/
 const judged = await parallel(args.findings.map(f => () =>
   parallel(args.lenses.map(lens => () =>
     agent(`${OS}\n\nRe-read ${f.fileLine}. REFUTE via the ${lens} lens: "${f.desc}". Default refuted=true if not reproducible.`,
-      { label: `refute:${lens}:${f.key}`, phase: 'Audit', model: 'sonnet', schema: args.verdictSchema })))
+      { label: `refute:${lens}:${f.key}`, phase: 'Audit', model: 'sonnet', effort: 'medium', schema: args.verdictSchema })))
     // full-lens denominator is deliberate (recall bias: refuter failure must NOT auto-drop a finding — see references/main.md §553)
     .then(votes => ({ f, refuted: votes.filter(Boolean).filter(v => v.refuted).length > args.lenses.length / 2 }))))
 const survivors = judged.filter(j => !j.refuted).map(j => j.f)  // ≥majority refute → dropped

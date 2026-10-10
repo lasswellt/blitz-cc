@@ -74,7 +74,7 @@ Missing type-check with a `tsconfig.json` is `FAIL` (the Stop gate arms `npx tsc
 
 `worktree.baseRef: "head"` (FAIL when absent), `subagentPromptCacheTtl: "1h"` (WARN), `crossSessionInbound` (WARN, value depends on the runtime). Rationale and the `jq` merges: [references/main.md](references/main.md) §3.4 Settings for the loop.
 
-### 3.5 Platform facts (D-307, D-308)
+### 3.5 Platform facts (D-307, D-308; D-318 in references)
 
 - **D-307 Task tools** — advisory `INFO` on current models: `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Print the variable only as "set it if you want the platform's own checklist UI; blitz does not need it". A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
 - **D-308 bash** — `command -v bash` must succeed. Hooks are bash scripts; on native Windows without Git Bash or WSL every hook fails **open** (the anti-shortcut guards, `tasks-guard.sh`, `stop-gate.sh` and the kill switch silently do nothing). `FAIL` on Windows (`uname -s` matches `MINGW|MSYS|CYGWIN` is fine; PowerShell-only is not; a PowerShell tool needs hook matcher `Bash|PowerShell`). Remediation: install Git for Windows or run under WSL; there is no PowerShell port of the hooks.

@@ -24,6 +24,8 @@ tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 maxTurns: 50
 # Sonnet per /_shared/agents.md §1.3 — build runs fix rounds 4–5 on opus via Agent({model}).
 model: sonnet
+# Effort per /_shared/agents.md §1.3 (Claude Code >=2.1.292 honours a per-spawn override).
+effort: medium
 memory: project
 # Spawned once per task: keep the warmed prefix for 1h (Claude Code >=2.1.248).
 experimental:

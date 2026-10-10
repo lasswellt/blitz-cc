@@ -494,16 +494,18 @@ export const meta = { name: 'research', description: 'Parallel research agents +
 const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
-    model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku', schema: args.findingsSchema })))
+    model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku',
+    effort: a.name === 'codebase-analyst' ? 'medium' : 'low', schema: args.findingsSchema })))
+found.forEach((f, i) => { if (f === null) log(`research: ${args.roster[i].name} returned null`) })
 // One narrow second wave (≤2 agents) for unanswered / under-cited questions
-const gaps = (await agent(args.gapPrompt, { phase: 'GapFill', model: 'haiku', schema: args.gapSchema }))
+const gaps = (await agent(args.gapPrompt, { label: 'gap-detect', phase: 'GapFill', model: 'haiku', effort: 'low', schema: args.gapSchema }))
   ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
 const gapFills = await parallel(gaps.map(g => () =>
-  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', schema: args.findingsSchema })))
+  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', effort: 'low', schema: args.findingsSchema })))
 return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
 ```
 
-- Model routing per token-budget: `codebase-analyst` → sonnet, retrieval agents → haiku.
+- Model and effort routing per [agents.md](/_shared/agents.md) §1.3: `codebase-analyst` → sonnet/medium, retrieval agents → haiku/low. Labels match the Agent-path `description` units so `/workflows` and `/tasks` read the same (§1.5).
 - `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
 - Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
 - `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.
@@ -616,7 +618,7 @@ After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetc
 ```
 Agent({
   subagent_type: "blitz:research-critic",
-  description: "Citation + claim validity probe",
+  description: "research citation-critic",
   prompt: "Probe all citations in docs/research/${TIMESTAMP}_${TOPIC_SLUG}.md.
            Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
            per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
@@ -638,7 +640,8 @@ Optional: `BLITZ_RESEARCH_NO_CRITIC=1` skips this phase (default-on: the doc fee
 GAPS=$(Agent({
   subagent_type: "general-purpose",
   model: "haiku",
-  description: "Identify research-question gaps in summarized findings",
+  effort: "low",
+  description: "research gap-detect",
   prompt: "Read ${SYNTHESIS_INPUT_FILES[@]}. For each research question in:
            ${QUESTIONS}
            Return JSON array: [{q: '...', answered: bool, citations_count: int}].

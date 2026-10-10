@@ -54,6 +54,7 @@ Check catalog, migration field maps, the `/verify` seed, and the conflict-catalo
 | D-311 | `git check-ignore -q .cc-sessions/x` fails | FAIL | append `.cc-sessions/` to `.gitignore` | yes |
 | D-312 | `tasks.json`: `$schema` ≠ `blitz-tasks/1.0`; `status: done` without `passes ∧ last_verify.ok`; empty `verify[]` | FAIL | `tasks.sh set <plan> <id> status=open attempts=0` then `tasks.sh verify <plan> <id>`; re-add tasks with checks | no |
 | D-313 | `origin` ∉ `{plan, audit, check, learn, issue:<n>}` | WARN | note the old value, re-add through `tasks.sh add … --origin plan` | no |
+| D-318 | `CLAUDE_CODE_SUBAGENT_MODEL`, `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` or an `ANTHROPIC_DEFAULT_*_MODEL` pin, in the environment or `settings.json` `env` | INFO (5.5 family pin) / WARN (older-model pin, or any subagent-wide pin) | unset, or pin the family variable to its 5.5 id; then `/doctor prompt-audit` | no |
 
 Settings precedence for D-304…D-306: `.claude/settings.local.json` over `.claude/settings.json` over `~/.claude/settings.json`; the finding names the file the key would be added to (project `.claude/settings.json` by default, so the whole team inherits it).
 
@@ -329,3 +330,19 @@ for d in "$P"/skills/*/; do [ -f "$d/SKILL.md" ] || echo "NO-SKILL-MD $d"; done 
 `D-103` misses are `FAIL` (`chmod +x hooks/scripts/<name>.sh` is the fix, `fix:auto`). `D-104`/`D-105` violations are `FAIL`; a cumulative-description figure above 14 000 chars is `WARN`. `D-107` is `WARN` (run `scripts/gen-catalog.sh`).
 
 `detect-stack.sh` must print something (`D-109`): an empty result means stack-dependent skills (`build`, `check`) will guess commands.
+
+---
+
+## D-318 Model routing
+
+```bash
+# D-318 — env or settings that override blitz's per-agent model/effort routing
+for v in CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL; do
+  val=$(printenv "$v"); [ -z "$val" ] && val=$(jq -r --arg k "$v" '.env[$k] // empty' .claude/settings.json ~/.claude/settings.json 2>/dev/null | head -1)
+  [ -n "$val" ] && echo "D-318 $v=$val"
+done
+```
+
+| Id | Check | Severity | Remediation |
+|---|---|---|---|
+| D-318 | No variable above pins a model | **INFO** when set to a 5.5 model; **WARN** when a family pin names an older model (e.g. `ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-5`) or `CLAUDE_CODE_SUBAGENT_MODEL`/`CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` is set at all | Blitz routes each agent to `haiku`/`sonnet`/`opus` with an explicit effort ([agents.md](/_shared/agents.md) §1.3); the aliases resolve to the 5.5 family. A subagent-wide pin flattens that routing (the critic stops running on opus, collectors stop running on haiku). Unset it, or pin a family variable to its 5.5 id. Then suggest Claude Code's `/doctor prompt-audit` (≥2.1.283), which flags CLAUDE.md, skill and agent text written for older models. |

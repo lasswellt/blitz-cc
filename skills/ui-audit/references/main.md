@@ -1123,13 +1123,14 @@ else:
   wait for each worker's output file, then merge
 ```
 
-**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` is LOAD-BEARING — omitting re-introduces `[1m]` context crash (see `feedback_skill_model_1m_inheritance.md`). See `agent-orchestration.md` §7 for OUTPUT STYLE snippet.
+**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` and `effort: "medium"` are explicit per [agents.md](/_shared/agents.md) §1.3: inheritance would run every worker on the operator's model and effort. The `description` is the row label in `/tasks` and the agents view (§1.5).
 
 ```
 Agent(
   description: "ui-audit heuristic-<category>",
   subagent_type: "general-purpose",
   model: "sonnet",
+  effort: "medium",
   prompt: <<PROMPT
 pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths,
 commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version

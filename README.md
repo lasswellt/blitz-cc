@@ -157,6 +157,18 @@ A critic from a different model family catches blindspots the home model has on 
 
 Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line — never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate.
 
+### Models, effort and watching the agents
+
+Each agent runs on the cheapest model that can do its job, at an explicit effort, so the session model only routes. Aliases resolve to the Claude 5.5 family:
+
+| Lane | Model · effort | Price per Mtok (in · out · cache read) |
+|---|---|---|
+| Collectors, retrieval research, summaries | `haiku` (Haiku 5.5) · low | $0.10 · $0.50 · n/a |
+| `dev`, `test-writer`, survey critics, codebase analysis | `sonnet` (Sonnet 5.5) · medium | $2 · $10 · $0.10 |
+| `critic --mode reject`, fix rounds 4–5 | `opus` (Opus 5.5) · high | $4 · $20 · $0.20 |
+
+Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, parallel `dev` agents are named teammates (`dev-T-004`) that take a `SendMessage` mid-run. Detail: `skills/_shared/agents.md` §1.3 and §1.5.
+
 ### One registry, two lanes
 
 `skills/_shared/check-registry.json` holds every detector once. The deterministic lane (grep, AST, tsc, git, import graph) may flip a verdict; the semantic lane only annotates. `check` is precision-biased and runs on every diff. `audit` is recall-biased, runs before a release, aggregates independent passes, refutes each finding in a panel, and emits the survivors as a plan the loop can work. `doctor --review-md` exports the P0/P1 rows for hosted Claude Code Review.

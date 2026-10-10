@@ -4,7 +4,7 @@ export const meta = {
   whenToUse: 'Only from /blitz:check when Phase 2.1 selected the Workflow path. Findings files and the check-report stay in the skill (main thread).',
   phases: [
     { title: 'Review', detail: 'blitz:critic MODE: survey lenses (spec compliance, then code quality)', model: 'sonnet' },
-    { title: 'Critic', detail: 'blitz:critic MODE: reject adversarial verdict, schema-validated' },
+    { title: 'Critic', detail: 'blitz:critic MODE: reject adversarial verdict, schema-validated', model: 'opus' },
   ],
 }
 
@@ -38,14 +38,14 @@ if (args.sequential) {
   let prior = []
   for (const a of args.lenses) {
     const f = await agent(`${a.prompt}\n\nPrior findings:\n${JSON.stringify(prior)}`,
-      { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', schema: args.surveySchema })
+      { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', effort: 'medium', schema: args.surveySchema })
     reviews.push(f)
     if (f) prior = [...prior, f]
   }
 } else {
   log(`review-fanout: parallel mode — ${args.lenses.length} survey lens(es)`)
   reviews = await parallel(args.lenses.map(a => () =>
-    agent(a.prompt, { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', schema: args.surveySchema })))
+    agent(a.prompt, { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', effort: 'medium', schema: args.surveySchema })))
 }
 const missing = reviews.filter(f => f === null).length
 if (missing) log(`review-fanout: ${missing} survey lens(es) returned null (skill applies the /_shared/agents.reference.md §4.4 fan-out gate)`)
@@ -53,7 +53,7 @@ if (missing) log(`review-fanout: ${missing} survey lens(es) returned null (skill
 // Adversarial critic (MODE: reject), schema-validated (replaces jq parse of LGTM|REJECT).
 phase('Critic')
 const critic = await agent(args.criticPrompt,
-  { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', schema: args.criticSchema })
+  { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', model: 'opus', effort: 'high', schema: args.criticSchema })
 if (critic === null) log('review-fanout: critic returned null — skill must fall back to the Agent() critic')
 
 return {

@@ -108,7 +108,7 @@ Print the plan:
 | Path | When | Call | Returns |
 |---|---|---|---|
 | Workflow | `Workflow` tool present and `BLITZ_DISPATCH != agent` (`workflow` forces it, error if absent) | `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` | `{ wave, tasks: [{id, ok, result}] }`; `result: null` → `BLOCKED circuit-breaker` |
-| Agent | otherwise, or on any Workflow failure | `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", isolation: "worktree", prompt)` × tasks in wave | JSON reply per agent |
+| Agent | otherwise, or on any Workflow failure | `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", isolation: "worktree", run_in_background: true, prompt)` × tasks in wave | JSON reply per agent |
 
 Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and schema validation only; `tasks.sh`, `progress.md`, commits, and `gate.json` stay on the main thread between calls ([agents.reference.md](/_shared/agents.reference.md) §7.4). Log `detail.dispatch` on the feed `task_start` line. Never hard-fail on a Workflow error; fall through to the Agent path for the same wave.
 
@@ -118,7 +118,7 @@ Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and sche
 Monitor(command: "tail -f ${SESSION_TMP_DIR}/wave-<N>.log | grep --line-buffered 'DONE\|BLOCKED\|NEEDS_CONTEXT'", timeout: 1800)
 ```
 
-Every watch has a deadline (max 30 min; use `timeout: 600` under `-p`; `persistent` no longer exists). Re-arm at every wave boundary. Agents on the Agent path do not write that log — the orchestrator appends a line per reply it receives — so the tail is a wake-up, not the source of truth; `ListAgents` polling every 2-3 turns covers a deadline that expires mid-wave. The Workflow barrier replaces Monitor inside a wave.
+Every watch has a deadline (max 30 min; use `timeout: 600` under `-p`; `persistent` no longer exists). Re-arm at every wave boundary. Agents on the Agent path do not write that log — the orchestrator appends one `<ID> <STATUS> <summary≤80>` line per reply it receives, so each Monitor event row reads `T-004 DONE …` (≥2.1.284) — and the tail is a wake-up, not the source of truth; `ListAgents` polling every 2-3 turns covers a deadline that expires mid-wave. The Workflow barrier replaces Monitor inside a wave.
 
 Stuck detection per agent: no reply by wall-clock + 30 s → `SendMessage(to: "dev-<ID>", message: "STATUS?")`; nothing in 90 s → classify `MISSING` → `BLOCKED circuit-breaker`, `attempts=+1`; do not wait further and do not block the barrier on it.
 
@@ -308,7 +308,7 @@ Per iteration:
 1. **Select.** `TASK_JSON=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" next "$SLUG")`; empty → §T.6. A `<task-id>` argument pins `TASK_JSON` to that task and exits after it. A cycle in `depends_on` (Kahn layering never empties while open tasks remain) is a hard failure: print the cycle, `BLOCKED: dependency cycle`, stop.
 2. **Mark.** `tasks.sh set "$SLUG" "$ID" status=in_progress`; append `## <ISO> build <ID> start (attempt <attempts+1>)` to `progress.md`; feed `task_start {plan, task}`.
 3. **Arm the gate** when `--autonomous` (§Gate).
-4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", name: "dev-<ID>", model: "sonnet", prompt: <11-item spec>)`. The spec ([agents.reference.md](/_shared/agents.reference.md) §3.1; template below):
+4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", prompt: <11-item spec>)` (foreground: the next task waits on it). The spec ([agents.reference.md](/_shared/agents.reference.md) §3.1; template below):
 
    | # | Item | Source |
    |---|---|---|
@@ -380,7 +380,7 @@ Fall back to sequential, with the reason printed, when any of these fails: `work
 | Round | Who | How |
 |---|---|---|
 | 1-3 | same `dev-<ID>` (sonnet) | `SendMessage(to: "dev-<ID>", message: "verify item <n> failing: <200-char tail>; fix <file> only")` — state remaining work explicitly, never a bare "continue"; one failing item per message |
-| 4-5 | fresh `dev` on opus | new `Agent(subagent_type: "blitz:dev", model: "opus")`, full 11-item spec plus the `progress.md` tail (last 3 verify tails and rulings) |
+| 4-5 | fresh `dev` on opus | new `Agent(subagent_type: "blitz:dev", description: "build <ID> fix <n>", model: "opus", effort: "high")`, full 11-item spec plus the `progress.md` tail (last 3 verify tails and rulings) |
 | after 5 | main thread | adjudicate (§T.5) |
 
 Each round: `set attempts=+1` on failure, re-run `tasks.sh verify`, append the verify line. At `attempts == 3` `tasks.sh set` flips the task to `blocked` with `circuit-breaker`; under `--autonomous` or `next --loop` the loop continues with rounds 4-5 only when `BLITZ_FIX_ROUNDS_MAX` (default 5) allows, else moves to the next ready task. Never retry an unchanged prompt; each round changes at least the evidence tail. Stuck: no reply within 8 min + 30 s → `SendMessage STATUS?`; no answer in 90 s → `MISSING`, treat as `BLOCKED circuit-breaker`.

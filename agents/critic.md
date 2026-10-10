@@ -30,6 +30,8 @@ maxTurns: 30
 # Opus per /_shared/agents.md §1.3: the adversarial verdict needs depth. check spawns
 # MODE: survey with Agent({model: "sonnet"}) to override.
 model: opus
+# Effort per /_shared/agents.md §1.3; check passes effort: medium with MODE: survey.
+effort: high
 # Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
 # the verdict (Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true

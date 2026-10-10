@@ -403,7 +403,7 @@ Order: imports/exports → types → lint → framework → naming → unused. L
 
 ### 2.1 Survey fan-out
 
-Spawn N `blitz:critic` agents (sonnet, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
+Spawn N `blitz:critic` agents (`model: "sonnet"`, `effort: "medium"`, `description: "check survey <lens>"`, `run_in_background: true`, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
 
 | Focus | Reads first | Output |
 |---|---|---|

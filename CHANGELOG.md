@@ -10,6 +10,31 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.10.0] — 2026-10-10 · the 5.5 models and the platform's own views
+
+Aligns blitz with Claude Code 2.1.278–2.1.296: the Claude 5.5 models, per-spawn effort, and the background-agent, workflow and agent-team views that now show what a fan-out is doing.
+
+### Added
+- **Model table for the 5.5 family** (`skills/_shared/agents.md` §1.3). `haiku`, `sonnet` and `opus` now resolve to Haiku 5.5 ($0.10/$0.50 per Mtok), Sonnet 5.5 ($2/$10, cache reads $0.10 since 2.1.296) and Opus 5.5 ($4/$20, cache reads $0.20), all 1M context. The routing matrix gains an effort column: haiku lanes at `low`, sonnet lanes at `medium`, the reject critic and fix rounds 4–5 at `high`.
+- **Per-spawn effort.** Every agent file sets `effort:`; every `Agent()` spawn in `build`, `check`, `research`, `audit`, `ui-audit`, `doc-gen` and `onboard` passes `effort` (Agent tool parameter, ≥2.1.292); every `agent()` in `workflows/*.js` passes `model` and `effort`. Before, a spawn without one ran at the session effort, so `--effort high` ran haiku collectors at high.
+- **§1.5 Visibility** in `agents.md`: fan-out spawns carry a `<skill> <unit>` `description` (`build T-004`, `research web-researcher`, `audit security`) that is the row label in `/tasks`, `claude agents` and the VS Code agent map; surveys run with `run_in_background: true` and the main thread waits on completion notifications instead of polling files; workflow `label`s match those units so `/workflows` reads the same. Agent teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) are documented as opt-in: `build --parallel` names each dev `dev-<ID>` so a `NEEDS_CONTEXT` is answered with `SendMessage`. Blitz never turns teams on.
+- **`sessions.reference.md` §8.1 Watching background work**: which Claude Code view answers which question (`/tasks`, `claude agents` with `n:blitz`, the workflow row, Monitor rows, send now, `subagentStatusLine` with `agentType`).
+- **`doctor` D-318**: flags `CLAUDE_CODE_SUBAGENT_MODEL`, `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` or an older-model `ANTHROPIC_DEFAULT_*_MODEL` pin that flattens per-agent routing, then points to `/doctor prompt-audit`.
+- `agent-frontmatter-validate.sh` shape-checks `effort` (`low|medium|high|xhigh|max`) and `autoCompactWindow` (positive integer).
+- README section on models, effort and watching agents.
+
+### Changed
+- `build` wave Monitor lines are `<ID> <STATUS> <summary>`, so each Monitor event row (≥2.1.284) reads `T-004 DONE …`. Workflow `build-wave` labels are `build <ID>` (were `<ID>:w<N>`).
+- `review-fanout.js` states `opus`/`high` on the reject critic and the Critic phase instead of relying on the agent file, so `/workflows` shows the model and a workflow default cannot replace it.
+- `research` Phase 1.7 waits on notifications, then checks files once; haiku summarizers run in the background.
+- The `[1m]`-inheritance rationale is retired from the routing docs: the 5.5 family defaults to 1M. Explicit `model:` stays, now justified by cost and effort.
+- `compat.json`: `docs_verified_against` 2.1.296 and feature floors for every new citation. `cc_min` stays 2.1.271; nothing new is required to run.
+- `count-tokens.sh` defaults to `claude-opus-5-5`; `security.md` no longer names Opus 4.8.
+
+### Notes
+- Pricing and model ids are from the Claude Code changelog (2.1.280, 2.1.284, 2.1.293, 2.1.296). Benchmark claims about Sonnet 5.5 are not cited here.
+- `autoCompactWindow` (2.1.296) is documented but unset on blitz agents: their budgets keep them far below the window.
+
 ## [3.9.4] — 2026-09-24 · next-state survives a large plan
 
 ### Fixed

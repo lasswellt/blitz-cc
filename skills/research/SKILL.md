@@ -87,7 +87,7 @@ Spawn 2-4 agents depending on research type:
 | `codebase-analyst` | Codebase Analysis | Yes | sonnet | Existing patterns, integration points, migration impact, affected files, dependency graph |
 | `infra-analyst` | Infrastructure Analysis | Conditional (§1.2.5) | haiku | Cloud service docs, pricing, quotas, deployment implications, environment config |
 
-Model routing follows [agents.md](/_shared/agents.md): retrieval-class workloads (library-docs, web-researcher, infra-analyst) → Haiku 4.5 (12× cheaper than Sonnet, comparable hallucination rate per arxiv 2604.03173). Semantic codebase reasoning (codebase-analyst) → Sonnet 4.6.
+Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, web-researcher, infra-analyst) → `haiku`/low (Haiku 5.5, 20× cheaper than Sonnet 5.5); codebase-analyst → `sonnet`/medium.
 
 ### 1.2.5 Spawn-N Gate (skip unneeded agents)
 
@@ -136,10 +136,10 @@ Opt-in only; the `Agent()` pool above is the default. Script contract and args s
 Spawn each agent in **a single assistant message** (so they run concurrently) using the `Agent` tool with:
 
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails the write)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
-- `description: research <agent-name>`
+- `model:`/`effort:` per §1.2, always explicit
+- `description: research <agent-name>` (row label in `/tasks` and the agents view, §1.5)
 - `prompt`: the agent prompt template from Section 1.5 below, filled with topic, questions, output path, and stack profile
-- `run_in_background: true` (the main thread polls output files in Phase 1.7)
+- `run_in_background: true` (Phase 1.7 waits on notifications)
 
 Each agent prompt MUST include: research topic + questions; detected stack profile; output file path (`${SESSION_TMP_DIR}/research/<agent-name>.md`); research limits (§1.5); write-as-you-go rule ("Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory.").
 
@@ -165,6 +165,8 @@ The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU
 - `infra-analyst` — model: haiku. **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.
 
 ### 1.7 Wait for Completion
+
+No polling: wait for each completion notification, then check once:
 
 ```bash
 for f in ${SESSION_TMP_DIR}/research/*.md; do
@@ -192,7 +194,8 @@ for f in "${EXPECTED_OUTPUTS[@]}"; do
   Agent({
     subagent_type: "general-purpose",
     model: "haiku",
-    description: "Summarize $(basename $f .md) findings to ≤30 lines",
+    effort: "low",
+    description: "research summarize $(basename $f .md)",
     prompt: "Read ${f}. Output ≤30 lines listing the most important findings as
              bullets. Preserve URLs, file:line refs, dates, version numbers verbatim.
              Drop prose. Write to ${f}.summary.md. Return canonical JSON reply with
