@@ -611,7 +611,7 @@ When new URL found, normalize to pattern for dedup:
 | External origin | `new URL(href).origin !== new URL(BASE_URL).origin` |
 | Non-HTTP scheme | `mailto:`, `tel:`, `javascript:`, `data:`, `blob:` |
 | Auth paths | `/auth/*`, `/oauth/*`, `/login`, `/logout`, `/callback`, `/signup`, `/register`, `/forgot-password`, `/reset-password` |
-| File downloads | URL path ends in a document, archive, image, audio or video extension (pdf, zip, csv, xlsx, doc, docx, png, jpg, jpeg, gif, svg, webp, mp4, mp3) |
+| File downloads | URL path ends in a document, archive, image, audio or video extension (pdf, zip, csv, xlsx, doc, docx, mp4, mp3, or any common raster or vector image format) |
 | Already visited | Exact URL exists in `crawl-visited.json` |
 | Already queued | Exact URL exists in `crawl-queue.json` queue |
 | Pattern seen | Normalized pattern exists in `url_patterns_seen[]` |
@@ -749,7 +749,7 @@ Screenshots are powerful but expensive. Follow strictly:
 1. **Resize browser to 1280×720** before every screenshot — prevents oversized images that crash session
 2. **Viewport-only screenshots** — NEVER full-page. Long pages can exceed 8000px height, causing unrecoverable API errors
 3. **One screenshot per tick maximum** — each costs ~1,600 tokens; multiple fill context rapidly
-4. **PNG format preferred** — lossless, sharper text for analysis
+4. **Lossless screenshots preferred** — lossless, sharper text for analysis
 5. **Conditional triggers only** — do NOT screenshot every page. Only when structural analysis flags anomaly or every 10th tick.
 6. **Disable animations before capture** — inject CSS `* { animation: none !important; transition: none !important; }` via `browser_evaluate` before screenshot to avoid partial animation frames
 
@@ -1074,7 +1074,7 @@ For each extracted link, apply normalization rules from references/main.md:
    - External origin (different host than `BASE_URL`)
    - `mailto:`, `tel:`, `javascript:`, `data:` scheme
    - Auth path: matches `/auth/*`, `/oauth/*`, `/login`, `/logout`, `/callback`, `/signup`, `/register`
-   - File download: URL path ends in a document, archive or image extension (pdf, zip, csv, xlsx, doc, png, jpg, svg)
+   - File download: URL path ends in a document, archive or image extension (pdf, zip, csv, xlsx, doc, or any common image format)
    - Already in `crawl-visited.json` (exact URL)
    - Already in queue (exact URL)
 3. Strip hash fragments (`#section` → removed)

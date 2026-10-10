@@ -90,7 +90,7 @@ The selected run on PRs is only as good as its miss rate. Run the whole suite on
     bash $BLITZ/scripts/test-listener.sh --trigger ci --selected-by full --run-id "$RUN_ID" < full.json
     # escaped = failed test files in full.json that today's selector would not have chosen
     SELECTED=$(git diff --name-only origin/main@{1.day.ago}...HEAD | bash $BLITZ/scripts/test-selector.sh | cut -f1 | sort)
-    FAILED=$(jq -r '.testResults[] | select(.status=="failed") | .name' full.json | sed "s#^$PWD/##" | sort)
+    FAILED=$(jq -r '.testResults[] | select(.status=="failed") | .name' full.json | sed "s#^$(pwd)/##" | sort)
     ESCAPED=$(comm -23 <(echo "$FAILED") <(echo "$SELECTED") | grep -c . || true)
     jq --argjson n "$ESCAPED" '.escaped_failures_recent = ((.escaped_failures_recent // []) + [$n])[-10:]' \
       .cc-sessions/test-journal.meta.json > m.json && mv m.json .cc-sessions/test-journal.meta.json

@@ -16,6 +16,8 @@ print_warning() { echo -e "  ${YELLOW}WARN${NC}: $*"; }
 print_pass()    { echo -e "  ${GREEN}PASS${NC}: $*"; }
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+# Globs below are literal and relative to the plugin root.
+cd "$PLUGIN_ROOT"
 
 ERRORS=0
 WARNINGS=0
@@ -53,7 +55,7 @@ fi
 echo "Checking skill directories..."
 SKILLS_DIR="$PLUGIN_ROOT/skills"
 if [[ -d "$SKILLS_DIR" ]]; then
-  for skill_dir in "$SKILLS_DIR"/*/; do
+  for skill_dir in skills/*/; do
     skill_name=$(basename "$skill_dir")
     [[ "$skill_name" == "_shared" ]] && continue
 
@@ -86,7 +88,7 @@ fi
 # ---------------------------------------------------------------
 echo "Checking SKILL.md line limits..."
 if [[ -d "$SKILLS_DIR" ]]; then
-  for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
+  for skill_md in skills/*/SKILL.md; do
     [[ -f "$skill_md" ]] || continue
     line_count=$(wc -l < "$skill_md")
     rel_path="${skill_md#"$PLUGIN_ROOT"/}"
@@ -104,7 +106,7 @@ fi
 echo "Checking agent files..."
 AGENTS_DIR="$PLUGIN_ROOT/agents"
 if [[ -d "$AGENTS_DIR" ]]; then
-  for agent_file in "$AGENTS_DIR"/*.md; do
+  for agent_file in agents/*.md; do
     [[ -f "$agent_file" ]] || continue
     agent_name=$(basename "$agent_file")
 
@@ -256,7 +258,7 @@ echo "Checking plugin workflows..."
 WORKFLOWS_DIR="$PLUGIN_ROOT/workflows"
 if [[ -d "$WORKFLOWS_DIR" ]]; then
   wf_count=0
-  for wf in "$WORKFLOWS_DIR"/*.js; do
+  for wf in workflows/*.js; do
     [[ -f "$wf" ]] || continue
     wf_count=$((wf_count + 1))
     rel_path="${wf#"$PLUGIN_ROOT"/}"
