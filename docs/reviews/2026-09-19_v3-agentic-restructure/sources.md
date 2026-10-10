@@ -8,7 +8,7 @@ Fetched 2026-09-18 and 2026-09-19 unless noted. Platform pages are the versions 
 |---|---|
 | `plugins`, `plugins-reference`, `plugin-marketplaces` | plugin anatomy, `compat.json`, marketplace install and pinning |
 | `skills`, `sub-agents`, `hooks`, `hooks-guide` | frontmatter fields, `disable-model-invocation` dispatch rule, hook events and exit codes, `Bash\|PowerShell` matcher, bash requirement on Windows, prompt and agent hook types |
-| `workflows`, `plugin-evals`, `skill-doctor` | `workflows/*.js` contract, `claude plugin eval` flags and ablation arms, description budget |
+| `workflows`, `plugin-evals`, `skill-doctor` | `workflows/*.js` contract, `claude plugin eval .` flags and ablation arms, description budget |
 | `common-workflows` (`/verify`, `/goal`, `/loop`, `/batch`, `/code-review`, `/security-review`) | bundled user-only skills, `/goal` as a prompt-type Stop hook, `/loop` self-paced end via `ScheduleWakeup stop:true`, `.claude/loop.md` |
 | `worktrees`, `agent-view`, `cross-session-messaging` | `worktree.baseRef`, platform-owned worktree lifecycle, `claude agents --json`, messaging token line |
 | `routines`, `projects`, `channels`, `remote-control` | Routines minimum interval and fresh clone, Projects coordinator and threads, channel relay of permission prompts, `-p` disables `AskUserQuestion` |

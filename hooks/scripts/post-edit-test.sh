@@ -23,7 +23,8 @@ FILE_PATH=$(blitz_extract file_path)
 SESSION_ID=$(blitz_extract session_id)
 [ -n "$SESSION_ID" ] || SESSION_ID=$(blitz_session_id)
 SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -c 'A-Za-z0-9_.-' '_')
-case "$SAFE_SID" in ''|.*) exit 0 ;; esac
+# Empty or dot-leading ids would name the sessions dir itself or a hidden path.
+if [ -z "$SAFE_SID" ] || [ "${SAFE_SID:0:1}" = "." ]; then exit 0; fi
 
 ROOT=$(blitz_find_root || true)
 SESSIONS_DIR="${SESSIONS_DIR:-$ROOT/.cc-sessions}"

@@ -1,7 +1,7 @@
 ---
 name: migrate
 description: "Migrates frameworks, libraries and tooling one major version at a time: researches breaking changes, plans atomic steps, verifies type-check, tests and build after each, aborts on repeated failure. Use for 'migrate to', 'upgrade to Vue 3', 'Vuex to Pinia', 'Nuxt 2 to 3', 'replace X with Y'."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, WebFetch(domain:registry.npmjs.org), WebFetch(domain:github.com), WebFetch(domain:raw.githubusercontent.com), WebFetch(domain:api.osv.dev), WebFetch(domain:pypi.org), WebFetch(domain:nodejs.org), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(docs/migrations/**), Edit(.cc-sessions/**)
 model: opus
 effort: high
 compatibility: ">=2.1.296"

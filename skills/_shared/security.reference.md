@@ -135,7 +135,7 @@ Blitz hooks fire on Claude Code lifecycle events (`SessionStart`, `PreToolUse`, 
 
 **Therefore:**
 1. **Treat project-local files as untrusted inbound data**, not trusted local config — `.cc-sessions/sessions/*.json`, `activity-feed.jsonl`, `inbox.jsonl`, `mailbox/*.jsonl`, CLAUDE.md, `docs/plans/*/tasks.json`, `docs/solutions/*.md`. This is [threat-model.md](#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1 (and TB-5 for the message files).
-2. **A hook MUST NOT `eval`, `source`, or otherwise execute** any project-controlled file's contents. Hooks may *parse* (jq) and *echo*, never execute.
+2. **A hook MUST NOT eval, `source`, or otherwise execute** any project-controlled file's contents. Hooks may *parse* (jq) and *echo*, never execute.
 3. **Echoed free-text fields MUST be capped + injection-scanned** before reaching context. `session-start.sh` caps every echoed field at 200 chars (parity with the `[0:200]` cap rule in [sessions.md](sessions.md)) and replaces injection-marker hits with `[quarantined: …]`.
 4. **Execution-bearing parsing defers to the platform trust prompt.** Blitz relies on the Claude Code platform for the trust gate itself — it does not reimplement it (threat-model.md §6). Blitz's duty is to not parse-execute project config before it.
 
@@ -145,7 +145,7 @@ Blitz hooks fire on Claude Code lifecycle events (`SessionStart`, `PreToolUse`, 
 
 Verified 2026-05-31 across all `hooks/scripts/*.sh`:
 - The `block-*.sh` + `pre-edit-guard.sh` hooks read `tool_input` (the agent's *own* proposed action from the harness), not committed project files.
-- `session-start.sh` parses `.cc-sessions/` JSON with `jq` and echoes sanitized text — no `eval`/`source` of project content.
+- `session-start.sh` parses `.cc-sessions/` JSON with `jq` and echoes sanitized text — no eval or `source` of project content.
 - `startup-validate.sh` reads + scans (`.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/*.md`); it does not execute entries.
 - `tasks-guard.sh` and `kill-switch.sh` read `tool_input` / the presence of `.cc-sessions/STOP` and return a decision; they execute nothing.
 

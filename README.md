@@ -108,7 +108,7 @@ Everything else — `audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-
 | 4 | check report PASS and fresh | mark done, run `learn`, archive, print `Ready: /blitz:ship` |
 | 5 | nothing open | `LOOP_DONE` |
 
-Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled fire cannot release anything. Run the loop under `/loop`, a cloud Routine, or `claude -p` with a fresh session per tick; `doctor --loop-md` writes the `.claude/loop.md` that makes a bare `/loop` do this.
+Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled fire cannot release anything. Run the loop under `/loop`, a cloud Routine, or `claude -p` with a fresh session per tick; `doctor --loop-md` writes the `.claude/loop.md` that makes a bare `/loop` do this. Blitz pre-approves only its own scripts and scoped writes, so an unattended loop needs auto mode or allow rules for your project's commands ([SECURITY.md §Running unattended](SECURITY.md#running-unattended)).
 
 ---
 
@@ -242,7 +242,7 @@ Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISA
 
 ## CI and hosted review
 
-`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed, running `/blitz:check --scope diff --comment` on each pull request and posting findings as inline comments. This repo's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and — when an API key is present — the advisory `claude plugin eval` cases in [`evals/`](evals/README.md).
+`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed, running `/blitz:check --scope diff --comment` on each pull request and posting findings as inline comments. This repo's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and — when an API key is present — the advisory `claude plugin eval .` cases in [`evals/`](evals/README.md).
 
 ## Contributing
 

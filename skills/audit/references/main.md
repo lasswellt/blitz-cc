@@ -169,7 +169,7 @@ Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **cap
 - [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/`, or CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
 - [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.md` §3)
 - [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
-- [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or `eval`/`source` a project-controlled file? ([/_shared/security.md](/_shared/security.md))
+- [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or eval/`source` a project-controlled file? ([/_shared/security.md](/_shared/security.md))
 
 ### Pillar 4: Maintainability
 

@@ -1,7 +1,7 @@
 ---
 name: refactor
 description: "Refactors a file or module in small verified steps: snapshots the test baseline, changes one thing at a time, type-checks and tests after each, reverts on regression. Use for 'refactor', 'extract', 'simplify', 'decompose', 'rename', 'restructure', 'clean up'. Behavior changes go to /blitz:build."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Glob, Grep, Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "<target-file-or-module> <refactoring-goal>"

@@ -10,6 +10,26 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.15.0] — 2026-10-10 · scoped grants on every skill, directory warnings cleared
+
+Clears the plugin directory's 19 warnings and 25 policy holds on `main` @ 07a8e07.
+
+### Changed (behaviour)
+- **No skill pre-approves bare `Bash`, `Write`, `Edit`, `Monitor`, `WebSearch` or `WebFetch`** (`ALLOWED_TOOLS_BROAD`, `ALLOWED_TOOLS_UNSCOPED_WRITE`, `ALLOWED_TOOLS_UNSCOPED_FETCH`). `build`, `check`, `next`, `ship`, `audit`, `migrate`, `dep-health`, `refactor`, `test-gen`, `ui-build` and `perf-profile` now pre-approve read tools, the plugin scripts each calls, read-only git and writes to the directories each owns. `migrate` and `dep-health` fetch package registries and advisories without asking; other hosts and `WebSearch` follow your rules. `research` no longer pre-approves `WebSearch`/`WebFetch`.
+- **Unattended runs need auto mode or allow rules.** Source edits and your project's commands follow your permission mode. The documented shell loop now passes `--permission-mode auto`; `SECURITY.md` §Running unattended lists the options.
+
+### Added
+- `skill-frontmatter-validate.sh` rule 12 fails on a bare broad grant or a `Bash(...)` wildcard after a shell, interpreter, package runner or network tool; `hooks/tests/skill-grants.bats` covers it.
+
+### Fixed
+- **`critic-external.sh` used eval to read a provider's flags variable.** It now uses bash indirect expansion, which reads the value without running it.
+- Directory `RUNTIME_FETCH_EXEC` (19 files): a code span ending in the word eval reads to a shell parser as eval of a backtick command substitution; the plugin eval command is now written with its directory argument (`claude plugin eval .`), and other spans drop the backticks. Test fixtures build their pipe-to-shell and eval samples from parts.
+- Directory `UNREAD_ASSET_REFERENCED`: catch-all globs that could match the icon (a default case arm, a dot-wildcard, a recursive match-everything walk) are gone from `post-edit-test.sh`, `validate-plugin-structure.sh` and `skill-scan.sh`; docs name extensions without the dot.
+- Directory `MCP_FORWARDS_CREDENTIAL_ENV`: doc code spans that read as shell builtins which print the environment are reworded, and the CI template no longer names the CLI's token-minting command.
+
+### Notes
+- Still held by design: `NAME_CONFUSABLE` and `NAME_EQUALS_GITHUB_OWNER` (the name `blitz`), and `COMMAND_SCRIPT_NOT_FOLLOWED` (hooks source `_lib/common.sh` and run python here-docs, which the validator never follows).
+
 ## [3.14.0] — 2026-10-10 · pre-approved tools split by need, listing icon
 
 ### Changed (behaviour)
@@ -18,7 +38,7 @@ _Nothing yet._
 
 ### Added
 - `ui-audit`'s dev smoke test (`run-fixture.sh` and its fixtures) moves from the shipped skill folder to `hooks/tests/fixtures/ui-audit/`, and its `npx http-server` fallback is pinned to 14.1.1. Cisco's scanner read a server-starting script inside a skill whose `allowed-tools` grant no shell as a capability mismatch.
-- `.claude-plugin/icon.png` (1024×1024): the listing icon, a lightning bolt drawn as a task graph whose last node is a passed check (blitz's task DAG and verify gate). The directory keeps the first icon it is given.
+- A 1024×1024 listing icon in the plugin manifest folder: a lightning bolt drawn as a task graph whose last node is a passed check (blitz's task DAG and verify gate). The directory keeps the first icon it is given.
 
 ### Fixed
 - **`critic-external.sh` printed a gawk warning before its JSON.** The secret pattern was passed with `awk -v`, which applies escape processing, so gawk (GitHub's runners) warned that `\.` became `.` on stderr. The pattern now goes through `ENVIRON`, which also keeps the JWT pattern's literal dot. `scripts/ci-local.sh` runs the suite under gawk when the host's `awk` is mawk.
@@ -51,7 +71,7 @@ Follow-up on the five caveats left by 3.12.0, each researched and fixed where a 
 
 ### Added
 - **Exact per-subagent cost.** New `hooks/scripts/subagent-usage.sh` (SubagentStop, async) reads the finished subagent's `agent_transcript_path`, groups API responses by message id, and prices input, output, cache reads and 5-minute / 1-hour cache writes from `hooks/scripts/_lib/model-prices.json` (Haiku's 5× long-context rate per request). One row per subagent lands in `.cc-sessions/agent-usage.jsonl`, attributed by the prompt's `PLAN:` line and first task id. Transcript output counts are streaming snapshots, so a response without a final line marks the row `output_final: false` (a lower bound). Replaces 3.12.0's model-called `scripts/usage-log.sh`, which only had total tokens and depended on the model remembering to call it.
-- **`blitz-guard` 0.2.0.** `turn.complete` appends each subagent run's final counts to `.cc-sessions/agent-usage.mod.jsonl`; the dashboard uses them in place of transcript output snapshots. `tool.call` on `Agent` raises a `blitz:dev`, `blitz:test-writer` or `blitz:critic` call made below `medium` effort to `medium`: `agent.spawn` has no effort field, but the Agent call's own `effort` is rewritable there. The critic read-only check now unwraps `sh -c`/`bash -c` payloads recursively and refuses `eval`, `source`, variable-led commands, `find -delete`/`-exec rm`, `xargs` into a writer, interpreter one-liners that write files, and running files from temp directories. 12 plugin tests.
+- **`blitz-guard` 0.2.0.** `turn.complete` appends each subagent run's final counts to `.cc-sessions/agent-usage.mod.jsonl`; the dashboard uses them in place of transcript output snapshots. `tool.call` on `Agent` raises a `blitz:dev`, `blitz:test-writer` or `blitz:critic` call made below `medium` effort to `medium`: `agent.spawn` has no effort field, but the Agent call's own `effort` is rewritable there. The critic read-only check now unwraps `sh -c`/`bash -c` payloads recursively and refuses eval, `source`, variable-led commands, `find -delete`/`-exec rm`, `xargs` into a writer, interpreter one-liners that write files, and running files from temp directories. 12 plugin tests.
 - **`scripts/ci-local.sh`** runs every gate of CI's `validate` job locally. CI runs only on pushes to main and on PRs, so 3.10.0–3.12.0's bare `§` references would first have failed when a PR opened; `hooks/tests/ci-local.bats` now fails whenever CI gains a gate the local script does not run.
 - **Cisco `skill-scanner` 2.2.2 in CI** (offline static and behavioral analyzers, no account, gate at HIGH), alongside `scripts/skill-scan.sh`, which still covers agents, hooks and scripts that Cisco's tool does not. Snyk Agent Scan (the successor to `mcp-scan`) was evaluated and left out: its `scan` uploads skill content to Snyk's API, needs `SNYK_TOKEN`, and its CI mode starts MCP servers.
 
@@ -68,7 +88,7 @@ Follow-up on the five caveats left by 3.12.0, each researched and fixed where a 
 Implements the P2 recommendations of [docs/research/2026-10-10_agentic-loop-alignment](docs/research/2026-10-10_agentic-loop-alignment/README.md).
 
 ### Added
-- **`blitz-guard`, an optional Claude Mod** (`mods/blitz-guard`, 0.1.0, listed in the marketplace; Claude Code ≥2.1.287). `agent.spawn`: a `blitz:*` agent never starts as an agent-team teammate and never on haiku (moved to its routing default, or refused as a workflow agent, whose spawn cannot be rewritten). `tool.check`: inside a `blitz:critic`, `blitz:research-critic` or `blitz:design-critic` loop, matched by `agentId`, write tools and writing shell (git writes, `rm`/`mv`/`cp`, in-place edits, installs, redirection outside `/tmp`, `tasks.sh init|add|set`) are refused. Status line: `blitz <slug> 3/7 · T-004 running · 1 blocked`. Every rule is a pure function in `hooks/policy.ts`; `claude plugin validate` passes and `claude plugin test` runs 9 cases. It adds to the bash hooks and never replaces them; Claude Code 2.1.296 exposes no effort field on `agent.spawn`, so effort stays the spawn's own.
+- **`blitz-guard`, an optional Claude Mod** (`mods/blitz-guard`, 0.1.0, listed in the marketplace; Claude Code ≥2.1.287). `agent.spawn`: a `blitz:*` agent never starts as an agent-team teammate and never on haiku (moved to its routing default, or refused as a workflow agent, whose spawn cannot be rewritten). `tool.check`: inside a `blitz:critic`, `blitz:research-critic` or `blitz:design-critic` loop, matched by `agentId`, write tools and writing shell (git writes, `rm`/`mv`/`cp`, in-place edits, installs, redirection outside `/tmp`, `tasks.sh` calls that init, add or set) are refused. Status line: `blitz <slug> 3/7 · T-004 running · 1 blocked`. Every rule is a pure function in `hooks/policy.ts`; `claude plugin validate` passes and `claude plugin test` runs 9 cases. It adds to the bash hooks and never replaces them; Claude Code 2.1.296 exposes no effort field on `agent.spawn`, so effort stays the spawn's own.
 - **Audit refuter panel with independent votes.** The three lenses now differ in model or evidence (correctness on sonnet, security on opus, reproduces on sonnet with an executed command). One model family is one vote and an executed refutation is its own; two votes drop a finding, and a finding a run reproduced is never dropped by reading alone. Same-model persona votes were correlated (arXiv 2502.08788).
 - **Per-task usage ledger.** `scripts/usage-log.sh` appends each blitz agent's tokens, tool uses and duration from the Agent result to `.cc-sessions/agent-usage.jsonl`; `build` and `check` call it after every reply. `/blitz:sessions dashboard` gains **Agent usage by task**: spawns, tokens, agent time, models and a priced band (all-input to all-output at 5.5 list prices). Exact cost stays with `claude -p --output-format json` or the OpenTelemetry cost metric.
 - **`SECURITY.md`**: what runs where and with what authority, the TB-1…TB-5 boundaries mapped to OWASP Agentic ASI01–ASI10 with controls and residual risk, safe-install steps, and a hardened settings profile for unattended runs.
@@ -496,7 +516,7 @@ Review: [docs/reviews/2026-09-19_v3-agentic-restructure/README.md](docs/reviews/
 
 ### Added
 - **The loop:** `plan` (spike / bounded / architectural classification, interview unless `--autonomous`, reads `docs/solutions/` and `docs/plans/BACKLOG.md`, verify templates per stack), `build` (inline path for a one-sentence change; one fresh-context `dev` per task; fix rounds ≤3 then a fresh opus agent; circuit breaker at three attempts; `--parallel` waves over disjoint files with a `git merge-tree` pre-check; `--issue N`), `check` (gates, TIA, anti-mock, `tasks.sh verify` per task, critic survey then adversarial reject; `--fix`, `--comment`, `--security`, `--mutation`), `learn` (rulings, check reports, and `Task:` commits → `docs/solutions/`), `next` rewritten over a deterministic `scripts/next-state.sh` with six rows and a headless-safe `--loop`.
-- **Structural done:** `docs/plans/<slug>/tasks.json` (`blitz-tasks/1.0`) written only by `scripts/tasks.sh` (`init|add|list|set|verify|next`; refuses empty or test-only `verify[]`); `hooks/scripts/tasks-guard.sh` denies Write, Edit, and shell writes to it; `startup-validate.sh` schema-checks and injection-scans `tasks.json` and `docs/solutions/` (OWASP ASI06).
+- **Structural done:** `docs/plans/<slug>/tasks.json` (`blitz-tasks/1.0`) written only by `scripts/tasks.sh` (subcommands init, add, list, set, verify, next; refuses empty or test-only `verify[]`); `hooks/scripts/tasks-guard.sh` denies Write, Edit, and shell writes to it; `startup-validate.sh` schema-checks and injection-scans `tasks.json` and `docs/solutions/` (OWASP ASI06).
 - **Kill switch:** `.cc-sessions/STOP` makes `kill-switch.sh` deny every tool call.
 - **Generated catalog:** `scripts/gen-catalog.sh` writes `docs/CATALOG.md` and `--check` fails CI on a stale catalog, a dead `/blitz:<name>` reference, or a numeric inventory claim. `scripts/gen-review-md.sh` exports registry P0/P1 rows as `REVIEW.md`.
 - **doctor** (health + setup + conform): checks `worktree.baseRef`, Task-tools absence, bash on Windows, `subagentPromptCacheTtl`, `crossSessionInbound`; writers `--loop-md`, `--review-md`, `--ci` (`templates/blitz-check.yml`, a `claude-code-action` workflow that runs `/blitz:check --scope diff --comment`); `--migrate`.
@@ -558,7 +578,7 @@ Review: [docs/reviews/2026-09-18_cc-2.1.276-alignment/README.md](docs/reviews/20
 - **Eight hook events (E-040):** SessionEnd, Stop (non-blocking heartbeat + mailbox drain, then the conditional gate), Notification, PermissionDenied, PreModelSwitch, CwdChanged, DirectoryAdded, ConfigChange. Hook scripts 38→46, events 16→24; exec-form entries with `timeout` + `statusMessage`.
 - **Verification stack (E-042):** `stop-gate.sh` deterministic Stop gate armed by sprint-dev / `next --loop` via `gate.json` (never fights a user `/goal`; stays under the platform's 8-block cap); sprint-dev prints the `/goal` companion line; sprint-review runs the recorded `/verify` recipe first; `/blitz:setup` seeds `.claude/skills/verify/SKILL.md`.
 - **Test impact analysis v0 (E-043):** `scripts/test-listener.sh` (stateless, append-only journal, `runs_started == runs_recorded`), `scripts/test-selector.sh` (sibling + static import graph / jest related + journal recent-fail + co-change, `--full` fallbacks); heartbeat runs the selected set after edits; sprint-review calibrates with one full run (`escaped_failures`); advisory metrics `tia_escaped_failures`, `tia_selection_ratio`; `docs/guides/tia.md`.
-- **Plugin evals + workflows (E-045):** `evals/` suite (5 cases) for `claude plugin eval`, advisory CI job; `workflows/sprint-wave.js`, `review-fanout.js`, `audit-sweep.js` extracted from skill prose.
+- **Plugin evals + workflows (E-045):** `evals/` suite (5 cases) for `claude plugin eval .`, advisory CI job; `workflows/sprint-wave.js`, `review-fanout.js`, `audit-sweep.js` extracted from skill prose.
 - **Cloud posture (E-046):** `docs/guides/cloud-threads.md` (Projects threads, Routines, Desktop tasks, Channels, Remote Control); security TB-5 (cross-session and channel inbound is untrusted).
 - `.claude/rules/skills.md`, `.claude/rules/hooks.md` (path-scoped authoring contracts); `docs/research/README.md`; `docs/EPICS.md`.
 

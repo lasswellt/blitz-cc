@@ -1,7 +1,7 @@
 ---
 name: perf-profile
 description: "Profiles bundle size, runtime performance (Web Vitals) and Lighthouse scores for Vue/Nuxt apps and ranks optimizations (large deps, unused exports, render bottlenecks) by impact. Use for 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
+allowed-tools: Read, Glob, Grep, ToolSearch, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "<bundle|runtime|lighthouse|full>"

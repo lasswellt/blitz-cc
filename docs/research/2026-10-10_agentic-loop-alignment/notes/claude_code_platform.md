@@ -341,12 +341,12 @@ In-window additions:
 - Many new `claude plugin validate` checks: MCP entries, unquoted `${CLAUDE_PLUGIN_ROOT}`, missing component paths, `gatingHooks`, README install advice
 - `claude plugin test` for mods
 
-`claude plugin eval` (2.1.269) and `/skill-doctor` (2.1.261) predate the window.
+`claude plugin eval .` (2.1.269) and `/skill-doctor` (2.1.261) predate the window.
 
 ### Cited Findings
 - **`/doctor prompt-audit`**: "Added `/doctor prompt-audit` (also `/checkup prompt-audit`) to audit your CLAUDE.md files, skills, agents and commands for prompting patterns written for older models" ([CL 2.1.283](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md)). On Claude Code configuration it reports "stale paths, stale commands and contradicting instruction files" first (CL 2.1.283)
 - **`/skill-doctor`**: "show which loaded skills go unused and what they cost in context" — [CL 2.1.261](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md). Note that blitz `compat.json` lists `skill_doctor: 2.1.252`, which conflicts with the changelog's 2.1.261.
-- **`claude plugin eval`**:
+- **`claude plugin eval .`**:
   - Added in [CL 2.1.269](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md) (older); git 2.31+ required since CL 2.1.283
   - Cases live in `evals/` (`prompt.md`, `case.yaml`, `graders/`); each case runs 3× with the plugin and 3× without it (a no-plugin baseline); `--threshold` defaults to 1.0
   - Six grader types (`regex`, `tool_used`, `tool_order`, `file_exists`, `llm`, `baseline`), and "There are no custom-code graders"
@@ -385,7 +385,7 @@ In-window additions:
   - [plugins-reference](https://code.claude.com/docs/en/plugins-reference)
 
 ### Inferences
-- blitz could add `evals/` cases (for example, "does `/blitz:build` invoke the build-wave workflow", or "does the critic return the schema") using `tool_used` and `file_exists` graders. The eval runner already uses `claude plugin eval` (blitz has an `evals/` dir), so the window's fixes (Docker Desktop link refusal fixed in 2.1.293, stale local-folder copies fixed in 2.1.289) matter.
+- blitz could add `evals/` cases (for example, "does `/blitz:build` invoke the build-wave workflow", or "does the critic return the schema") using `tool_used` and `file_exists` graders. The eval runner already uses `claude plugin eval .` (blitz has an `evals/` dir), so the window's fixes (Docker Desktop link refusal fixed in 2.1.293, stale local-folder copies fixed in 2.1.289) matter.
 - Running `/doctor prompt-audit` against blitz `skills/` and `agents/` is a cheap check for prompting patterns tuned for older models.
 - If blitz uses shell-form hooks with unquoted `${CLAUDE_PLUGIN_ROOT}`, the 2.1.281 validate warning would flag them; quoting or exec form is required for paths with spaces.
 - Reconcile the `compat.json` `skill_doctor` floor (2.1.252) with the changelog (2.1.261).

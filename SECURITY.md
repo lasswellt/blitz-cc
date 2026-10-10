@@ -19,17 +19,31 @@ Report privately through GitHub's private vulnerability reporting on [lasswellt/
 
 ## Pre-approved tools per skill
 
-A skill's `allowed-tools` lets Claude Code run matching calls without asking while the skill is active; anything else still prompts. Blitz grants broad shell and file writes only to skills that must run a project's own commands unattended:
+A skill's `allowed-tools` lets Claude Code run matching calls without asking while the skill is active; anything else follows your permission mode and rules. No blitz skill pre-approves bare `Bash`, `Write`, `Edit`, `Monitor`, `WebSearch` or `WebFetch` (`hooks/scripts/skill-frontmatter-validate.sh` rule 12 fails CI on one). What each skill may run silently:
 
-| Skills | Pre-approved | Why |
+| Skills | Pre-approved | Everything else |
 |---|---|---|
-| `build`, `check`, `next`, `ship`, `migrate`, `refactor`, `test-gen`, `ui-build`, `perf-profile`, `dep-health`, `audit` | `Bash`, `Write`, `Edit` (plus `WebSearch`/`WebFetch` for `migrate` and `dep-health`, which look up release notes and advisories) | They run the project's type-check, tests, builds and `verify[]` commands, whose names differ per project, and `next --loop` runs them with no one at the keyboard. The anti-shortcut hooks and the kill switch apply to every one of those calls. |
-| `research` | read tools, `WebSearch`, `WebFetch`, writes to `docs/research/**`, the plugin's `detect-stack.sh` | Searching and fetching sources is the skill; it cannot know the domains in advance. |
-| `plan`, `onboard` | read tools, writes to `docs/plans/**` (`onboard`: `docs/**` and `CLAUDE.md`), the plugin's `tasks.sh` and `detect-stack.sh` | Everything else prompts. |
-| `doc-gen`, `learn`, `todo`, `ui-audit` | read tools, writes scoped to the directory each owns (`docs/generated/**`, `docs/solutions/**`, `docs/plans/**`, `docs/crawls/**` and `DESIGN.md`); `learn` also reads `git log`/`git diff` | Everything else prompts. |
-| `doctor`, `sessions`, `browse` | read tools and the plugin's own scripts (`doctor` may also edit `.claude/settings.json`, `.gitignore`, `.worktreeinclude`, `.claude/loop.md`) | Everything else prompts. |
+| `build`, `check`, `next`, `ship`, `audit` | read tools; the plugin scripts each one calls (`tasks.sh`, `test-selector.sh`, `next-state.sh`, …) as `Bash(bash ${CLAUDE_PLUGIN_ROOT}/<script> *)`; read-only git (`status`, `diff`, `log`, plus `show`/`rev-parse` where used); writes to the directories each owns (`docs/plans/**`, `docs/solutions/**`, `docs/sweeps/**`, `docs/audits/**`, `.cc-sessions/**`) | source edits, the project's own test/build/`verify[]` commands, commits and pushes follow your permission mode |
+| `migrate`, `dep-health` | read tools, read-only git, writes to `docs/migrations/**` or `docs/guides/**`, `WebFetch` to package registries and advisories only (`registry.npmjs.org`, `pypi.org`, `api.osv.dev`, `github.com`, `raw.githubusercontent.com`, `nodejs.org`) | other hosts, `WebSearch`, installs and source edits prompt |
+| `refactor`, `test-gen`, `ui-build`, `perf-profile` | read tools, read-only git, the plugin's `detect-stack.sh` | edits and commands prompt |
+| `research` | read tools, writes to `docs/research/**`, the plugin's `detect-stack.sh` | `WebSearch`/`WebFetch` follow your rules; allow them once per project if you research often |
+| `plan`, `onboard` | read tools, writes to `docs/plans/**` (`onboard`: `docs/**` and `CLAUDE.md`), the plugin's `tasks.sh` and `detect-stack.sh` | prompt |
+| `doc-gen`, `learn`, `todo`, `ui-audit` | read tools, writes scoped to the directory each owns (`docs/generated/**`, `docs/solutions/**`, `docs/plans/**`, `docs/crawls/**` and `DESIGN.md`); `learn` also reads `git log`/`git diff` | prompt |
+| `doctor`, `sessions`, `browse` | read tools and the plugin's own scripts (`doctor` may also edit `.claude/settings.json`, `.gitignore`, `.worktreeinclude`, `.claude/loop.md`) | prompt |
 
 `next` and `ship` may start only the blitz skills they dispatch (`Skill(blitz:build)`, `Skill(blitz:check)`, `Skill(blitz:learn)`), not any skill.
+
+### Running unattended
+
+`next --loop`, `build` and `check` edit source and run your project's commands, which blitz no longer pre-approves. Pick one before you leave a loop running:
+
+| Setup | What it does |
+|---|---|
+| Auto mode (`--permission-mode auto`, or `defaultMode: "auto"`) | A classifier approves routine edits and commands and blocks risky ones; blitz's guards still run on every call. Recommended. |
+| `acceptEdits` plus allow rules | Edits apply silently; list your test, build and `verify[]` commands in the project's `permissions.allow` (for example `Bash(npm test *)`, `Bash(npm run build *)`). |
+| Interactive | Every edit and command prompts. Fine for a supervised `build`. |
+
+Under `claude -p` nothing can prompt, so an unapproved call is denied: use auto mode or allow rules there.
 
 ## Threat model
 

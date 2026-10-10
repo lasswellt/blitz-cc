@@ -1,6 +1,6 @@
 # Verifying coding-agent output: critics, judges, cross-model review, test-based verification, reward hacking, and agent evals
 
-Scope: evidence for blitz's verification stack (script-owned `verify[]` status, anti-gaming hooks, read-only opus `critic` that must say LGTM, survey critics, refuter panel with majority-refute, optional cross-model external critic where "any REJECT blocks", diagnostic ratchet, `claude plugin eval` hook suites). Research date: 2026-10-10. Each finding is marked **[measured]** or **[opinion/guidance]**. Several 2026 arXiv items are single-author or workshop preprints that have not been peer reviewed. Note that below.
+Scope: evidence for blitz's verification stack (script-owned `verify[]` status, anti-gaming hooks, read-only opus `critic` that must say LGTM, survey critics, refuter panel with majority-refute, optional cross-model external critic where "any REJECT blocks", diagnostic ratchet, `claude plugin eval .` hook suites). Research date: 2026-10-10. Each finding is marked **[measured]** or **[opinion/guidance]**. Several 2026 arXiv items are single-author or workshop preprints that have not been peer reviewed. Note that below.
 
 ## 1. LLM critics, self-verification, debate, cross-model vs same-model review, judge bias
 
@@ -156,7 +156,7 @@ Public coding benchmarks are degrading. OpenAI stopped reporting SWE-bench Verif
 
 ### Inferences
 - blitz's `verify[]`-as-sole-status-writer is the "deterministic outcome grader" Anthropic recommends for code, and it is correctly placed as the primary gate. LLM critics should be secondary rubric graders.
-- For `claude plugin eval` hook suites, apply the eval guidance:
+- For `claude plugin eval .` hook suites, apply the eval guidance:
   1. Include known-bad *and* known-good fixtures, so blocking hooks get measured for false blocks, not just catches.
   2. Run k > 1 trials for any LLM-judged skill eval and report pass^k.
   3. Seed suites from real failures found in transcripts (error analysis).
@@ -166,7 +166,7 @@ Public coding benchmarks are degrading. OpenAI stopped reporting SWE-bench Verif
 
 ### Gaps
 - Terminal-Bench 2.0 details and the latest METR time-horizon figures were not retrieved in this pass. The search returned nothing relevant.
-- No public material found on Claude Code `claude plugin eval` internals or skill-eval best practice beyond Anthropic's general guide. The skill-creator skill in this environment mentions benchmarking skills with variance analysis, but I did not research it.
+- No public material found on Claude Code `claude plugin eval .` internals or skill-eval best practice beyond Anthropic's general guide. The skill-creator skill in this environment mentions benchmarking skills with variance analysis, but I did not research it.
 - Trusted-author views from Eugene Yan, Shreya Shankar, Chip Huyen, Jason Liu, Harper Reed, Geoffrey Litt, Armin Ronacher, Mitchell Hashimoto, Steve Yegge, and Kent Beck were **not** retrieved within the tool budget. Only Willison and Husain are covered. Treat the trusted-author coverage as incomplete.
 
 ## Summary of recommendations for blitz (inferences from the above)

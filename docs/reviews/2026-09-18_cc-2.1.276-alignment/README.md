@@ -27,7 +27,7 @@ epics: [E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047]
 | Verification | B | Seven deterministic blockers and an 8-invariant gate are strong. No `/goal`, no Stop-hook gate, no `/verify` recipe. sprint-dev's `Monitor(..., persistent: true)` is removed API (C1). |
 | Test selection | D | `npm test -- --changed` plus a filename-sibling matcher. No journal, no selector, no calibration. |
 | Memory / context | B- | `memory: project` on 7 agents is right. KNOWLEDGE.md and auto memory unreconciled. All 37 skills pin `model: opus` + `effort`, forcing a model/effort switch (prompt-cache bust) on every invocation from a non-opus session (C6). CLAUDE.md carries a hook-shaped procedure (C13). |
-| Plugin quality | B | Validators + bats + CI are solid. No `evals/` for `claude plugin eval`, no `/skill-doctor` budget check, Workflow scripts embedded in skill prose rather than `workflows/`. |
+| Plugin quality | B | Validators + bats + CI are solid. No `evals/` for `claude plugin eval .`, no `/skill-doctor` budget check, Workflow scripts embedded in skill prose rather than `workflows/`. |
 | Hygiene | C | README headings say 10 agents / 12 protocols against a banner of 11 / 13; `ci.yml` says 10; `[Unreleased]` holds four review rounds; research cited from shipped protocols is gitignored; two epic numbering schemes. |
 
 ---
@@ -122,7 +122,7 @@ Skills no longer mint IDs. They **claim** the hook-created record (`skill`, `wor
 1. `model: inherit` on skills reverses a 2.4.4 decision. Confirm on a live `opus[1m]` session that no `sonnet[1m]` credits error reappears before merging E-044.
 2. A blocking Stop hook and a user-set `/goal` both fire after every turn. The gate must be a no-op unless `gate.json` exists, and must stay under the platform's 8-consecutive-block cap.
 3. `PushNotification` and `TeamCreate` references need a live check (`/list-agents`, tool listing) before deletion.
-4. `claude plugin eval` suite format and `/skill-doctor` invocation from a skill are unverified; confirm with `--help` before authoring E-045.
+4. `claude plugin eval .` suite format and `/skill-doctor` invocation from a skill are unverified; confirm with `--help` before authoring E-045.
 
 ---
 

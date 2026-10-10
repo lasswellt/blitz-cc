@@ -103,7 +103,7 @@ jobs:
         run: bats hooks/tests/test-listener.bats hooks/tests/test-selector.bats
 
   plugin-eval:
-    # E-045: behavioural eval suite (`claude plugin eval`). ADVISORY — it never fails the
+    # E-045: behavioural eval suite (`claude plugin eval .`). ADVISORY — it never fails the
     # workflow on a grader score, only on a crash (no result document / unexpected exit).
     # GitHub does not expose the `secrets` context in a job-level `if`, so the gate is a
     # job-level env flag and every step is skipped when ANTHROPIC_API_KEY is absent (forks).
