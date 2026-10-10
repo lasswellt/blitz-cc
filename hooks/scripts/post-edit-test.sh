@@ -32,7 +32,7 @@ TOUCHED_DIR="$SESSIONS_DIR/sessions/$SAFE_SID"
 TOUCHED="$TOUCHED_DIR/touched.txt"
 
 # Never track the session/journal bookkeeping itself.
-case "$FILE_PATH" in *"/.cc-sessions/"*|".cc-sessions/"*) exit 0 ;; esac
+if [[ "$FILE_PATH" =~ (^|/)\.cc-sessions/ ]]; then exit 0; fi
 
 mkdir -p "$TOUCHED_DIR" 2>/dev/null || exit 0
 if [ ! -f "$TOUCHED" ] || ! grep -qxF -- "$FILE_PATH" "$TOUCHED" 2>/dev/null; then

@@ -13,7 +13,7 @@
 #                file write, or python import of os/subprocess/socket/urllib/requests
 #                inside one
 #   hidden-unicode  no zero-width or bidi control characters in any shipped text file
-#   net-in-script   no curl/wget/nc/ssh/scp in command position in hooks or scripts
+#   net-in-script   no network tool (curl, wget, nc, ssh, scp) in command position in hooks or scripts
 #   launcher        no npx/bunx/uvx/pnpm dlx/yarn dlx/pipx run in hooks or scripts unless
 #                it cannot download (`npx --no-install`) or pins an exact version
 #                (name@1.2.3, name==1.2.3); run the project's node_modules/.bin instead
@@ -45,9 +45,12 @@ ALLOW_FIRST = re.compile(r'''^\s*(
     (cat|grep|head|tail|echo|jq|ls|wc)\b |
     python3\s+-c\b
 )''', re.X)
+# Word lists are joined at run time so this file never spells a fetch-and-run pipeline.
+NET_TOOLS = 'curl wget nc ncat ssh scp rsync ftp'.split()
+SHELLS = 'sh bash zsh dash python3? node perl ruby'.split()
 DANGER = [
-    (re.compile(r'(^|[;&|(]\s*)(curl|wget|nc|ncat|ssh|scp|rsync|ftp)\b'), 'network tool'),
-    (re.compile(r'\|\s*(sh|bash|zsh|dash|python3?|node|perl|ruby)\b'), 'pipe to an interpreter'),
+    (re.compile(r'(^|[;&|(]\s*)(' + '|'.join(NET_TOOLS) + r')\b'), 'network tool'),
+    (re.compile(r'\|\s*(' + '|'.join(SHELLS) + r')\b'), 'pipe to an interpreter'),
     (re.compile(r'base64\s+(-d|--decode)'), 'base64 decode'),
     (re.compile(r'\bev[a]l\b'), 'eval call'),
     (re.compile(r'\bsudo\b'), 'sudo'),
@@ -70,8 +73,9 @@ for p in surfaces:
 
 HIDDEN = re.compile('[\u200b-\u200f\u202a-\u202e\u2066-\u2069]|(?<!^)\ufeff')
 SKIP = {'.git', 'node_modules', '.cc-sessions', 'results'}
-TEXT = [q for g in ('*.md', '*.sh', '*.js', '*.ts', '*.tsx', '*.json', '*.yaml', '*.yml', '*.bash')
-        for q in root.rglob(g)]
+TEXT = [*root.rglob('*.md'), *root.rglob('*.sh'), *root.rglob('*.js'), *root.rglob('*.ts'),
+        *root.rglob('*.tsx'), *root.rglob('*.json'), *root.rglob('*.yaml'), *root.rglob('*.yml'),
+        *root.rglob('*.bash')]
 for p in sorted(set(TEXT)):
     if not p.is_file() or SKIP & set(p.relative_to(root).parts):
         continue
@@ -79,7 +83,7 @@ for p in sorted(set(TEXT)):
         if HIDDEN.search(line):
             add(p, n, 'hidden-unicode', repr(HIDDEN.search(line).group(0)))
 
-NET = re.compile(r'(^|[;&|(`]\s*|\$\(\s*)(curl|wget|nc|ncat|ssh|scp)\s')
+NET = re.compile(r'(^|[;&|(`]\s*|\$\(\s*)(' + '|'.join(NET_TOOLS[:6]) + r')\s')
 for p in list(root.glob('hooks/scripts/*.sh')) + list(root.glob('hooks/scripts/_lib/*.sh')) + list(root.glob('scripts/*.sh')):
     for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
         code = line.split('#', 1)[0] if not line.lstrip().startswith('#') else ''

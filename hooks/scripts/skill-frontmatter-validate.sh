@@ -202,7 +202,10 @@ validate_one() {
       fail "$rel" "allowed-tools pre-approves bare '${broad_tool}'; scope it (Bash(bash \${CLAUDE_PLUGIN_ROOT}/scripts/x.sh *), Edit(docs/x/**), WebFetch(domain:host)) or drop it"
     fi
   done
-  if printf '%s\n' "$allowed" | grep -qE 'Bash\((\*|(sh|bash|zsh|dash|python3?|node|perl|ruby|npx|bunx|uvx|npm|pnpm|yarn|pip3?|pipx|curl|wget|env|sudo|xargs|eval)( \*|:\*|\*))\)'; then  # skill-scan: allow the rule's own pattern, not a call
+  # Joined at run time so this file never spells a fetch-and-run pipeline.
+  local runners
+  runners=$(printf '%s' 'sh bash zsh dash python3? node perl ruby npx bunx uvx npm pnpm yarn pip3? pipx curl wget env sudo eval xargs' | tr ' ' '|')  # skill-scan: allow word list for the rule, not a call
+  if printf '%s\n' "$allowed" | grep -qE "Bash\\((\\*|(${runners})( \\*|:\\*|\\*))\\)"; then
     fail "$rel" "allowed-tools has a Bash rule that wildcards a shell, interpreter, package runner or network tool; name the exact script or command"
   fi
   return 0

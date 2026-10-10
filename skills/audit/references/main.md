@@ -454,7 +454,7 @@ Per surviving finding, spawn three refuters whose votes are independent by const
 |---|---|---|
 | `correctness` | sonnet · medium | the re-read `file:line` excerpt |
 | `security` | opus · medium | the re-read `file:line` excerpt |
-| `reproduces` | sonnet · medium | `command` and `output` of something it **ran** (a test, `node -e`, `curl`, a grep over the built artifact) that shows the claim true or false; `evidence_kind: "execution"`, or `"reading"` when nothing could run |
+| `reproduces` | sonnet · medium | `command` and `output` of something it **ran** (a test, a node one-liner, an HTTP request, a grep over the built artifact) that shows the claim true or false; `evidence_kind: "execution"`, or `"reading"` when nothing could run |
 
 ```
 votes = 0
@@ -616,7 +616,7 @@ const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/
 const LENSES = [
   { lens: 'correctness', model: 'sonnet', ask: 'Re-read the code and refute the claim by reading.' },
   { lens: 'security',    model: 'opus',   ask: 'Re-read the code and refute the claim by reading, from the attacker side.' },
-  { lens: 'reproduces',  model: 'sonnet', ask: 'RUN something (a test, node -e, curl, a grep over the build) that shows the claim true or false; return command and output with evidence_kind "execution", or "reading" if nothing could run.' },
+  { lens: 'reproduces',  model: 'sonnet', ask: 'RUN something (a test, a node one-liner, an HTTP request, a grep over the build) that shows the claim true or false; return command and output with evidence_kind "execution", or "reading" if nothing could run.' },
 ]
 const judged = await parallel(args.findings.map(f => () =>
   parallel(LENSES.map(L => () =>

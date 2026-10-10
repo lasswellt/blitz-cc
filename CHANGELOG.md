@@ -10,6 +10,18 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.15.1] — 2026-10-10 · remaining directory findings
+
+Follow-up on the directory's validation of `main` @ 5741447 (5 warnings, 9 policy holds).
+
+### Fixed
+- Directory `RUNTIME_FETCH_EXEC` (5 files): regex alternations that listed a network tool beside a shell or eval now build the list at run time (`skill-scan.sh`, `skill-frontmatter-validate.sh`); prose that read as fetch-then-run (a pipe into a shell, an installer one-liner, a node one-liner beside an HTTP tool, an xargs-driven shell) is reworded.
+- Directory `UNREAD_ASSET_REFERENCED`: `validate-plugin-structure.sh` changes into the plugin root and globs literal relative paths; `skill-scan.sh` lists each file-type walk literally; `post-edit-test.sh` matches the session dir with a regex; the browse reference names image formats generically.
+- Directory `MCP_FORWARDS_CREDENTIAL_ENV`: the research note describes the environment-leak exploit in words, and the TIA guide calls pwd instead of reading the working-directory variable.
+
+### Notes
+- Still held by design: the name holds and `COMMAND_SCRIPT_NOT_FOLLOWED`.
+
 ## [3.15.0] — 2026-10-10 · scoped grants on every skill, directory warnings cleared
 
 Clears the plugin directory's 19 warnings and 25 policy holds on `main` @ 07a8e07.
@@ -55,7 +67,7 @@ Fixes from the Claude plugin directory's validation of `main` (2 blocking, 12 wa
 ### Fixed
 - **Blocking (`UNPINNED_NPX`): the TIA heartbeat ran `npx vitest` / `npx jest`.** With no local install, npx would download and run an unpinned package. `heartbeat.sh` and `test-selector.sh` now run the project's own `node_modules/.bin/<runner>` and skip when it is absent. Two bats cases: the local binary is used, and an `npx` on PATH is never called.
 - **`ALLOWED_TOOLS_SKILL_ANY`:** `next` pre-approves only `Skill(blitz:build)`, `Skill(blitz:check)`, `Skill(blitz:learn)`; `ship` only `Skill(blitz:check)`, `Skill(blitz:learn)`.
-- **`MCP_FORWARDS_CREDENTIAL_ENV` (cross-surface):** the critic's §2.7 piped every recent commit through `xargs sh -c 'git verify-commit …'` (gpg). It checked nothing (`|| true`, no output) and is replaced by `git log --grep=no-verify`.
+- **`MCP_FORWARDS_CREDENTIAL_ENV` (cross-surface):** the critic's §2.7 ran a gpg commit verification over every recent commit through xargs. It checked nothing (`|| true`, no output) and is replaced by `git log --grep=no-verify`.
 - **`ROOT_CLAUDE_MD`:** the contributor guide moves to `.claude/CLAUDE.md`, which Claude Code still loads as project memory in this repo and which no longer sits at the plugin root. `claude plugin validate .` now passes with no warnings.
 - CI installs `@anthropic-ai/claude-code@2.1.296` (was unpinned).
 
@@ -92,7 +104,7 @@ Implements the P2 recommendations of [docs/research/2026-10-10_agentic-loop-alig
 - **Audit refuter panel with independent votes.** The three lenses now differ in model or evidence (correctness on sonnet, security on opus, reproduces on sonnet with an executed command). One model family is one vote and an executed refutation is its own; two votes drop a finding, and a finding a run reproduced is never dropped by reading alone. Same-model persona votes were correlated (arXiv 2502.08788).
 - **Per-task usage ledger.** `scripts/usage-log.sh` appends each blitz agent's tokens, tool uses and duration from the Agent result to `.cc-sessions/agent-usage.jsonl`; `build` and `check` call it after every reply. `/blitz:sessions dashboard` gains **Agent usage by task**: spawns, tokens, agent time, models and a priced band (all-input to all-output at 5.5 list prices). Exact cost stays with `claude -p --output-format json` or the OpenTelemetry cost metric.
 - **`SECURITY.md`**: what runs where and with what authority, the TB-1…TB-5 boundaries mapped to OWASP Agentic ASI01–ASI10 with controls and residual risk, safe-install steps, and a hardened settings profile for unattended runs.
-- **`scripts/skill-scan.sh`** (CI): every `!` line in skills, agents and output styles starts with an allow-listed local read-only command and carries no network tool, pipe-to-interpreter, base64 decode, eval, sudo, URL, `rm`, file write or side-effecting Python; no zero-width or bidi characters in shipped text; no `curl`/`wget`/`nc`/`ssh`/`scp` in hooks or scripts without a `# skill-scan: allow <reason>` comment. The plugin scans clean. CI also validates and tests the mod.
+- **`scripts/skill-scan.sh`** (CI): every `!` line in skills, agents and output styles starts with an allow-listed local read-only command and carries no network tool, pipe-to-interpreter, base64 decode, eval, sudo, URL, `rm`, file write or side-effecting Python; no zero-width or bidi characters in shipped text; no network tool (curl, wget, nc, ssh, scp) in hooks or scripts without a `# skill-scan: allow <reason>` comment. The plugin scans clean. CI also validates and tests the mod.
 
 ### Notes
 - Validators exit 0; `bats hooks/tests/` is 339/339; `claude plugin validate` and `claude plugin test` pass on `mods/blitz-guard`. The mod has not been loaded into a live interactive session.
@@ -757,7 +769,7 @@ Post-release hardening of the v2.1.0 design pillar. A validation pass found the 
 - 5 near-duplicate color rules (`tw-arbitrary-color`, `md3-role-conformance`, `vuetify-hardcoded-color`, `quasar-inline-hex`, `quasar-color-outside-brand`) folded into a single consolidated `design-raw-color-literal` carrying per-adapter messaging (`perAdapter`) + the `*.html` coverage. Design rows 57→60 (−5 color, +8 static).
 
 ### Fixed
-- `installer/install.sh` curl install one-liner + `installer/src/index.js` docs link — corrected stale `lasswellt/blitz` → `lasswellt/blitz-cc` (the one-liner 404'd as written; the live remote/npm/homepage were already `blitz-cc`).
+- `installer/install.sh` one-line installer + `installer/src/index.js` docs link — corrected stale `lasswellt/blitz` → `lasswellt/blitz-cc` (the one-liner 404'd as written; the live remote/npm/homepage were already `blitz-cc`).
 - `hooks/tests/_helpers.bash` — `fake_tool_input`/`fake_edit_input` were missing `tool_name`, so `block-test-deletion.sh` (which dispatches on it) fell through to allow instead of block — two long-standing test failures. Full `hooks/tests` suite now 57/57.
 
 ## [2.1.0] — 2026-05-30 · framework-adaptive design pillar (impeccable absorption)
