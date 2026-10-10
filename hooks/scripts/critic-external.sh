@@ -271,7 +271,7 @@ REJECT_EXIT=2
 read_flags() {  # read_flags <ENVVAR-NAME> — echoes nothing, fills PROVIDER_FLAGS
   PROVIDER_FLAGS=()
   local _raw _flag
-  eval "_raw=\${$1:-}"
+  _raw="${!1:-}"
   while IFS= read -r _flag; do
     [ -n "$_flag" ] && PROVIDER_FLAGS+=("$_flag")
   done < <(printf '%s\n' "$_raw")

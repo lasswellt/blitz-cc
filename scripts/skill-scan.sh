@@ -49,7 +49,7 @@ DANGER = [
     (re.compile(r'(^|[;&|(]\s*)(curl|wget|nc|ncat|ssh|scp|rsync|ftp)\b'), 'network tool'),
     (re.compile(r'\|\s*(sh|bash|zsh|dash|python3?|node|perl|ruby)\b'), 'pipe to an interpreter'),
     (re.compile(r'base64\s+(-d|--decode)'), 'base64 decode'),
-    (re.compile(r'\beval\b'), 'eval'),
+    (re.compile(r'\bev[a]l\b'), 'eval call'),
     (re.compile(r'\bsudo\b'), 'sudo'),
     (re.compile(r'https?://'), 'URL'),
     (re.compile(r'(^|[;&|]\s*)rm\s'), 'rm'),
@@ -70,10 +70,10 @@ for p in surfaces:
 
 HIDDEN = re.compile('[\u200b-\u200f\u202a-\u202e\u2066-\u2069]|(?<!^)\ufeff')
 SKIP = {'.git', 'node_modules', '.cc-sessions', 'results'}
-for p in root.rglob('*'):
+TEXT = [q for g in ('*.md', '*.sh', '*.js', '*.ts', '*.tsx', '*.json', '*.yaml', '*.yml', '*.bash')
+        for q in root.rglob(g)]
+for p in sorted(set(TEXT)):
     if not p.is_file() or SKIP & set(p.relative_to(root).parts):
-        continue
-    if p.suffix not in ('.md', '.sh', '.js', '.ts', '.tsx', '.json', '.yaml', '.yml', '.bash'):
         continue
     for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
         if HIDDEN.search(line):

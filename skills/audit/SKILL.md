@@ -2,7 +2,7 @@
 name: audit
 description: "Runs a 5-pillar recall audit (architecture, performance, security, maintainability, robustness) with paired agents plus registry checks, then writes docs/plans/audit-<date>/ as a paused task plan. Use for 'audit codebase', 'find tech debt', 'security audit', 'full code review', or before a release."
 argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual] [--plan]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(docs/plans/**), Edit(docs/audits/**), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 ---

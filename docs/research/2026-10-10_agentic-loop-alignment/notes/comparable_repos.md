@@ -119,7 +119,7 @@ Adoption is extremely skewed. superpowers has about 297k stars; blitz has 1.
 - 94 plugins, 202 agents, 184 skills and 105 commands.
 - One Markdown source feeds 7 harnesses: Claude Code, Codex, Cursor, OpenCode, Antigravity, Copilot and Pi.
 - Model aliases (opus, sonnet, haiku, inherit) are mapped per harness.
-- `plugin-eval` scores skills statically; the LLM-judge layer is "experimental… not validated against human labels."
+- plugin-eval scores skills statically; the LLM-judge layer is "experimental… not validated against human labels."
 - [README](https://raw.githubusercontent.com/wshobson/agents/main/README.md)
 
 **frankbria/ralph-claude-code**

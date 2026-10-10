@@ -52,7 +52,7 @@ MD3 is **not a primary** — it is a token layer over Tailwind v4. The composite
 |---|---|
 | colorRoles | **49 sys-color tokens** — `--md-sys-color-{primary,secondary,tertiary,error}` (+ `-container`, `-fixed`, `-fixed-dim` + `on-*` for each), `surface` + `surface-container-{lowest,low,_,high,highest}`, `surface-variant`, `outline`, `outline-variant`, `inverse-*`, `shadow`, `scrim`. `closedSet: true`. |
 | onPairing | **enforced-by-role** — every container/bg role has `--md-sys-color-on-<role>` at WCAG-AA. (surface-container-* share `on-surface`/`on-surface-variant`; fixed roles use `on-*-fixed`/`-fixed-variant`.) |
-| typeScale | **15-role scale** `--md-sys-typescale-{display,headline,title,body,label}-{large,medium,small}-{font,size,line-height,weight}` + 2 `weight-prominent`. **Tracking unsupported on web.** |
+| typeScale | **15-role scale** `--md-sys-typescale-<role>-<size>-<prop>` (role: display, headline, title, body, label; size: large, medium, small; prop: font, size, line-height, weight) + 2 `weight-prominent`. **Tracking unsupported on web.** |
 | shape | **7 corners** `--md-sys-shape-corner-{none,extra-small,small,medium,large,extra-large,full}` (0/4/8/12/16/28dp/pill). M3 Expressive adds +35 shapes (design lib; core 7 unchanged on web). |
 | motion | `--md-sys-motion-easing-{standard,emphasized,emphasized-accelerate,emphasized-decelerate,legacy*}` + `--md-sys-motion-duration-{short1..4,medium1..4,long1..4,extra-long1..4}` (50–1000ms). M3 Expressive **spring prescribed** but **CSS spring tokens not yet shipped on web** — `emphasized-*` overshoot curves are today's expression. `springPrescribed: true (spec); web-pending`. |
 | spacing | inherits Tailwind spacing; MD3 has no separate web spacing-token scale. |

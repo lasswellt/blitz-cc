@@ -2,7 +2,7 @@
 name: check
 description: "Runs the quality gate on a diff, a plan, or the repo: tsc/lint/tests/build, registry checks, task verify[], critic review; writes check-report.md. Use for 'check this', 'review my changes', 'run the gates', 'is this done', 'is this mergeable', 'check wiring/completeness/framework/design/security'."
 argument-hint: "[--scope diff|plan <slug>|repo] [--only completeness|wiring|framework|design|security] [--fix] [--comment] [--mutation] [--dual]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-registry-validate.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Bash(git show *), Bash(git rev-parse *), Bash(git ls-files *), Edit(docs/plans/**), Edit(docs/sweeps/**), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 ---

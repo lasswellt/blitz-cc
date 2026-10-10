@@ -15,7 +15,7 @@ registry_entries: []
 
 # E-045 Plugin evals + workflows/ distribution
 
-**Why.** `claude plugin eval` (2.1.269) runs a plugin's eval suite and emits a scored, reproducible JSON + HTML report suitable for CI. Plugins can now ship `workflows/*.js` that run as namespaced commands (`/blitz:<name>`), with `args` input and resume replay. blitz's Workflow scripts live inline in SKILL.md prose (sprint-dev §2.3-W, sprint-review §2.2.0-W, audit §1.1-W), so they cannot be saved, diffed, or replayed by the runtime.
+**Why.** `claude plugin eval .` (2.1.269) runs a plugin's eval suite and emits a scored, reproducible JSON + HTML report suitable for CI. Plugins can now ship `workflows/*.js` that run as namespaced commands (`/blitz:<name>`), with `args` input and resume replay. blitz's Workflow scripts live inline in SKILL.md prose (sprint-dev §2.3-W, sprint-review §2.2.0-W, audit §1.1-W), so they cannot be saved, diffed, or replayed by the runtime.
 
 ## Stories
 
@@ -26,7 +26,7 @@ registry_entries: []
 
 ### S2 CI job
 - **Files:** `.github/workflows/ci.yml`.
-- **Change:** job `plugin-eval`, `if: ${{ secrets.ANTHROPIC_API_KEY != '' }}`, installs the CLI, runs the eval, uploads JSON + HTML as artifacts. Drop hard-coded counts from step names (overlaps E-047).
+- **Change:** job plugin-eval, `if: ${{ secrets.ANTHROPIC_API_KEY != '' }}`, installs the CLI, runs the eval, uploads JSON + HTML as artifacts. Drop hard-coded counts from step names (overlaps E-047).
 - **Acceptance:** job is skipped cleanly on forks without the secret; passes on main.
 
 ### S3 Extract plugin workflows

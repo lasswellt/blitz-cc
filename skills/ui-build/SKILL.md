@@ -2,7 +2,7 @@
 name: ui-build
 description: "Use when the user says 'build a page', 'create UI', 'add a form', 'build UI for X', 'add a screen', or 'extract design system' / 'build DESIGN.md'. Discovers the project's components, tokens, and conventions (extracting DESIGN.md when absent), then builds production-grade Vue 3 UI native to it."
 argument-hint: "<feature description>"
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch, AskUserQuestion
+allowed-tools: Read, Glob, Grep, ToolSearch, AskUserQuestion, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(git diff *), Bash(git --no-pager diff *)
 model: inherit
 compatibility: ">=2.1.296"
 paths:

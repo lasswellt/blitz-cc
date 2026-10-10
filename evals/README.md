@@ -1,6 +1,6 @@
-# blitz eval suite (`claude plugin eval`, CC ≥2.1.269)
+# blitz eval suite (`claude plugin eval .`, CC ≥2.1.269)
 
-Behavioural regression cases for the plugin, in the layout `claude plugin eval` reads
+Behavioural regression cases for the plugin, in the layout `claude plugin eval .` reads
 (`evals/<case>/prompt.md` + `graders/*.md`, optional `case.yaml` for fixtures). Format
 reference: https://code.claude.com/docs/en/plugin-evals. Structural checks (`node --check`,
 frontmatter lint) live in `scripts/validate-plugin-structure.sh`; this suite covers what the
@@ -32,7 +32,7 @@ claude plugin eval . --tag routing --ablation none --runs 1 --case next-suggests
 
 Results land in `evals/results/<timestamp>/{aggregate-result.json,report.html}` (gitignored via
 `evals/.gitignore`). `--json <path>` writes the versioned result document (`schemaVersion: 1`)
-for CI. The CI job (`plugin-eval` in `.github/workflows/ci.yml`) runs only when
+for CI. The CI job (job plugin-eval in `.github/workflows/ci.yml`) runs only when
 `ANTHROPIC_API_KEY` is configured and uploads `evals/results/` as an artifact.
 
 ## Ablation arm

@@ -2,7 +2,7 @@
 name: build
 description: "Implements work: a one-sentence change inline, or the next task from docs/plans/<slug>/tasks.json with a fresh dev agent per task, verify gate, and fix loop. Use for 'build', 'implement', 'fix issue #N', 'make this change', 'work the plan'. --parallel fans out disjoint tasks."
 argument-hint: "[<slug>|<task-id>|--issue <n>|\"<change>\"] [--parallel] [--autonomous]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent, SendMessage, ListAgents, Monitor
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, SendMessage, ListAgents, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(docs/plans/**), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 ---

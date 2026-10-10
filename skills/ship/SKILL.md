@@ -2,7 +2,7 @@
 name: ship
 description: "Releases finished work: checks the plan's gate, computes semver from commits, writes CHANGELOG, tags, publishes, archives the plan, runs learn. Slash-only. Use for 'ship it', 'cut a release', 'publish', 'release vX.Y.Z', 'tag this'. Refuses when any task is open or the check report is not PASS."
 argument-hint: "[--plan <slug>] [<version>] [--dry-run] [--no-publish]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill(blitz:check), Skill(blitz:learn)
+allowed-tools: Read, Glob, Grep, Skill(blitz:check), Skill(blitz:learn), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Bash(git rev-parse *), Bash(git describe *), Edit(docs/plans/**), Edit(docs/solutions/**), Edit(.cc-sessions/**)
 model: opus
 effort: medium
 disable-model-invocation: true

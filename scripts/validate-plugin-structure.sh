@@ -237,17 +237,14 @@ while IFS= read -r -d '' sh_file; do
     check_fail "$rel_path missing shebang (got: $first_line)"
   fi
 
-  case "$rel_path" in
-    */_lib/*)
-      # sourced libraries (never executed directly) — executable bit not required
-      check_pass "$rel_path is a sourced lib (exec bit not required)" ;;
-    *)
-      if [[ -x "$sh_file" ]]; then
-        check_pass "$rel_path is executable"
-      else
-        check_fail "$rel_path is not executable"
-      fi ;;
-  esac
+  if [[ "$rel_path" == */_lib/* ]]; then
+    # sourced libraries (never executed directly) — executable bit not required
+    check_pass "$rel_path is a sourced lib (exec bit not required)"
+  elif [[ -x "$sh_file" ]]; then
+    check_pass "$rel_path is executable"
+  else
+    check_fail "$rel_path is not executable"
+  fi
 done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/null)
 
 # ---------------------------------------------------------------

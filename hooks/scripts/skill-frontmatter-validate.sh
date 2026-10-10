@@ -21,6 +21,10 @@
 #   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
 #  11. a pinned model: discloses its cache cost in the body
+#  12. allowed-tools pre-approves no unscoped Bash, Write, Edit, Monitor,
+#      WebSearch or WebFetch, and no Bash rule that wildcards a shell,
+#      interpreter, package runner or network tool (plugin directory holds
+#      ALLOWED_TOOLS_BROAD, _UNSCOPED_WRITE, _UNSCOPED_FETCH)
 
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
@@ -190,6 +194,17 @@ validate_one() {
       fail "$rel" "allowed-tools lists '${gated_tool}' — Task/Todo tools are off on current models; track work in docs/plans/<slug>/tasks.json"
     fi
   done
+
+  # 12. Scoped grants only: anything else prompts or follows the user's own rules.
+  local broad_tool
+  for broad_tool in Bash Write Edit Monitor WebSearch WebFetch; do
+    if printf '%s\n' "$allowed" | grep -qE "(^|[, ])${broad_tool}([, ]|$)"; then
+      fail "$rel" "allowed-tools pre-approves bare '${broad_tool}'; scope it (Bash(bash \${CLAUDE_PLUGIN_ROOT}/scripts/x.sh *), Edit(docs/x/**), WebFetch(domain:host)) or drop it"
+    fi
+  done
+  if printf '%s\n' "$allowed" | grep -qE 'Bash\((\*|(sh|bash|zsh|dash|python3?|node|perl|ruby|npx|bunx|uvx|npm|pnpm|yarn|pip3?|pipx|curl|wget|env|sudo|xargs|eval)( \*|:\*|\*))\)'; then  # skill-scan: allow the rule's own pattern, not a call
+    fail "$rel" "allowed-tools has a Bash rule that wildcards a shell, interpreter, package runner or network tool; name the exact script or command"
+  fi
   return 0
 }
 

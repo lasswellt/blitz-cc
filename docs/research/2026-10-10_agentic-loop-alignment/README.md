@@ -110,7 +110,7 @@ This report synthesizes eight research notes covering eight areas:
 
 Together the notes cite **253 distinct URLs**, from the Claude Code changelog and live docs read on 2026-10-10, Anthropic engineering posts from 2024 to 2026, arXiv preprints, GitHub repositories and issues, and practitioner blogs. File-level claims about blitz come from a local read of the checkout at 3.10.0: `hooks/hooks.json`, `agents/critic.md`, `agents/dev.md`, `skills/build/references/main.md`, `skills/_shared/agents.md`, `skills/_shared/loop.reference.md`, `hooks/scripts/stop-gate.sh`, `hooks/scripts/block-destructive-sql.sh`, `hooks/scripts/critic-external.sh` and `.claude-plugin/compat.json`.
 
-Some of the evidence is weak. Benchmark figures for the 5.5 models are mostly Anthropic's own or second-hand reports of Artificial Analysis. The system cards could not be fetched. Several 2026 verification papers are single-author or workshop preprints. The notes found no independent study of any Claude Code plugin framework against plain Claude Code. Effort recommendations are therefore phrased as defaults to confirm with blitz's own `claude plugin eval` suites, not as settled facts.
+Some of the evidence is weak. Benchmark figures for the 5.5 models are mostly Anthropic's own or second-hand reports of Artificial Analysis. The system cards could not be fetched. Several 2026 verification papers are single-author or workshop preprints. The notes found no independent study of any Claude Code plugin framework against plain Claude Code. Effort recommendations are therefore phrased as defaults to confirm with blitz's own `claude plugin eval .` suites, not as settled facts.
 
 ## Conclusion
 

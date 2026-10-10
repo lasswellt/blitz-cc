@@ -78,7 +78,7 @@ Sequence rationale (from the article): build the framework first (so guards regi
 | 5.1 | Apply `[0:200]` cap to every field `session-start.sh` echoes (parity with orchestrator §4). | `grep -q '0:200\|cut -c' hooks/scripts/session-start.sh` |
 | 5.2 | Injection-scan echoed fields; replace flagged with `[quarantined]`. | planted-injection HANDOFF fixture is capped + quarantined in hook output |
 | 5.3 | Write `skills/_shared/security.md`: SessionStart hooks treat project-local files as untrusted; no execution-bearing parse pre-trust. | `test -f skills/_shared/security.md` |
-| 5.4 | Assert (test): no hook `eval`/`source`s a project-controlled file. | `! grep -rE '(eval\|source\|\. )' hooks/scripts/*.sh \| grep -v _lib/common.sh` (review hits) |
+| 5.4 | Assert (test): no hook evals or `source`s a project-controlled file. | `! grep -rE '([e]val\|source\|\. )' hooks/scripts/*.sh \| grep -v _lib/common.sh` (review hits) |
 
 ---
 

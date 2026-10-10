@@ -611,7 +611,7 @@ When new URL found, normalize to pattern for dedup:
 | External origin | `new URL(href).origin !== new URL(BASE_URL).origin` |
 | Non-HTTP scheme | `mailto:`, `tel:`, `javascript:`, `data:`, `blob:` |
 | Auth paths | `/auth/*`, `/oauth/*`, `/login`, `/logout`, `/callback`, `/signup`, `/register`, `/forgot-password`, `/reset-password` |
-| File downloads | Ends with: `.pdf`, `.zip`, `.csv`, `.xlsx`, `.doc`, `.docx`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`, `.mp4`, `.mp3` |
+| File downloads | URL path ends in a document, archive, image, audio or video extension (pdf, zip, csv, xlsx, doc, docx, png, jpg, jpeg, gif, svg, webp, mp4, mp3) |
 | Already visited | Exact URL exists in `crawl-visited.json` |
 | Already queued | Exact URL exists in `crawl-queue.json` queue |
 | Pattern seen | Normalized pattern exists in `url_patterns_seen[]` |
@@ -1074,7 +1074,7 @@ For each extracted link, apply normalization rules from references/main.md:
    - External origin (different host than `BASE_URL`)
    - `mailto:`, `tel:`, `javascript:`, `data:` scheme
    - Auth path: matches `/auth/*`, `/oauth/*`, `/login`, `/logout`, `/callback`, `/signup`, `/register`
-   - File download: ends with `.pdf`, `.zip`, `.csv`, `.xlsx`, `.doc`, `.png`, `.jpg`, `.svg`
+   - File download: URL path ends in a document, archive or image extension (pdf, zip, csv, xlsx, doc, png, jpg, svg)
    - Already in `crawl-visited.json` (exact URL)
    - Already in queue (exact URL)
 3. Strip hash fragments (`#section` → removed)

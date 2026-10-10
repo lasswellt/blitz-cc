@@ -1,11 +1,10 @@
 # blitz-check.yml — run /blitz:check on every pull request with claude-code-action.
 # Installed by `/blitz:doctor --ci` at .github/workflows/blitz-check.yml.
 #
-# Auth: `anthropic_api_key` (an API key stored as the ANTHROPIC_API_KEY repository
-# secret) is the default. Subscribers of Claude Pro/Max can use an OAuth token
-# instead: replace the `anthropic_api_key` line with
-#   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-# (generate it with `claude setup-token`). Never set both.
+# Auth: `anthropic_api_key` reads the ANTHROPIC_API_KEY repository secret, which
+# you add under Settings > Secrets and variables > Actions. Claude Pro/Max
+# subscribers can use the action's `claude_code_oauth_token` input instead (see
+# the claude-code-action README); never set both.
 #
 # Fork PRs: GitHub withholds repository secrets from workflows triggered by pull
 # requests from forks, so this job has no credentials there and fails at the
