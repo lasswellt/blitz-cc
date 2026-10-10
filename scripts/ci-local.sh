@@ -58,6 +58,12 @@ if [ "$FAST" -eq 0 ]; then
   else
     step "Hook tests (bats, CI=true)"    env CI=true "$BATS" hooks/tests/   # GitHub Actions sets CI=true
     step "Link resolver tests"           bash hooks/scripts/tests/test-link-resolver.sh
+    # GitHub's runners resolve `awk` to gawk; a mawk host misses gawk-only warnings.
+    if command -v gawk >/dev/null 2>&1 && ! awk --version 2>/dev/null | grep -q 'GNU Awk'; then
+      GAWK_DIR=$(mktemp -d); ln -s "$(command -v gawk)" "$GAWK_DIR/awk"
+      step "Hook tests under gawk"       env PATH="$GAWK_DIR:$PATH" CI=true "$BATS" hooks/tests/
+      rm -rf "$GAWK_DIR"
+    fi
   fi
 fi
 rm -f /tmp/blitz-ci-local.$$

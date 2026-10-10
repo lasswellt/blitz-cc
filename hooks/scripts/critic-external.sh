@@ -244,7 +244,10 @@ SECRET_RX='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|
 REDACTED=0
 if [ "${BLITZ_CRITIC_NO_REDACT:-0}" != "1" ]; then
   printf '%s\n' "$FULL_PROMPT" > "$WORK/prompt.raw"
-  awk -v rx="$SECRET_RX" -v cnt="$WORK/redacted.count" '
+  # The pattern goes through ENVIRON, not -v: awk applies escape processing to
+  # -v values, so `\.` became a plain `.` and gawk warned on stderr.
+  BLITZ_SECRET_RX="$SECRET_RX" awk -v cnt="$WORK/redacted.count" 'BEGIN { rx = ENVIRON["BLITZ_SECRET_RX"] }
+
     /^diff --git / { secretfile = ($0 ~ /\/(\.env[^ ]*|[^ ]*\.(pem|key|p12|pfx|keystore)|id_(rsa|ed25519|ecdsa)[^ ]*|credentials[^ ]*|\.npmrc|\.pypirc|\.netrc)( |$)/) }
     {
       if ((secretfile && $0 ~ /^\+[^+]/) || $0 ~ rx) { print "[REDACTED by blitz]"; n++; next }

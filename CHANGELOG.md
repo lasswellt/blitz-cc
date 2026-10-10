@@ -21,6 +21,7 @@ _Nothing yet._
 - `.claude-plugin/icon.png` (1024×1024): the listing icon, a lightning bolt drawn as a task graph whose last node is a passed check (blitz's task DAG and verify gate). The directory keeps the first icon it is given.
 
 ### Fixed
+- **`critic-external.sh` printed a gawk warning before its JSON.** The secret pattern was passed with `awk -v`, which applies escape processing, so gawk (GitHub's runners) warned that `\.` became `.` on stderr. The pattern now goes through `ENVIRON`, which also keeps the JWT pattern's literal dot. `scripts/ci-local.sh` runs the suite under gawk when the host's `awk` is mawk.
 - **CI was red on `main` since 3.9.2.** GitHub Actions sets `CI=true`, and `post-edit-typecheck-block.sh` stands down in CI by design, so the four typecheck-ratchet bats cases tested nothing there and failed. `toolchain.bats` now unsets `CI` in `setup()`, a new case pins the CI stand-down, and `scripts/ci-local.sh` runs bats with `CI=true` as GitHub does.
 
 ### Notes
