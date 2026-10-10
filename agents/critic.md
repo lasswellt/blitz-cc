@@ -159,7 +159,7 @@ For 3 randomly chosen files from `git diff --name-only "${BASE:-HEAD~3}"...HEAD 
 
 ```bash
 git reflog --all --grep-reflog='no-verify' | head
-git log --all --since='3 days ago' --pretty='%H %s' | xargs -I{} sh -c 'git verify-commit {} 2>&1 | grep -q "gpg" || true' | head
+git log --all --since='3 days ago' --grep='no-verify' --pretty='%h %s' | head
 ```
 
 If any commit landed via --no-verify: REJECT (det-13).

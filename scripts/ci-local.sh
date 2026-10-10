@@ -33,7 +33,7 @@ step "Agent frontmatter"                 bash hooks/scripts/agent-frontmatter-va
 step "Check-registry schema"             bash hooks/scripts/check-registry-validate.sh
 step "Markdown links + anchors"          bash hooks/scripts/markdown-link-validate.sh
 step "Section references resolve"        bash scripts/check-section-refs.sh
-step "CLAUDE.md size guard (<=200)"      test "$(wc -l < CLAUDE.md)" -le 200
+step ".claude/CLAUDE.md size (<=200)"    test "$(wc -l < .claude/CLAUDE.md)" -le 200
 step "Version-reference sync"            bash scripts/check-version-sync.sh
 step "Plugin structure"                  bash scripts/validate-plugin-structure.sh
 step "Workflow JS syntax"                bash -c 'for f in workflows/*.js; do node --check "$f" || exit 1; done'

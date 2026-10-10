@@ -2,7 +2,7 @@
 name: next
 description: "Recommends or, with --loop, dispatches the next unit of work from docs/plans/*/tasks.json and the inbox. Use for 'what next', 'where are we', 'run the loop' or any autonomous tick. One tick reconciles state, runs one row (build, check, learn+archive), commits with a Task: trailer, exits."
 argument-hint: "[--loop] [--plan <slug>]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup, ListAgents, SendMessage
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill(blitz:build), Skill(blitz:check), Skill(blitz:learn), ScheduleWakeup, ListAgents, SendMessage
 disallowed-tools: AskUserQuestion
 model: inherit
 compatibility: ">=2.1.296"

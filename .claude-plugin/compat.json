@@ -47,7 +47,7 @@
   },
   "cited_in": [
     "README.md",
-    "CLAUDE.md",
+    ".claude/CLAUDE.md",
     ".claude-plugin/plugin.json",
     "skills/_shared/agents.md",
     "skills/_shared/sessions.md",

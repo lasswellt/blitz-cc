@@ -29,3 +29,31 @@ teardown() { teardown_fake_repo; }
   run_hook "heartbeat.sh" '{"session_id":"s1"}'
   [ ! -f .cc-sessions/sessions/s1.json ]
 }
+
+tia_fixture() {  # a vitest project with one changed source file and its sibling test
+  printf '{"name":"x","devDependencies":{"vitest":"2.0.0"}}\n' > package.json
+  mkdir -p src bin .cc-sessions/sessions/s1
+  printf 'export const a = 1\n' > src/a.ts
+  printf 'import { a } from "./a"\n' > src/a.test.ts
+  printf 'src/a.ts\n' > .cc-sessions/sessions/s1/touched.txt
+  # an npx on PATH that records any call: the heartbeat must never use it
+  printf '#!/usr/bin/env bash\necho "$@" >> "%s/npx.calls"\n' "$PWD" > bin/npx; chmod +x bin/npx
+  export PATH="$PWD/bin:$PATH"
+}
+
+@test "TIA runs the project's own node_modules/.bin runner, never npx" {
+  tia_fixture
+  mkdir -p node_modules/.bin
+  printf '#!/usr/bin/env bash\necho "$@" >> "%s/vitest.calls"\n' "$PWD" > node_modules/.bin/vitest; chmod +x node_modules/.bin/vitest
+  run_hook "heartbeat.sh" "{\"session_id\":\"s1\",\"cwd\":\"$PWD\"}"
+  [ "$status" -eq 0 ]
+  grep -q '^run --reporter=json' vitest.calls
+  [ ! -f npx.calls ]
+}
+
+@test "TIA skips (no download) when the runner is not installed locally" {
+  tia_fixture
+  run_hook "heartbeat.sh" "{\"session_id\":\"s1\",\"cwd\":\"$PWD\"}"
+  [ "$status" -eq 0 ]
+  [ ! -f npx.calls ]
+}

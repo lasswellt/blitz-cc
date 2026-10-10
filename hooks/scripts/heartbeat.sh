@@ -54,11 +54,15 @@ SELECTED=$(printf '%s\n' "$CHANGED" | "$SELECTOR" 2>/dev/null | cut -f1 | grep -
 "$LISTENER" --start --run-id "$RUN_ID" --session "$SESSION_ID" 2>/dev/null || true
 REPORT=$(mktemp "${TMPDIR:-/tmp}/blitz-tia.XXXXXX" 2>/dev/null || echo "/tmp/blitz-tia.$$")
 CHANGED_CSV=$(printf '%s\n' "$CHANGED" | paste -sd, -)
+# The project's own runner from node_modules/.bin, never a launcher: npx would
+# download and run an unpinned package when the project has none installed.
+BIN="$PROJECT_ROOT/node_modules/.bin/$RUNNER"
+[ -x "$BIN" ] || { rm -f "$REPORT"; exit 0; }
 # shellcheck disable=SC2086  # SELECTED is a newline list of paths; word-split intended
 if [ "$RUNNER" = vitest ]; then
-  timeout 120s npx vitest run --reporter=json --outputFile="$REPORT" $SELECTED >/dev/null 2>&1 || true
+  timeout 120s "$BIN" run --reporter=json --outputFile="$REPORT" $SELECTED >/dev/null 2>&1 || true
 else
-  timeout 120s npx jest --json --outputFile="$REPORT" $SELECTED >/dev/null 2>&1 || true
+  timeout 120s "$BIN" --json --outputFile="$REPORT" $SELECTED >/dev/null 2>&1 || true
 fi
 "$LISTENER" --trigger post-edit --changed "$CHANGED_CSV" --selected-by selector \
   --run-id "$RUN_ID" --session "$SESSION_ID" < "$REPORT" 2>/dev/null || true

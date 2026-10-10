@@ -15,7 +15,7 @@ validate_job() { awk '/^  validate:/{f=1; next} /^  [a-z-]+:$/{f=0} f' "$ROOT/.g
 }
 
 @test "the non-script gates (bats, node --check, mod, Cisco scanner, CLAUDE.md size) are mirrored" {
-  for needle in 'bats' 'node --check' 'claude plugin validate mods/blitz-guard' 'claude plugin test mods/blitz-guard' 'skill-scanner scan-all skills' 'wc -l < CLAUDE.md'; do
+  for needle in 'bats' 'node --check' 'claude plugin validate mods/blitz-guard' 'claude plugin test mods/blitz-guard' 'skill-scanner scan-all skills' 'wc -l < .claude/CLAUDE.md'; do
     validate_job | grep -qF -- "$needle" || { echo "CI no longer runs: $needle (update this test)"; return 1; }
     grep -qF -- "$needle" "$ROOT/scripts/ci-local.sh" || { echo "ci-local.sh does not run: $needle"; return 1; }
   done

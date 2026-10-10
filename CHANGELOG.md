@@ -10,6 +10,23 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.13.1] — 2026-10-10 · plugin-directory validation fixes
+
+Fixes from the Claude plugin directory's validation of `main` (2 blocking, 12 warnings, 27 policy holds).
+
+### Fixed
+- **Blocking (`UNPINNED_NPX`): the TIA heartbeat ran `npx vitest` / `npx jest`.** With no local install, npx would download and run an unpinned package. `heartbeat.sh` and `test-selector.sh` now run the project's own `node_modules/.bin/<runner>` and skip when it is absent. Two bats cases: the local binary is used, and an `npx` on PATH is never called.
+- **`ALLOWED_TOOLS_SKILL_ANY`:** `next` pre-approves only `Skill(blitz:build)`, `Skill(blitz:check)`, `Skill(blitz:learn)`; `ship` only `Skill(blitz:check)`, `Skill(blitz:learn)`.
+- **`MCP_FORWARDS_CREDENTIAL_ENV` (cross-surface):** the critic's §2.7 piped every recent commit through `xargs sh -c 'git verify-commit …'` (gpg). It checked nothing (`|| true`, no output) and is replaced by `git log --grep=no-verify`.
+- **`ROOT_CLAUDE_MD`:** the contributor guide moves to `.claude/CLAUDE.md`, which Claude Code still loads as project memory in this repo and which no longer sits at the plugin root. `claude plugin validate .` now passes with no warnings.
+- CI installs `@anthropic-ai/claude-code@2.1.296` (was unpinned).
+
+### Added
+- `scripts/skill-scan.sh` rule `launcher`: no `npx`/`bunx`/`uvx`/`pnpm dlx`/`yarn dlx`/`pipx run` in hooks or scripts unless it cannot download (`npx --no-install`) or pins an exact version.
+
+### Notes
+- Left for review by design: `templates/blitz-check.yml` passes the user's own Anthropic key to Anthropic's GitHub Action, and the CHANGELOG hit is a link to keepachangelog.com beside the word "env". Documentation mentions of install commands (`RUNTIME_FETCH_EXEC`) need no change per the validator's own guidance. Open decisions (plugin name, icon, scope of `Bash`/`Write`/`WebFetch` grants) are not in this release.
+
 ## [3.13.0] — 2026-10-10 · exact subagent cost, an effort floor, tighter critic shell checks, a pinned skill scanner
 
 Follow-up on the five caveats left by 3.12.0, each researched and fixed where a fix exists.

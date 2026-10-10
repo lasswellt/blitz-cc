@@ -94,7 +94,7 @@ for c in checks:
     cmd = det.get("command", "")
     if dt != "semantic":
         SAFE_TOOLS = {
-            "grep", "git", "tsc", "npx", "jq", "node", "wc", "test",
+            "grep", "git", "tsc", "npx", "jq", "node", "wc", "test",  # skill-scan: allow tool-name list, not a call
             "find", "sed", "awk", "cat", "echo", "head", "tail", "sort",
             "uniq", "python3", "bash", "sh", "rg", "ls", "diff", "xargs",
         }

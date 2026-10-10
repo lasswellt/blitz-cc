@@ -67,3 +67,12 @@ skill() { printf -- '---\nname: demo\n---\n%s\n' "$1" > "$FIX/skills/demo/SKILL.
   [[ "$output" == *"leak.sh:2: net-in-script"* ]]
   [[ "$output" != *"ok.sh"* ]]
 }
+
+@test "unpinned package launchers in hooks and scripts are flagged; local or pinned ones pass" {
+  printf '#!/usr/bin/env bash\ntimeout 120s npx vitest run\nnpx --no-install tsc --noEmit\nnpx prettier@3.3.3 --check .\nuvx ruff check\nuvx ruff==0.6.9 check\n"$ROOT/node_modules/.bin/vitest" run\n' > "$FIX/hooks/scripts/t.sh"
+  run bash "$SCAN" --root "$FIX"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"t.sh:2: launcher"* ]]
+  [[ "$output" == *"t.sh:5: launcher"* ]]
+  [ "$(printf '%s\n' "$output" | grep -c ': launcher')" -eq 2 ]
+}

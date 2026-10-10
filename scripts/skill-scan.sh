@@ -14,7 +14,10 @@
 #                inside one
 #   hidden-unicode  no zero-width or bidi control characters in any shipped text file
 #   net-in-script   no curl/wget/nc/ssh/scp in command position in hooks or scripts
-#                (a line may opt out with the comment `# skill-scan: allow <reason>`)
+#   launcher        no npx/bunx/uvx/pnpm dlx/yarn dlx/pipx run in hooks or scripts unless
+#                it cannot download (`npx --no-install`) or pins an exact version
+#                (name@1.2.3, name==1.2.3); run the project's node_modules/.bin instead
+#                (either rule: a line may opt out with `# skill-scan: allow <reason>`)
 #
 # Usage: skill-scan.sh [--root DIR]     Exit: 0 clean · 1 findings · 2 usage
 set -euo pipefail
@@ -82,6 +85,16 @@ for p in list(root.glob('hooks/scripts/*.sh')) + list(root.glob('hooks/scripts/_
         code = line.split('#', 1)[0] if not line.lstrip().startswith('#') else ''
         if NET.search(code) and 'skill-scan: allow' not in line:
             add(p, n, 'net-in-script', line)
+
+LAUNCH = re.compile(r'(^|[;&|(`\s"\[]|\$\(\s*)(npx|bunx|uvx|pnpm\s+dlx|yarn\s+dlx|pipx\s+run)\b(?P<rest>[^;&|\n]*)')  # skill-scan: allow the rule's own pattern
+PINNED = re.compile(r'^\s*(--no-install\b|(-[^\s]+\s+)*[@A-Za-z0-9_./-]+(@\d+\.\d+\.\d+|==\d+\.\d+\.\d+)\b)')
+for p in list(root.glob('hooks/scripts/*.sh')) + list(root.glob('hooks/scripts/_lib/*.sh')) + list(root.glob('scripts/*.sh')):
+    for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
+        if line.lstrip().startswith('#') or 'skill-scan: allow' in line:
+            continue
+        for m in LAUNCH.finditer(line.split(' #', 1)[0]):
+            if not PINNED.match(m.group('rest')):
+                add(p, n, 'launcher', line)
 
 for f in findings:
     print(f)

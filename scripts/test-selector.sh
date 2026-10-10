@@ -149,9 +149,10 @@ else:
     # 2. graph
     graph_mode = "unavailable"
     src_changed = [c for c in changed if c.endswith(SRC_EXT)]
-    if runner == "jest" and src_changed:
+    jest_bin = os.path.join(root, "node_modules", ".bin", "jest")  # project-local only; never a launcher
+    if runner == "jest" and src_changed and os.access(jest_bin, os.X_OK):
         try:
-            r = subprocess.run(["npx", "jest", "--findRelatedTests", "--listTests", *src_changed],
+            r = subprocess.run([jest_bin, "--findRelatedTests", "--listTests", *src_changed],
                                cwd=root, capture_output=True, text=True, timeout=60)
             if r.returncode == 0:
                 for line in r.stdout.splitlines():
