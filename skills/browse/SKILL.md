@@ -171,7 +171,7 @@ browserAge = 0
 - Check for:
   - **Mock/placeholder data**: Text containing "Lorem ipsum", "test", "TODO", "FIXME", "example.com", "John Doe", "Jane Doe", "foo", "bar"
   - **Broken images**: Images with error state or empty `src`
-  - **Dead links**: Links with `href="#"` or `href="javascript:void(0)"`
+  - **Dead links**: Links whose `href` is `#` or a script-scheme no-op (`void(0)`)
   - **Empty containers**: Visible sections with no content (missing empty state)
   - **Overlapping text**: Text nodes that might overlap (check via screenshot if suspicious)
 

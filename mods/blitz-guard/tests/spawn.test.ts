@@ -31,3 +31,14 @@ test('agent.spawn: other agents pass through unchanged', async ($, on) => {
   await $.agent.spawn({ ...ENGINE, subagentType: 'general-purpose', model: 'haiku', prompt: 'p', description: 'd' })
   expect(seen).toEqual(['haiku'])
 })
+
+test('tool.call Agent: a blitz:critic call at low effort reaches the engine at medium', async ($, on) => {
+  const seen: (string | undefined)[] = []
+  on('tool.call', { tool: 'Agent' }, ($, e) => {
+    seen.push(e.effort)
+    return { result: 'started' } as never
+  })
+  await $.tool.call({ tool: 'Agent', description: 'check critic', prompt: 'MODE: reject', subagent_type: 'blitz:critic', effort: 'low' })
+  await $.tool.call({ tool: 'Agent', description: 'build T-001', prompt: 'p', subagent_type: 'blitz:dev', effort: 'high' })
+  expect(seen).toEqual(['medium', 'high'])
+})

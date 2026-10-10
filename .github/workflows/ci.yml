@@ -73,6 +73,15 @@ jobs:
         # bang lines are local and read-only, no hidden Unicode, no network calls in hooks
         run: bash scripts/skill-scan.sh
 
+      - name: Cisco skill-scanner (offline, pinned)
+        # Static + behavioral analyzers only: no --use-llm / --use-osv / VirusTotal, so
+        # nothing leaves the runner. Gate at HIGH; the MEDIUM findings are documented
+        # shell examples. Pinned: rule packs change between releases.
+        run: |
+          pipx install cisco-ai-skill-scanner==2.2.2
+          skill-scanner scan-all skills --recursive --use-behavioral --format json \
+            --output skill-scanner.json --fail-on-severity high
+
       - name: blitz-guard mod (validate + tests)
         # `claude plugin validate` / `claude plugin test` run locally; no API key needed.
         run: |

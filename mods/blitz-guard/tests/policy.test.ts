@@ -31,6 +31,10 @@ test('critics may read and run checks', async () => {
     'grep -oE x f.test.js > /tmp/blitz-critic-literals.txt',
     'timeout 60 node -e "require(\'./src/a.js\')"',
     'cat docs/sweeps/ratchet.json | jq .metrics',
+    "sh -c 'git log --oneline -5'",
+    "find src -name '*.ts' -newer package.json",
+    'node -e "console.log(require(\'./package.json\').version)"',
+    'python3 -c "import json; print(json.load(open(\'tasks.json\'))[\'plan\'])"',
   ]
   for (const command of ok) expect(readOnlyVerdict('blitz:critic', 'Bash', { command })).toEqual({ kind: 'pass' })
   expect(readOnlyVerdict('blitz:research-critic', 'WebFetch', { url: 'https://x' })).toEqual({ kind: 'pass' })
@@ -50,6 +54,20 @@ test('critics may not write', async () => {
     ['Bash', { command: 'npm install left-pad' }],
     ['Bash', { command: 'bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set demo T-001 status=done' }],
     ['Bash', { command: 'ls | tee src/out.txt' }],
+    ['Bash', { command: "sh -c 'rm -rf src'" }],
+    ['Bash', { command: 'bash -lc "git push origin HEAD"' }],
+    ['Bash', { command: "sh -c \"bash -c 'echo x > src/a.ts'\"" }],
+    ['Bash', { command: 'eval "$CMD"' }],
+    ['Bash', { command: '$TOOL src/a.ts' }],
+    ['Bash', { command: 'source ./scripts/setup.sh' }],
+    ['Bash', { command: "find src -name '*.bak' -delete" }],
+    ['Bash', { command: 'find . -name x -exec rm {} +' }],
+    ['Bash', { command: 'git ls-files | xargs sed -i s/a/b/' }],
+    ['Bash', { command: 'node -e "require(\'fs\').writeFileSync(\'src/a.ts\', \'\')"' }],
+    ['Bash', { command: 'python3 -c "import os; os.remove(\'src/a.ts\')"' }],
+    ['Bash', { command: 'bash /tmp/x.sh' }],
+    ['Bash', { command: '/tmp/x.sh --go' }],
+    ['Bash', { command: 'node $TMPDIR/run.js' }],
   ]
   for (const [tool, input] of bad) expect(readOnlyVerdict('blitz:critic', tool, input).kind).toBe('deny')
 })
@@ -69,4 +87,22 @@ test('plan progress reads tasks.json and the status line keeps to safe character
   expect(statusText(p!)).toBe('blitz checkout-v2 1/4 · T-002 running · 1 blocked')
   expect(statusText({ slug: 'x$(rm -rf /)', done: 0, total: 1, inProgress: [], blocked: 0 })).toBe('blitz xrm-rf 0/1')
   expect(planProgress('bad', '{not json')).toBe(undefined)
+})
+
+import { effortFloor, usageLine } from '../hooks/policy.ts'
+
+test('effort floor raises blitz implementation and verdict agents below medium only', async () => {
+  expect(effortFloor('blitz:dev', 'low')).toBe('medium')
+  expect(effortFloor('blitz:critic', 'low')).toBe('medium')
+  expect(effortFloor('blitz:critic', 'high')).toBe(undefined)
+  expect(effortFloor('blitz:dev', undefined)).toBe(undefined)
+  expect(effortFloor('blitz:research-critic', 'low')).toBe(undefined)
+  expect(effortFloor('Explore', 'low')).toBe(undefined)
+})
+
+test('usage line keeps counts numeric and identifiers safe', async () => {
+  const row = JSON.parse(usageLine({ ts: '2026-10-10T00:00:00Z', agentId: 'a1$(x)', agentType: 'blitz:dev',
+    usage: { model: 'claude-sonnet-5-5', input_tokens: 10, output_tokens: 2500, cache_read_input_tokens: 9000, cache_creation_input_tokens: -1 } }))
+  expect(row).toEqual({ ts: '2026-10-10T00:00:00Z', source: 'turn.complete', agent_id: 'a1x', agent: 'blitz:dev',
+    model: 'claude-sonnet-5-5', input: 10, output: 2500, cache_read: 9000, cache_write: 0 })
 })

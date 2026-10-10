@@ -527,7 +527,7 @@ EFFORT=medium
 
 Record the chosen effort in the report's `## Critic` line. `evals/critic-false-block/` measures whether `medium` raises false LGTMs; revisit the thresholds when it says so.
 
-**Usage.** After each critic reply (survey lenses and the reject critic), `bash "${CLAUDE_PLUGIN_ROOT}/scripts/usage-log.sh" --skill check --plan "$SLUG" --task critic --agent blitz:critic --model <model> --effort "$EFFORT" --tokens <total> --tool-uses <n> --duration-ms <ms>` from the Agent result's usage block; `/blitz:sessions dashboard` sums the ledger per task.
+**Usage.** Every critic's tokens and cost are recorded by `hooks/scripts/subagent-usage.sh` on SubagentStop and summed per task by `/blitz:sessions dashboard`; the critic prompt's `PLAN:` line is what attributes them to the plan.
 
 **Derived verdict.**
 

@@ -11,7 +11,7 @@ This repo is the **blitz** Claude Code plugin: skills in `skills/` (auto-discove
 
 ## Working here
 
-- Run the validators before committing; `pre-commit-validate.sh` runs them again and blocks on drift.
+- Run `scripts/ci-local.sh` before committing: it runs every gate of CI's `validate` job (CI itself runs only on pushes to main and on PRs), and `hooks/tests/ci-local.bats` fails if the two drift. `pre-commit-validate.sh` re-checks version sync on commit.
 - After adding, removing, or renaming a skill or agent, run `scripts/gen-catalog.sh` and commit `docs/CATALOG.md`.
 - `docs/plans/<slug>/tasks.json` is written only through `scripts/tasks.sh`; `tasks-guard.sh` denies everything else.
 - Set model and effort once per session (`claude --model opus --effort high`); skills are `model: inherit` unless slash-only.

@@ -74,6 +74,22 @@ const MUTATING: { rx: RegExp; what: string }[] = [
 // Checked on the raw command: the script path is usually quoted ("${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh").
 const PLAN_WRITE = /\btasks\.sh"?\s+(init|add|set)\b/
 
+// Shell that runs code the text does not show: these are refused in a critic
+// rather than guessed at.
+const OPAQUE: { rx: RegExp; what: string }[] = [
+  { rx: /(^|[;&|(]\s*)(eval|source|\.)\s/, what: 'dynamic execution (eval/source)' },
+  { rx: /(^|[;&|(]\s*)(\$[A-Za-z_{(]|`)/, what: 'a command taken from a variable or substitution' },
+  { rx: /\bxargs\b[^|;&]*\b(rm|mv|cp|sh|bash|tee|sed\s+-i)\b/, what: 'xargs into a writer' },
+  { rx: /\bfind\b[^|;&]*\s-(delete|exec(dir)?\s+(rm|mv|cp|sh|bash|sed))\b/, what: 'find that deletes or rewrites' },
+  // Writing to /tmp is allowed, so running what is there is not: it is code no check saw.
+  { rx: /(^|[;&|(]\s*|\b(?:ba|z|da|k)?sh\s+|\b(?:python3?|node|perl|ruby|deno|bun)\s+)(\/tmp\/|\/var\/tmp\/|\$\{?(TMPDIR|SESSION_TMP_DIR)\}?\/)/, what: 'running a file from a temp directory' },
+]
+// Interpreter one-liners that write or delete files.
+const INLINE_CODE = /\b(python3?|node|perl|ruby|deno|bun)\s+(-c|-e|--eval|-p)\s/
+const INLINE_WRITE = /(writeFile|appendFile|createWriteStream|unlink|rmSync|rmdirSync|renameSync|copyFile|os\.remove|os\.unlink|os\.rename|shutil\.|\.write_text|\.write_bytes|open\([^)]*,\s*['"][wax]|File\.write|IO\.write|truncate)/
+// `sh -c '<payload>'` and friends: the payload is shell too and is checked the same way.
+const SHELL_C = /\b(?:ba|z|da|k)?sh\s+(?:-[a-zA-Z]*c[a-zA-Z]*)\s+(?:'([^']*)'|"((?:[^"\\]|\\.)*)")/g
+
 /** The command with quoted strings blanked, so a grep pattern like 'a>b' or 'rm -rf' is not read as shell. */
 function unquoted(cmd: string): string {
   return cmd.replace(/'[^']*'/g, "''").replace(/"(?:[^"\\]|\\.)*"/g, '""')
@@ -101,14 +117,26 @@ export function readOnlyVerdict(agentType: string | undefined, tool: string, inp
   }
   if (tool === 'Bash' || tool === 'PowerShell') {
     const raw = String((input as { command?: unknown } | null)?.command ?? '')
-    if (PLAN_WRITE.test(raw)) return { kind: 'deny', reason: `blitz-guard: ${agentType} is read-only; this command is a plan-state write (only \`tasks.sh verify\` is allowed).` }
-    const cmd = unquoted(raw)
-    for (const { rx, what } of MUTATING) {
-      if (rx.test(cmd)) return { kind: 'deny', reason: `blitz-guard: ${agentType} is read-only; this command is ${what}.` }
-    }
-    if (writesFile(cmd)) return { kind: 'deny', reason: `blitz-guard: ${agentType} is read-only; redirect output to /tmp or /dev/null.` }
+    const why = shellWrite(raw, 0)
+    if (why !== undefined) return { kind: 'deny', reason: `blitz-guard: ${agentType} is read-only; ${why}.` }
   }
   return { kind: 'pass' }
+}
+
+/** Why a shell command writes, or undefined. Recurses into `sh -c` payloads (depth-capped). */
+function shellWrite(raw: string, depth: number): string | undefined {
+  if (depth > 3) return 'shell nested too deep to check'
+  if (PLAN_WRITE.test(raw)) return 'this command is a plan-state write (only `tasks.sh verify` is allowed)'
+  if (INLINE_CODE.test(raw) && INLINE_WRITE.test(raw)) return 'an inline interpreter script writes or deletes files'
+  for (const m of raw.matchAll(SHELL_C)) {
+    const inner = shellWrite((m[1] ?? m[2] ?? '').replace(/\\(["\\$`])/g, '$1'), depth + 1)
+    if (inner !== undefined) return `inside sh -c: ${inner}`
+  }
+  const cmd = unquoted(raw)
+  for (const { rx, what } of OPAQUE) if (rx.test(cmd)) return `this command is ${what}`
+  for (const { rx, what } of MUTATING) if (rx.test(cmd)) return `this command is ${what}`
+  if (writesFile(cmd)) return 'redirect output to /tmp or /dev/null'
+  return undefined
 }
 
 export type PlanProgress = { slug: string; done: number; total: number; inProgress: string[]; blocked: number }
@@ -140,4 +168,51 @@ export function statusText(p: PlanProgress): string {
   if (p.inProgress.length > 0) parts.push(`${p.inProgress.slice(0, 3).map(safe).join(' ')} running`)
   if (p.blocked > 0) parts.push(`${p.blocked} blocked`)
   return parts.join(' · ')
+}
+
+export type UsageFacts = {
+  ts: string
+  agentId: string
+  agentType: string
+  usage: { model: string; input_tokens: number; output_tokens: number; cache_read_input_tokens: number; cache_creation_input_tokens?: number }
+}
+
+/** One JSONL row for .cc-sessions/agent-usage.mod.jsonl: a subagent run's final counts. Identifiers kept to safe characters. */
+export function usageLine(f: UsageFacts): string {
+  const safe = (s: string) => s.replace(/[^A-Za-z0-9_.:/-]/g, '').slice(0, 80)
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0)
+  return JSON.stringify({
+    ts: f.ts,
+    source: 'turn.complete',
+    agent_id: safe(f.agentId),
+    agent: safe(f.agentType),
+    model: safe(f.usage.model),
+    input: n(f.usage.input_tokens),
+    output: n(f.usage.output_tokens),
+    cache_read: n(f.usage.cache_read_input_tokens),
+    cache_write: n(f.usage.cache_creation_input_tokens),
+  })
+}
+
+export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+const EFFORT_ORDER: Effort[] = ['low', 'medium', 'high', 'xhigh', 'max']
+
+/**
+ * The lowest effort a blitz agent runs at. Anthropic documents Sonnet 5.5 at
+ * `low` skipping its own checks and Opus 5.5 `medium` as the strong default, so
+ * an implementation agent or the verdict below `medium` is a routing mistake.
+ * An absent effort is left alone: the agent file's `effort:` applies.
+ */
+export const EFFORT_FLOOR: Record<string, Effort> = {
+  'blitz:dev': 'medium',
+  'blitz:test-writer': 'medium',
+  'blitz:critic': 'medium',
+}
+
+/** The effort an Agent call should carry, or undefined to leave the call as it is. */
+export function effortFloor(subagentType: string | undefined, effort: Effort | undefined): Effort | undefined {
+  if (subagentType === undefined || effort === undefined) return undefined
+  const floor = EFFORT_FLOOR[subagentType]
+  if (floor === undefined) return undefined
+  return EFFORT_ORDER.indexOf(effort) < EFFORT_ORDER.indexOf(floor) ? floor : undefined
 }

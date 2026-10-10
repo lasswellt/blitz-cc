@@ -287,6 +287,20 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-usage.sh",
+            "args": [],
+            "async": true,
+            "timeout": 30,
+            "statusMessage": "blitz: recording subagent usage"
+          }
+        ]
+      }
     ]
   }
 }

@@ -10,6 +10,24 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.13.0] — 2026-10-10 · exact subagent cost, an effort floor, tighter critic shell checks, a pinned skill scanner
+
+Follow-up on the five caveats left by 3.12.0, each researched and fixed where a fix exists.
+
+### Added
+- **Exact per-subagent cost.** New `hooks/scripts/subagent-usage.sh` (SubagentStop, async) reads the finished subagent's `agent_transcript_path`, groups API responses by message id, and prices input, output, cache reads and 5-minute / 1-hour cache writes from `hooks/scripts/_lib/model-prices.json` (Haiku's 5× long-context rate per request). One row per subagent lands in `.cc-sessions/agent-usage.jsonl`, attributed by the prompt's `PLAN:` line and first task id. Transcript output counts are streaming snapshots, so a response without a final line marks the row `output_final: false` (a lower bound). Replaces 3.12.0's model-called `scripts/usage-log.sh`, which only had total tokens and depended on the model remembering to call it.
+- **`blitz-guard` 0.2.0.** `turn.complete` appends each subagent run's final counts to `.cc-sessions/agent-usage.mod.jsonl`; the dashboard uses them in place of transcript output snapshots. `tool.call` on `Agent` raises a `blitz:dev`, `blitz:test-writer` or `blitz:critic` call made below `medium` effort to `medium`: `agent.spawn` has no effort field, but the Agent call's own `effort` is rewritable there. The critic read-only check now unwraps `sh -c`/`bash -c` payloads recursively and refuses `eval`, `source`, variable-led commands, `find -delete`/`-exec rm`, `xargs` into a writer, interpreter one-liners that write files, and running files from temp directories. 12 plugin tests.
+- **`scripts/ci-local.sh`** runs every gate of CI's `validate` job locally. CI runs only on pushes to main and on PRs, so 3.10.0–3.12.0's bare `§` references would first have failed when a PR opened; `hooks/tests/ci-local.bats` now fails whenever CI gains a gate the local script does not run.
+- **Cisco `skill-scanner` 2.2.2 in CI** (offline static and behavioral analyzers, no account, gate at HIGH), alongside `scripts/skill-scan.sh`, which still covers agents, hooks and scripts that Cisco's tool does not. Snyk Agent Scan (the successor to `mcp-scan`) was evaluated and left out: its `scan` uploads skill content to Snyk's API, needs `SNYK_TOKEN`, and its CI mode starts MCP servers.
+
+### Changed
+- `/blitz:sessions dashboard` "Agent usage by task" shows exact cost per task, output tokens, cache-read share and the agents involved; `≥` marks a lower bound.
+- `browse` skill: reworded a dead-link example that Cisco's YARA rule read as script injection (a false positive; the text described what to detect).
+
+### Notes
+- What stays approximate: transcript output counts without the mod; Haiku 5.5's cache-read rate, which is not published and is assumed at Opus/Sonnet's 0.05× ratio; workflow agents' effort, which no hook can change. Exact whole-run spend including the main thread remains `claude -p --output-format json` (`total_cost_usd`, `modelUsage`).
+- `scripts/ci-local.sh` passes locally, with every gate including bats and the mod tests.
+
 ## [3.12.0] — 2026-10-10 · the P2 layer: mod, independent votes, cost ledger, threat model
 
 Implements the P2 recommendations of [docs/research/2026-10-10_agentic-loop-alignment](docs/research/2026-10-10_agentic-loop-alignment/README.md).

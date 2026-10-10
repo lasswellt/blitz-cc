@@ -67,7 +67,7 @@ Cost controls that apply to every spawn:
 - Effort: routing skills run `effort: low`; multi-phase orchestrators (`build --parallel`) keep the session effort; every spawn names its own (table above).
 - `autoCompactWindow` (agent frontmatter, ≥2.1.296) lets a subagent compact earlier than the main thread. Blitz agents leave it unset: their budgets ([agents.reference.md](agents.reference.md) §3.3) keep them far below 1M, and an early compaction only buys a cache rewrite mid-task.
 - `skills:` preload is capped at 32 per subagent (≥2.1.295); blitz preloads one.
-- Usage: after every blitz agent reply the main thread appends the Agent result's token, tool-use and duration counts to `.cc-sessions/agent-usage.jsonl` with `scripts/usage-log.sh`; `/blitz:sessions dashboard` sums them per task. `/usage` and the status line cover the main conversation only.
+- Usage: `hooks/scripts/subagent-usage.sh` (SubagentStop, async) reads each finished subagent's transcript and appends its exact input, cache-read, 5m/1h cache-write and output tokens and their cost to `.cc-sessions/agent-usage.jsonl`, attributed by the prompt's `PLAN:` line and first task id; `/blitz:sessions dashboard` sums them per task. Transcript output counts are streaming snapshots, so a row without a final line is a lower bound (`output_final: false`); the optional `blitz-guard` mod records the final counts from `turn.complete` and the dashboard prefers them. `/usage` and the status line cover the main conversation only.
 
 ### 1.4 What subagents never receive
 

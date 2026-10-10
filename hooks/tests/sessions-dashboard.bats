@@ -110,32 +110,34 @@ J
   [ "$status" -eq 2 ]
 }
 
-ULOG="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/usage-log.sh"
 
-@test "usage-log appends one JSON line per call and refuses non-integer counts" {
-  run bash "$ULOG" --agent blitz:dev --model sonnet --effort medium --tokens 1000 --tool-uses 3 --duration-ms 60000 --plan demo --task T-001
-  [ "$status" -eq 0 ]
-  run bash "$ULOG" --agent blitz:dev --model sonnet --tokens lots
-  [ "$status" -eq 2 ]
-  run bash "$ULOG" --model sonnet --tokens 5
-  [ "$status" -eq 2 ]
-  [ "$(wc -l < .cc-sessions/agent-usage.jsonl)" -eq 1 ]
-  jq -e '.agent == "blitz:dev" and .tokens == 1000 and .task == "T-001"' .cc-sessions/agent-usage.jsonl
+usage_row() {  # usage_row <agent_id> <plan> <task> <output> <cost> <final>
+  jq -nc --arg id "$1" --arg plan "$2" --arg task "$3" --argjson out "$4" --argjson cost "$5" --argjson fin "$6" \
+    '{source:"transcript", agent_id:$id, agent:"blitz:dev", plan:$plan, task:$task, models:["claude-sonnet-5-5"],
+      input:10, output:$out, cache_read:900000, cache_write_5m:100000, cache_write_1h:0,
+      tokens:(1000010 + $out), cost_usd:$cost, output_final:$fin}' >> .cc-sessions/agent-usage.jsonl
 }
 
-@test "dashboard sums agent usage per task with a priced band" {
-  bash "$ULOG" --agent blitz:dev --model sonnet --tokens 1000000 --plan demo --task T-001
-  bash "$ULOG" --agent blitz:critic --model opus --tokens 500000 --plan demo --task T-001
-  bash "$ULOG" --agent blitz:dev --model sonnet --tokens 200000 --plan demo --task T-002
+@test "dashboard sums exact subagent cost per task and marks lower bounds" {
+  usage_row a1 demo T-001 1000 0.36 true
+  usage_row a2 demo T-001 500 0.20 false
+  usage_row a3 demo T-002 100 0.10 true
   run bash "$DASH"
   [ "$status" -eq 0 ]
   printf '%s' "$output" | grep -q '^## Agent usage by task'
-  printf '%s' "$output" | grep -qF '| demo | T-001 | 2 | 1,500,000 |'
-  printf '%s' "$output" | grep -qF '4.00–20.00'
-  printf '%s' "$output" | grep -qF 'Total: 1,700,000 tokens over 3 spawns.'
+  printf '%s' "$output" | grep -qF '| demo | T-001 | 2 |'
+  printf '%s' "$output" | grep -qF '≥0.56 |'
+  printf '%s' "$output" | grep -qF '| 0.10 |'
+  printf '%s' "$output" | grep -qF '(1 with output as a lower bound)'
 }
 
-@test "usage identifiers are stripped to safe characters" {
-  bash "$ULOG" --agent 'blitz:dev' --model sonnet --tokens 10 --plan 'demo|x' --task 'T-1$(rm)'
-  jq -e '.plan == "demox" and .task == "T-1rm"' .cc-sessions/agent-usage.jsonl
+@test "the mod's final output count replaces a transcript snapshot" {
+  usage_row a2 demo T-001 500 0.20 false
+  printf '%s\n' '{"source":"turn.complete","agent_id":"a2","agent":"blitz:dev","model":"claude-sonnet-5-5","input":10,"output":10500,"cache_read":900000,"cache_write":100000}' \
+    > .cc-sessions/agent-usage.mod.jsonl
+  run bash "$DASH"
+  [ "$status" -eq 0 ]
+  # 10,000 more output tokens at $10/Mtok = +$0.10, and no lower-bound mark
+  printf '%s' "$output" | grep -qF '| 0.30 |'
+  ! printf '%s' "$output" | grep -qF 'lower bound)'
 }
