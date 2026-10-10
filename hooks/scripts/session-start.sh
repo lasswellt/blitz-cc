@@ -15,6 +15,23 @@
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
+# --- Preconditions the guards depend on (said loudly; never blocks startup) ---
+# Blocking guards fail closed without jq (blitz_guard_input), so a missing jq
+# means every Write/Edit/Bash call is refused. Say so before anything else.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "[blitz] ERROR: jq is not installed. blitz's guard hooks fail closed without it, so every Write, Edit and Bash call will be blocked. Install jq (apt-get install jq / brew install jq), or set BLITZ_GUARD_FAIL_OPEN=1 before starting Claude Code to run unguarded."
+  exit 0
+fi
+# Claude Code older than compat.json cc_min ignores onFailure (guards fail open)
+# and may reject the Agent tool's effort parameter. One cheap CLI call.
+CC_MIN=$(jq -r '.cc_min // empty' "$(dirname "$0")/../../.claude-plugin/compat.json" 2>/dev/null || true)
+if [ -n "$CC_MIN" ] && command -v claude >/dev/null 2>&1; then
+  CC_VER=$(timeout 5 claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+  if [ -n "$CC_VER" ] && [ "$(printf '%s\n%s\n' "$CC_MIN" "$CC_VER" | sort -V | head -1)" != "$CC_MIN" ]; then
+    echo "[blitz] WARNING: Claude Code $CC_VER is older than blitz's floor $CC_MIN. Guards may fail open and per-agent effort may be rejected; run 'claude update'."
+  fi
+fi
+
 INPUT=$(cat 2>/dev/null || echo "{}")
 [ -n "$INPUT" ] || INPUT="{}"
 ROOT=$(blitz_find_root || true)

@@ -3,7 +3,7 @@ name: ui-audit
 description: "Audits a running app across pages and roles: builds a labeled value registry, asserts cross-page invariants (same field, same value; no role leaks), flags placeholders and flapping values, runs UI/UX heuristics. Read-only, loop-safe. Use for 'audit consistency', 'role leak', 'placeholder text'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
 ---
 

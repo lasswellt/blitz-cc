@@ -12,6 +12,8 @@
 set -euo pipefail
 
 INPUT="$(cat)"
+. "$(dirname "$0")/_lib/common.sh"
+blitz_guard_input block-test-deletion
 TOOL="$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")"
 
 block() {

@@ -3,7 +3,7 @@ name: test-gen
 description: "Generates tests for a target file in the project's conventions (Vitest/Jest, AAA, factories): untested exports, edge cases, error paths; mocks only true externals; runs each test until it passes. Use for 'add tests', 'generate tests for', 'write tests', 'cover this file', 'test coverage'."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 argument-hint: "<file-path>"
 ---
 

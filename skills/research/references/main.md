@@ -301,6 +301,8 @@ TOPIC: ${TOPIC}
 RESEARCH QUESTIONS: ${QUESTIONS}
 PROJECT STACK: ${STACK_PROFILE}
 OUTPUT FILE: ${SESSION_TMP_DIR}/research/library-docs.md
+TODAY: ${TODAY} (from `date -u +%F`). Sources and versions are judged against this date.
+SEARCH FLOOR: run at least one web search per research question before you conclude; never answer a question from memory alone.
 
 TASKS:
 1. Find official documentation for the topic/library.
@@ -321,6 +323,8 @@ TOPIC: ${TOPIC}
 RESEARCH QUESTIONS: ${QUESTIONS}
 PROJECT STACK: ${STACK_PROFILE}
 OUTPUT FILE: ${SESSION_TMP_DIR}/research/web-researcher.md
+TODAY: ${TODAY} (from `date -u +%F`). Sources and versions are judged against this date.
+SEARCH FLOOR: run at least one web search per research question before you conclude; never answer a question from memory alone.
 
 CONTRARIAN ROLE: Of the parallel agents on this topic, you are explicitly assigned the
 counter-evidence role. Your job is to find sources that CONTRADICT the obvious consensus
@@ -372,6 +376,8 @@ TOPIC: ${TOPIC}
 RESEARCH QUESTIONS: ${QUESTIONS}
 PROJECT STACK: ${STACK_PROFILE}
 OUTPUT FILE: ${SESSION_TMP_DIR}/research/infra-analyst.md
+TODAY: ${TODAY} (from `date -u +%F`). Sources and versions are judged against this date.
+SEARCH FLOOR: run at least one web search per research question before you conclude; never answer a question from memory alone.
 
 TASKS:
 1. Check cloud service documentation for relevant features, quotas, and pricing.
@@ -495,17 +501,17 @@ const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
     model: a.name === 'codebase-analyst' ? 'sonnet' : 'haiku',
-    effort: a.name === 'codebase-analyst' ? 'medium' : 'low', schema: args.findingsSchema })))
+    effort: 'medium', schema: args.findingsSchema })))
 found.forEach((f, i) => { if (f === null) log(`research: ${args.roster[i].name} returned null`) })
 // One narrow second wave (≤2 agents) for unanswered / under-cited questions
 const gaps = (await agent(args.gapPrompt, { label: 'gap-detect', phase: 'GapFill', model: 'haiku', effort: 'low', schema: args.gapSchema }))
   ?.filter(g => !g.answered || g.citations_count < 2).slice(0, 2) ?? []
 const gapFills = await parallel(gaps.map(g => () =>
-  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', effort: 'low', schema: args.findingsSchema })))
+  agent(`${OS}\n\nResearch only: ${g.q}. Max 5 web searches.`, { label: `gap:${g.q.slice(0,24)}`, phase: 'GapFill', model: 'haiku', effort: 'medium', schema: args.findingsSchema })))
 return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
 ```
 
-- Model and effort routing per [agents.md](/_shared/agents.md) §1.3: `codebase-analyst` → sonnet/medium, retrieval agents → haiku/low. Labels match the Agent-path `description` units so `/workflows` and `/tasks` read the same (§1.5).
+- Model and effort routing per [agents.md](/_shared/agents.md) §1.3: `codebase-analyst` → sonnet/medium, retrieval agents → haiku/medium (multi-step search; `low` skips searches), gap detection → haiku/low (single-shot classification). Labels match the Agent-path `description` units so `/workflows` and `/tasks` read the same (§1.5).
 - `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
 - Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
 - `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.

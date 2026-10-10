@@ -1,6 +1,6 @@
 # Hook Scripts
 
-Every script reads its trigger JSON from stdin, sources `_lib/common.sh`, and exits 0 unless it is listed as BLOCKING below (exit 2 with the reason on stderr). Wiring lives in `hooks/hooks.json`; the generated component list is `docs/CATALOG.md` (`scripts/gen-catalog.sh`). Authoring contract: `.claude/rules/hooks.md`. Security posture: `skills/_shared/security.md` §4.
+Every script reads its trigger JSON from stdin, sources `_lib/common.sh`, and exits 0 unless it is listed as BLOCKING below (exit 2 with the reason on stderr). BLOCKING PreToolUse guards fail closed: `hooks.json` gives them `onFailure: "block"` (Claude Code ≥2.1.295), so a crash or timeout blocks the call, and each calls `blitz_guard_input` first, which exits 2 when jq is missing or the payload is not JSON (`BLITZ_GUARD_FAIL_OPEN=1` in the launch environment opts out). Advisory hooks stay fail-open. Wiring lives in `hooks/hooks.json`; the generated component list is `docs/CATALOG.md` (`scripts/gen-catalog.sh`). Authoring contract: `.claude/rules/hooks.md`. Security posture: `skills/_shared/security.md` §4.
 
 Hooks require bash on the host (Git Bash or WSL on native Windows; without it the guards fail open). Command guards match `Bash|PowerShell` so the PowerShell tool is covered.
 

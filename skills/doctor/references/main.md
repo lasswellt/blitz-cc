@@ -21,6 +21,7 @@ Check catalog, migration field maps, the `/verify` seed, and the conflict-catalo
 | D-107 | `scripts/gen-catalog.sh --check` diff, dead `/blitz:<name>` reference, numeric inventory in prose | WARN | `scripts/gen-catalog.sh` and edit the prose it names | no |
 | D-108 | `skills/<dir>/` without `SKILL.md` | WARN | Remove the stale directory or add the file | no |
 | D-109 | `scripts/detect-stack.sh` prints nothing | WARN | Add the lockfile / manifest the detector keys on, or write stack commands into `verify[]` by hand | no |
+| D-110 | `claude --version` below `compat.json` `cc_min`, or `command -v jq` fails | FAIL | `claude update`; install jq. Below the floor, `onFailure: "block"` is ignored (guards fail open) and the Agent tool may reject `effort`; without jq every blocking guard refuses every call | no |
 
 ### Session state (Phase 2)
 
@@ -325,6 +326,9 @@ bash "$P/hooks/scripts/agent-frontmatter-validate.sh" --all </dev/null # D-105 a
 bash "$P/hooks/scripts/markdown-link-validate.sh" </dev/null           # D-106 links
 bash "$P/scripts/gen-catalog.sh" --check                               # D-107 catalog fresh, no dead /blitz: refs
 for d in "$P"/skills/*/; do [ -f "$d/SKILL.md" ] || echo "NO-SKILL-MD $d"; done   # D-108
+command -v jq >/dev/null || echo "NO-JQ"                                # D-110 jq
+V=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1); M=$(jq -r .cc_min "$P/.claude-plugin/compat.json")
+[ "$(printf '%s\n%s\n' "$M" "$V" | sort -V | head -1)" = "$M" ] || echo "CC-BELOW-FLOOR $V < $M"   # D-110 floor
 ```
 
 `D-103` misses are `FAIL` (`chmod +x hooks/scripts/<name>.sh` is the fix, `fix:auto`). `D-104`/`D-105` violations are `FAIL`; a cumulative-description figure above 14 000 chars is `WARN`. `D-107` is `WARN` (run `scripts/gen-catalog.sh`).

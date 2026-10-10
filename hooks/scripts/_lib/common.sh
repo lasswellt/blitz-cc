@@ -4,7 +4,7 @@
 # Source this file near the top of each hook script:
 #   . "$(dirname "$0")/_lib/common.sh"
 #
-# Provides: blitz_find_root, blitz_extract, blitz_session_id,
+# Provides: blitz_find_root, blitz_extract, blitz_guard_input, blitz_session_id,
 #           blitz_log_event, blitz_live_worktree_paths, blitz_atomic_write,
 #           blitz_session_record_path, blitz_session_record_find,
 #           blitz_session_update, blitz_inbox_append, blitz_inbox_post,
@@ -67,6 +67,26 @@ blitz_extract() {
     && [ -n "$val" ] && { printf '%s\n' "$val"; return 0; } || true
   val=$(printf '%s' "$input" | jq -r --arg f "$field" '.tool_input[$f] // empty' 2>/dev/null) \
     && { printf '%s\n' "$val"; return 0; } || true
+  return 0
+}
+
+# blitz_guard_input guard_name [json_string]
+# Fail-closed input check for BLOCKING PreToolUse guards. A guard that cannot read
+# its input must not let the call through: exits 2 (block, reason on stderr) when
+# jq is missing or the payload is not a JSON object. BLITZ_GUARD_FAIL_OPEN=1 (set in
+# the environment Claude Code starts with, not by the model) restores the old
+# fail-open behaviour for a host that cannot install jq.
+blitz_guard_input() {
+  local name="$1" input="${2:-${INPUT:-}}"
+  [ "${BLITZ_GUARD_FAIL_OPEN:-0}" = "1" ] && return 0
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "BLOCKED by blitz ${name}: jq is not installed, so this guard cannot read the tool call. Install jq (or set BLITZ_GUARD_FAIL_OPEN=1 before starting Claude Code to accept unguarded calls)." >&2
+    exit 2
+  fi
+  if ! printf '%s' "$input" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    echo "BLOCKED by blitz ${name}: hook input is not a JSON object, so this guard cannot check the call." >&2
+    exit 2
+  fi
   return 0
 }
 

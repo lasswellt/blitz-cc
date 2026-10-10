@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: opus
 effort: medium
 disable-model-invocation: true
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** slash-only skill; it pins `model: opus`, `effort: medium` because a release is rare and the cache reset is acceptable. Current effort: `${CLAUDE_EFFORT}`.
 

@@ -13,6 +13,7 @@ set -euo pipefail
 
 INPUT=$(cat 2>/dev/null || echo "{}")
 [ "${BLITZ_TASKS_GUARD_OFF:-0}" = "1" ] && exit 0
+blitz_guard_input tasks-guard
 
 TASKS_RX='(^|[/ "=])docs/plans/[^/]+/tasks\.json'
 TOOL=$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null || true)

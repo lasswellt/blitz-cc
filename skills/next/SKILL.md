@@ -5,7 +5,7 @@ argument-hint: "[--loop] [--plan <slug>]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ScheduleWakeup, ListAgents, SendMessage
 disallowed-tools: AskUserQuestion
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

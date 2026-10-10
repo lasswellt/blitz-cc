@@ -49,9 +49,9 @@ Sonnet 5.5 is half the price of Opus 5.5 on input and output and half again on c
 
 | Work | Model | Effort | Why |
 |---|---|---|---|
-| Triage, classification, one-line summaries, `next` row selection | haiku | low | Pattern-following; cheapest lane |
+| Triage, classification, one-line summaries, `next` row selection | haiku | low | Single-shot pattern-following; cheapest lane |
 | Deterministic check-lane collection (`det-*`, `check:*`) | haiku | low | Running a registry row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement. Keep the semantic lane and the verdict on the session model. |
-| Retrieval research (`library-docs`, `web-researcher`, `infra-analyst`) | haiku | low | Fetch-and-cite work |
+| Retrieval research (`library-docs`, `web-researcher`, `infra-analyst`), gap-fill | haiku | medium | Multi-step search. Anthropic documents Haiku 5.5 at `low` skipping searches and stopping early in long agent prompts; `medium` roughly halves early stopping. Put today's date in the prompt and keep it under 100K tokens (the price steps up 5×). |
 | Build (`dev`), test-writer, `critic --mode survey`, research-critic, design-critic, `codebase-analyst` | sonnet | medium | Sufficient for implementation and survey-grade review |
 | `critic --mode reject`, fix rounds 4–5 | opus | high | Adversarial verdict and stuck-loop recovery need depth |
 | Main thread running `build` / `check` / `next --loop` | operator's choice (`claude --model opus --effort high` recommended; `--model sonnet` for cost-bound loops) | — | Heavy reasoning is delegated; the main thread routes |

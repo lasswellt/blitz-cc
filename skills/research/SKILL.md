@@ -4,7 +4,7 @@ description: "Researches a topic with parallel agents (docs, web, codebase) and 
 argument-hint: "<topic> | --codebase <question>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -71,7 +71,7 @@ Read root `package.json`; note detected stack profile; identify existing code re
 
 ```bash
 RESEARCH_DIR="${SESSION_TMP_DIR}/research"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+TIMESTAMP=$(date +%Y%m%d-%H%M%S); TODAY=$(date -u +%F)
 rm -rf "${RESEARCH_DIR}"
 mkdir -p "${RESEARCH_DIR}"
 ```
@@ -87,7 +87,7 @@ Spawn 2-4 agents depending on research type:
 | `codebase-analyst` | Codebase Analysis | Yes | sonnet | Existing patterns, integration points, migration impact, affected files, dependency graph |
 | `infra-analyst` | Infrastructure Analysis | Conditional (§1.2.5) | haiku | Cloud service docs, pricing, quotas, deployment implications, environment config |
 
-Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, web-researcher, infra-analyst) → `haiku`/low (Haiku 5.5, 20× cheaper than Sonnet 5.5); codebase-analyst → `sonnet`/medium.
+Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, web-researcher, infra-analyst) → `haiku`/medium with `TODAY` in the prompt (at `low` Haiku 5.5 skips searches); codebase-analyst → `sonnet`/medium.
 
 ### 1.2.5 Spawn-N Gate (skip unneeded agents)
 
@@ -159,7 +159,7 @@ Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-pe
 The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates — paste from there into each Agent() spawn. Orchestrator MAY mark the canonical preamble `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens (after Haiku-routing migration).
 
 **Templates by role** (all consume the canonical preamble):
-- `library-docs` — model: haiku. Official docs, API surface, version compat. Citation rule: structured entries, no `[QUOTE_UNVERIFIED]` text.
+- `library-docs` — model: haiku. Official docs, API surface, version compat.
 - `web-researcher` — model: haiku. **Contrarian role** (counter-evidence focus to mitigate agent-agreement bias per arxiv 2604.02923).
 - `codebase-analyst` — model: sonnet. Semantic codebase reasoning, no web search. file:LINE cites.
 - `infra-analyst` — model: haiku. **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.

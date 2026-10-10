@@ -1,6 +1,6 @@
 {
   "$comment": "AUTHORITATIVE Claude Code version floors. scripts/check-version-sync.sh asserts every '2.1.NNN' citation in the files listed under 'cited_in' is either cc_min or one of the feature floors. Individual /blitz:* slash skills declare their own 'compatibility:' and may stay at cc_min_slash.",
-  "cc_min": "2.1.271",
+  "cc_min": "2.1.296",
   "cc_min_slash": "2.1.71",
   "features": {
     "agent_view": "2.1.139",
@@ -40,7 +40,9 @@
     "subagent_autocompact_window": "2.1.296",
     "workflow_subagent_model": "2.1.296",
     "sonnet_5_5_cache_read_cut": "2.1.296",
-    "prompt_audit": "2.1.283"
+    "prompt_audit": "2.1.283",
+    "hook_on_failure_block": "2.1.295",
+    "stop_hook_block_cap_8": "2.1.296"
   },
   "cited_in": [
     "README.md",

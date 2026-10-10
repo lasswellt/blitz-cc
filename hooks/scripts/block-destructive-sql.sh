@@ -13,6 +13,8 @@
 set -euo pipefail
 
 INPUT="$(cat)"
+. "$(dirname "$0")/_lib/common.sh"
+blitz_guard_input block-destructive-sql
 CMD="$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")"
 
 [[ -z "$CMD" ]] && exit 0

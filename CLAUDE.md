@@ -1,6 +1,6 @@
 # blitz — development guidelines
 
-This repo is the **blitz** Claude Code plugin: skills in `skills/` (auto-discovered as `/blitz:<name>`), agents in `agents/`, hooks in `hooks/`, shared protocols in `skills/_shared/`. Floor: Claude Code ≥2.1.271 (`.claude-plugin/compat.json`). The catalog is generated into `docs/CATALOG.md`; never state component counts in prose.
+This repo is the **blitz** Claude Code plugin: skills in `skills/` (auto-discovered as `/blitz:<name>`), agents in `agents/`, hooks in `hooks/`, shared protocols in `skills/_shared/`. Floor: Claude Code ≥2.1.296 (`.claude-plugin/compat.json`). The catalog is generated into `docs/CATALOG.md`; never state component counts in prose.
 
 ## Where the rules live
 

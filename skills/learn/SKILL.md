@@ -4,7 +4,7 @@ description: "Captures what a plan taught into docs/solutions/<slug>.md from pro
 argument-hint: "[<slug>] [--from-diff]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: sonnet, effort low; it reads ledgers and writes one markdown file. Current effort: `${CLAUDE_EFFORT}`.
 

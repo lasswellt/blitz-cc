@@ -4,7 +4,7 @@ description: "Implements work: a one-sentence change inline, or the next task fr
 argument-hint: "[<slug>|<task-id>|--issue <n>|\"<change>\"] [--parallel] [--autonomous]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, ListAgents, Monitor
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high (the main thread routes; `dev` agents run on sonnet). Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

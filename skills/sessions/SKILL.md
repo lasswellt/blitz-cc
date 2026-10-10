@@ -5,7 +5,7 @@ argument-hint: "[list|attention|dashboard|prune|worktrees] [--html] [--apply] [-
 allowed-tools: Read, Bash, Glob, Grep, ListAgents
 disallowed-tools: Write, Edit, NotebookEdit
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 
 # Sessions

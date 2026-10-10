@@ -4,7 +4,7 @@ description: "Runs the quality gate on a diff, a plan, or the repo: tsc/lint/tes
 argument-hint: "[--scope diff|plan <slug>|repo] [--only completeness|wiring|framework|design|security] [--fix] [--comment] [--mutation] [--dual]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
