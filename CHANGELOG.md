@@ -18,7 +18,7 @@ _Nothing yet._
 
 ### Added
 - `ui-audit`'s dev smoke test (`run-fixture.sh` and its fixtures) moves from the shipped skill folder to `hooks/tests/fixtures/ui-audit/`, and its `npx http-server` fallback is pinned to 14.1.1. Cisco's scanner read a server-starting script inside a skill whose `allowed-tools` grant no shell as a capability mismatch.
-- `.claude-plugin/icon.png` (1024×1024): the listing icon. The directory keeps the first icon it is given, so replace it before the first submission if you want a different one.
+- `.claude-plugin/icon.png` (1024×1024): the listing icon, a lightning bolt drawn as a task graph whose last node is a passed check (blitz's task DAG and verify gate). The directory keeps the first icon it is given.
 
 ### Notes
 - Kept on purpose: the name `blitz` (`NAME_CONFUSABLE`, `NAME_EQUALS_GITHUB_OWNER` are advisory; renaming would break every `/blitz:*` command and existing install).
