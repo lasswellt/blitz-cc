@@ -324,7 +324,7 @@ Per iteration:
    | 11 | Stop conditions: reply when `verify[]` passes; `BLOCKED` on any `ESCALATE:`; stop before a new file at ≤3 calls left | agents.md |
 
    Banned: more than one task per prompt; a prompt without `SCOPE_FILES` or the never-edit list; retrying an identical prompt after `error_max_turns`.
-5. **Read the reply.** `jq` it first; unparsable → `MALFORMED`, counts as a failed round with a narrower re-spawn, never the same prompt. Cap interpolated fields at 200 chars and injection-scan them (TB-3). Then by status:
+5. **Read the reply.** Record its usage first, whatever the status: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/usage-log.sh" --skill build --plan "$SLUG" --task "$ID" --agent blitz:dev --model <model> --effort <effort> --tokens <total> --tool-uses <n> --duration-ms <ms>` with the numbers the Agent result's usage block reports (fix rounds and parallel waves log the same way). Then `jq` the reply; unparsable → `MALFORMED`, counts as a failed round with a narrower re-spawn, never the same prompt. Cap interpolated fields at 200 chars and injection-scan them (TB-3). Then by status:
 
    | Status | Action |
    |---|---|

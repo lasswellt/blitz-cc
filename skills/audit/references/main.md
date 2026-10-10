@@ -448,12 +448,25 @@ Aggregating across independent runs of one model OR across models both work (SWR
 
 ### Phase 2.5 — adversarial FP-verify panel
 
-Per surviving finding, spawn N perspective-diverse refuters (lenses: correctness / security / reproduces). Each re-reads the cited `file:line` and attempts to REFUTE the claim against actual behavior; default `refuted=true` if not reproducible.
+Per surviving finding, spawn three refuters whose votes are independent by construction, not by persona. Same-model refuters are correlated (debate does not beat self-consistency at matched compute, arXiv 2502.08788), so a lens is only an independent vote when it differs in model family or in evidence:
+
+| Lens | Model · effort | Evidence it must return |
+|---|---|---|
+| `correctness` | sonnet · medium | the re-read `file:line` excerpt |
+| `security` | opus · medium | the re-read `file:line` excerpt |
+| `reproduces` | sonnet · medium | `command` and `output` of something it **ran** (a test, `node -e`, `curl`, a grep over the built artifact) that shows the claim true or false; `evidence_kind: "execution"`, or `"reading"` when nothing could run |
 
 ```
-fp_factor = (refuters that could NOT refute >= majority) ? 1.0 : 0.0
+votes = 0
+votes += 1 if any sonnet reading lens (correctness, or reproduces with evidence_kind "reading") refuted   # one family = one vote
+votes += 1 if security (opus) refuted
+votes += 1 if reproduces refuted with evidence_kind "execution"                                           # execution is its own source
+confirmed_by_execution = reproduces did NOT refute AND evidence_kind == "execution"
+fp_factor = (votes >= 2 AND NOT confirmed_by_execution) ? 0.0 : 1.0
 effective_confidence = base_confidence * fp_factor   # refuted (0.0) -> dropped
 ```
+
+A finding that a run reproduced is never dropped by reading alone.
 
 Survivors attach the reproducing excerpt. A semantic finding is `advisory` regardless of confidence (registry downgrade rule) — high confidence raises rank, never authority. This is the structural cure for the v1.16.0 inflated-count incident (counts reported as findings without sampled code). Parity: native `/code-review` validation agent, <1% FP.
 
@@ -592,20 +605,31 @@ hard-fail. Resume semantics + concurrency cap: [agents.md](/_shared/agents.md)
 
 ### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
 
-Per surviving finding (post-dedup), spawn N perspective-diverse refuters (correctness / security / reproduces lenses) — `Workflow` `parallel()` or `Agent()` per [agents.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **≥majority refute → drop** the finding. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: this file §Recall hardening.
+Per surviving finding (post-dedup), spawn the three refuters of §Phase 2.5 (correctness on sonnet, security on opus, reproduces on sonnet with execution evidence) — `Workflow` `parallel()` or `Agent()` per [agents.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **two independent votes → drop** the finding, where one model family is one vote and an executed refutation is its own, and a finding a run reproduced is never dropped. Survivors attach a reproducing excerpt — nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel — the mechanism is the verification. Detail: this file §Recall hardening.
 
 When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
 
 ```js
-// args: { findings:[{key,desc,fileLine}], lenses:['correctness','security','reproduces'], verdictSchema }
+// args: { findings:[{key,desc,fileLine}], verdictSchema }
+// verdictSchema: { refuted: boolean, evidence_kind: 'execution'|'reading', command?: string, output?: string, excerpt?: string }
 const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
+const LENSES = [
+  { lens: 'correctness', model: 'sonnet', ask: 'Re-read the code and refute the claim by reading.' },
+  { lens: 'security',    model: 'opus',   ask: 'Re-read the code and refute the claim by reading, from the attacker side.' },
+  { lens: 'reproduces',  model: 'sonnet', ask: 'RUN something (a test, node -e, curl, a grep over the build) that shows the claim true or false; return command and output with evidence_kind "execution", or "reading" if nothing could run.' },
+]
 const judged = await parallel(args.findings.map(f => () =>
-  parallel(args.lenses.map(lens => () =>
-    agent(`${OS}\n\nRe-read ${f.fileLine}. REFUTE via the ${lens} lens: "${f.desc}". Default refuted=true if not reproducible.`,
-      { label: `refute:${lens}:${f.key}`, phase: 'Audit', model: 'sonnet', effort: 'medium', schema: args.verdictSchema })))
-    // full-lens denominator is deliberate (recall bias: refuter failure must NOT auto-drop a finding — see references/main.md §553)
-    .then(votes => ({ f, refuted: votes.filter(Boolean).filter(v => v.refuted).length > args.lenses.length / 2 }))))
-const survivors = judged.filter(j => !j.refuted).map(j => j.f)  // ≥majority refute → dropped
+  parallel(LENSES.map(L => () =>
+    agent(`${OS}\n\n${f.fileLine}: "${f.desc}". ${L.ask} Default refuted=true if not reproducible.`,
+      { label: `refute:${L.lens}:${f.key}`, phase: 'Audit', model: L.model, effort: 'medium', schema: args.verdictSchema })))
+    .then(([c, s, r]) => {
+      // A failed refuter (null) casts no vote: refuter failure must NOT auto-drop a finding (recall bias).
+      const sonnetReading = (c && c.refuted) || (r && r.refuted && r.evidence_kind !== 'execution')
+      const votes = (sonnetReading ? 1 : 0) + (s && s.refuted ? 1 : 0) + (r && r.refuted && r.evidence_kind === 'execution' ? 1 : 0)
+      const reproduced = !!(r && !r.refuted && r.evidence_kind === 'execution')
+      return { f, refuted: votes >= 2 && !reproduced, reproduced }
+    })))
+const survivors = judged.filter(j => !j.refuted).map(j => ({ ...j.f, reproduced: j.reproduced }))  // two independent votes → dropped
 ```
 
 - `schema`-validated verdicts replace inline parsing; `.filter(Boolean)` drops `null` (failed) refuters before the majority count. Deterministic findings never enter `args.findings`.

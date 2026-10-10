@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# skill-scan.sh — supply-chain scan of blitz's own shipped prompt and script surface.
+#
+# Snyk's ToxicSkills scan found critical issues in 13.4% of ~4,000 public skills
+# (remote-fetch-and-run `!` lines, hidden Unicode, exfiltration). blitz ships skills,
+# agents and bash hooks that run with the user's privileges, so CI holds them to:
+#
+#   bang-cmd     every `!`cmd`` line in SKILL.md / agents / output styles starts with
+#                an allow-listed local, read-only command
+#                (${CLAUDE_PLUGIN_ROOT}/scripts/*, git log|diff|status|show|rev-parse|
+#                branch|ls-files, cat, grep, head, tail, echo, jq, ls, wc, python3 -c)
+#   bang-danger  no network tool, pipe-to-shell, base64 decode, eval, sudo, URL, rm,
+#                file write, or python import of os/subprocess/socket/urllib/requests
+#                inside one
+#   hidden-unicode  no zero-width or bidi control characters in any shipped text file
+#   net-in-script   no curl/wget/nc/ssh/scp in command position in hooks or scripts
+#                (a line may opt out with the comment `# skill-scan: allow <reason>`)
+#
+# Usage: skill-scan.sh [--root DIR]     Exit: 0 clean · 1 findings · 2 usage
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --root) ROOT="${2:-}"; shift 2 ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    *) echo "skill-scan: unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+[ -d "$ROOT" ] || { echo "skill-scan: no such directory: $ROOT" >&2; exit 2; }
+
+python3 - "$ROOT" <<'PY'
+import pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+findings = []
+def add(p, n, rule, text):
+    findings.append(f"{p.relative_to(root)}:{n}: {rule}: {text.strip()[:140]}")
+
+BANG = re.compile(r'!`([^`]+)`')
+ALLOW_FIRST = re.compile(r'''^\s*(
+    "?\$\{CLAUDE_PLUGIN_ROOT\}/scripts/[A-Za-z0-9_.-]+"? |
+    git\s+(log|diff|status|show|rev-parse|branch|ls-files)\b |
+    (cat|grep|head|tail|echo|jq|ls|wc)\b |
+    python3\s+-c\b
+)''', re.X)
+DANGER = [
+    (re.compile(r'(^|[;&|(]\s*)(curl|wget|nc|ncat|ssh|scp|rsync|ftp)\b'), 'network tool'),
+    (re.compile(r'\|\s*(sh|bash|zsh|dash|python3?|node|perl|ruby)\b'), 'pipe to an interpreter'),
+    (re.compile(r'base64\s+(-d|--decode)'), 'base64 decode'),
+    (re.compile(r'\beval\b'), 'eval'),
+    (re.compile(r'\bsudo\b'), 'sudo'),
+    (re.compile(r'https?://'), 'URL'),
+    (re.compile(r'(^|[;&|]\s*)rm\s'), 'rm'),
+    (re.compile(r'(?<![0-9&])>>?\s*(?!/dev/null)[^\s&|]'), 'file write'),
+    (re.compile(r'\b(import\s+(os|subprocess|socket|urllib|requests|http)|__import__|os\.system|subprocess\.)'), 'python side effects'),
+]
+surfaces = list(root.glob('skills/*/SKILL.md')) + list(root.glob('agents/*.md')) + list(root.glob('output-styles/*.md'))
+surfaces += list(root.glob('mods/*/skills/*/SKILL.md'))
+for p in surfaces:
+    for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
+        for m in BANG.finditer(line):
+            cmd = m.group(1)
+            if not ALLOW_FIRST.match(cmd):
+                add(p, n, 'bang-cmd', cmd)
+            for rx, what in DANGER:
+                if rx.search(cmd):
+                    add(p, n, f'bang-danger ({what})', cmd)
+
+HIDDEN = re.compile('[\u200b-\u200f\u202a-\u202e\u2066-\u2069]|(?<!^)\ufeff')
+SKIP = {'.git', 'node_modules', '.cc-sessions', 'results'}
+for p in root.rglob('*'):
+    if not p.is_file() or SKIP & set(p.relative_to(root).parts):
+        continue
+    if p.suffix not in ('.md', '.sh', '.js', '.ts', '.tsx', '.json', '.yaml', '.yml', '.bash'):
+        continue
+    for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
+        if HIDDEN.search(line):
+            add(p, n, 'hidden-unicode', repr(HIDDEN.search(line).group(0)))
+
+NET = re.compile(r'(^|[;&|(`]\s*|\$\(\s*)(curl|wget|nc|ncat|ssh|scp)\s')
+for p in list(root.glob('hooks/scripts/*.sh')) + list(root.glob('hooks/scripts/_lib/*.sh')) + list(root.glob('scripts/*.sh')):
+    for n, line in enumerate(p.read_text(errors='replace').splitlines(), 1):
+        code = line.split('#', 1)[0] if not line.lstrip().startswith('#') else ''
+        if NET.search(code) and 'skill-scan: allow' not in line:
+            add(p, n, 'net-in-script', line)
+
+for f in findings:
+    print(f)
+print(f"skill-scan: {'FAIL' if findings else 'OK'}: {len(findings)} finding(s) across {len(surfaces)} prompt files", file=sys.stderr)
+sys.exit(1 if findings else 0)
+PY

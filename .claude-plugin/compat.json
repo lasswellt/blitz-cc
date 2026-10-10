@@ -42,7 +42,8 @@
     "sonnet_5_5_cache_read_cut": "2.1.296",
     "prompt_audit": "2.1.283",
     "hook_on_failure_block": "2.1.295",
-    "stop_hook_block_cap_8": "2.1.296"
+    "stop_hook_block_cap_8": "2.1.296",
+    "claude_mods": "2.1.287"
   },
   "cited_in": [
     "README.md",

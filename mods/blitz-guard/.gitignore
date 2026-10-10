@@ -1,0 +1,3 @@
+# Laid by the engine at each load (claude --plugin-dir / hot reload); regenerated, never edited.
+.claude-plugin/types/
+tsconfig.json

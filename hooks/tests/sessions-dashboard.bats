@@ -109,3 +109,33 @@ J
   run bash "$DASH" --out
   [ "$status" -eq 2 ]
 }
+
+ULOG="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/usage-log.sh"
+
+@test "usage-log appends one JSON line per call and refuses non-integer counts" {
+  run bash "$ULOG" --agent blitz:dev --model sonnet --effort medium --tokens 1000 --tool-uses 3 --duration-ms 60000 --plan demo --task T-001
+  [ "$status" -eq 0 ]
+  run bash "$ULOG" --agent blitz:dev --model sonnet --tokens lots
+  [ "$status" -eq 2 ]
+  run bash "$ULOG" --model sonnet --tokens 5
+  [ "$status" -eq 2 ]
+  [ "$(wc -l < .cc-sessions/agent-usage.jsonl)" -eq 1 ]
+  jq -e '.agent == "blitz:dev" and .tokens == 1000 and .task == "T-001"' .cc-sessions/agent-usage.jsonl
+}
+
+@test "dashboard sums agent usage per task with a priced band" {
+  bash "$ULOG" --agent blitz:dev --model sonnet --tokens 1000000 --plan demo --task T-001
+  bash "$ULOG" --agent blitz:critic --model opus --tokens 500000 --plan demo --task T-001
+  bash "$ULOG" --agent blitz:dev --model sonnet --tokens 200000 --plan demo --task T-002
+  run bash "$DASH"
+  [ "$status" -eq 0 ]
+  printf '%s' "$output" | grep -q '^## Agent usage by task'
+  printf '%s' "$output" | grep -qF '| demo | T-001 | 2 | 1,500,000 |'
+  printf '%s' "$output" | grep -qF '4.00–20.00'
+  printf '%s' "$output" | grep -qF 'Total: 1,700,000 tokens over 3 spawns.'
+}
+
+@test "usage identifiers are stripped to safe characters" {
+  bash "$ULOG" --agent 'blitz:dev' --model sonnet --tokens 10 --plan 'demo|x' --task 'T-1$(rm)'
+  jq -e '.plan == "demox" and .task == "T-1rm"' .cc-sessions/agent-usage.jsonl
+}

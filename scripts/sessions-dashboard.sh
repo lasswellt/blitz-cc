@@ -8,10 +8,10 @@
 #   --out <path>  markdown path (default .cc-sessions/dashboard.md)
 #
 # Sections: Sessions table, Attention queue (prints HEARTBEAT_OK when empty), Locks,
-# Inbox (pending), Timeline (last 200 feed lines), Token estimate per session.
+# Inbox (pending), Timeline (last 200 feed lines), Agent usage by task, Token estimate per session.
 # Inputs (all optional, all untrusted repo-local data — TB-1; bad JSON lines skipped):
 #   .cc-sessions/sessions/*.json   hook-owned records (+ legacy .cc-sessions/<skill>-<hex>.json)
-#   .cc-sessions/activity-feed.jsonl, inbox.jsonl, **/*.lock, context-char-count
+#   .cc-sessions/activity-feed.jsonl, inbox.jsonl, agent-usage.jsonl (scripts/usage-log.sh), **/*.lock, context-char-count
 #   `claude agents --json --all` overlay via blitz_agent_view (empty when unavailable)
 # The rendered markdown is also printed to stdout. Pure bash + jq + python3.
 # Exit 0 always on a rendered dashboard; 2 on bad arguments.
@@ -69,6 +69,10 @@ if [ -s "$SESSIONS_DIR/inbox.jsonl" ]; then
   done < "$SESSIONS_DIR/inbox.jsonl" > "$WORK/inbox.jsonl" || true
 fi
 blitz_agent_view > "$WORK/overlay.jsonl" 2>/dev/null || : > "$WORK/overlay.jsonl"
+: > "$WORK/usage.jsonl"
+if [ -s "$SESSIONS_DIR/agent-usage.jsonl" ]; then
+  tail -5000 "$SESSIONS_DIR/agent-usage.jsonl" > "$WORK/usage.jsonl" 2>/dev/null || true
+fi
 
 # --- 3. Locks: path, owner (record sid named in the body, else JSON field), age ---
 : > "$WORK/locks.jsonl"
@@ -161,6 +165,7 @@ inbox = rows("inbox.jsonl")
 overlay = {o.get("sessionId"): o for o in rows("overlay.jsonl") if o.get("sessionId")}
 locks = rows("locks.jsonl")
 sizes = {o.get("sid"): o.get("kb") for o in rows("sizes.jsonl")}
+usage = rows("usage.jsonl")
 ctx_chars = os.environ.get("BLITZ_CTX_CHARS") or ""
 
 # PR label per session: latest feed line whose message/detail mentions a PR
@@ -296,6 +301,45 @@ else:
         t = str(ev.get("ts") or "")
         t = t.split("T")[1][:8] if "T" in t else san(t, 8)
         p(f"| {san(t, 8)} | {short(ev.get('session'))} | {san(ev.get('event'), 24)} | {san(ev.get('message'), 120)} |")
+p("")
+
+# --- Agent usage by task ---
+# $/Mtok (input, output) per family, Claude 5.5 list prices (skills/_shared/agents.md §1.3).
+# The ledger holds total tokens, not the input/output/cache split, so the dollar
+# column is a band between all-input and all-output pricing, not a bill.
+PRICE = {"haiku": (0.10, 0.50), "sonnet": (2.0, 10.0), "opus": (4.0, 20.0)}
+def fam(m):
+    m = str(m or "").lower()
+    return next((f for f in PRICE if f in m), None)
+def as_int(v):
+    try:
+        return max(0, int(v))
+    except Exception:
+        return 0
+p("## Agent usage by task")
+p("")
+if not usage:
+    p("_No `agent-usage.jsonl` yet: skills record each blitz agent's reply with `scripts/usage-log.sh`._")
+else:
+    p("_Tokens per task across every blitz agent (dev, test-writer, critics, fix rounds). The $ band prices all tokens at the model's input rate, then at its output rate; cache reads cost less than either. Exact cost: `claude -p --output-format json` (`total_cost_usd`) or the OpenTelemetry `claude_code.cost.usage` metric._")
+    p("")
+    agg = {}
+    for u in usage:
+        key = (san(u.get("plan"), 40) or "-", san(u.get("task"), 16) or "-")
+        a = agg.setdefault(key, {"tokens": 0, "spawns": 0, "tools": 0, "ms": 0, "lo": 0.0, "hi": 0.0, "models": set()})
+        t = as_int(u.get("tokens"))
+        a["tokens"] += t; a["spawns"] += 1; a["tools"] += as_int(u.get("tool_uses")); a["ms"] += as_int(u.get("duration_ms"))
+        f = fam(u.get("model"))
+        if f:
+            a["lo"] += t * PRICE[f][0] / 1e6; a["hi"] += t * PRICE[f][1] / 1e6; a["models"].add(f)
+    p("| plan | task | spawns | tokens | tool uses | agent time (m) | models | ~$ band |")
+    p("|---|---|---|---|---|---|---|---|")
+    for (plan, task), a in sorted(agg.items(), key=lambda kv: -kv[1]["tokens"]):
+        band = f"{a['lo']:.2f}–{a['hi']:.2f}" if a["models"] else "-"
+        p(f"| {plan} | {task} | {a['spawns']} | {a['tokens']:,} | {a['tools']} | {a['ms'] // 60000} | {', '.join(sorted(a['models'])) or '-'} | {band} |")
+    total = sum(a["tokens"] for a in agg.values())
+    p("")
+    p(f"Total: {total:,} tokens over {sum(a['spawns'] for a in agg.values())} spawns.")
 p("")
 
 # --- Token estimate ---

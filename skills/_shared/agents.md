@@ -65,12 +65,13 @@ Cost controls that apply to every spawn:
 - Agent bodies ≥1024 tokens are static-prefix-first (role, protocol, output style) with dynamic content (task, files, feed slice) last, so the cached prefix survives across tasks.
 - Lazy tool loading: `ToolSearch` on demand, never bulk-enable MCP servers in an agent.
 - Effort: routing skills run `effort: low`; multi-phase orchestrators (`build --parallel`) keep the session effort; every spawn names its own (table above).
-- `autoCompactWindow` (agent frontmatter, ≥2.1.296) lets a subagent compact earlier than the main thread. Blitz agents leave it unset: their budgets (§3.3 of the reference) keep them far below 1M, and an early compaction only buys a cache rewrite mid-task.
+- `autoCompactWindow` (agent frontmatter, ≥2.1.296) lets a subagent compact earlier than the main thread. Blitz agents leave it unset: their budgets ([agents.reference.md](agents.reference.md) §3.3) keep them far below 1M, and an early compaction only buys a cache rewrite mid-task.
 - `skills:` preload is capped at 32 per subagent (≥2.1.295); blitz preloads one.
+- Usage: after every blitz agent reply the main thread appends the Agent result's token, tool-use and duration counts to `.cc-sessions/agent-usage.jsonl` with `scripts/usage-log.sh`; `/blitz:sessions dashboard` sums them per task. `/usage` and the status line cover the main conversation only.
 
 ### 1.4 What subagents never receive
 
-Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, the Task tools, or `TodoWrite`; `agent-frontmatter-validate.sh` rejects an agent file that lists one. The platform lets subagents spawn subagents up to three layers below the main conversation; blitz does not: no blitz agent lists `Agent`, so every fan-out originates on the main thread, which owns state and the §4.4 gate. An operator who wants the platform to enforce that for every agent sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`. Subagents do not inherit skills; one needed on every run goes in `skills:` frontmatter ([agents.reference.md](agents.reference.md) §3).
+Subagents never get `AskUserQuestion`, `Workflow`, `ScheduleWakeup`, the Task tools, or `TodoWrite`; `agent-frontmatter-validate.sh` rejects an agent file that lists one. The platform lets subagents spawn subagents up to three layers below the main conversation; blitz does not: no blitz agent lists `Agent`, so every fan-out originates on the main thread, which owns state and the fan-out gate ([agents.reference.md](agents.reference.md) §4.4). An operator who wants the platform to enforce that for every agent sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`. Subagents do not inherit skills; one needed on every run goes in `skills:` frontmatter ([agents.reference.md](agents.reference.md) §3).
 
 ### 1.5 Visibility: background agents, workflows, teams
 
@@ -79,7 +80,7 @@ Blitz fan-outs run where the operator can watch them in Claude Code's own views 
 | Surface | What the operator sees | What blitz does to feed it |
 |---|---|---|
 | `/tasks`, VS Code agent map, agents view (`claude agents`) | One row per background agent: status icon, label, live token count, transcript on Enter | Every spawn passes a `description` of the form `<skill> <unit>` (`research web-researcher`, `build T-004`, `audit security`), ≤5 words, unique within the fan-out. With agent teams on, also `name: <skill>-<unit>` (lowercase, hyphens) so the row is addressable. |
-| Background agents | Spawns return immediately and notify on completion; the main thread is free to talk | Fan-outs set `run_in_background: true` (the interactive default since 2.1.232; stated so `-p` and SDK runs behave the same). The main thread waits on completion notifications, then applies the §4.4 gate. It never sleeps or polls output files in a loop. |
+| Background agents | Spawns return immediately and notify on completion; the main thread is free to talk | Fan-outs set `run_in_background: true` (the interactive default since 2.1.232; stated so `-p` and SDK runs behave the same). The main thread waits on completion notifications, then applies the fan-out gate ([agents.reference.md](agents.reference.md) §4.4). It never sleeps or polls output files in a loop. |
 | `/workflows` and the background workflow row (≥2.1.281) | Run name, progress bar, phase boxes, agent count, elapsed time, tokens | Workflow scripts name every `phase()` in `meta.phases`, give each `agent()` a `label` matching the Agent-path `description` unit, and `log()` one line per dropped or failed agent. |
 | Monitor rows (≥2.1.284) | What each event printed | `build --parallel` greps the wave log for `DONE`/`BLOCKED`/`NEEDS_CONTEXT` lines that start with the task id, so each row reads `T-004 DONE`. |
 | Phase one-liner | One status line per boundary in the transcript and the agents-view preview | Orchestrators print `<skill> <phase> N/M · k/n done` at each boundary (`build wave 2/3 · 3/4 done`). |

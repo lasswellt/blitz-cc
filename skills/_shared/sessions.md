@@ -118,6 +118,7 @@ Degrade to **WARN-only text** (print the conflict line, no message, no `LOOP_DEF
 ├── activity-feed.jsonl         loop and skill events (reference §9)
 ├── inbox.jsonl                 attention queue (reference §4)
 ├── loop-ticks.jsonl            next --loop tick ledger for the loop circuit breaker (loop.reference.md)
+├── agent-usage.jsonl           per-agent token/tool/duration ledger (scripts/usage-log.sh), summed by sessions dashboard
 ├── mailbox/<sid>.jsonl         hook/script → session, drained by stop-turn.sh (reference §5)
 ├── HANDOFF.json                PreCompact snapshot, surfaced ≤24 h (reference §7)
 ├── quarantine/                 lines startup-validate.sh refused to load

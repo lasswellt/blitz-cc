@@ -69,6 +69,18 @@ jobs:
       - name: Catalog, dead references, numeric inventory
         run: bash scripts/gen-catalog.sh --check
 
+      - name: Skill and script supply-chain scan
+        # bang lines are local and read-only, no hidden Unicode, no network calls in hooks
+        run: bash scripts/skill-scan.sh
+
+      - name: blitz-guard mod (validate + tests)
+        # `claude plugin validate` / `claude plugin test` run locally; no API key needed.
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude --version
+          claude plugin validate mods/blitz-guard
+          claude plugin test mods/blitz-guard
+
       - name: Hook tests (bats)
         run: |
           command -v bats >/dev/null || sudo apt-get update && sudo apt-get install -y bats
