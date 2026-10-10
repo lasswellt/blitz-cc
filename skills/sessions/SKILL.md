@@ -2,10 +2,10 @@
 name: sessions
 description: "Use when asked what is running, who needs input, session status, leftover worktrees, or a session dashboard. Lists, triages, and prunes session records and platform worktrees. Modes: list, attention (HEARTBEAT_OK when empty), dashboard (--html), prune, worktrees (--apply removes merged, non-live)."
 argument-hint: "[list|attention|dashboard|prune|worktrees] [--html] [--apply] [--prune] [--merged-only]"
-allowed-tools: Read, Bash, Glob, Grep, ListAgents
+allowed-tools: Read, Glob, Grep, ListAgents, Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/sessions-dashboard.sh *)
 disallowed-tools: Write, Edit, NotebookEdit
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 
 # Sessions
@@ -91,7 +91,7 @@ Empty queue → print exactly `HEARTBEAT_OK` (the `/blitz:next --loop` heartbeat
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/sessions-dashboard.sh" $( [ "$HTML" = 1 ] && echo --html )
 ```
 
-Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Worktrees, Inbox, Timeline = last 200 feed lines, Token estimate) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: the header of `hooks/scripts/_lib/html.sh`). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4) — say so when quoting them.
+Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Worktrees, Inbox, Timeline = last 200 feed lines, Agent usage by task from `agent-usage.jsonl`, Token estimate) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: the header of `hooks/scripts/_lib/html.sh`). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4), and the agent-usage $ column is a band, not a bill — say so when quoting them.
 
 ### 1.4 `prune` — closed records older than 7 days
 

@@ -2,9 +2,9 @@
 name: doctor
 description: "Checks the plugin install and the project's setup, fixes drift, and writes helper files: hooks, session state, CLAUDE.md conflicts, worktree.baseRef, loop.md, REVIEW.md, CI workflow, v2 migration. Use for 'is blitz healthy', 'set up blitz', 'migrate from v2', 'hooks misfiring'."
 argument-hint: "[--fix] [--migrate] [--loop-md] [--review-md] [--ci] [--verify-recipe]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Glob, Grep, Edit(.claude/settings.json), Edit(.gitignore), Edit(.worktreeinclude), Edit(.claude/loop.md), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-structure.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *)
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -43,7 +43,7 @@ Without flags `doctor` is read-only: it prints findings, a remediation per findi
 
 ## Phase 1: PLUGIN STRUCTURE
 
-D-101…D-105: the plugin's own files load, hook scripts are executable, and no skill or agent lists a gated Task tool. Scans: [references/main.md](references/main.md) §Phase 1 PLUGIN STRUCTURE.
+D-101…D-110: plugin files load, hooks are executable, no skill lists a gated Task tool, Claude Code ≥ `cc_min`, jq present. Scans: [references/main.md](references/main.md) §Phase 1 PLUGIN STRUCTURE.
 
 ## Phase 2: SESSION STATE
 
@@ -74,9 +74,9 @@ Missing type-check with a `tsconfig.json` is `FAIL` (the Stop gate arms `npx tsc
 
 `worktree.baseRef: "head"` (FAIL when absent), `subagentPromptCacheTtl: "1h"` (WARN), `crossSessionInbound` (WARN, value depends on the runtime). Rationale and the `jq` merges: [references/main.md](references/main.md) §3.4 Settings for the loop.
 
-### 3.5 Platform facts (D-307, D-308)
+### 3.5 Platform facts (D-307, D-308; D-318 in references)
 
-- **D-307 Task tools** — advisory `INFO` on current models: `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Print the variable only as "set it if you want the platform's own checklist UI; blitz does not need it". A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
+- **D-307 Task tools** — advisory `INFO` on current models: `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Mention the variable only as optional (platform checklist UI). A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
 - **D-308 bash** — `command -v bash` must succeed. Hooks are bash scripts; on native Windows without Git Bash or WSL every hook fails **open** (the anti-shortcut guards, `tasks-guard.sh`, `stop-gate.sh` and the kill switch silently do nothing). `FAIL` on Windows (`uname -s` matches `MINGW|MSYS|CYGWIN` is fine; PowerShell-only is not; a PowerShell tool needs hook matcher `Bash|PowerShell`). Remediation: install Git for Windows or run under WSL; there is no PowerShell port of the hooks.
 
 ### 3.6 Repository layout (D-309…D-311)

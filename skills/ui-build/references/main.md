@@ -282,7 +282,7 @@ When triggered, spawn `agents/design-critic.md`:
 ```
 Agent({
   subagent_type: "blitz:design-critic",
-  description: "Design-quality critique (live nav)",
+  description: "ui-build design-critic",
   prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })
 ```

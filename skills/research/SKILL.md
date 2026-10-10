@@ -2,9 +2,9 @@
 name: research
 description: "Researches a topic with parallel agents (docs, web, codebase) and writes docs/research/<date>_<topic>.md with a Recommendation that /blitz:plan --from-research reads. Use for 'research X', 'compare options', 'evaluate Y', or 'how does this codebase do Y' (--codebase: read-only, file:line answers)."
 argument-hint: "<topic> | --codebase <question>"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion, Edit(docs/research/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh)
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
@@ -71,7 +71,7 @@ Read root `package.json`; note detected stack profile; identify existing code re
 
 ```bash
 RESEARCH_DIR="${SESSION_TMP_DIR}/research"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+TIMESTAMP=$(date +%Y%m%d-%H%M%S); TODAY=$(date -u +%F)
 rm -rf "${RESEARCH_DIR}"
 mkdir -p "${RESEARCH_DIR}"
 ```
@@ -87,7 +87,7 @@ Spawn 2-4 agents depending on research type:
 | `codebase-analyst` | Codebase Analysis | Yes | sonnet | Existing patterns, integration points, migration impact, affected files, dependency graph |
 | `infra-analyst` | Infrastructure Analysis | Conditional (§1.2.5) | haiku | Cloud service docs, pricing, quotas, deployment implications, environment config |
 
-Model routing follows [agents.md](/_shared/agents.md): retrieval-class workloads (library-docs, web-researcher, infra-analyst) → Haiku 4.5 (12× cheaper than Sonnet, comparable hallucination rate per arxiv 2604.03173). Semantic codebase reasoning (codebase-analyst) → Sonnet 4.6.
+Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, web-researcher, infra-analyst) → `haiku`/medium with `TODAY` in the prompt (at `low` Haiku 5.5 skips searches); codebase-analyst → `sonnet`/medium.
 
 ### 1.2.5 Spawn-N Gate (skip unneeded agents)
 
@@ -136,10 +136,10 @@ Opt-in only; the `Agent()` pool above is the default. Script contract and args s
 Spawn each agent in **a single assistant message** (so they run concurrently) using the `Agent` tool with:
 
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails the write)
-- `model: sonnet` (explicit — prevents `[1m]` inheritance from an Opus main thread)
-- `description: research <agent-name>`
+- `model:`/`effort:` per §1.2, always explicit
+- `description: research <agent-name>` (row label in `/tasks` and the agents view, §1.5)
 - `prompt`: the agent prompt template from Section 1.5 below, filled with topic, questions, output path, and stack profile
-- `run_in_background: true` (the main thread polls output files in Phase 1.7)
+- `run_in_background: true` (Phase 1.7 waits on notifications)
 
 Each agent prompt MUST include: research topic + questions; detected stack profile; output file path (`${SESSION_TMP_DIR}/research/<agent-name>.md`); research limits (§1.5); write-as-you-go rule ("Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory.").
 
@@ -159,12 +159,14 @@ Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-pe
 The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates — paste from there into each Agent() spawn. Orchestrator MAY mark the canonical preamble `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens (after Haiku-routing migration).
 
 **Templates by role** (all consume the canonical preamble):
-- `library-docs` — model: haiku. Official docs, API surface, version compat. Citation rule: structured entries, no `[QUOTE_UNVERIFIED]` text.
+- `library-docs` — model: haiku. Official docs, API surface, version compat.
 - `web-researcher` — model: haiku. **Contrarian role** (counter-evidence focus to mitigate agent-agreement bias per arxiv 2604.02923).
 - `codebase-analyst` — model: sonnet. Semantic codebase reasoning, no web search. file:LINE cites.
 - `infra-analyst` — model: haiku. **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.
 
 ### 1.7 Wait for Completion
+
+No polling: wait for each completion notification, then check once:
 
 ```bash
 for f in ${SESSION_TMP_DIR}/research/*.md; do
@@ -192,7 +194,8 @@ for f in "${EXPECTED_OUTPUTS[@]}"; do
   Agent({
     subagent_type: "general-purpose",
     model: "haiku",
-    description: "Summarize $(basename $f .md) findings to ≤30 lines",
+    effort: "low",
+    description: "research summarize $(basename $f .md)",
     prompt: "Read ${f}. Output ≤30 lines listing the most important findings as
              bullets. Preserve URLs, file:line refs, dates, version numbers verbatim.
              Drop prose. Write to ${f}.summary.md. Return canonical JSON reply with

@@ -8,10 +8,11 @@
 #   --out <path>  markdown path (default .cc-sessions/dashboard.md)
 #
 # Sections: Sessions table, Attention queue (prints HEARTBEAT_OK when empty), Locks,
-# Inbox (pending), Timeline (last 200 feed lines), Token estimate per session.
+# Inbox (pending), Timeline (last 200 feed lines), Agent usage by task, Token estimate per session.
 # Inputs (all optional, all untrusted repo-local data — TB-1; bad JSON lines skipped):
 #   .cc-sessions/sessions/*.json   hook-owned records (+ legacy .cc-sessions/<skill>-<hex>.json)
-#   .cc-sessions/activity-feed.jsonl, inbox.jsonl, **/*.lock, context-char-count
+#   .cc-sessions/activity-feed.jsonl, inbox.jsonl, agent-usage.jsonl (subagent-usage.sh),
+#   agent-usage.mod.jsonl (blitz-guard mod, optional), **/*.lock, context-char-count
 #   `claude agents --json --all` overlay via blitz_agent_view (empty when unavailable)
 # The rendered markdown is also printed to stdout. Pure bash + jq + python3.
 # Exit 0 always on a rendered dashboard; 2 on bad arguments.
@@ -69,6 +70,10 @@ if [ -s "$SESSIONS_DIR/inbox.jsonl" ]; then
   done < "$SESSIONS_DIR/inbox.jsonl" > "$WORK/inbox.jsonl" || true
 fi
 blitz_agent_view > "$WORK/overlay.jsonl" 2>/dev/null || : > "$WORK/overlay.jsonl"
+: > "$WORK/usage.jsonl"; : > "$WORK/usage-mod.jsonl"
+[ -s "$SESSIONS_DIR/agent-usage.jsonl" ] && { tail -5000 "$SESSIONS_DIR/agent-usage.jsonl" > "$WORK/usage.jsonl" 2>/dev/null || true; }
+[ -s "$SESSIONS_DIR/agent-usage.mod.jsonl" ] && { tail -5000 "$SESSIONS_DIR/agent-usage.mod.jsonl" > "$WORK/usage-mod.jsonl" 2>/dev/null || true; }
+export BLITZ_PRICES="$LIB_DIR/model-prices.json"
 
 # --- 3. Locks: path, owner (record sid named in the body, else JSON field), age ---
 : > "$WORK/locks.jsonl"
@@ -161,6 +166,12 @@ inbox = rows("inbox.jsonl")
 overlay = {o.get("sessionId"): o for o in rows("overlay.jsonl") if o.get("sessionId")}
 locks = rows("locks.jsonl")
 sizes = {o.get("sid"): o.get("kb") for o in rows("sizes.jsonl")}
+usage = rows("usage.jsonl")
+usage_mod = {u.get("agent_id"): u for u in rows("usage-mod.jsonl") if u.get("agent_id")}
+try:
+    PRICES = json.load(open(os.environ.get("BLITZ_PRICES", ""))).get("models", [])
+except Exception:
+    PRICES = []
 ctx_chars = os.environ.get("BLITZ_CTX_CHARS") or ""
 
 # PR label per session: latest feed line whose message/detail mentions a PR
@@ -296,6 +307,53 @@ else:
         t = str(ev.get("ts") or "")
         t = t.split("T")[1][:8] if "T" in t else san(t, 8)
         p(f"| {san(t, 8)} | {short(ev.get('session'))} | {san(ev.get('event'), 24)} | {san(ev.get('message'), 120)} |")
+p("")
+
+# --- Agent usage by task ---
+# Rows come from subagent-usage.sh (SubagentStop): exact input, cache and output
+# tokens per subagent, priced from hooks/scripts/_lib/model-prices.json. Transcript
+# output counts are streaming snapshots; where the blitz-guard mod recorded the
+# run's final counts (turn.complete), its output replaces the snapshot.
+def out_price(model):
+    m = str(model or "").lower()
+    p_ = next((x for x in PRICES if str(x.get("match", "")) in m), None)
+    return (p_ or {}).get("output", 0.0)
+def num(v):
+    try:
+        return max(0.0, float(v))
+    except Exception:
+        return 0.0
+p("## Agent usage by task")
+p("")
+if not usage:
+    p("_No `agent-usage.jsonl` yet: `subagent-usage.sh` writes a row each time a subagent finishes._")
+else:
+    p("_Exact per subagent: input, cache reads, 5m/1h cache writes and output, priced at Claude 5.5 list rates (`hooks/scripts/_lib/model-prices.json`). `≥` marks a cost whose output count is a streaming lower bound; install the `blitz-guard` mod for final counts. Whole-run totals including the main thread: `claude -p --output-format json` (`total_cost_usd`, `modelUsage`)._")
+    p("")
+    agg = {}
+    for u in usage:
+        key = (san(u.get("plan"), 40) or "-", san(u.get("task"), 16) or "-")
+        a = agg.setdefault(key, {"spawns": 0, "tokens": 0, "output": 0, "cache_read": 0, "cost": 0.0, "lower": 0, "agents": set()})
+        n_out, cost, final = num(u.get("output")), num(u.get("cost_usd")), bool(u.get("output_final"))
+        m = usage_mod.get(u.get("agent_id"))
+        if m and num(m.get("output")) > n_out:
+            cost += (num(m.get("output")) - n_out) * out_price(m.get("model")) / 1e6
+            n_out, final = num(m.get("output")), True
+        elif m:
+            final = True
+        a["spawns"] += 1; a["tokens"] += int(num(u.get("tokens")) - num(u.get("output")) + n_out)
+        a["output"] += int(n_out); a["cache_read"] += int(num(u.get("cache_read"))); a["cost"] += cost
+        a["lower"] += 0 if final else 1
+        if u.get("agent"): a["agents"].add(san(u.get("agent"), 30))
+    p("| plan | task | spawns | tokens | output | cache-read share | agents | cost (USD) |")
+    p("|---|---|---|---|---|---|---|---|")
+    for (plan, task), a in sorted(agg.items(), key=lambda kv: -kv[1]["cost"]):
+        share = f"{100 * a['cache_read'] // a['tokens']}%" if a["tokens"] else "-"
+        cost = ("≥" if a["lower"] else "") + f"{a['cost']:.2f}"
+        p(f"| {plan} | {task} | {a['spawns']} | {a['tokens']:,} | {a['output']:,} | {share} | {', '.join(sorted(a['agents'])) or '-'} | {cost} |")
+    tot = sum(a["cost"] for a in agg.values()); low = sum(a["lower"] for a in agg.values())
+    p("")
+    p(f"Total: {'≥' if low else ''}${tot:.2f} over {sum(a['spawns'] for a in agg.values())} subagent runs" + (f" ({low} with output as a lower bound)." if low else "."))
 p("")
 
 # --- Token estimate ---

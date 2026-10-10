@@ -1,9 +1,9 @@
 ---
 name: browse
 description: "Tests and crawls a running app through Playwright MCP: visits pages, captures console errors, failed requests and screenshots, classifies Critical/Error/Warning, optionally fixes sources; loop-safe, one page per tick. Use for 'test pages', 'smoke test', 'crawl site', 'click through the app'."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
+allowed-tools: Read, Glob, Grep, ToolSearch
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 argument-hint: "[full|smoke|page <path>|fix|--loop] [target]"
 ---
 
@@ -171,7 +171,7 @@ browserAge = 0
 - Check for:
   - **Mock/placeholder data**: Text containing "Lorem ipsum", "test", "TODO", "FIXME", "example.com", "John Doe", "Jane Doe", "foo", "bar"
   - **Broken images**: Images with error state or empty `src`
-  - **Dead links**: Links with `href="#"` or `href="javascript:void(0)"`
+  - **Dead links**: Links whose `href` is `#` or a script-scheme no-op (`void(0)`)
   - **Empty containers**: Visible sections with no content (missing empty state)
   - **Overlapping text**: Text nodes that might overlap (check via screenshot if suspicious)
 

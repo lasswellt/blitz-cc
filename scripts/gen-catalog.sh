@@ -95,17 +95,17 @@ rm -f "$tmp"
 # Dead /blitz:<name> references (skills, workflows only; prose under docs/reviews and CHANGELOG is history)
 known=$( { ls skills | grep -v '^_'; grep -ohE "name: *'[^']+'" workflows/*.js 2>/dev/null | sed "s/name: *'//; s/'//"; } | sort -u)
 refs=$(grep -rhoE '/blitz:[a-z][a-z0-9-]*' --include=*.md --include=*.sh --include=*.js --include=*.json --include=*.yml --include=*.yaml \
-  skills agents hooks scripts workflows evals templates README.md CLAUDE.md .claude .claude-plugin 2>/dev/null | sed 's#/blitz:##' | sort -u || true)
+  skills agents hooks scripts workflows evals templates README.md .claude .claude-plugin 2>/dev/null | sed 's#/blitz:##' | sort -u || true)
 for r in $refs; do
   if ! printf '%s\n' "$known" | grep -qx "$r"; then
     echo "gen-catalog: dead reference /blitz:$r (no such skill or workflow); found in:" >&2
-    grep -rlE "/blitz:$r([^a-z0-9-]|$)" --include=*.md --include=*.sh --include=*.js --include=*.json --include=*.yml skills agents hooks scripts workflows evals templates README.md CLAUDE.md .claude .claude-plugin 2>/dev/null | sed 's/^/  /' >&2
+    grep -rlE "/blitz:$r([^a-z0-9-]|$)" --include=*.md --include=*.sh --include=*.js --include=*.json --include=*.yml skills agents hooks scripts workflows evals templates README.md .claude .claude-plugin 2>/dev/null | sed 's/^/  /' >&2
     rc=1
   fi
 done
 
 # Numeric inventory claims in prose
-if grep -nE '\b[0-9]+ (skills?|agents?|hook scripts?|hooks?|events?|shared protocol files?|protocols?|detectors?)\b' README.md CLAUDE.md hooks/scripts/README.md .claude-plugin/plugin.json .claude-plugin/marketplace.json 2>/dev/null | grep -v 'CATALOG' ; then
+if grep -nE '\b[0-9]+ (skills?|agents?|hook scripts?|hooks?|events?|shared protocol files?|protocols?|detectors?)\b' README.md .claude/CLAUDE.md hooks/scripts/README.md .claude-plugin/plugin.json .claude-plugin/marketplace.json 2>/dev/null | grep -v 'CATALOG' ; then
   echo "gen-catalog: numeric inventory claim in prose (above); counts drift — describe, do not count" >&2
   rc=1
 fi

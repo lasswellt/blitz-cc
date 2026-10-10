@@ -2,9 +2,9 @@
 name: audit
 description: "Runs a 5-pillar recall audit (architecture, performance, security, maintainability, robustness) with paired agents plus registry checks, then writes docs/plans/audit-<date>/ as a paused task plan. Use for 'audit codebase', 'find tech debt', 'security audit', 'full code review', or before a release."
 argument-hint: "[scope] [--pillar architecture|performance|security|maintainability|robustness|design] [--min-confidence low|high] [--dual] [--plan]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

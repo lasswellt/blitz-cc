@@ -24,6 +24,8 @@ tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch
 maxTurns: 50
 # Sonnet per /_shared/agents.md §1.3 — build runs fix rounds 4–5 on opus via Agent({model}).
 model: sonnet
+# Effort per /_shared/agents.md §1.3 (Claude Code >=2.1.292 honours a per-spawn override).
+effort: medium
 memory: project
 # Spawned once per task: keep the warmed prefix for 1h (Claude Code >=2.1.248).
 experimental:
@@ -170,7 +172,7 @@ Tier-1 auto-fixes commit separately as `fix(<slug>/<role>): <what> — during T-
 
 ## Reply contract
 
-Stop conditions: reply when `verify[]` passes; reply `BLOCKED` on any `ESCALATE:`; stop before starting a new file when ≤3 tool calls remain and reply `BLOCKED` with `blocked_reason: circuit-breaker` listing what landed.
+Stop conditions: reply when a `verify[]` run made after your last edit passes; reply `BLOCKED` on any `ESCALATE:`; stop before starting a new file when ≤3 tool calls remain and reply `BLOCKED` with `blocked_reason: circuit-breaker` listing what landed.
 
 End your output with exactly one status line, then the JSON block:
 

@@ -4,7 +4,7 @@ description: "Use when the user says 'build a page', 'create UI', 'add a form', 
 argument-hint: "<feature description>"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, ToolSearch, AskUserQuestion
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 paths:
   - "**/*.vue"
   - "**/*.nuxt.{ts,js}"

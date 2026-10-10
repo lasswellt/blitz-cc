@@ -76,7 +76,7 @@ Flags: `--plans-dir <dir>`, `--sessions-dir <dir>`, `--no-agent-view` (skip `cla
 
 `last_failed` is hook-owned: `stop-gate.sh` writes the failing check's name and tail on a block and clears it on pass.
 
-Armed, every check runs in order; the first failure blocks the turn from ending (exit 2, reason plus a 200-char output tail on stderr) and increments `blocks`. When every check passes, `blocks` resets to 0 and the turn ends. The gate stands down (exit 0) when no gate file exists, stdin `stop_hook_active` is true, `last_assistant_message` carries a terminal marker (`LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:`), or `blocks ≥ max_blocks` (logged `gate_exhausted`). `max_blocks` defaults to 4: the platform stops honoring Stop-hook blocks after 5 in a row (`stopHookBlockCap`, `CLAUDE_STOP_HOOK_BLOCK_CAP`), and a user `/goal` shares that count, so the gate always exhausts first and logs it.
+Armed, every check runs in order; the first failure blocks the turn from ending (exit 2, reason plus a 200-char output tail on stderr) and increments `blocks`. When every check passes, `blocks` resets to 0 and the turn ends. The gate stands down (exit 0) when no gate file exists, stdin `stop_hook_active` is true, `last_assistant_message` carries a terminal marker (`LOOP_DONE | LOOP_ESCALATE | LOOP_DEFER | BLOCKED: | ESCALATE:`), the Stop payload's `background_tasks[]` lists a task still running (logged `gate_deferred`: blocking while background agents run forces idle turns until the quota is gone, anthropics/claude-code#55754), or `blocks ≥ max_blocks` (logged `gate_exhausted`). `max_blocks` defaults to 4 and is capped there: the platform ends the turn after 8 consecutive Stop-hook continuations (`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`, ≥2.1.296 docs), and a user `/goal` shares that count, so the gate always exhausts first and logs it.
 
 ### Arming table
 
@@ -99,7 +99,7 @@ jq -n --arg sel "$SELECTED" --arg until "build ${SLUG} ${TASK}" '{
 rm -f "$GATE_DIR/gate.json"   # before any LOOP_* marker or early return
 ```
 
-Interactive runs never write the file. Never wire a prompt-type Stop hook in the plugin: a user `/goal` is itself a prompt-type Stop hook and the two would fight; the gate already stands down on `stop_hook_active`. `/goal` is the loop controller (a separate evaluator judging the transcript); the gate is the evidence layer (commands that must pass). Both count against the platform's 5-block cap.
+Interactive runs never write the file. Never wire a prompt-type Stop hook in the plugin: a user `/goal` is itself a prompt-type Stop hook and the two would fight; the gate already stands down on `stop_hook_active`. `/goal` is the loop controller (a separate evaluator judging the transcript); the gate is the evidence layer (commands that must pass). Both count against the platform's 8-continuation cap.
 
 ---
 
@@ -151,7 +151,7 @@ Row 1 notifies through the first available channel, then prints `LOOP_ESCALATE`:
 | Bare `/loop` | `/loop` | reads `.claude/loop.md` (project) or `~/.claude/loop.md` (user), written by `doctor --loop-md` (`/blitz:next --loop`); 25,000-byte cap; edits apply on the next iteration | as above | Same semantics as the two rows above |
 | Desktop scheduled task | Claude Desktop task running `/blitz:next --loop` | survives session restart; needs the machine on | 1 min | Overnight local runs |
 | Routine (cloud) | Routine prompt `/blitz:next --loop` | fresh cloud session per fire, no permission prompts, commits on `claude/` branches | 1 hour | Nightly and weekly; pair with `crossSessionInbound: hold` |
-| Shell loop | `while :; do claude -p "/blitz:next --loop" \| tee -a loop.log \| grep -q LOOP_DONE && break; done` | fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; set `crossSessionInbound: accept` for `-p` workers |
+| Shell loop | `while :; do claude -p "/blitz:next --loop" --max-turns 80 --max-budget-usd 8 \| tee -a loop.log \| grep -qE 'LOOP_DONE\|LOOP_ESCALATE' && break; done` | fresh context per tick; keyed on markers | as scheduled | **Preferred for long runs**; set `crossSessionInbound: accept` for `-p` workers |
 | Claude Projects | coordinator thread runs `next`; one thread per task on its own branch and PR | machine-independent | event-driven | Plugin loads into threads from `.claude/settings.json` or project settings |
 
 A skill's own `ScheduleWakeup` is per-session and disappears with the process; it is never the keep-alive for unattended work. Durable loops are `/loop` in a dedicated session, a Desktop task, a Routine, or the shell loop.
@@ -171,6 +171,23 @@ On the first tick of a session (no prior `skill_start` from this session in the 
 /goal <slug>: every task in docs/plans/<slug>/tasks.json is status: done, tsc clean, check-report.md PASS; stop after 40 turns
 ```
 
+### Loop circuit breaker
+
+Per-task circuit breakers stop one task; nothing else stops a loop that spins: a subagent once repeated the same `npm install` 300+ times over 4.6 hours (about 27M tokens, anthropics/claude-code#15909). `next --loop` appends one line per tick to `.cc-sessions/loop-ticks.jsonl` (main thread only):
+
+```bash
+DONE_NOW=$(cat docs/plans/*/tasks.json 2>/dev/null | jq -s '[.[].tasks[]? | select(.status=="done")] | length')
+CHANGED=$(git diff --name-only "$HEAD_START" HEAD -- . ':(exclude)docs/plans' ':(exclude).cc-sessions' | wc -l)
+PROGRESS=$([ "$DONE_NOW" -gt "$DONE_START" ] || [ "$CHANGED" -gt 0 ] && echo true || echo false)
+jq -nc --argjson row "$ROW" --arg plan "${SLUG:-}" --arg task "${TASK:-}" --argjson p "$PROGRESS" --arg e "${TICK_ERROR:-}" \
+  '{ts: (now | todate), row: $row, plan: $plan, task: $task, progress: $p, error: (if $e == "" then null else $e end)}' \
+  >> .cc-sessions/loop-ticks.jsonl
+```
+
+`next-state.sh` opens the breaker after `BLITZ_LOOP_NO_PROGRESS_MAX` (3) trailing build/check ticks without progress or `BLITZ_LOOP_SAME_ERROR_MAX` (5) trailing ticks with the same `error` (the thresholds frankbria/ralph-claude-code uses), and reports row 1: notify, `LOOP_ESCALATE`, no dispatch. Rows 0, 1, 4 and 5 never count. After a human rules (fixes the spec, unblocks the task), `printf '{"reset":true}\n' >> .cc-sessions/loop-ticks.jsonl` discards the earlier ticks.
+
+**Per-tick budgets.** Cap each tick at the runner, where the platform enforces it: `claude -p "/blitz:next --loop" --max-turns 80 --max-budget-usd 8` in the shell loop (tune to the plan; a `build` tick with fix rounds is the heaviest). Budget against the weekly limit, not the 5-hour window: parallel waves draw quota linearly with agent count. In a same-session `/loop`, lower the main thread's auto-compact window to 200–300K (`/autocompact 250k`; 5.5 models otherwise compact near 967K) and leave `autoCompactWindow` unset on agents. A scheduled fire re-sends the whole session context each time, so keep ticks thin: Observe, one dispatch, commit, marker.
+
 ### Fresh session per tick
 
 Every model degrades with context length and compaction can erase constraints. Prefer a fresh session per tick (Routine, shell loop, Projects thread) over one long `/loop` session; `tasks.json`, `progress.md`, and git are the memory. Inside a long session, `pre-compact-snapshot.sh` writes `HANDOFF.json` with the plan, task, gate path, and never-edit list so a compacted session resumes the same task.
@@ -184,7 +201,7 @@ Each rung has one owner and one kind of verdict; they compose, none replaces ano
 | Rung | Mechanism | Owner | Verdict |
 |---|---|---|---|
 | Prompt-level check | the skill's own checklist and `tasks.sh verify` output read before claiming done | the running skill | claim |
-| `/goal` | prompt-type Stop hook: a separate evaluator judges the transcript each turn; counts against the platform's 5-block cap; survives compaction; works under `-p` | user pastes the line; blitz prints it | condition met / not yet / impossible |
+| `/goal` | prompt-type Stop hook: a separate evaluator judges the transcript each turn; counts against the platform's 8-continuation cap; survives compaction; works under `-p` | user pastes the line; blitz prints it | condition met / not yet / impossible |
 | `stop-gate.sh` | deterministic: `gate.json` checks (tsc, selected tests, lint) | blitz Stop hook | pass / block (≤4) |
 | `critic` | fresh-context evaluator, no `Write`/`Edit`, `omitClaudeMd`; `--mode reject` (opus) for gates, `--mode survey` (sonnet) for `check`; runs `tasks[].verify[]` through `tasks.sh` | `check`, `build` fix rounds | LGTM / REJECT, JSON findings |
 | Bundled `/verify` | the platform's user-only skill; its recorded recipe lives at `.claude/skills/verify/SKILL.md` and `check` reads it for the app-level run | user | the app runs and behaves |

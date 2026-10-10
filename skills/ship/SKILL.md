@@ -2,11 +2,11 @@
 name: ship
 description: "Releases finished work: checks the plan's gate, computes semver from commits, writes CHANGELOG, tags, publishes, archives the plan, runs learn. Slash-only. Use for 'ship it', 'cut a release', 'publish', 'release vX.Y.Z', 'tag this'. Refuses when any task is open or the check report is not PASS."
 argument-hint: "[--plan <slug>] [<version>] [--dry-run] [--no-publish]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill(blitz:check), Skill(blitz:learn)
 model: opus
 effort: medium
 disable-model-invocation: true
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** slash-only skill; it pins `model: opus`, `effort: medium` because a release is rare and the cache reset is acceptable. Current effort: `${CLAUDE_EFFORT}`.
 

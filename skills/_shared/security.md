@@ -34,7 +34,7 @@ This document organizes Blitz's scattered tactical guards (`block-*.sh`, `pre-ed
 
 **Rule:** Blitz's deterministic guards are the boundary. Model-layer behavior (skill prose, critic reasoning, gates) is defense-in-depth on top of that boundary — never the boundary itself.
 
-**Why (reasoning chain — do not terse-compress):** Blitz now runs on a highly aligned model (Opus 4.8 honesty gains), making "the model will notice" tempting. The article's two most instructive incidents — an employee phished into running a malicious prompt, and exfiltration through an approved domain — were both egress events where the model layer had *nothing anomalous to catch*, because the instruction came from the legitimate user or through a permitted channel. Only the environment boundary held. OWASP states the same in general form: prompt injection has "no known complete mitigation — only layered defenses." Therefore:
+**Why (reasoning chain — do not terse-compress):** Blitz now runs on highly aligned models (the Claude 5.5 family), making "the model will notice" tempting. The article's two most instructive incidents — an employee phished into running a malicious prompt, and exfiltration through an approved domain — were both egress events where the model layer had *nothing anomalous to catch*, because the instruction came from the legitimate user or through a permitted channel. Only the environment boundary held. OWASP states the same in general form: prompt injection has "no known complete mitigation — only layered defenses." Therefore:
 
 - A new control is **valid containment** only if it has a deterministic component (a hook, schema check, tool grant, cap, hash). "The agent is instructed to be careful" is not containment.
 - Persistent-state validation (TB-2) and fetched-content inspection (TB-4) are **deterministic scan + small-fast classifier** steps (Haiku per [agents.md](agents.md)), not "the reasoning model will spot the injection." Per the article, the classifier "can be a small, fast model; it doesn't need to be the one doing the reasoning."
@@ -55,6 +55,10 @@ Everything below is **untrusted-by-default**.
 | **TB-5** | Cross-session and channel inbound | `SendMessage`, mailbox, inbox and channel payloads sit at the TB-1 tier. The platform guarantees an inbound message can never approve a prompt, change config or run a command; blitz keeps that at the protocol layer with a 200-char echo cap. |
 
 Each boundary's enforcement — which script, which hook, which cap — is in [security.reference.md](security.reference.md) §The five trust boundaries (detail).
+
+### Guard posture
+
+Blitz's hooks are deterministic defense in depth, not a sandbox. Blocking guards fail closed (`onFailure: "block"`, ≥2.1.295; `blitz_guard_input` blocks when jq is missing or input does not parse), advisory hooks fail open. They match command text, so `sh -c`, variables and path variants can slip past them; auto mode's classifier and the sandbox are the other layers. A user-installed mod handling `tool.check` can approve a call a hook or deny rule refused outside managed or Team/Enterprise settings, and `--bare`, `--safe-mode` and `disableAllHooks` turn blitz's hooks off entirely. Hardened profile for unattended runs: sandbox on with `failIfUnavailable: true`, `allowUnsandboxedCommands: false`, `blockReadsOutsideWorkingDirectories: true`. The cross-model critic is an egress channel: `critic-external.sh` redacts secret-shaped lines and secret-file hunks before any provider call, never passes an approval-bypass flag (bats-enforced), and its REJECTs block only once the in-Claude critic reproduces them.
 
 ### Kill switch
 

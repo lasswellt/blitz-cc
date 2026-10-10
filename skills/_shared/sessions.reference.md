@@ -103,11 +103,26 @@ Compaction must not drop: the `gate` path (the Stop gate is still armed), the `n
 
 - **Subagents for verbose work.** Test runs, greps over large trees, log reads and research go to a subagent that returns a ≤10-line digest; the main thread keeps decisions, not output ([agents.md](/_shared/agents.md)).
 - **One task per session.** `build` runs one `dev` per task with fresh context; `next --loop` should fire from a fresh session or `claude --bg`, since a `/loop` turn carries the whole conversation.
-- **`/clear` between plans, `/compact` before a break.** Set model and effort once (`claude --model opus --effort high`); every skill is `model: inherit`, and a mid-session switch resets the prompt cache. `/rewind` to discard, `/compact` to keep, `/btw` for side questions, `/rename` before `/clear` if you will `--resume`.
+- **`/clear` between plans, `/compact` before a break.** Set model and effort once (`claude --model opus --effort high`, or `--model sonnet` for a cost-bound `next --loop`: Sonnet 5.5 is half the price of Opus 5.5); every skill is `model: inherit`, and a mid-session switch resets the prompt cache. `/rewind` to discard, `/compact` to keep, `/btw` for side questions, `/rename` before `/clear` if you will `--resume`.
 - **Target 40–60 % utilization.** Above that, compact or split; below, nothing to do. `/usage` and `/insights` report cost per skill and friction — blitz does not duplicate them.
 - **Quiet flags.** `npx vitest run <file> --reporter=dot`, `git --no-pager`, `npm run lint --silent`; outputs over ~30 k chars are auto-saved with a preview.
 - **Compaction instructions in `CLAUDE.md`** (≤200 lines, no procedural text): preserve the plan slug and task id, `${CLAUDE_SESSION_ID}`, the `gate.json` path in force, the never-edit list, undelivered mailbox lines, modified files and the exact test/lint commands.
 - **Self-contained summaries.** Reference files by path, not "the file I created earlier"; re-read a file rather than recall it; summarize verification as one line (`Type-check: FAIL — 1 error in src/x.ts:42`) unless reporting a blocker.
+
+### 8.1 Watching background work
+
+Blitz leaves progress display to Claude Code's own views; the spawn conventions that feed them are in [agents.md](/_shared/agents.md) §1.5.
+
+| Want | Use |
+|---|---|
+| Every background agent, shell and Monitor in this session | `/tasks` (status icon, label, Enter for the transcript; Claude Code's own background work folds under "System tasks") |
+| Every session on the machine, including `claude --bg` and `next --loop` runs | `claude agents`. `n:blitz` filters by session name or task (≥2.1.287); Ctrl+F finds a session, Alt+↑/↓ jumps between groups (≥2.1.288) |
+| A running Workflow (`build-wave`, `review-fanout`, `audit-sweep`) | The background workflow row under the prompt, or `/workflows` for the phase tree; `x` stops the run under the pointer |
+| A build wave as it lands | The Monitor rows (`T-004 DONE …`) |
+| Push a long tool call to the background mid-turn | Send now (Ctrl+Enter): running tools move to the background instead of the turn being cancelled (≥2.1.281) |
+| Per-subagent status line | `subagentStatusLine` in user settings; the payload's `agentType` (≥2.1.293) tells `blitz:dev` from `blitz:critic` |
+
+Name a long-running blitz session after its job (`/rename blitz next <slug>`) so `n:blitz` finds it. Background shells stop after their `timeout` only in unattended sessions (`-p`, SDK, CI, cloud; ≥2.1.288); a terminal session has no limit, so a Monitor deadline is still the only watchdog a wave has.
 
 ---
 

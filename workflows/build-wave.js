@@ -2,7 +2,7 @@ export const meta = {
   name: 'build-wave',
   description: 'Dispatch one wave of blitz dev agents in isolated worktrees (build --parallel §Wave)',
   whenToUse: 'Dispatch one wave of blitz dev agents in isolated worktrees (build --parallel §Wave). Only from /blitz:build --parallel when Phase 0 selected the Workflow path. One wave per run; tasks.json, progress.md, the merge-tree pre-check and the wave-boundary commit stay in the skill (main thread).',
-  phases: [{ title: 'Wave', detail: 'one blitz:dev per task, isolation: worktree, schema-validated reply' }],
+  phases: [{ title: 'Wave', detail: 'one blitz:dev per task, isolation: worktree, schema-validated reply', model: 'sonnet' }],
 }
 
 // Extracted from skills/build/SKILL.md §Wave (build --parallel). Plugin workflow: runs as
@@ -40,9 +40,11 @@ log(`build-wave: ${plan} wave ${wave} — ${args.tasks.length} task(s), worktree
 
 const results = await parallel(args.tasks.map(t => () =>
   agent(t.prompt, {
-    label: `${t.id}:w${wave}`,
+    label: `build ${t.id}`,
     phase: 'Wave',
     agentType: 'blitz:dev',
+    model: 'sonnet',
+    effort: 'medium',
     isolation: 'worktree',
     schema: args.replySchema,
   })))

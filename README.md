@@ -47,9 +47,15 @@ Design decisions and the evidence behind them: [`docs/reviews/2026-09-19_v3-agen
 /plugin install blitz@blitz
 ```
 
-Pin the version and leave auto-update off for any plugin that runs hooks; read the diff before upgrading. For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
+Pin the version and leave auto-update off for any plugin that runs hooks; read the diff before upgrading. Blitz's hooks run as you on every tool call: [SECURITY.md](SECURITY.md) has the threat model, what leaves the machine, and a hardened profile for unattended runs.
 
-**Requires** Claude Code ≥ 2.1.271 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
+Optional: the `blitz-guard` mod (Claude Code ≥2.1.287) adds checks a shell hook cannot make: blitz agents never start as agent-team teammates or on haiku, critics stay read-only by agent id, and plan progress shows in the status line. It sits on top of the hooks and never replaces them. Details: [mods/blitz-guard/README.md](mods/blitz-guard/README.md).
+
+```
+/plugin install blitz-guard --marketplace lasswellt/blitz-cc
+``` For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
+
+**Requires** Claude Code ≥ 2.1.296 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
 
 ```bash
 /blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY
@@ -151,11 +157,24 @@ A critic from a different model family catches blindspots the home model has on 
 | Setting | Effect |
 |---|---|
 | (unset) | in-Claude critic only |
-| `BLITZ_CRITIC_PROVIDER=agy` | that provider replaces the in-Claude reject critic |
-| `BLITZ_CRITIC_PANEL=agy,copilot` | both run; **any REJECT blocks** |
-| `BLITZ_DUAL_CRITIC=1` | in-Claude plus the external one; both must say LGTM |
+| `BLITZ_CRITIC_PROVIDER=agy` | that provider replaces the in-Claude reject critic; its REJECTs still go to the in-Claude critic for confirmation |
+| `BLITZ_CRITIC_PANEL=agy,copilot` | both run; a REJECT blocks once the in-Claude critic reproduces it |
+| `BLITZ_DUAL_CRITIC=1` | in-Claude plus the external one; external REJECTs are confirmed before they block |
 
-Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line — never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate.
+Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line — never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate. External REJECTs are claims, not vetoes: cross-model reviewers measure around 30% precision, so `critic-external.sh` exits 3 and the in-Claude critic must reproduce a claim before it blocks (`BLITZ_CRITIC_EXTERNAL_VETO=1` restores the old veto). Secret-shaped lines and secret-file hunks are redacted from the diff before it leaves the machine.
+
+### Models, effort and watching the agents
+
+Each agent runs on the cheapest model that can do its job, at an explicit effort, so the session model only routes. Aliases resolve to the Claude 5.5 family:
+
+| Lane | Model · effort | Price per Mtok (in · out · cache read) |
+|---|---|---|
+| Deterministic collectors, triage, summaries | `haiku` (Haiku 5.5) · low | $0.10 · $0.50 · n/a |
+| Retrieval research, codebase mapping (multi-step search) | `haiku` (Haiku 5.5) · medium | $0.10 · $0.50 · n/a |
+| `dev`, `test-writer`, survey critics, codebase analysis | `sonnet` (Sonnet 5.5) · medium | $2 · $10 · $0.10 |
+| `critic --mode reject` (`medium` on small all-green diffs), fix rounds 4–5 | `opus` (Opus 5.5) · high | $4 · $20 · $0.20 |
+
+Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. Each `dev` is named `dev-T-004`, so a `SendMessage` resumes it with its context; that needs no agent teams, and blitz keeps its agents as subagents even when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set. Detail: `skills/_shared/agents.md` §1.3 and §1.5.
 
 ### One registry, two lanes
 

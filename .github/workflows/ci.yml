@@ -51,8 +51,8 @@ jobs:
             print "OVER THE 5,000-TOKEN COMPACTION CAP: " $2 " (" $1 " tokens)"; bad=1
           } END { exit bad }'
 
-      - name: CLAUDE.md size guard (<=200 lines)
-        run: test "$(wc -l < CLAUDE.md)" -le 200
+      - name: .claude/CLAUDE.md size guard (<=200 lines)
+        run: test "$(wc -l < .claude/CLAUDE.md)" -le 200
 
       - name: Version-reference sync
         run: bash scripts/check-version-sync.sh
@@ -68,6 +68,27 @@ jobs:
 
       - name: Catalog, dead references, numeric inventory
         run: bash scripts/gen-catalog.sh --check
+
+      - name: Skill and script supply-chain scan
+        # bang lines are local and read-only, no hidden Unicode, no network calls in hooks
+        run: bash scripts/skill-scan.sh
+
+      - name: Cisco skill-scanner (offline, pinned)
+        # Static + behavioral analyzers only: no --use-llm / --use-osv / VirusTotal, so
+        # nothing leaves the runner. Gate at HIGH; the MEDIUM findings are documented
+        # shell examples. Pinned: rule packs change between releases.
+        run: |
+          pipx install cisco-ai-skill-scanner==2.2.2
+          skill-scanner scan-all skills --recursive --use-behavioral --format json \
+            --output skill-scanner.json --fail-on-severity high
+
+      - name: blitz-guard mod (validate + tests)
+        # `claude plugin validate` / `claude plugin test` run locally; no API key needed.
+        run: |
+          npm install -g @anthropic-ai/claude-code@2.1.296
+          claude --version
+          claude plugin validate mods/blitz-guard
+          claude plugin test mods/blitz-guard
 
       - name: Hook tests (bats)
         run: |
@@ -98,7 +119,7 @@ jobs:
       - name: Install Claude Code + sandbox backend
         if: env.HAS_ANTHROPIC_KEY == 'true'
         run: |
-          npm install -g @anthropic-ai/claude-code
+          npm install -g @anthropic-ai/claude-code@2.1.296
           sudo apt-get update && sudo apt-get install -y bubblewrap socat   # Bash grants need the OS sandbox
           claude --version
 

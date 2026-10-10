@@ -28,7 +28,7 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-MODEL="${BLITZ_COUNT_MODEL:-claude-opus-5}"
+MODEL="${BLITZ_COUNT_MODEL:-claude-opus-5-5}"
 
 [ "$#" -eq 0 ] && { echo "usage: count-tokens.sh {<file>...|--skills|--calibrate} [--json]" >&2; exit 2; }
 

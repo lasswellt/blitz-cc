@@ -15,6 +15,8 @@
 set -euo pipefail
 
 INPUT="$(cat)"
+. "$(dirname "$0")/_lib/common.sh"
+blitz_guard_input block-test-disabling
 TOOL="$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")"
 FILE_PATH="$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")"
 

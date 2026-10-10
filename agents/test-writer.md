@@ -16,6 +16,8 @@ maxTurns: 35
 # Sonnet per /_shared/agents.md — test generation needs to follow patterns
 # AND reason about edge cases. Haiku is too coarse for the latter.
 model: sonnet
+# Effort per /_shared/agents.md §1.3 (Claude Code >=2.1.292 honours a per-spawn override).
+effort: medium
 memory: project
 # Spawned several times per plan: keep the warmed prefix for 1h (E-044; Claude Code >=2.1.248).
 experimental:

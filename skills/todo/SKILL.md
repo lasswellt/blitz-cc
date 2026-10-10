@@ -1,9 +1,9 @@
 ---
 name: todo
 description: "Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', or when Claude surfaces a follow-up that should not become a stale TODO comment. Tracks ideas, follow-ups, and tech debt in docs/plans/BACKLOG.md (markdown checklist). Modes: add, list, check, resolve."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Glob, Grep, Edit(docs/plans/**)
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 argument-hint: "<add <text> [#tag] | list [#tag] | check | resolve <n|substring>>"
 ---
 

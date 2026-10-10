@@ -1,6 +1,6 @@
 # Hook Scripts
 
-Every script reads its trigger JSON from stdin, sources `_lib/common.sh`, and exits 0 unless it is listed as BLOCKING below (exit 2 with the reason on stderr). Wiring lives in `hooks/hooks.json`; the generated component list is `docs/CATALOG.md` (`scripts/gen-catalog.sh`). Authoring contract: `.claude/rules/hooks.md`. Security posture: `skills/_shared/security.md` §4.
+Every script reads its trigger JSON from stdin, sources `_lib/common.sh`, and exits 0 unless it is listed as BLOCKING below (exit 2 with the reason on stderr). BLOCKING PreToolUse guards fail closed: `hooks.json` gives them `onFailure: "block"` (Claude Code ≥2.1.295), so a crash or timeout blocks the call, and each calls `blitz_guard_input` first, which exits 2 when jq is missing or the payload is not JSON (`BLITZ_GUARD_FAIL_OPEN=1` in the launch environment opts out). Advisory hooks stay fail-open. Wiring lives in `hooks/hooks.json`; the generated component list is `docs/CATALOG.md` (`scripts/gen-catalog.sh`). Authoring contract: `.claude/rules/hooks.md`. Security posture: `skills/_shared/security.md` §4.
 
 Hooks require bash on the host (Git Bash or WSL on native Windows; without it the guards fail open). Command guards match `Bash|PowerShell` so the PowerShell tool is covered.
 
@@ -39,6 +39,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows; without it th
 | `permission-denied.sh` | `PermissionDenied` | inbox `permission_denied` line; never emits `retry` |
 | `config-change.sh` | `ConfigChange` | re-runs `startup-validate.sh --strict --quiet` |
 | `subagent-context.sh` | `SubagentStart` (`^blitz:(dev|test-writer)$`) | injects `skills/_shared/spawn-invariant.md` as `additionalContext`: the invariant half of the 11-item spawn spec. Static by construction — never interpolate a timestamp, session id or command output, or the per-spawn cache benefit is lost. Cannot block a spawn. (`BLITZ_DISABLE_SPAWN_INVARIANT=1`) |
+| `subagent-usage.sh` | `SubagentStop` (async) | reads the finished subagent's `agent_transcript_path`, groups API responses by message id, prices input, output, cache reads and 5m/1h cache writes from `_lib/model-prices.json` (Haiku long-context multiplier per request), and appends one row to `.cc-sessions/agent-usage.jsonl` with plan and task taken from the prompt; `output_final: false` marks a streaming lower bound. Advisory: always exits 0. |
 | `worktree-remove.sh` | `WorktreeRemove` | logs; deletes a merged agent branch (`BLITZ_SKIP_BRANCH_CLEANUP=1`). Always exits 0: a non-zero exit **fails the removal** when the directory still exists. |
 | `markdown-link-validate.sh` | `PreToolUse` on `git commit` | warns on broken relative `.md` links and anchors under `skills/` and `agents/`; CI runs it blocking |
 

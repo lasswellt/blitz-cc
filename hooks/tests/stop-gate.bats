@@ -54,7 +54,7 @@ write_gate() {  # write_gate '<checks json array>' [blocks] [max]
   [ "$status" -eq 0 ]
 }
 
-@test "max_blocks above 4 is clamped under the platform's 5-block cap" {
+@test "max_blocks above 4 is clamped well under the platform's 8-continuation cap" {
   write_gate '[{"name":"fail","cmd":"exit 1"}]' 4 20
   run_hook "stop-gate.sh" '{"session_id":"s1"}'
   [ "$status" -eq 0 ]
@@ -71,5 +71,25 @@ write_gate() {  # write_gate '<checks json array>' [blocks] [max]
 @test "check timeout is honored" {
   write_gate '[{"name":"slow","cmd":"sleep 5","timeout":1}]'
   run_hook "stop-gate.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 2 ]
+}
+
+@test "running background tasks: gate defers instead of blocking (#55754)" {
+  write_gate '[{"name":"fail","cmd":"exit 1"}]'
+  run_hook "stop-gate.sh" '{"session_id":"s1","background_tasks":[{"id":"a1","status":"running"},{"id":"a2","status":"completed"}]}'
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .blocks .cc-sessions/sessions/s1/gate.json)" = "0" ]
+  feed_events | grep -q gate_deferred
+}
+
+@test "a background task with no status counts as running" {
+  write_gate '[{"name":"fail","cmd":"exit 1"}]'
+  run_hook "stop-gate.sh" '{"session_id":"s1","background_tasks":[{"id":"a1"}]}'
+  [ "$status" -eq 0 ]
+}
+
+@test "only finished background tasks: gate still blocks a failing check" {
+  write_gate '[{"name":"fail","cmd":"exit 1"}]'
+  run_hook "stop-gate.sh" '{"session_id":"s1","background_tasks":[{"id":"a1","status":"completed"},{"id":"a2","status":"failed"},{"id":"a3","status":"killed"}]}'
   [ "$status" -eq 2 ]
 }

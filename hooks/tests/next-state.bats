@@ -85,3 +85,49 @@ spec() { mkdir -p "$BLITZ_PLANS_DIR/$1"; printf -- '---\nstatus: %s\npriority: %
   [ "$(printf '%s' "$output" | jq -r .row)" = "2" ]
   [ "$(printf '%s' "$output" | jq -r .next_task.id)" = "T-001" ]
 }
+
+tick() {  # tick <row> <progress> <error>
+  mkdir -p "$FAKE_REPO/.cc-sessions"
+  jq -nc --argjson r "$1" --argjson p "$2" --arg e "$3" '{row:$r, plan:"demo", task:"T-001", progress:$p, error:(if $e == "" then null else $e end)}' \
+    >> "$FAKE_REPO/.cc-sessions/loop-ticks.jsonl"
+}
+
+@test "loop breaker: three build ticks without progress open it (row 1, before open work)" {
+  spec demo active
+  bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "false" >/dev/null
+  tick 2 false ""; tick 2 false ""; tick 2 false ""
+  ns; [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r .row)" = "1" ]
+  printf '%s' "$output" | jq -e '.loop_breaker.open and (.reason | startswith("loop circuit breaker"))'
+}
+
+@test "loop breaker: a progress tick resets the no-progress run" {
+  spec demo active
+  bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" >/dev/null
+  tick 2 false ""; tick 2 false ""; tick 2 true ""; tick 2 false ""
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "2" ]
+  [ "$(printf '%s' "$output" | jq -r .loop_breaker.no_progress)" = "1" ]
+}
+
+@test "loop breaker: the same error five ticks running opens it even with progress" {
+  BLITZ_LOOP_NO_PROGRESS_MAX=99
+  export BLITZ_LOOP_NO_PROGRESS_MAX
+  for i in 1 2 3 4 5; do tick 2 true "T-001:tsc TS2322"; done
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "1" ]
+  [ "$(printf '%s' "$output" | jq -r .loop_breaker.same_error)" = "5" ]
+}
+
+@test "loop breaker: a reset line discards earlier ticks; rows 0/4/5 never count" {
+  tick 2 false ""; tick 2 false ""; tick 2 false ""
+  printf '{"reset":true}\n' >> "$FAKE_REPO/.cc-sessions/loop-ticks.jsonl"
+  tick 5 false ""; tick 0 false ""; tick 2 false ""
+  ns; [ "$(printf '%s' "$output" | jq -r .loop_breaker.open)" = "false" ]
+  [ "$(printf '%s' "$output" | jq -r .loop_breaker.no_progress)" = "1" ]
+}
+
+@test "loop breaker: a corrupt ledger line is skipped, not fatal" {
+  tick 2 false ""
+  printf 'not json\n' >> "$FAKE_REPO/.cc-sessions/loop-ticks.jsonl"
+  ns; [ "$status" -eq 0 ]
+  printf '%s' "$output" | jq -e '.loop_breaker.no_progress == 1'
+}

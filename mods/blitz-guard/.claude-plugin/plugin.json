@@ -1,0 +1,10 @@
+{
+  "name": "blitz-guard",
+  "version": "0.2.0",
+  "description": "Optional Claude Mod for blitz: keeps blitz agents off haiku and out of agent teams, keeps blitz critics read-only by agent id, and shows plan progress in the status line. An add-on to blitz's bash hooks, never a replacement.",
+  "author": {
+    "name": "lasswellt"
+  },
+  "homepage": "https://github.com/lasswellt/blitz-cc",
+  "license": "MIT"
+}

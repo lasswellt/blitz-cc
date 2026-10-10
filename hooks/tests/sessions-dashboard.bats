@@ -109,3 +109,35 @@ J
   run bash "$DASH" --out
   [ "$status" -eq 2 ]
 }
+
+
+usage_row() {  # usage_row <agent_id> <plan> <task> <output> <cost> <final>
+  jq -nc --arg id "$1" --arg plan "$2" --arg task "$3" --argjson out "$4" --argjson cost "$5" --argjson fin "$6" \
+    '{source:"transcript", agent_id:$id, agent:"blitz:dev", plan:$plan, task:$task, models:["claude-sonnet-5-5"],
+      input:10, output:$out, cache_read:900000, cache_write_5m:100000, cache_write_1h:0,
+      tokens:(1000010 + $out), cost_usd:$cost, output_final:$fin}' >> .cc-sessions/agent-usage.jsonl
+}
+
+@test "dashboard sums exact subagent cost per task and marks lower bounds" {
+  usage_row a1 demo T-001 1000 0.36 true
+  usage_row a2 demo T-001 500 0.20 false
+  usage_row a3 demo T-002 100 0.10 true
+  run bash "$DASH"
+  [ "$status" -eq 0 ]
+  printf '%s' "$output" | grep -q '^## Agent usage by task'
+  printf '%s' "$output" | grep -qF '| demo | T-001 | 2 |'
+  printf '%s' "$output" | grep -qF '≥0.56 |'
+  printf '%s' "$output" | grep -qF '| 0.10 |'
+  printf '%s' "$output" | grep -qF '(1 with output as a lower bound)'
+}
+
+@test "the mod's final output count replaces a transcript snapshot" {
+  usage_row a2 demo T-001 500 0.20 false
+  printf '%s\n' '{"source":"turn.complete","agent_id":"a2","agent":"blitz:dev","model":"claude-sonnet-5-5","input":10,"output":10500,"cache_read":900000,"cache_write":100000}' \
+    > .cc-sessions/agent-usage.mod.jsonl
+  run bash "$DASH"
+  [ "$status" -eq 0 ]
+  # 10,000 more output tokens at $10/Mtok = +$0.10, and no lower-bound mark
+  printf '%s' "$output" | grep -qF '| 0.30 |'
+  ! printf '%s' "$output" | grep -qF 'lower bound)'
+}

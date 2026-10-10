@@ -15,6 +15,9 @@ setup() {
   PLUGIN_ROOT="$(cd "$HOOKS_DIR/../.." && pwd)"
   export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
   TC="$PLUGIN_ROOT/scripts/toolchain.sh"
+  # Hermetic: GitHub Actions sets CI=true, and post-edit-typecheck-block.sh
+  # stands down in CI by design, so the ratchet cases would test nothing there.
+  unset CI
 }
 
 # A table whose every row runs a stub on PATH, so resolution is deterministic
@@ -219,6 +222,19 @@ EOF
   [ "$output" = "2" ]
   run jq -r '.lanes | keys | join(",")' .cc-sessions/typecheck-baseline.json
   [ "$output" = "zz-check" ]
+  teardown_fake_repo
+}
+
+@test "typecheck ratchet: stands down under CI=true (a pipeline's checker runs elsewhere)" {
+  setup_fake_repo
+  write_stub_table
+  touch zz.marker
+  printf 'x\n' > a.zz
+  echo 1 > .stub-errors
+  run_hook "post-edit-typecheck-block.sh" "$(fake_edit_input "a.zz")"
+  echo 9 > .stub-errors
+  CI=true run_hook "post-edit-typecheck-block.sh" "$(fake_edit_input "a.zz")"
+  [ "$status" -eq 0 ]
   teardown_fake_repo
 }
 

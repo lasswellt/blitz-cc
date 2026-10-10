@@ -10,9 +10,11 @@ set -euo pipefail
 
 # Read the hook input from stdin
 INPUT=$(cat)
+. "$(dirname "$0")/_lib/common.sh"
+blitz_guard_input pre-edit-guard
 
 # Extract the file path from the tool input
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
 
 if [[ -z "$FILE_PATH" ]]; then
   # No file path found — allow (might be a non-file operation)

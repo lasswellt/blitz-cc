@@ -1,9 +1,9 @@
 ---
 name: doc-gen
 description: "Generates API docs, component docs and Mermaid architecture diagrams from source code into docs/generated/. Modes: api, components, architecture, full (parallel agents). Use for 'generate docs', 'API documentation', 'component docs', 'architecture diagram', or when source is ahead of docs/."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(docs/generated/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh)
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 argument-hint: "<api|components|architecture|full>"
 ---
 
@@ -167,7 +167,7 @@ mkdir -p docs/generated
 
 If mode is `full`, create a team and spawn agents for parallel documentation generation.
 
-Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true, description: <agent-name>, prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`).
+Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", effort: "medium", run_in_background: true, description: "doc-gen <agent-name>", prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`).
 
 > **Subagent type**: doc agents must Write their output files. Never use `Explore` or rely on SDK heuristics. See [agents.md](/_shared/agents.md).
 

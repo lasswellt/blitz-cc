@@ -2,9 +2,9 @@
 name: plan
 description: "Turns a goal into docs/plans/<slug>/{spec.md, plan.md, tasks.json}: brainstorm, research, tasks with executable verify checks. Use for 'plan X', 'spec this', 'break this down', 'what would it take', or before /blitz:build on anything larger than a one-sentence diff."
 argument-hint: "<slug or goal> [--autonomous] [--from-research <doc>] [--issues]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, AskUserQuestion, Edit(docs/plans/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *)
 model: inherit
-compatibility: ">=2.1.271"
+compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 

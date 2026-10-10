@@ -336,7 +336,7 @@ Four layers, one owner and one kind of verdict each. They compose; none replaces
 | Layer | Mechanism | Owner | Decides |
 |---|---|---|---|
 | Deterministic gate | `hooks/scripts/stop-gate.sh` + `.cc-sessions/sessions/<sid>/gate.json`; tests from `scripts/test-selector.sh` | blitz Stop hook | tsc / selected tests / ratchet quick-check pass |
-| Goal evaluator | `/goal <plan DoD>` (bundled prompt-type Stop hook: a separate evaluator judges the transcript; counts against the platform's 5-block `stopHookBlockCap`) | user; `next --loop` prints the line once | condition met / not yet / impossible |
+| Goal evaluator | `/goal <plan DoD>` (bundled prompt-type Stop hook: a separate evaluator judges the transcript; counts against the platform's 8-continuation cap, `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`) | user; `next --loop` prints the line once | condition met / not yet / impossible |
 | Adversarial | `agents/critic.md --mode reject` on the diff, fresh context, no Write/Edit | `check` Phase 4.3 | LGTM / REJECT |
 | App-level | `/verify` recipe recorded at `.claude/skills/verify/SKILL.md` (bundled, user-only); `check` reads and replays it | user | the app runs and behaves |
 

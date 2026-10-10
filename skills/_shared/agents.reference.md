@@ -219,12 +219,14 @@ Blitz manages no worktree lifecycle of its own. What the platform does:
 3. Spawned agents are not sandboxed: full Read/Write/Bash per their agent definition; they stub-and-append their own files exactly as under `Agent()`.
 4. Opt-in is satisfied by skill instructions: a SKILL.md that says "call Workflow" counts. First-trigger confirmation stays platform-controlled.
 
-### 7.2 Tool API (2.1.277)
+### 7.2 Tool API (2.1.296)
 
 | Item | Value |
 |---|---|
 | Concurrency | `min(16, cores-2)`; override `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS=<1..256>`; excess `parallel()` items queue |
 | Lifetime cap | ≤1000 agents per run; ≤4096 items per `parallel()`/`pipeline()` call |
+| Per-agent routing | `agent(prompt, {label, phase, model, effort, agentType, isolation, schema})`; blitz scripts set `model` and `effort` on every call ([agents.md](agents.md) §1.3). `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (≥2.1.296) overrides every `model` in the run |
+| Display | `meta.phases[].title` must match each `phase()` exactly or the agents get their own unnamed group; `label` is the row name in `/workflows` and the background workflow row (≥2.1.281) |
 | Budget | `{ total, spent(), remaining() }`; `spent()` shared with the main loop |
 | Nesting | `workflow(name | {scriptPath}, args)` one level only |
 | Resume | `resumeFromRunId` same-session; replays completed agents from cache until the first prompt that differs, then re-runs that agent and everything after it. Keep `args` deterministic (sorted rosters, no clock labels) |

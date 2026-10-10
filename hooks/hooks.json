@@ -122,7 +122,8 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/kill-switch.sh",
             "args": [],
             "timeout": 10,
-            "statusMessage": "blitz: kill switch"
+            "statusMessage": "blitz: kill switch",
+            "onFailure": "block"
           }
         ]
       },
@@ -134,7 +135,8 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/tasks-guard.sh",
             "args": [],
             "timeout": 10,
-            "statusMessage": "blitz: tasks.json guard"
+            "statusMessage": "blitz: tasks.json guard",
+            "onFailure": "block"
           }
         ]
       },
@@ -146,7 +148,8 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/tasks-guard.sh",
             "args": [],
             "timeout": 10,
-            "statusMessage": "blitz: tasks.json guard"
+            "statusMessage": "blitz: tasks.json guard",
+            "onFailure": "block"
           }
         ]
       },
@@ -155,19 +158,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-edit-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/pre-edit-guard.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-as-any-insertion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-as-any-insertion.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-disabling.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-disabling.sh",
+            "onFailure": "block"
           }
         ]
       },
@@ -184,19 +191,23 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-no-verify.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-no-verify.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-git.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-git.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-sql.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-destructive-sql.sh",
+            "onFailure": "block"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/scripts/block-test-deletion.sh",
+            "onFailure": "block"
           }
         ]
       }
@@ -273,6 +284,20 @@
             "args": [],
             "timeout": 60,
             "statusMessage": "blitz: re-validating .cc-sessions state"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-usage.sh",
+            "args": [],
+            "async": true,
+            "timeout": 30,
+            "statusMessage": "blitz: recording subagent usage"
           }
         ]
       }

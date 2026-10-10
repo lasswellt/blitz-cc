@@ -11,7 +11,13 @@
       "name": "blitz",
       "source": "./",
       "description": "Agentic development loop for any stack: research → plan → build → check → ship with per-task verify commands, structural done, fresh-context dev agents, an adversarial critic, anti-shortcut hooks, and next --loop for unattended runs. Deeper Vue/Nuxt/Firebase lanes when that stack is detected.",
-      "version": "3.9.4"
+      "version": "3.14.0"
+    },
+    {
+      "name": "blitz-guard",
+      "source": "./mods/blitz-guard",
+      "description": "Optional Claude Mod for blitz: blitz agents never become teammates or run on haiku, critics stay read-only by agent id, plan progress in the status line. An add-on to blitz's bash hooks.",
+      "version": "0.2.0"
     }
   ]
 }

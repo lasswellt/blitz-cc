@@ -32,6 +32,8 @@ maxTurns: 30
 # BLITZ_CRITIC_PANEL fans out to several, and BLITZ_DUAL_CRITIC=1 runs both the
 # in-Claude and external critics and requires both PASS. See agents/critic.md §8.
 model: sonnet
+# Effort per /_shared/agents.md §1.3 (Claude Code >=2.1.292 honours a per-spawn override).
+effort: medium
 # Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
 # the verdict (E-044; Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.
 omitClaudeMd: true

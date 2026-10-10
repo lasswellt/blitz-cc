@@ -27,7 +27,9 @@
 #   8. Optional fields, if present, match expected shape:
 #        background: true|false
 #        color: known palette token (cyan|orange|green|red|yellow|magenta|blue|purple)
-#        memory: project|none
+#        memory: user|project|local|none
+#        effort: low|medium|high|xhigh|max
+#        autoCompactWindow: positive integer (tokens)
 #   9. Body length ≤500 lines (excluding frontmatter) — same cap as SKILL.md
 #  10. tools never lists Task/Todo tools (off on Claude 5 models) or tools the platform strips
 
@@ -134,7 +136,15 @@ validate_one() {
   if [ -n "$memory" ]; then
     case "$memory" in user|project|local|none) ;; *) fail "$rel" "memory '$memory' must be user|project|local|none";; esac
   fi
-  local isolation omitcm cachettl
+  local isolation omitcm cachettl effort acw
+  effort=$(printf '%s\n' "$fm" | awk -F': *' '/^effort:/{print $2; exit}' | tr -d '"')
+  acw=$(printf '%s\n' "$fm" | awk -F': *' '/^autoCompactWindow:/{print $2; exit}' | tr -d '"')
+  if [ -n "$effort" ]; then
+    case "$effort" in low|medium|high|xhigh|max) ;; *) fail "$rel" "effort '$effort' must be low|medium|high|xhigh|max";; esac
+  fi
+  if [ -n "$acw" ]; then
+    case "$acw" in ''|*[!0-9]*|0) fail "$rel" "autoCompactWindow '$acw' must be a positive integer";; esac
+  fi
   isolation=$(printf '%s\n' "$fm" | awk -F': *' '/^isolation:/{print $2; exit}' | tr -d '"')
   omitcm=$(printf '%s\n' "$fm" | awk -F': *' '/^omitClaudeMd:/{print $2; exit}' | tr -d '"')
   cachettl=$(printf '%s\n' "$fm" | awk '/^experimental:/{f=1; next} f && /^  cacheTtl:/{sub(/^  cacheTtl: */,""); gsub(/"/,""); print; exit} f && /^[^ ]/{f=0}')
