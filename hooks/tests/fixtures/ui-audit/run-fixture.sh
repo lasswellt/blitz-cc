@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# skills/ui-audit/tests/run-fixture.sh
+# hooks/tests/fixtures/ui-audit/run-fixture.sh (dev-only smoke test for the ui-audit skill)
 #
 # Self-contained smoke test for the ui-audit skill.
 #
@@ -28,7 +28,7 @@ set -euo pipefail
 
 PORT=18765
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 FIXTURE="${SCRIPT_DIR}/fixture-app.html"
 CONFIG="${SCRIPT_DIR}/fixture-ui-audit.json"
 
@@ -54,7 +54,7 @@ if command -v python3 >/dev/null; then
 elif command -v python >/dev/null; then
   python -m SimpleHTTPServer "${PORT}" >/dev/null 2>&1 &
 elif command -v npx >/dev/null; then
-  npx --yes http-server -p "${PORT}" >/dev/null 2>&1 &
+  npx --yes http-server@14.1.1 -p "${PORT}" >/dev/null 2>&1 &
 else
   echo "ERROR: no static server available (python3 / python / npx required)." >&2
   exit 2

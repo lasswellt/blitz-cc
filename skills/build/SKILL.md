@@ -2,7 +2,7 @@
 name: build
 description: "Implements work: a one-sentence change inline, or the next task from docs/plans/<slug>/tasks.json with a fresh dev agent per task, verify gate, and fix loop. Use for 'build', 'implement', 'fix issue #N', 'make this change', 'work the plan'. --parallel fans out disjoint tasks."
 argument-hint: "[<slug>|<task-id>|--issue <n>|\"<change>\"] [--parallel] [--autonomous]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, SendMessage, ListAgents, Monitor
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, ToolSearch, Agent, SendMessage, ListAgents, Monitor
 model: inherit
 compatibility: ">=2.1.296"
 ---

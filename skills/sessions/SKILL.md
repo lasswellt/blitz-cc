@@ -2,7 +2,7 @@
 name: sessions
 description: "Use when asked what is running, who needs input, session status, leftover worktrees, or a session dashboard. Lists, triages, and prunes session records and platform worktrees. Modes: list, attention (HEARTBEAT_OK when empty), dashboard (--html), prune, worktrees (--apply removes merged, non-live)."
 argument-hint: "[list|attention|dashboard|prune|worktrees] [--html] [--apply] [--prune] [--merged-only]"
-allowed-tools: Read, Bash, Glob, Grep, ListAgents
+allowed-tools: Read, Glob, Grep, ListAgents, Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/sessions-dashboard.sh *)
 disallowed-tools: Write, Edit, NotebookEdit
 model: inherit
 compatibility: ">=2.1.296"

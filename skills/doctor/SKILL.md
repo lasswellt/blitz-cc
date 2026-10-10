@@ -2,7 +2,7 @@
 name: doctor
 description: "Checks the plugin install and the project's setup, fixes drift, and writes helper files: hooks, session state, CLAUDE.md conflicts, worktree.baseRef, loop.md, REVIEW.md, CI workflow, v2 migration. Use for 'is blitz healthy', 'set up blitz', 'migrate from v2', 'hooks misfiring'."
 argument-hint: "[--fix] [--migrate] [--loop-md] [--review-md] [--ci] [--verify-recipe]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Glob, Grep, Edit(.claude/settings.json), Edit(.gitignore), Edit(.worktreeinclude), Edit(.claude/loop.md), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-structure.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *)
 model: inherit
 compatibility: ">=2.1.296"
 ---

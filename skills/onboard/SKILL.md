@@ -2,7 +2,7 @@
 name: onboard
 description: "Sets a project up for blitz: scaffolds a new Vue/Nuxt/Firebase app or package, or maps an existing repo into CODEBASE-MAP.md. Use for 'new project', 'scaffold', 'set up a Nuxt app', 'add a package', 'I inherited this repo', 'map the codebase', or when no CODEBASE-MAP.md exists."
 argument-hint: "[--greenfield <name>|--map] [--package <name>]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(CLAUDE.md), Edit(docs/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *)
 model: inherit
 compatibility: ">=2.1.296"
 ---

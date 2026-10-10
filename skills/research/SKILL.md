@@ -2,7 +2,7 @@
 name: research
 description: "Researches a topic with parallel agents (docs, web, codebase) and writes docs/research/<date>_<topic>.md with a Recommendation that /blitz:plan --from-research reads. Use for 'research X', 'compare options', 'evaluate Y', or 'how does this codebase do Y' (--codebase: read-only, file:line answers)."
 argument-hint: "<topic> | --codebase <question>"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch, ToolSearch, Agent, AskUserQuestion, Edit(docs/research/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh)
 model: inherit
 compatibility: ">=2.1.296"
 ---

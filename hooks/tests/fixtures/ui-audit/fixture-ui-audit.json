@@ -1,5 +1,5 @@
 {
-  "_comment": "Fixture config for skills/ui-audit/tests/run-fixture.sh. Declares 6 labels across 3 pages + 1 invariant that MUST fail (intentional 47 vs 46 mismatch on open_invoices).",
+  "_comment": "Fixture config for hooks/tests/fixtures/ui-audit/run-fixture.sh. Declares 6 labels across 3 pages + 1 invariant that MUST fail (intentional 47 vs 46 mismatch on open_invoices).",
   "baseUrl": "http://localhost:18765",
   "pages": {
     "/#/dashboard": {

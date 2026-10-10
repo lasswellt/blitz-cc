@@ -1,7 +1,7 @@
 ---
 name: doc-gen
 description: "Generates API docs, component docs and Mermaid architecture diagrams from source code into docs/generated/. Modes: api, components, architecture, full (parallel agents). Use for 'generate docs', 'API documentation', 'component docs', 'architecture diagram', or when source is ahead of docs/."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, ToolSearch, Agent
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(docs/generated/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "<api|components|architecture|full>"

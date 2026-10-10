@@ -10,6 +10,20 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 _Nothing yet._
 
+## [3.14.0] — 2026-10-10 · pre-approved tools split by need, listing icon
+
+### Changed (behaviour)
+- **Skills pre-approve only what they need** (plugin directory holds `ALLOWED_TOOLS_BROAD`, `ALLOWED_TOOLS_UNSCOPED_WRITE`, `ALLOWED_TOOLS_UNSCOPED_FETCH`). Broad `Bash`/`Write`/`Edit` stay on the skills that run a project's own commands unattended (`build`, `check`, `next`, `ship`, `migrate`, `refactor`, `test-gen`, `ui-build`, `perf-profile`, `dep-health`, `audit`). `research`, `plan`, `onboard`, `doc-gen`, `learn`, `todo`, `ui-audit`, `doctor`, `sessions` and `browse` now pre-approve read tools, writes scoped to the paths each owns, and the plugin's own scripts; any other shell call or write prompts. `build` and `audit` drop `WebSearch`/`WebFetch`; `plan`, `onboard` and `doc-gen` drop `WebSearch`. The full table and rationale are in `SECURITY.md` §Pre-approved tools per skill.
+- If you run `research`, `plan` or `onboard` unattended, expect permission prompts for shell calls they used to make silently, or let auto mode or your own permission rules decide.
+
+### Added
+- `ui-audit`'s dev smoke test (`run-fixture.sh` and its fixtures) moves from the shipped skill folder to `hooks/tests/fixtures/ui-audit/`, and its `npx http-server` fallback is pinned to 14.1.1. Cisco's scanner read a server-starting script inside a skill whose `allowed-tools` grant no shell as a capability mismatch.
+- `.claude-plugin/icon.png` (1024×1024): the listing icon. The directory keeps the first icon it is given, so replace it before the first submission if you want a different one.
+
+### Notes
+- Kept on purpose: the name `blitz` (`NAME_CONFUSABLE`, `NAME_EQUALS_GITHUB_OWNER` are advisory; renaming would break every `/blitz:*` command and existing install).
+- Whether `allowed-tools` expands `${CLAUDE_PLUGIN_ROOT}` inside a `Bash(...)` rule was not verified live; if it does not, those script calls prompt instead of running silently.
+
 ## [3.13.1] — 2026-10-10 · plugin-directory validation fixes
 
 Fixes from the Claude plugin directory's validation of `main` (2 blocking, 12 warnings, 27 policy holds).

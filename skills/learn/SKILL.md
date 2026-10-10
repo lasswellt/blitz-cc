@@ -2,7 +2,7 @@
 name: learn
 description: "Captures what a plan taught into docs/solutions/<slug>.md from progress.md rulings, the check report, and Task: commits, so plan reads it next time. Use for 'what did we learn', 'capture this', 'write this down', after a hard fix, or with --from-diff for an ad hoc fix outside a plan. Idempotent."
 argument-hint: "[<slug>] [--from-diff]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Glob, Grep, Edit(docs/solutions/**), Bash(git --no-pager log *), Bash(git --no-pager diff *)
 model: inherit
 compatibility: ">=2.1.296"
 ---
