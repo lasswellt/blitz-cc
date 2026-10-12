@@ -1,4 +1,4 @@
-# Agents — roster, spawn contract, execution policy
+# Agents: roster, spawn contract, execution policy
 
 Canonical protocol for every `Agent()` spawn and `Workflow` dispatch in blitz. Skills that spawn agents follow this file; agent definitions in `agents/*.md` implement it. Siblings: [loop.md](/_shared/loop.md) (tasks.json, `next`, gate), [sessions.md](/_shared/sessions.md) (session records, messaging, feed), [quality.md](/_shared/quality.md) (checks, ratchet, structural done), [security.md](/_shared/security.md) (trust boundaries TB-1…TB-5), [output.md](/_shared/output.md) (OUTPUT STYLE line, feed schema).
 
@@ -41,7 +41,7 @@ Family aliases resolve to the newest model in the family:
 
 | Alias | Resolves to | Context | $/Mtok in · out · cache read | Since |
 |---|---|---|---|---|
-| `haiku` | Claude Haiku 5.5 (`claude-haiku-5-5`) | 1M | 0.10 · 0.50 · — (prompts over 100K: 0.50 · 2.50) | 2.1.293 |
+| `haiku` | Claude Haiku 5.5 (`claude-haiku-5-5`) | 1M | 0.10 · 0.50 · n/a (prompts over 100K: 0.50 · 2.50) | 2.1.293 |
 | `sonnet` | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | 1M | 2 · 10 · 0.10 | 2.1.284; cache-read price cut in 2.1.296 |
 | `opus` | Claude Opus 5.5 (`claude-opus-5-5`) | 1M | 4 · 20 · 0.20 | 2.1.280 |
 
@@ -54,7 +54,7 @@ Sonnet 5.5 is half the price of Opus 5.5 on input and output and half again on c
 | Retrieval research (`library-docs`, `web-researcher`, `infra-analyst`), gap-fill | haiku | medium | Multi-step search. Anthropic documents Haiku 5.5 at `low` skipping searches and stopping early in long agent prompts; `medium` roughly halves early stopping. Put today's date in the prompt and keep it under 100K tokens (the price steps up 5×). |
 | Build (`dev`), test-writer, `critic --mode survey`, research-critic, design-critic, `codebase-analyst` | sonnet | medium | Sufficient for implementation and survey-grade review |
 | `critic --mode reject`, fix rounds 4–5 | opus | high; reject critic `medium` on a diff ≤200 lines with every deterministic gate green and no risky path (`check` references §Critic effort) | Adversarial verdict and stuck-loop recovery need depth. Escalate a stuck Sonnet to Opus rather than raising Sonnet to `xhigh`/`max`: Sonnet 5.5 at max used ~60% more output tokens than Opus 5.5 and cost more per task |
-| Main thread running `build` / `check` / `next --loop` | operator's choice (`claude --model opus --effort high` recommended; `--model sonnet` for cost-bound loops) | — | Heavy reasoning is delegated; the main thread routes |
+| Main thread running `build` / `check` / `next --loop` | operator's choice (`claude --model opus --effort high` recommended; `--model sonnet` for cost-bound loops) | operator's | Heavy reasoning is delegated; the main thread routes |
 
 Effort is set per spawn: agent frontmatter `effort:`, the Agent tool's `effort` parameter (≥2.1.292), or `agent(..., {effort})` in a Workflow script. A spawn that omits it inherits the session effort, so an `--effort high` main thread would run every haiku collector at high. Fix rounds 4–5 pass `model: "opus", effort: "high"` together.
 

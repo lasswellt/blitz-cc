@@ -48,7 +48,7 @@ A skill that wants a level other than the default names it in its body (`audit` 
 
 ## Intensity override precedence (model-followed convention)
 
-This is an **advisory convention the main thread follows when interpolating** the active intensity into a spawn prompt — NOT a deterministic resolver read by any hook or script. When assembling the `Output:` line for an Agent() spawn or skill invocation, consult these sources in order and use the first one present:
+This is an **advisory convention the main thread follows when interpolating** the active intensity into a spawn prompt, NOT a deterministic resolver read by any hook or script. When assembling the `Output:` line for an Agent() spawn or skill invocation, consult these sources in order and use the first one present:
 
 1. **Environment variable:** `BLITZ_OUTPUT_INTENSITY=lite|full|ultra`, a session-scoped override, typically set for one `/loop` or `next --loop` run.
 2. **Skill body:** the level the invoking skill names in its body (a `Terse exemptions (<LEVEL> intensity)` line, or the level written into its spawn template's `Output:` line).
@@ -67,7 +67,7 @@ Never compress:
 3. File paths and URLs
 4. Grep patterns, regex strings, exact-match phrases inside tables
 5. Commit messages and PR descriptions (rendered verbatim elsewhere)
-6. `tasks.json` entries, `verify[]` commands, DoD checklists — every field must parse
+6. `tasks.json` entries, `verify[]` commands, DoD checklists; every field must parse
 7. Commands the user might copy-paste
 8. Error messages and stack traces quoted for diagnosis
 
@@ -100,8 +100,8 @@ Every skill MUST print status lines at each phase transition, substep, and decis
 
 Example:
 ```
-[plan] Phase 0: CONTEXT — Loading project state
-[plan] Phase 1: TASKS — Writing spec, plan, and tasks.json
+[plan] Phase 0: CONTEXT (loading project state)
+[plan] Phase 1: TASKS (writing spec, plan, and tasks.json)
 ```
 
 ### Substep Progress
@@ -131,7 +131,7 @@ When a skill makes a non-trivial decision, explain WHY:
 
 Examples:
 ```
-[plan]    ├─ DECISION: Classified as architectural — writing spec.md
+[plan]    ├─ DECISION: Classified as architectural; writing spec.md
 [plan]    │  Reason: touches auth flow and two packages; one-sentence diff not possible
 [build]   ├─ DECISION: Task path, sequential (no --parallel)
 [build]   │  Reason: 4 open tasks, only 2 have disjoint files
@@ -140,7 +140,7 @@ Examples:
 ### Agent Spawning
 
 ```
-[<skill-name>]   ├─ SPAWNING: <agent-name> — <role description>
+[<skill-name>]   ├─ SPAWNING: <agent-name> (<role description>)
 [<skill-name>]   │  Working on: <list of assigned items>
 [<skill-name>]   │  Worktree: <path> (if applicable)
 ```
@@ -173,7 +173,7 @@ Examples:
 ```
 
 ```
-[<skill-name>] Complete ✓ — <one-line summary>
+[<skill-name>] Complete ✓ (<one-line summary>)
   Duration: <elapsed>
   Activity logged to .cc-sessions/activity-feed.jsonl
 ```

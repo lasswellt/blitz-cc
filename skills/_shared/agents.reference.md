@@ -26,7 +26,7 @@ Every `dev` / `test-writer` spawn carries all eleven items. **Items 6, 7, 9, 10 
 
 ### 3.1b Preloaded skills
 
-An agent that needs a skill on every run lists it in `skills:` frontmatter. The cost is the skill's full body injected per spawn, so this is deliberate, not a convenience: no blitz agent preloads one today (`test-writer` reaches `test-gen` through the `Skill` tool). Everything is fetched through the `Skill` tool when the agent actually needs it. The Task tools (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) and `TodoWrite` are off on current models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and v3 never uses them: `docs/plans/<slug>/tasks.json` is the task list.
+An agent that needs a skill on every run lists it in `skills:` frontmatter. The cost is the skill's full body injected per spawn, so this is deliberate, not a convenience: no blitz agent preloads one today, and none lists the `Skill` tool. `test-writer` is the contract a `dev` spawned with `ROLE: test` reads (`skills/build/references/test.md` points at it); it reaches `test-gen` material by path (`skills/test-gen/references/deterministic-tests.md`), not through a tool. Material an agent needs only sometimes is cited by path in the prompt or the agent body. The Task tools (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) and `TodoWrite` are off on current models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and v3 never uses them: `docs/plans/<slug>/tasks.json` is the task list.
 
 ### 3.2 Generic preamble (file-producing agents)
 
@@ -50,7 +50,7 @@ Every spawn is in one class; a task that does not fit is split by file prefix, n
 Budget block, pasted near the top of every Medium/Heavy prompt:
 
 ```
-BUDGET (<Light|Medium|Heavy> — agents.reference.md §3.3):
+BUDGET (<Light|Medium|Heavy>; agents.reference.md §3.3):
 - Max file reads: <n>
 - Max web searches: <n>
 - Max tool calls: <n> (at <n-5>, finish the current step and reply)
@@ -163,7 +163,7 @@ Under `Workflow`, `schema:` validation plus `null`-on-throw and `.filter(Boolean
 
 ## 5. Sequential by default; the parallel exception
 
-**Why sequential is the default.** The platform docs put agent teams at roughly 7× the tokens of a single session when teammates run in plan mode, and recommend a single session or subagents for sequential work, same-file edits, or many dependencies. A 33,596-agent-PR study put cross-agent conflicts at 41.7% against 19.8% intra-agent, 42% of them structural. The defenses that worked were file scoping, worktrees, sequential merge and `merge-tree` preflight — which is exactly what `--parallel` requires before it will run.
+**Why sequential is the default.** The platform docs put agent teams at roughly 7× the tokens of a single session when teammates run in plan mode, and recommend a single session or subagents for sequential work, same-file edits, or many dependencies. A 33,596-agent-PR study put cross-agent conflicts at 41.7% against 19.8% intra-agent, 42% of them structural. The defenses that worked were file scoping, worktrees, sequential merge and `merge-tree` preflight, which is exactly what `--parallel` requires before it will run.
 
 
 ### 5.1 Default: one `dev` per task, fresh context
@@ -185,7 +185,7 @@ All of the following, checked by `build` Phase 0; any miss falls back to sequent
 
 1. Wave N = tasks whose `depends_on` are all `done`; dispatch via `build-wave.js` (§7) or an `Agent({isolation: "worktree"})` pool, one task per agent, `SCOPE_FILES` = that task's `files[]`.
 2. Barrier: no wave N+1 task starts until every wave N agent replied.
-3. Sequential merge, in task order: for each branch, `git merge-tree --write-tree <main> <branch>`; on conflict, do not merge — mark the task `BLOCKED` with `blocked_reason: scope-expansion-needed`, write a `Ruling:` line, continue with the next branch. Clean trees merge with `--no-ff`, then `tasks.sh verify` on main before the task flips to `done`.
+3. Sequential merge, in task order: for each branch, `git merge-tree --write-tree <main> <branch>`; on conflict, do not merge: mark the task `BLOCKED` with `blocked_reason: scope-expansion-needed`, write a `Ruling:` line, continue with the next branch. Clean trees merge with `--no-ff`, then `tasks.sh verify` on main before the task flips to `done`.
 4. Main thread only: `tasks.json`, `progress.md`, commits on main, `gate.json`. Agents commit inside their worktree on `build/<slug>/<role>` and never touch plan files.
 5. Wave end: emit the phase one-liner (`build wave 2/3 · 3/4 done`), append `task_complete` feed lines, commit `feat(<slug>): wave N`.
 
@@ -235,7 +235,7 @@ Blitz manages no worktree lifecycle of its own. What the platform does:
 
 ### 7.3 Plugin workflows
 
-Files under `workflows/` at the plugin root, invoked as `/blitz:<meta.name>` with structured `args`. `export const meta = { name, description, phases }` is the first statement and a pure literal; inputs come only from the `args` global; agents may return `null` — filter or mark `ok: false`. Load `/workflow-authoring` before editing; `/reload-skills` re-reads the directory in a live session.
+Files under `workflows/` at the plugin root, invoked as `/blitz:<meta.name>` with structured `args`. `export const meta = { name, description, phases }` is the first statement and a pure literal; inputs come only from the `args` global; agents may return `null`; filter or mark `ok: false`. Load `/workflow-authoring` before editing; `/reload-skills` re-reads the directory in a live session.
 
 | File | Command | Invoked by | `args` |
 |---|---|---|---|
@@ -284,7 +284,7 @@ Identical to `Agent()`: the 11-item spec for dev/test-writer, the OUTPUT STYLE l
 
 `claude --bg "/blitz:build demo"` or `/bg` from a session runs a skill as one row in agent view (`claude agents`); `claude --agent dev --bg "…"` runs a blitz agent as the main-session agent. Manage with `claude attach|logs|stop|respawn|rm <id>`. A row's one-line summary is haiku-generated from recent output, and spawned subagents are not separate rows, so the orchestrator emits the [output.md](/_shared/output.md) phase one-liner often enough that the row reads true (`build wave 2/3 · 3/4 done`).
 
-Off-screen alerts: `PushNotification` (deferred tool; load via `ToolSearch`; no-op without Remote Control; hooks cannot call it) fires only at human-escalation points — a `BLOCKED` task after round 5 and a Tier-4 escalation — never on completion.
+Off-screen alerts: `PushNotification` (deferred tool; load via `ToolSearch`; no-op without Remote Control; hooks cannot call it) fires only at human-escalation points (a `BLOCKED` task after round 5 and a Tier-4 escalation), never on completion.
 
 ---
 
@@ -299,7 +299,7 @@ Applies after a `dev` or `test-writer` reply when `tasks.sh verify` fails or `cr
 | 3 | same `dev` | same; on failure `attempts` reaches 3 → `status: blocked`, `blocked_reason: circuit-breaker` unless the operator or `next --loop` continues | resumed |
 | 4 | fresh `dev` on opus | new spawn, full 11-item spec plus `progress.md` tail (last 3 rounds' verify tails and rulings) | fresh |
 | 5 | fresh `dev` on opus | same; then adjudicate | fresh |
-| after 5 | main thread | `Ruling:` line in `progress.md` naming the decision (`descope`, `split`, `spec-defect`, `defer`); task stays `blocked` with the ruling's reason; `PushNotification` if configured | — |
+| after 5 | main thread | `Ruling:` line in `progress.md` naming the decision (`descope`, `split`, `spec-defect`, `defer`); task stays `blocked` with the ruling's reason; `PushNotification` if configured | n/a |
 
 Rules:
 
@@ -317,12 +317,12 @@ A dev agent that meets something the task did not cover acts by tier; the tier m
 
 | Tier | Situations | Agent action | Reply status | Main thread |
 |---|---|---|---|---|
-| 1 Auto-fix | Blocking bug in existing code, missing import/export, obvious type error, barrel entry, test broken by own change | Fix, commit separately `fix(<slug>/<role>): <what> — during T-003` | `DONE` | Nothing |
+| 1 Auto-fix | Blocking bug in existing code, missing import/export, obvious type error, barrel entry, test broken by own change | Fix, commit separately `fix(<slug>/<role>): <what> (during T-003)` | `DONE` | Nothing |
 | 2 Auto-add | Helper not in the task, error handling a dependency needs, extra type, related fix <20 lines | Do it, list under `concerns[]` with `severity: low` | `DONE_WITH_CONCERNS` | Log a `decision` feed line; `Ruling:` only if the concern changes scope. >30 new lines promotes to Tier 3 |
-| 3 Escalate | New module boundary, public API contract change, >3 files outside `SCOPE_FILES`, contradictory acceptance, another task's files, performance redesign | Stop; `escalate: "ESCALATE: <what> — options: a|b"` | `BLOCKED` (`scope-expansion-needed` or `hard_spec`) | Ruling required before any retry; `plan` may split the task |
+| 3 Escalate | New module boundary, public API contract change, >3 files outside `SCOPE_FILES`, contradictory acceptance, another task's files, performance redesign | Stop; `escalate: "ESCALATE: <what>; options: a|b"` | `BLOCKED` (`scope-expansion-needed` or `hard_spec`) | Ruling required before any retry; `plan` may split the task |
 | 4 Never auto-fix | Auth/security rules, schema migrations, breaking shared APIs, env vars, new dependencies, license-affecting changes | Stop; escalate with the completed work described | `BLOCKED` (`hard_spec`) | Ruling requires the operator; `next --loop` skips the task and prints the escalation |
 
-`Ruling:` lines are append-only in `progress.md`: `Ruling: <decision> — <why> (T-003, round N)`. `learn` harvests rulings into `docs/solutions/`. Priority when several deviations arrive at once: blocking bugs > missing critical checks > blockers for dependent tasks > convention issues; wider file impact first within a level.
+`Ruling:` lines are append-only in `progress.md`: `Ruling: <decision>; <why> (T-003, round N)`. `learn` harvests rulings into `docs/solutions/`. Priority when several deviations arrive at once: blocking bugs > missing critical checks > blockers for dependent tasks > convention issues; wider file impact first within a level.
 
 ---
 

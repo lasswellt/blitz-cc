@@ -23,10 +23,10 @@ contract either way.
 
 Do not create, modify or delete:
 
-- `docs/plans/*/tasks.json` — only `scripts/tasks.sh` writes it; a `PreToolUse`
+- `docs/plans/*/tasks.json`: only `scripts/tasks.sh` writes it; a `PreToolUse`
   hook denies every other write, and attempting one wastes a turn.
-- `docs/plans/*/progress.md` — the orchestrator's ledger.
-- `.cc-sessions/**` — session records, gates, baselines, the activity feed.
+- `docs/plans/*/progress.md`: the orchestrator's ledger.
+- `.cc-sessions/**`: session records, gates, baselines, the activity feed.
 - Test files, unless your `ROLE:` is `test`.
 - Any path the spawn prompt's project additions name.
 
