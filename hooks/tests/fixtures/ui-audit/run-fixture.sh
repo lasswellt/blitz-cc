@@ -17,7 +17,7 @@
 #      assertions in the acceptance criteria hold.
 #   6. Cleans up.
 #
-# This deliberately does not invoke Claude Code or Playwright MCP — those are
+# This deliberately does not invoke Claude Code or Playwright MCP; those are
 # out of scope for a shell-runnable test. When the skill is executed end-to-end
 # from Claude Code, the same fixture applies: the real browser_evaluate will
 # produce the same raw values this script pulls via grep.
@@ -84,7 +84,7 @@ span_text() { awk -F'[<>]' '{for (i=1;i<=NF;i++) if ($i !~ /^\/?span/ && $i !~ /
 RAW_DASH_OPEN=$(echo "${HTML}" | grep -oE '<span class="value">[^<]+</span>' | head -1 | span_text)
 # invoices.open_invoices (the badge):
 RAW_INV_OPEN=$(echo "${HTML}" | grep -oE '<span class="badge">[^<]+</span>' | head -1 | span_text)
-# plan tier — 3 occurrences in document order (dashboard, invoices, billing):
+# plan tier: 3 occurrences in document order (dashboard, invoices, billing):
 PLAN_LINES=$(echo "${HTML}" | grep -oE '<span data-user-plan>[^<]+</span>')
 RAW_DASH_PLAN=$(echo "${PLAN_LINES}" | sed -n '1p' | span_text)
 RAW_INV_PLAN=$(echo  "${PLAN_LINES}" | sed -n '2p' | span_text)
@@ -144,11 +144,11 @@ jq -s '
   | map(max_by(.ts))
 ' "${REG}" > "${REDUCED}"
 
-# Canonical evaluator — mirrors skills/ui-audit/references/main.md § 3I.1.
+# Canonical evaluator; mirrors skills/ui-audit/references/main.md § 3I.1.
 # Hydrates each invariant's sources from the reduced registry, then runs the
 # same cmp_equal / cmp_gte / cmp_lte functions documented in references/main.md.
 # For "equal" with string values (INV-002 plan_tier), cmp_equal falls back to
-# direct equality — tolerance only applies to numeric pairs.
+# direct equality; tolerance only applies to numeric pairs.
 jq --slurpfile cfg "${CONFIG}" --slurpfile reg "${REDUCED}" -n '
   def lookup($src; $r): $r | map(select(.page == $src.page and .label == $src.key)) | first;
   def is_num($x): ($x | type) == "number";
@@ -215,7 +215,7 @@ fi
   echo
   echo "## High"
   echo
-  echo "- **[HIGH] invariant_fail INV-001:FAIL** — open_invoices (dashboard=47, invoices=46, delta=1)"
+  echo "- **[HIGH] invariant_fail INV-001:FAIL**: open_invoices (dashboard=47, invoices=46, delta=1)"
 } > "${REPORT}"
 
 grep -q 'INV-001:FAIL' "${REPORT}" || { echo "FAIL: report missing INV-001:FAIL marker" >&2; exit 6; }
@@ -378,7 +378,7 @@ FMT_HITS=$(jq -sn '
   [
     {raw: "$1,234.56", tick: 1},
     {raw: "$1,234.56", tick: 2},
-    {raw: "€1.234,56", tick: 3}   # current — different currency + different decimal separator
+    {raw: "€1.234,56", tick: 3}   # current: different currency + different decimal separator
   ]
   | map({
       raw,
@@ -416,7 +416,7 @@ if [ "${WRITTEN_OUT}" -lt 1 ]; then
 fi
 
 # NUMERIC_COLUMN_NOT_TABULAR: the <table class="non-tabular"> has no tabular-nums styling
-# Static shell check: class != "tabular-nums" — absence confirmed trivially; real browser probe is Phase 5 work.
+# Static shell check: class != "tabular-nums" (absence confirmed trivially); real browser probe is Phase 5 work.
 if ! echo "${HEUR_HTML}" | grep -q 'class="non-tabular"'; then
   echo "FAIL: expected table.non-tabular in /heuristic" >&2
   exit 20

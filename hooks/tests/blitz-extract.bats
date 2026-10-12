@@ -48,7 +48,7 @@ setup() {
 }
 
 @test "handles field value with embedded double-quote" {
-  # JSON-escaped: file_path = 'a"b.txt' — adversarial filename
+  # JSON-escaped: file_path = 'a"b.txt' (adversarial filename)
   INPUT='{"tool_input":{"file_path":"a\"b.txt"}}'
   export INPUT
   result=$(blitz_extract file_path)

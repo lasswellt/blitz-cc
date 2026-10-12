@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# critic-gemini.sh — back-compat shim over critic-external.sh.
+# critic-gemini.sh: back-compat shim over critic-external.sh.
 #
 # The Cross-Model Critic used to be Gemini-only. It is now provider-pluggable
 # (gemini | agy | copilot | codex) and lives in critic-external.sh; this wrapper pins

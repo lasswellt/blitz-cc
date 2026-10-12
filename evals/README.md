@@ -21,7 +21,7 @@ plugin makes Claude *do*.
 
 ## Run
 
-From the plugin root (target `.` — the plugin under test is auto-detected from the enclosing directory):
+From the plugin root (target `.`; the plugin under test is auto-detected from the enclosing directory):
 
 ```bash
 # everything, with fixtures + Bash granted (sandboxed; Linux needs bubblewrap + socat)
@@ -39,7 +39,7 @@ for CI. The CI job (job plugin-eval in `.github/workflows/ci.yml`) runs only whe
 ## Ablation arm
 
 By default each case runs twice: **with** the plugin and **without** it (`--ablation with-without`).
-The report shows both scores and `Δ` = with − without — the plugin's contribution. Under that mode
+The report shows both scores and `Δ` = with − without, the plugin's contribution. Under that mode
 every `tool_used: Skill` grader and every grader marked `arm: with-only` (the hook-fired regex in
 `blocker-no-verify`) is a *plugin-fired indicator*, reported but excluded from the score in both arms
 so the baseline isn't pushed to zero. `arm: both` forces scoring in both arms (used for the

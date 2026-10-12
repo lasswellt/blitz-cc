@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse hook (Write|Edit) — records the edited file for test-impact analysis.
+# PostToolUse hook (Write|Edit): records the edited file for test-impact analysis.
 # Always exits 0 (non-blocking).
 #
 # E-043 S3: this script no longer finds or runs tests. The filename-sibling

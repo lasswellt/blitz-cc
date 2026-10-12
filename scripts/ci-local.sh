@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ci-local.sh — run the CI `validate` job (.github/workflows/ci.yml) locally, step for step.
+# ci-local.sh: run the CI `validate` job (.github/workflows/ci.yml) locally, step for step.
 #
 # CI runs only on pushes to main and on pull requests, so a branch is first
 # checked when its PR opens. This script runs the same gates before you commit.

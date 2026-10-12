@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# count-tokens.sh — authoritative Claude token counts for files.
+# count-tokens.sh: authoritative Claude token counts for files.
 #
 # Uses the Messages API `count_tokens` endpoint, which is the only accurate
 # counter for Claude models: counts are model-specific and the endpoint is

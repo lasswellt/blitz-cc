@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/test-selector.sh (E-043 S2 — impacted-test selection)
+# Tests for scripts/test-selector.sh (E-043 S2, impacted-test selection)
 # Requires: bats-core, jq, python3, git
 
 load '_helpers'
@@ -19,11 +19,11 @@ setup() {
 }
 teardown() { teardown_fake_repo; }
 
-# sel — selector with stderr dropped (`run` merges stderr into $output; the
+# sel: selector with stderr dropped (`run` merges stderr into $output; the
 # cold-start / graph notes there are not part of the contract under test).
 sel() { bash "$SELECTOR" "$@" 2>/dev/null; }
 
-# seed_journal — one recorded run where tests/b.test.ts failed after src/b.ts changed
+# seed_journal: one recorded run where tests/b.test.ts failed after src/b.ts changed
 seed_journal() {
   bash "$LISTENER" --start --run-id r1
   bash "$LISTENER" --trigger post-edit --changed src/b.ts --selected-by selector --run-id r1 < vitest-report.json

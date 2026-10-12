@@ -10,7 +10,7 @@ export const meta = {
 
 // Extracted from skills/check/SKILL.md Phase 2 and Phase 4.3 (survey spawn detail in
 // skills/check/references/main.md §2.1 Survey fan-out). Plugin workflow: runs as
-// /blitz:review-fanout. No filesystem, no clock — the script dispatches and validates only.
+// /blitz:review-fanout. No filesystem, no clock: the script dispatches and validates only.
 //
 // args shape (required):
 //   {
@@ -20,7 +20,7 @@ export const meta = {
 //     surveySchema: { type: 'object', properties: { findings: {...}, verdict: { enum: ['CLEAN','FINDINGS'] } }, required: ['findings'] },
 //     criticSchema:   { type: 'object', properties: { verdict: { enum: ['LGTM','REJECT'] }, ... }, required: ['verdict'] }
 //   }
-// Returns { reviews: [{ name, ok, result }], critic } — critic is null on failure; the skill
+// Returns { reviews: [{ name, ok, result }], critic }. critic is null on failure; the skill
 // MUST then fall back to the Agent() critic spawn (LGTM before PASS is load-bearing).
 
 if (!args || !Array.isArray(args.lenses) || args.lenses.length === 0) {
@@ -33,8 +33,8 @@ if (!args.criticPrompt || !args.surveySchema || !args.criticSchema) {
 phase('Review')
 let reviews
 if (args.sequential) {
-  // Sequential accumulator: a true chain (NOT pipeline — pipeline's `prev` is same-item only).
-  log(`review-fanout: sequential mode — ${args.lenses.length} survey lens(es), each sees prior findings`)
+  // Sequential accumulator: a true chain (NOT pipeline: pipeline's `prev` is same-item only).
+  log(`review-fanout: sequential mode, ${args.lenses.length} survey lens(es), each sees prior findings`)
   reviews = []
   let prior = []
   for (const a of args.lenses) {
@@ -44,7 +44,7 @@ if (args.sequential) {
     if (f) prior = [...prior, f]
   }
 } else {
-  log(`review-fanout: parallel mode — ${args.lenses.length} survey lens(es)`)
+  log(`review-fanout: parallel mode, ${args.lenses.length} survey lens(es)`)
   reviews = await parallel(args.lenses.map(a => () =>
     agent(a.prompt, { label: a.name, phase: 'Review', agentType: 'blitz:critic', model: 'sonnet', effort: 'medium', schema: args.surveySchema })))
 }
@@ -55,7 +55,7 @@ if (missing) log(`review-fanout: ${missing} survey lens(es) returned null (skill
 phase('Critic')
 const critic = await agent(args.criticPrompt,
   { label: 'critic', phase: 'Critic', agentType: 'blitz:critic', model: 'opus', effort: 'high', schema: args.criticSchema })
-if (critic === null) log('review-fanout: critic returned null — skill must fall back to the Agent() critic')
+if (critic === null) log('review-fanout: critic returned null; skill must fall back to the Agent() critic')
 
 return {
   reviews: reviews.map((f, i) => ({ name: args.lenses[i]?.name, ok: f !== null, result: f })),

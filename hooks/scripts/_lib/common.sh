@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# _lib/common.sh — Shared helper library for blitz hook scripts.
+# _lib/common.sh: shared helper library for blitz hook scripts.
 #
 # Source this file near the top of each hook script:
 #   . "$(dirname "$0")/_lib/common.sh"
@@ -15,14 +15,14 @@
 # Designed for set -euo pipefail callers. Every function handles its own
 # error paths. Global fallback vars: SESSION_ID, SESSIONS_DIR, INPUT.
 
-# BLITZ_INJECTION_RX — canonical prompt-injection marker pattern (POSIX ERE, for grep -iE).
+# BLITZ_INJECTION_RX: canonical prompt-injection marker pattern (POSIX ERE, for grep -iE).
 # Single source of truth for BOTH the live echo path (session-start.sh) and the
 # persistent-state classifier (startup-validate.sh) so the two never drift (SEC-R2-03).
 # UNION of the historical patterns from both scripts: instruction verbs, role
 # directives, tag/role smuggling (HTML-style AND ChatML <|im_start|>/<|im_end|>),
 # tool-invocation strings, and secret/exfil markers. Case-insensitivity is the
 # caller's responsibility (always pair with grep -i). Keep ERE-safe: `\|` is a
-# literal pipe, `\.` a literal dot — both escaped for grep -E.
+# literal pipe, `\.` a literal dot; both are escaped for grep -E.
 # `system:` carries the word-start guard `(^|[^a-z])` so `filesystem:` and
 # `ecosystem:` do not match; under -i the bracket excludes A-Z as well. The
 # consumers are grep -iE (hooks, scripts) and Python `re` with re.I
@@ -116,7 +116,7 @@ blitz_session_id() {
 # Uses global SESSIONS_DIR if set; derives from blitz_find_root() otherwise.
 blitz_log_event() {
   local skill="${1:-hook}" event="${2:-event}" message="${3:-}" detail="${4:-}"
-  # NOTE: `${4:-{}}` is NOT safe here — bash closes the expansion at the first `}`,
+  # NOTE: `${4:-{}}` is NOT safe here: bash closes the expansion at the first `}`,
   # leaving a stray `}` appended to any caller-supplied detail (invalid JSON, event lost).
   [ -n "$detail" ] || detail='{}'
   local ts session_id sessions_dir
@@ -145,14 +145,14 @@ blitz_log_event() {
 # §Interop), so the same `.claude/worktrees/` dir now holds BOTH blitz
 # `Agent({isolation:"worktree"})` worktrees AND native background-session
 # worktrees. Callers (worktree-prune, cleanup) MUST skip any worktree whose
-# path appears here, regardless of merge-status / age / --force — removing it
+# path appears here, regardless of merge-status / age / --force, since removing it
 # would destroy a live session's uncommitted changes.
 #
 # Prints nothing and returns 0 when the `claude` CLI or `--json` is unavailable
 # (older CC, Bedrock/Vertex, or agent view disabled). Never blocks the caller.
 #
 # E-041 S1 (C2): only rows whose overlay `state` is working|blocked count as
-# live — a done/failed/stopped row's worktree is fair game for the pruner.
+# live; a done/failed/stopped row's worktree is fair game for the pruner.
 blitz_live_worktree_paths() {
   blitz_agent_view | jq -r 'select(.state=="working" or .state=="blocked") | .cwd // empty' 2>/dev/null || true
   return 0
@@ -248,7 +248,7 @@ blitz_session_stale() {
 # Append one line to .cc-sessions/mailbox/<target_sid>.jsonl (drained to the
 # target's messaging socket by stop-turn.sh):
 #   {ts,from:$SESSION_ID|"unknown",to,kind:note|unblock|halt,text}
-# text is capped at 500 chars and injection-scanned (BLITZ_INJECTION_RX) — a
+# text is capped at 500 chars and injection-scanned (BLITZ_INJECTION_RX); a
 # hit stores the quarantine marker instead. Returns 1 on an unsafe target id
 # or unknown kind; never throws under set -e.
 blitz_mailbox_send() {
@@ -262,7 +262,7 @@ blitz_mailbox_send() {
   from="${SESSION_ID:-unknown}"
   text=$(printf '%s' "$text" | tr -d '\r' | tr '\n' ' ' | cut -c1-500)
   if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    text='[quarantined: suspicious field — see startup-validate.sh]'
+    text='[quarantined: suspicious field; see startup-validate.sh]'
   fi
   jq -nc --arg ts "$ts" --arg from "$from" --arg to "$target" --arg kind "$kind" --arg text "$text" \
     '{ts:$ts,from:$from,to:$to,kind:$kind,text:$text}' >> "$dir/$target.jsonl" 2>/dev/null || return 1
@@ -270,13 +270,14 @@ blitz_mailbox_send() {
 }
 
 # blitz_atomic_write target content
-# Write content to target via mktemp+mv (atomic).
-# Falls back to direct write if mktemp fails.
+# Write content to target via a temp file + mv (atomic). The temp file comes
+# from blitz_mktemp_in, in the target's directory when it allows one.
+# Falls back to a direct write when no temp file can be created.
 blitz_atomic_write() {
   local target="$1" content="$2"
   local dir tmp
   dir=$(dirname "$target")
-  if tmp=$(mktemp -p "$dir" .blitz-atomic.XXXXXX 2>/dev/null || mktemp 2>/dev/null); then
+  if tmp=$(blitz_mktemp_in "$dir" .blitz-atomic); then
     printf '%s' "$content" > "$tmp" && mv "$tmp" "$target" || { rm -f "$tmp" 2>/dev/null; return 1; }
   else
     printf '%s' "$content" > "$target"
@@ -407,7 +408,7 @@ blitz_session_update() {
 # blitz_inbox_append kind text [session]
 # Append one pending item to .cc-sessions/inbox.jsonl:
 #   {ts,id:"inb-<8hex>",source:"hook",kind,session,text,status:"pending"}
-# text is capped at 200 chars and injection-scanned (BLITZ_INJECTION_RX) —
+# text is capped at 200 chars and injection-scanned (BLITZ_INJECTION_RX);
 # a hit stores a quarantine marker instead (same discipline as session-start.sh).
 blitz_inbox_append() {
   local kind="${1:-notification}" text="${2:-}" session="${3:-${SESSION_ID:-}}"
@@ -419,7 +420,7 @@ blitz_inbox_append() {
   [ -n "$id" ] || id=$(printf '%s%s' "$ts" "$$" | md5sum 2>/dev/null | cut -c1-8) || id="00000000"
   text=$(printf '%s' "$text" | tr -d '\r' | tr '\n' ' ' | cut -c1-200)
   if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    text='[quarantined: suspicious field — see startup-validate.sh]'
+    text='[quarantined: suspicious field; see startup-validate.sh]'
   fi
   jq -nc --arg ts "$ts" --arg id "inb-$id" --arg kind "$kind" \
     --arg session "$session" --arg text "$text" \

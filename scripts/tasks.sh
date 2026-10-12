@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tasks.sh — the only writer of docs/plans/<slug>/tasks.json (blitz-tasks/1.0).
+# tasks.sh: the only writer of docs/plans/<slug>/tasks.json (blitz-tasks/1.0).
 #
 # Usage:
 #   tasks.sh init   <plan>

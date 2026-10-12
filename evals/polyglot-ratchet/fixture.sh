@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scaffold: a repo with NO package.json — Python and Rust only, each with a real
+# Scaffold: a repo with NO package.json; Python and Rust only, each with a real
 # type error already present. Every eval before this one was Node-shaped, so a
 # regression that made the loop Node-only again would have passed CI.
 #

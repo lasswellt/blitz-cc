@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# notification-log.sh — Route Notification events to the inbox (E-040 S2)
+# notification-log.sh: route Notification events to the inbox (E-040 S2)
 #
 # Input: {notification_type|type, message, title, ...}. Non-blocking, exit 0.
 #   permission*                   -> inbox kind "permission", feed `needs_input`

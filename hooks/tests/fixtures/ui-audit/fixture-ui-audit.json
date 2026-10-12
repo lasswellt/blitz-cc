@@ -18,7 +18,7 @@
   "invariants": [
     {
       "id": "INV-001",
-      "description": "Open-invoice count matches dashboard + invoices (MUST FAIL in fixture — 47 vs 46).",
+      "description": "Open-invoice count matches dashboard + invoices (MUST FAIL in fixture: 47 vs 46).",
       "sources": [
         {"page": "/#/dashboard", "key": "open_invoices"},
         {"page": "/#/invoices",  "key": "open_invoices"}
@@ -28,7 +28,7 @@
     },
     {
       "id": "INV-002",
-      "description": "Plan tier matches across all pages (MUST PASS in fixture — all three say 'Pro').",
+      "description": "Plan tier matches across all pages (MUST PASS in fixture: all three say 'Pro').",
       "sources": [
         {"page": "/#/dashboard", "key": "plan_tier"},
         {"page": "/#/invoices",  "key": "plan_tier"},

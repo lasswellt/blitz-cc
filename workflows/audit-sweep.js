@@ -6,14 +6,14 @@ export const meta = {
 }
 
 // Extracted from skills/audit/SKILL.md §1.2 (E-045 S3). Plugin workflow: runs as
-// /blitz:audit-sweep. No filesystem, no clock — dispatch + schema validation only.
+// /blitz:audit-sweep. No filesystem, no clock: dispatch + schema validation only.
 //
 // args shape (required):
 //   {
 //     roster: [ { name: 'security-a', prompt: '<pillar template, inventory inline, OUTPUT STYLE snippet>' }, ... ],
 //     findingsSchema: { type: 'object', properties: {...}, required: [...] }
 //   }
-// Returns { agents: [{ name, ok, result }] } — result is null for a failed agent (Phase 2.2
+// Returns { agents: [{ name, ok, result }] }; result is null for a failed agent (Phase 2.2
 // handles MISSING agents exactly as under the Agent() path).
 
 if (!args || !Array.isArray(args.roster) || args.roster.length === 0) {

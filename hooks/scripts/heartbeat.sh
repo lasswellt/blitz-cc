@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# heartbeat.sh — PostToolBatch heartbeat (renamed from post-tool-batch.sh, E-040 S2)
+# heartbeat.sh: PostToolBatch heartbeat (renamed from post-tool-batch.sh, E-040 S2)
 # Fires after a batch of parallel tools resolves, before the next model call.
 # Marks the session record state:"working" + last_activity (liveness signal for
 # stale-session detection, sessions.md §3). It writes no feed line: the feed
@@ -19,7 +19,7 @@ SESSION_ID=$(blitz_extract session_id)
 blitz_session_update "$SESSION_ID" '.state = "working" | .last_activity = $now'
 
 # ---------------------------------------------------------------------------
-# E-043 S3 — test-impact run, once per batch.
+# E-043 S3: test-impact run, once per batch.
 # post-edit-test.sh appends every edited file to
 # .cc-sessions/sessions/<sid>/touched.txt; here: selector -> runner -> listener.
 # Output on stdout is delivered to the model via asyncRewake (hooks.json), so we

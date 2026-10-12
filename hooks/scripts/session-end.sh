@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# session-end.sh — Close the session record on SessionEnd (E-040 S2)
+# session-end.sh: close the session record on SessionEnd (E-040 S2)
 #
 # Input: {session_id, reason: clear|resume|logout|prompt_input_exit|other, ...}
 # Effects (all best-effort, always exit 0):
@@ -8,7 +8,7 @@
 #      reason (prompt_input_exit|other -> completed, resume -> suspended,
 #      clear -> cleared, logout -> logged_out), `ended` set to now.
 #   2. Every *.lock under .cc-sessions/ whose body names this session_id is
-#      removed — ownership-guarded (grep -q "$SID"), never a foreign lock
+#      removed; ownership-guarded (grep -q "$SID"), never a foreign lock
 #      (sessions.md §2).
 #   3. Feed event `session_end` (logged even when no record exists).
 set -euo pipefail

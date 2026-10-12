@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# post-edit-format.sh — PostToolUse on Write|Edit.
+# post-edit-format.sh: PostToolUse on Write|Edit.
 #
 # Formats the edited file, then lints it and prints remaining lint output as
 # context for the model. Always exits 0: a formatting or lint failure must

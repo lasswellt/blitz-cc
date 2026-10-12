@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# next-state.sh — deterministic Observe step for /blitz:next (loop.md §next rows).
+# next-state.sh: deterministic Observe step for /blitz:next (loop.md §next rows).
 # Prints one JSON object and exits 0. Never writes anything.
 #
 #   {
@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-fm_field() {  # fm_field <file> <key> — YAML frontmatter scalar, unquoted
+fm_field() {  # fm_field <file> <key>: YAML frontmatter scalar, unquoted
   [ -f "$1" ] || return 0
   awk -v k="$2" 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit} NR>1 && index($0, k":")==1 {sub("^" k ":[ ]*",""); gsub(/^"|"$/,""); print; exit}' "$1"
 }

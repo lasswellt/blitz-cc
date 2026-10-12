@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-listener.sh — stateless test-result journal writer (E-043 S1/S6).
+# test-listener.sh: stateless test-result journal writer (E-043 S1/S6).
 #
 # Reads a Vitest (`vitest run --reporter=json`) or Jest (`jest --json`) report
 # on stdin and appends ONE line per test file to .cc-sessions/test-journal.jsonl:
@@ -73,7 +73,7 @@ tia_inbox() { # kind text
   fi
 }
 
-# _mtime path — epoch mtime; GNU stat first, BSD stat second. A file that vanished
+# _mtime path: epoch mtime; GNU stat first, BSD stat second. A file that vanished
 # between the noclobber attempt and this call (another writer finished) reports
 # "now" so the caller never treats a just-taken lock as stale.
 _mtime() {
@@ -83,7 +83,7 @@ _mtime() {
   printf '%s\n' "$m"
 }
 
-# tia_lock — noclobber lock, 5s spin (50 x 0.1s), stale (>60s) recovery.
+# tia_lock: noclobber lock, 5s spin (50 x 0.1s), stale (>60s) recovery.
 tia_lock() {
   local i=0 age
   while :; do
@@ -96,7 +96,7 @@ tia_lock() {
 }
 tia_unlock() { rm -f "$LOCK" 2>/dev/null || true; }
 
-# tia_meta_update jq_filter — read-modify-write meta.json atomically (caller holds lock).
+# tia_meta_update jq_filter: read-modify-write meta.json atomically (caller holds lock).
 tia_meta_update() {
   local cur upd tmp
   cur=$(cat "$META" 2>/dev/null); printf '%s' "$cur" | jq -e . >/dev/null 2>&1 || cur='{}'

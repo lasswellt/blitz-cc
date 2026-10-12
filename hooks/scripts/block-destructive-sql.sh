@@ -24,7 +24,7 @@ if ! echo "$CMD" | grep -qE '(^|[[:space:];&|])(psql|mysql|sqlite3|mongosh|redis
   exit 0
 fi
 
-# Migration runs are intentional — skip ONLY when the INVOCATION FORM is a
+# Migration runs are intentional, so skip ONLY when the INVOCATION FORM is a
 # migration, not when the string "migrations/" merely appears anywhere.
 #
 # SEC-R2-02: the old broad match exempted any command containing `migrations/`,

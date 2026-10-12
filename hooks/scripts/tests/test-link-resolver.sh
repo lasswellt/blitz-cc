@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-link-resolver.sh — regression test for markdown-link-validate.sh
+# test-link-resolver.sh: regression test for markdown-link-validate.sh
 # convention-aware resolution (S14-001 / E-023). Locks in that /_shared/X
 # links are NOT false-flagged (the 242-dead-ref artifact) AND that genuinely
 # broken /_shared/ links ARE caught.
@@ -11,7 +11,7 @@ V=hooks/scripts/markdown-link-validate.sh
 FIX=skills/__xref_test__
 cleanup() { rm -rf "$FIX"; }
 trap cleanup EXIT
-fail() { echo "test-link-resolver: FAIL — $1" >&2; exit 1; }
+fail() { echo "test-link-resolver FAIL: $1" >&2; exit 1; }
 
 # 1. Baseline: real suite is clean (0 broken).
 bash "$V" </dev/null >/dev/null 2>&1 || fail "baseline suite has broken links"

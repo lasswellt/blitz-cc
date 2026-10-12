@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gen-catalog.sh — render docs/CATALOG.md from frontmatter (skills, agents, workflows,
+# gen-catalog.sh: render docs/CATALOG.md from frontmatter (skills, agents, workflows,
 # hooks) so prose never carries hand-maintained inventory.
 #
 #   scripts/gen-catalog.sh            # write docs/CATALOG.md
@@ -16,7 +16,7 @@ case "${1:-}" in
   *) echo "usage: scripts/gen-catalog.sh [--check]" >&2; exit 2 ;;
 esac
 
-fm() {  # fm <file> <key> — frontmatter scalar (single line), quotes stripped
+fm() {  # fm <file> <key>: frontmatter scalar (single line), quotes stripped
   awk -v k="$2" 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit} NR>1 && index($0, k":")==1 {sub("^" k ":[ ]*",""); gsub(/^"|"$/,""); print; exit}' "$1"
 }
 fm_desc() {  # description may be a block scalar (|) on agents: take first paragraph
@@ -122,7 +122,7 @@ done
 
 # Numeric inventory claims in prose
 if grep -nE '\b[0-9]+ (skills?|agents?|hook scripts?|hooks?|events?|shared protocol files?|protocols?|detectors?)\b' README.md .claude/CLAUDE.md hooks/scripts/README.md .claude-plugin/plugin.json .claude-plugin/marketplace.json 2>/dev/null | grep -v 'CATALOG' ; then
-  echo "gen-catalog: numeric inventory claim in prose (above); counts drift — describe, do not count" >&2
+  echo "gen-catalog: numeric inventory claim in prose (above); counts drift; describe, do not count" >&2
   rc=1
 fi
 [ "$rc" -eq 0 ] && echo "gen-catalog: OK"

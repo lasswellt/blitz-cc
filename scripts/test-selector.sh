@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# test-selector.sh — pick the test files impacted by a set of changed files (E-043 S2).
+# test-selector.sh: pick the test files impacted by a set of changed files (E-043 S2).
 #
 # Usage: test-selector.sh [--base <git-ref>] [--full] [--json] [files...]
 #   files: args, or stdin one per line; when neither is given, uses
 #          `git diff --name-only <base>..HEAD` + staged + unstaged changes.
 #   Output: `<test-file>\t<reasons>` per line (reasons: sibling, graph,
-#           recent-fail, co-change, full — comma-joined when several apply).
+#           recent-fail, co-change, full, comma-joined when several apply).
 #   --json: {"mode","changed","selected":[{file,reasons}],"total_test_files",
 #            "selection_ratio","graph","full_reason"}
 #
 # Sources (union):
-#   1. sibling  — <name>.test.<ext> / <name>.spec.<ext> / __tests__/<name>.<ext>
+#   1. sibling:   <name>.test.<ext> / <name>.spec.<ext> / __tests__/<name>.<ext>
 #                 (moved here from hooks/scripts/post-edit-test.sh)
-#   2. graph    — reverse import closure changed -> test files. Vitest: static
+#   2. graph:     reverse import closure changed -> test files. Vitest: static
 #                 python3 resolver (relative imports + tsconfig `paths` + Nuxt
 #                 `~/`, `@/`, `~~/`, `@@/`); `vitest list` cannot take an
 #                 arbitrary file list without executing (only --changed <git-ref>),
 #                 so the static graph is preferred for determinism.
 #                 Jest: `npx jest --findRelatedTests --listTests <files>`.
-#   3. recent-fail — journal: test files that failed in the last 5 runs
-#   4. co-change   — journal: test files that failed in any run whose `changed`
+#   3. recent-fail:  journal: test files that failed in the last 5 runs
+#   4. co-change:    journal: test files that failed in any run whose `changed`
 #                    intersects the current changed set
 # --full (or auto-full): every test file, tagged `full`. Auto-full when the
 # changed set touches package.json / lockfiles / vitest|vite|jest config /
@@ -237,7 +237,7 @@ else:
             if r.get("run_id") in last5: add(tf, "recent-fail")
             if cset.intersection(r.get("changed") or []): add(tf, "co-change")
     else:
-        notes.append("journal: none (cold start) — sibling + graph only")
+        notes.append("journal: none (cold start); sibling + graph only")
 
 for n in notes: sys.stderr.write(n + "\n")
 sel = sorted(selected)

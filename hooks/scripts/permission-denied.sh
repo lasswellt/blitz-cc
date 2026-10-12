@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# permission-denied.sh — Log PermissionDenied events (E-040 S2)
+# permission-denied.sh: log PermissionDenied events (E-040 S2)
 #
 # Containment posture (security.md TB-3): this hook NEVER emits
-# hookSpecificOutput.retry — a denied tool call stays denied. It prints nothing.
+# hookSpecificOutput.retry; a denied tool call stays denied. It prints nothing.
 # Effects: feed event `permission_denied` {tool_name} + inbox item kind "permission".
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"

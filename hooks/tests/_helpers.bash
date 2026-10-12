@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# _helpers.bash — shared test utilities for blitz hook bats tests.
+# _helpers.bash: shared test utilities for blitz hook bats tests.
 #
 # Run tests: bats hooks/tests/
 # Skip gracefully when bats not installed:
@@ -62,7 +62,7 @@ teardown_sessions() {
 # repo dir, cd into it, and inspect .cc-sessions/ afterwards.
 # ---------------------------------------------------------------------------
 
-# setup_fake_repo — create + enter a temp repo with .claude-plugin/ and
+# setup_fake_repo: create + enter a temp repo with .claude-plugin/ and
 # .cc-sessions/{sessions,mailbox}/. Exports FAKE_REPO and unsets the live
 # messaging socket so no test ever posts to a real Claude Code session.
 setup_fake_repo() {
@@ -85,13 +85,13 @@ write_session_record() {
     > "$FAKE_REPO/.cc-sessions/sessions/$1.json"
 }
 
-# run_hook script_name json_input — run a hook in $FAKE_REPO; sets $status/$output.
+# run_hook script_name json_input: run a hook in $FAKE_REPO; sets $status/$output.
 run_hook() {
   local hook="$HOOKS_DIR/$1" input="$2"
   run bash -c "printf '%s' \"\$1\" | bash \"\$2\"" _ "$input" "$hook"
 }
 
-# feed_events — print the event names logged to the fake repo's activity feed.
+# feed_events: print the event names logged to the fake repo's activity feed.
 feed_events() {
   jq -r '.event' "$FAKE_REPO/.cc-sessions/activity-feed.jsonl" 2>/dev/null || true
 }

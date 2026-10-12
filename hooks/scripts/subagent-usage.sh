@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# subagent-usage.sh — SubagentStop: record a finished subagent's exact token usage and cost.
+# subagent-usage.sh (SubagentStop): record a finished subagent's exact token usage and cost.
 #
 # The subagent's transcript (stdin `agent_transcript_path`) carries every API
 # response's `usage`: input, output, cache reads and 5-minute / 1-hour cache

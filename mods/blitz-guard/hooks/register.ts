@@ -6,13 +6,13 @@ import { READ_ONLY_AGENTS, effortFloor, planProgress, readOnlyVerdict, spawnVerd
 // person must trust, needs Claude Code >=2.1.287, and is switched off by
 // --bare, --safe-mode and disableAllHooks. This module adds what a shell hook
 // cannot see:
-//   agent.spawn  — blitz agents never become teammates and never run on haiku
-//   tool.check   — calls inside a blitz critic's loop (by agentId) stay read-only
-//   tool.call Agent — a blitz:dev/test-writer/critic spawn below `medium` effort
+//   agent.spawn:   blitz agents never become teammates and never run on haiku
+//   tool.check:    calls inside a blitz critic's loop (by agentId) stay read-only
+//   tool.call Agent:  a blitz:dev/test-writer/critic spawn below `medium` effort
 //                   is raised to it (agent.spawn has no effort field; the Agent
 //                   call's own `effort` does). Workflow agents never pass here.
-//   status line  — plan progress from docs/plans/*/tasks.json
-//   turn.complete — each subagent run's final token counts to
+//   status line:   plan progress from docs/plans/*/tasks.json
+//   turn.complete:  each subagent run's final token counts to
 //                   .cc-sessions/agent-usage.mod.jsonl (the SubagentStop hook's
 //                   transcript row has output only as a streaming lower bound)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/next-state.sh — Observe step for /blitz:next (loop.md rows 0–5)
+# Tests for scripts/next-state.sh: Observe step for /blitz:next (loop.md rows 0–5)
 load '_helpers'
 
 setup()    { command -v jq >/dev/null || skip "jq not installed"; setup_fake_repo; export BLITZ_PLANS_DIR="$FAKE_REPO/docs/plans"; TASKS="$HOOKS_DIR/../../scripts/tasks.sh"; NS="$HOOKS_DIR/../../scripts/next-state.sh"; }

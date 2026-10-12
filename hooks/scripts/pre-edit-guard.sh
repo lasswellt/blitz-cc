@@ -17,7 +17,7 @@ blitz_guard_input pre-edit-guard
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
 
 if [[ -z "$FILE_PATH" ]]; then
-  # No file path found — allow (might be a non-file operation)
+  # No file path found: allow (might be a non-file operation)
   exit 0
 fi
 
@@ -69,7 +69,7 @@ if [[ "$FILE_PATH" == *"/node_modules/"* || "$FILE_PATH" == "node_modules/"* ]];
   exit 2
 fi
 
-# Agent role boundary check — warn if agent edits outside its domain
+# Agent role boundary check: warn if agent edits outside its domain
 AGENT_TYPE=$(echo "$INPUT" | jq -r '.agent_type // empty' 2>/dev/null || true)
 if [[ -n "$AGENT_TYPE" ]]; then
   case "$AGENT_TYPE" in
@@ -86,5 +86,5 @@ if [[ -n "$AGENT_TYPE" ]]; then
   esac
 fi
 
-# All checks passed — allow the edit
+# All checks passed: allow the edit
 exit 0

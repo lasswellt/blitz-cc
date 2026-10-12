@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# config-change.sh — Re-validate persistent state on ConfigChange (E-040 S2)
+# config-change.sh: re-validate persistent state on ConfigChange (E-040 S2)
 #
 # Input: {source: user_settings|project_settings|local_settings|policy_settings|skills}
 # A settings/skills change is a TB-2 boundary event: re-run the deterministic
@@ -28,6 +28,6 @@ fi
 
 DETAIL=$(jq -nc --arg s "$SOURCE" --arg r "$RESULT" '{source:$s,validate:$r}')
 blitz_log_event "hook" "config_change" "Config changed (${SOURCE:-unknown}); startup-validate: ${RESULT}" "$DETAIL"
-[ "$RESULT" = "fail" ] && echo "[blitz] config change (${SOURCE:-unknown}): startup-validate --strict found issues in .cc-sessions/ — run hooks/scripts/startup-validate.sh" || true
+[ "$RESULT" = "fail" ] && echo "[blitz] config change (${SOURCE:-unknown}): startup-validate --strict found issues in .cc-sessions/; run hooks/scripts/startup-validate.sh" || true
 
 exit 0
