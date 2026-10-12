@@ -34,6 +34,20 @@ Full clarity, cleanliness and accuracy review of the plugin ([docs/reviews/2026-
 - README §Release process (#15): a version is released when its tag exists; the tag and GitHub release are a maintainer step a cloud session cannot perform.
 - `.gitignore` covers `.claude/worktrees/` (Agent tool worktrees); `gen-catalog.sh` skips that directory in its dead-reference scan.
 
+### Style: em-dash sweep (#20)
+- Shipped prose carries no em-dashes: skills and their references, agents, the shared protocols, hooks and their tests, scripts, workflows, the mod, templates, evals, the output style, README, SECURITY.md and the authoring rules were reworded sentence by sentence (colons, commas, semicolons, periods or parentheses; table cells that meant "none" say so). About 1,450 instances. CHANGELOG history and `docs/` are untouched. Formats that changed shape, all consistent across skills, agents and protocols: `Ruling: <decision>; <why>`, `fix(<slug>/<role>): <what> (during <ID>)`, `BUDGET (<class>; agents.reference.md §3.3)`, `feat(loop): tick (row N): <label>`, `DECISION: row N, <reason>`, `Phase N: NAME (Desc)` headings. One heading anchor moved (`security.md` Threat Model: Blitz Containment Posture) with its four referrers. Nothing parses the old separators; every bats assertion that touches a reworded message matches an unchanged substring.
+
+### Changed: follow-ups found while closing the items
+- `check --fix` resolves its Stop gate through the toolchain table like `build`: one `typecheck` row per detected stack plus the `lint` row where the table has one; no `gate.json` when nothing resolves (was hard-coded `npx tsc` / `npx eslint`).
+- `stop-gate.sh` runs every check through `blitz_timeout` and drops its inline fallback; on a host without GNU `timeout` a check that exceeds its limit now reports rc 124 and blocks the turn instead of running unbounded. `blitz_atomic_write` takes its temp file from `blitz_mktemp_in`, removing the last GNU-only `mktemp -p`.
+- `skills/_shared/loop.md` is back under the 9,500-byte protocol cap `pre-commit-validate.sh` enforces: the `notes` token vocabulary, the `last_verify.runs[]` rationale, the `progress.md` example and the circuit-breaker unblock recipe moved to `loop.reference.md` §Schemas (detail); every head heading and rule stays.
+- `pre-commit-validate.sh` raises the `agents.md` cap from 8,000 to 15,000 bytes (the file grew to 14,860 with the 5.5 model and effort tables in 3.14.0, so every in-session commit touching it was blocked); a trim back toward 8,000 is still owed.
+- `agents.reference.md` §3.1b: no blitz agent lists the `Skill` tool; `test-writer` reaches the `test-gen` material by path. `output-styles/terse-technical.md` matches `output.md` on how the intensity level is chosen.
+
+### Notes
+- Still owed: `skills/_shared/agents.md` sits at 14,860 bytes against a protocol-cap intent of 8,000; `hooks/scripts/markdown-link-validate.sh` scans `skills/` and `agents/` only (links under `docs/` and in the changelogs are unchecked).
+- Behaviour changes to re-read before running unattended: `build` and `check --fix` gates come from the toolchain table; `tasks-guard.sh` blocks subagent writes to `progress.md`; `ui-build` fails on hardcoded colours; `ui-audit` needs four observations for FLAPPING; `pre-commit-validate.sh` fails closed on malformed input; `stop-gate.sh` blocks on a timed-out check on hosts without GNU `timeout`.
+
 ### Fixed: open items
 - Feed lines in `block-no-verify.sh`, `block-test-disabling.sh` and `block-as-any-insertion.sh`, and `HANDOFF.json` in `pre-compact-snapshot.sh`, are built with jq; a quote or backslash in a path or `until` label no longer corrupts the line (#9).
 - `BLITZ_INJECTION_RX` uses `(^|[^a-z])system:`, so `filesystem:` and `ecosystem:` no longer match (#13).
