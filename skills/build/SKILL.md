@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, SendMessage, ListAgents, Bas
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high (the main thread routes; `dev` agents run on sonnet). Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high (the main thread routes; `dev` agents run on sonnet). Set once (`claude --model opus --effort high` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -35,7 +35,7 @@ One skill, three modes. `build` writes `tasks.json` only through `scripts/tasks.
 ### 0.1 Preamble
 
 1. Claim the session record per [sessions.md](/_shared/sessions.md) §2 (`skill: build`, `working_on: <mode> <target>`, `args`). Never mint an id.
-2. `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"` — a leftover gate from an aborted run blocks the next turn.
+2. `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"`: a leftover gate from an aborted run blocks the next turn.
 3. Run the conflict matrix ([sessions.md](/_shared/sessions.md) §6). `build` on the same plan, or `check --fix` on it, is **BLOCK** → `SendMessage(..., notify_when_idle: true)`, print `LOOP_DEFER`, exit. `build` on another plan with overlapping `files` is WARN.
 4. Feed: `skill_start {args}`.
 
@@ -44,8 +44,8 @@ One skill, three modes. `build` writes `tasks.json` only through `scripts/tasks.
 | Argument | Mode |
 |---|---|
 | quoted `"<change>"`, or `--issue N` with no `docs/plans/*/tasks.json` carrying `origin: issue:N` | **inline** (§Inline), if §0.3 holds; otherwise say so and route to `/blitz:plan` |
-| `<slug>` (a directory under `docs/plans/`) | **task** — loop over ready tasks |
-| `<task-id>` (`T-nnn`; resolve the slug by grepping `docs/plans/*/tasks.json` for the id; ambiguous → ask) | **task** — that one task only |
+| `<slug>` (a directory under `docs/plans/`) | **task**: loop over ready tasks |
+| `<task-id>` (`T-nnn`; resolve the slug by grepping `docs/plans/*/tasks.json` for the id; ambiguous → ask) | **task**: that one task only |
 | `<slug> --parallel` | **parallel** (§Parallel) if §0.4 holds; otherwise sequential with a one-line reason |
 | none | `scripts/next-state.sh` → `active_plan`; none active → print `LOOP_DONE` and stop |
 
@@ -91,7 +91,7 @@ Vocabulary ([loop.md](/_shared/loop.md) §blocked_reason): `hard_spec` · `oracl
 - `dependency-missing`: block until the upstream task is `done`; `next` re-offers it.
 - `hard_spec`, `oracle-underivable`, `test-assertion-suspect`: block now; `next --loop` row 1 escalates to a human.
 - Round 5 exhausted or Tier 3/4 `ESCALATE:`: `tasks.sh set "$SLUG" "$ID" blocked_reason=<reason>` and append
-  `Ruling: <descope|split|spec-defect|defer> — <why> (<ID>, round <n>)` to `progress.md`. `learn` mines these lines. Print `BLOCKED: <slug>/<ID> <reason>` (and `ESCALATE: <line>` when the agent raised one); `PushNotification` if available.
+  `Ruling: <descope|split|spec-defect|defer>; <why> (<ID>, round <n>)` to `progress.md`. `learn` mines these lines. Print `BLOCKED: <slug>/<ID> <reason>` (and `ESCALATE: <line>` when the agent raised one); `PushNotification` if available.
 
 ### T.6 Exit
 
@@ -111,7 +111,7 @@ Kahn layering on `depends_on` over open tasks: wave 0 = no unmet deps; wave N = 
 
 Mark every task in the wave `in_progress` and append its start line. Then:
 
-- **Workflow path** when the `Workflow` tool is present and `BLITZ_DISPATCH != agent`: call `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` — `prompt` is the 11-item spec, `replySchema` the §4.2 JSON. It returns `{ wave, tasks: [{id, ok, result}] }`; `result: null` = the agent died → treat as `BLOCKED circuit-breaker`. Any failure (tool absent, not allowed in `-p`, script error) → Agent path, never hard-fail. Feed `task_start.detail.dispatch: "workflow"|"agent"`.
+- **Workflow path** when the `Workflow` tool is present and `BLITZ_DISPATCH != agent`: call `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }`: `prompt` is the 11-item spec, `replySchema` the §4.2 JSON. It returns `{ wave, tasks: [{id, ok, result}] }`; `result: null` = the agent died → treat as `BLOCKED circuit-breaker`. Any failure (tool absent, not allowed in `-p`, script error) → Agent path, never hard-fail. Feed `task_start.detail.dispatch: "workflow"|"agent"`.
 - **Agent path**: one `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", isolation: "worktree", run_in_background: true, prompt: <spec>)` per task, all launched before waiting. Item 9 adds: branch label `build/<slug>/<ID>` (per task, so two same-role tasks in one wave never share a branch); commit inside the worktree.
 
 Arm the gate under `--autonomous` with `until: "build <slug> wave <N>"`.
@@ -126,11 +126,11 @@ In task-id order, on the main branch: `git merge-tree --write-tree HEAD "$BRANCH
 
 ### P.5 Wave end
 
-Append `## <ISO> build wave <N> <done>/<n> done` and the phase one-liner `build wave N/M · k/n done`, feed `task_complete` per merged task, commit `feat(<slug>): wave N` on main, push under `--autonomous`, re-arm Monitor, dispatch the next wave. Peer notice: if a `check` session for this plan is `waiting`, `SendMessage` one line (`build <slug> wave N merged — k/n`).
+Append `## <ISO> build wave <N> <done>/<n> done` and the phase one-liner `build wave N/M · k/n done`, feed `task_complete` per merged task, commit `feat(<slug>): wave N` on main, push under `--autonomous`, re-arm Monitor, dispatch the next wave. Peer notice: if a `check` session for this plan is `waiting`, `SendMessage` one line (`build <slug> wave N merged: k/n`).
 
 ### P.6 Integration pass (after the last wave, mandatory)
 
-1. `/blitz:check --only wiring` on `git diff --name-only <base>..HEAD` — export→import tracing, route coverage, store wiring. Fix high-severity findings before anything else.
+1. `/blitz:check --only wiring` on `git diff --name-only <base>..HEAD`: export→import tracing, route coverage, store wiring. Fix high-severity findings before anything else.
 2. Walk the integration checklist ([references/main.md](references/main.md) §Integration checklist): nav entries, design tokens, layout wrapper, state wiring, accessibility, loading/error states, route guards. Fewer than 3 open items → fix inline; more → one `dev` (`ROLE: frontend`, Medium budget, `SCOPE_FILES` = the files named by the findings). Do not skip a half-integration: every item is confirmed done or recorded as a `Ruling:`.
 3. Commit `feat(<slug>/integration): wiring pass`.
 
@@ -178,7 +178,7 @@ After a crash, `--resume`, or compaction: `tasks.sh list <slug>` + the `progress
 Print once per invocation (and per task boundary when not autonomous):
 
 ```
-build <slug> — <mode> · <done>/<total> done · <blocked> blocked
+build <slug> (<mode>) · <done>/<total> done · <blocked> blocked
 | Task | Status | Attempts | Last verify |
 |---|---|---|---|
 | T-001 | done | 1 | ok 14:19 |

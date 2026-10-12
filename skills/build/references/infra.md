@@ -23,12 +23,12 @@ Inspect the repo to determine the infra/deploy toolchain. Detect everything dyna
 
 Follow the existing pipeline structure. For new workflows, the canonical shape:
 
-1. **Trigger** — scope narrowly (`on: push: branches: [main]`, `pull_request`).
-2. **Checkout + setup** — pin runtime versions; cache dependencies.
-3. **Install** — the project's package manager with a frozen lockfile (`--frozen-lockfile` / `npm ci`).
-4. **Verify** — type-check, lint, test, build. Fail fast.
-5. **Deploy** — only after verify passes, only on the deploy branch, using keyless auth (workload identity / OIDC) where the provider supports it.
-6. **Guard** — deploy steps gated on `github.ref` / environment protection so a PR build can never deploy to production.
+1. **Trigger**: scope narrowly (`on: push: branches: [main]`, `pull_request`).
+2. **Checkout + setup**: pin runtime versions; cache dependencies.
+3. **Install**: the project's package manager with a frozen lockfile (`--frozen-lockfile` / `npm ci`).
+4. **Verify**: type-check, lint, test, build. Fail fast.
+5. **Deploy**: only after verify passes, only on the deploy branch, using keyless auth (workload identity / OIDC) where the provider supports it.
+6. **Guard**: deploy steps gated on `github.ref` / environment protection so a PR build can never deploy to production.
 
 ```yaml
 # GitHub Actions deploy guard example (Firebase Hosting via workload identity)
@@ -37,7 +37,7 @@ deploy:
   if: github.ref == 'refs/heads/main'
   permissions:
     contents: read
-    id-token: write   # OIDC — no long-lived secret
+    id-token: write   # OIDC: no long-lived secret
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@<sha>  # pin to commit
@@ -52,7 +52,7 @@ deploy:
 When the project uses Firebase:
 
 - **`firebase.json`**: declare only the targets the task needs (hosting, functions, firestore, storage). Wire `predeploy` hooks to the project's build scripts so a deploy always ships freshly-built artifacts.
-- **`.firebaserc`**: map deploy aliases (`default`, `staging`, `production`) to project IDs. Never hardcode a project ID inside a workflow — read it from the alias or a CI variable.
+- **`.firebaserc`**: map deploy aliases (`default`, `staging`, `production`) to project IDs. Never hardcode a project ID inside a workflow; read it from the alias or a CI variable.
 - **Security rules** (`firestore.rules`, `storage.rules`): default-deny. Every `allow` must be justified by a `verify[]` entry. Never commit a commented-out rule or an `allow read, write: if true` placeholder. Rules changes are verified with `@firebase/rules-unit-testing` in the emulator.
 - **Dry run**: `firebase deploy --only <target> --dry-run` (or `firebase hosting:channel:deploy` for preview channels) before shipping.
 
@@ -67,7 +67,7 @@ When the project uses Firebase:
 
 In addition to the gates in `agents/dev.md`:
 
-1. **Syntax valid**: lint/validate every config you touched — `yamllint` / `actionlint` for workflows, `terraform validate`, `firebase deploy --dry-run`, `docker build` (no push). If no validator exists, parse the file to confirm well-formedness.
+1. **Syntax valid**: lint/validate every config you touched: `yamllint` / `actionlint` for workflows, `terraform validate`, `firebase deploy --dry-run`, `docker build` (no push). If no validator exists, parse the file to confirm well-formedness.
 2. **Existing pipelines intact**: no removed required checks; jobs the task did not target still run.
 3. **No secrets committed**: grep your diff for tokens, keys, and credentials. `.env.example` holds placeholders only.
 4. **Restrictive default**: nothing left world-readable or world-writable by accident.

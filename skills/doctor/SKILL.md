@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, Edit(.claude/settings.json), Edit(.gitignore), 
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -33,9 +33,9 @@ Without flags `doctor` is read-only: it prints findings, a remediation per findi
 
 ## Phase 0: PREAMBLE
 
-1. Claim the hook-created session record per [sessions.md](/_shared/sessions.md) §2 (`skill: doctor`, `working_on: "doctor <flags>"`); log `skill_start`. If `${CLAUDE_SESSION_ID}` is empty print `WARN: no native session id — running unregistered` and continue.
+1. Claim the hook-created session record per [sessions.md](/_shared/sessions.md) §2 (`skill: doctor`, `working_on: "doctor <flags>"`); log `skill_start`. If `${CLAUDE_SESSION_ID}` is empty print `WARN: no native session id; running unregistered` and continue.
 2. Run `startup-validate.sh` (sessions.md §2 step 5). Quarantined paths are surfaced as findings, never loaded.
-3. Conflict matrix: doctor is read-only for the matrix (OK against everything). `--migrate` and `--fix` are the exceptions: BLOCK while any live `build`, `check --fix`, or `next --loop` record exists in this checkout — they read `tasks.json` and `.cc-sessions/` mid-flight.
+3. Conflict matrix: doctor is read-only for the matrix (OK against everything). `--migrate` and `--fix` are the exceptions: BLOCK while any live `build`, `check --fix`, or `next --loop` record exists in this checkout; they read `tasks.json` and `.cc-sessions/` mid-flight.
 4. Parse flags. Writers (`--loop-md`, `--review-md`, `--ci`, `--verify-recipe`) and `--migrate` run **after** Phases 1–3 so the report shows the state they started from. `--fix` applies the auto-fixable remediations marked `fix:auto` in the catalog and re-runs the affected check.
 5. Findings accumulate as one record each: `{id, severity: FAIL|WARN|INFO, where, detail, fix}`. `FAIL` = a blitz skill will misbehave; `WARN` = degraded or advisory; `INFO` = a note. Text echoed from `.cc-sessions/`, CLAUDE.md or `tasks.json` is truncated to 200 chars and passed through `BLITZ_INJECTION_RX` ([security.md](/_shared/security.md) TB-1/TB-2). Never quote whole CLAUDE.md files: only the matched line.
 
@@ -76,8 +76,8 @@ Missing type-check with a `tsconfig.json` is `FAIL` (the Stop gate arms `npx tsc
 
 ### 3.5 Platform facts (D-307, D-308; D-318 in references)
 
-- **D-307 Task tools** — advisory `INFO` on current models: `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Mention the variable only as optional (platform checklist UI). A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
-- **D-308 bash** — `command -v bash` must succeed. Hooks are bash scripts; without bash no hook starts, so the blocking guards fail **closed** (`onFailure: block`) and refuse every Write, Edit and Bash call, while advisory hooks do nothing. `FAIL` when `command -v bash` fails (PowerShell-only Windows); Git Bash, MSYS, Cygwin and WSL pass. Remediation: install Git for Windows or use WSL.
+- **D-307 Task tools** (advisory `INFO` on current models): `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Mention the variable only as optional (platform checklist UI). A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
+- **D-308 bash**: `command -v bash` must succeed. Hooks are bash scripts; without bash no hook starts, so the blocking guards fail **closed** (`onFailure: block`) and refuse every Write, Edit and Bash call, while advisory hooks do nothing. `FAIL` when `command -v bash` fails (PowerShell-only Windows); Git Bash, MSYS, Cygwin and WSL pass. Remediation: install Git for Windows or use WSL.
 
 ### 3.6 Repository layout (D-309…D-311)
 
@@ -96,18 +96,18 @@ D-312 FAIL: a `done` task without `passes ∧ last_verify.ok` means something by
 `build --parallel` and `claude --worktree` both depend on platform-owned worktree creation. Blitz registers no `WorktreeCreate` hook ([agents.reference.md](/_shared/agents.reference.md) §6); a registered one replaces git creation entirely and skips `.worktreeinclude`.
 
 ```bash
-# D-314 — stale agent branches ahead of origin/HEAD (GH#51596 collision source)
+# D-314: stale agent branches ahead of origin/HEAD (GH#51596 collision source)
 git for-each-ref --format='%(refname:short)' 'refs/heads/worktree-agent-*' 'refs/heads/worktree-build-*' |
   while read -r b; do
     n=$(git rev-list --count "origin/HEAD..$b" 2>/dev/null || echo 0)
     [ "${n:-0}" -gt 0 ] && echo "D-314 stale $b ($n ahead)"
   done
 
-# D-315 — gitignored env files with no .worktreeinclude to carry them
+# D-315: gitignored env files with no .worktreeinclude to carry them
 git ls-files --others --ignored --exclude-standard -- '.env*' 'config/secrets*' 2>/dev/null | head -20
 [ -f .worktreeinclude ] && echo "D-315 present"
 
-# D-314b — a third-party WorktreeCreate hook in project settings takes over creation
+# D-314b: a third-party WorktreeCreate hook in project settings takes over creation
 jq -e '.hooks.WorktreeCreate' .claude/settings.json >/dev/null 2>&1 && echo "D-314 foreign WorktreeCreate hook"
 ```
 
@@ -119,11 +119,11 @@ jq -e '.hooks.WorktreeCreate' .claude/settings.json >/dev/null 2>&1 && echo "D-3
 ### 3.9 Toolchain and code intelligence (D-316, D-317)
 
 ```bash
-# D-316 — which lanes actually resolve for this project's languages
+# D-316: which lanes actually resolve for this project's languages
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes     # lane<TAB>stack<TAB>row-id
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" stacks
 
-# D-317 — LSP binaries. The plugin configures the connection; the binary is
+# D-317: LSP binaries. The plugin configures the connection; the binary is
 # yours to install. A server whose binary is missing shows as
 # "Executable not found in $PATH" in the /plugin Errors tab.
 for b in typescript-language-server pyright-langserver rust-analyzer gopls; do
@@ -155,7 +155,7 @@ Applies only remediations tagged `fix:auto` above (D-103 chmod, D-203 orphan gat
 ## Phase 7: REPORT
 
 ```
-Doctor — <project> (<plugin version>, CC <version>)
+Doctor: <project> (<plugin version>, CC <version>)
 Plugin structure : PASS | FAIL (n)
 Session state    : n active, n stale, inbox n pending, feed n lines, STOP: no
 Project setup    : n FAIL, n WARN, n INFO

@@ -1,4 +1,4 @@
-# Onboard — Reference Material
+# Onboard: Reference Material
 
 Scaffold trees, convention detection, file templates (greenfield and package mode), and the map-mode dimension prompt, checklists, rubric and grep patterns. `SKILL.md` names the section it needs at each phase.
 
@@ -105,7 +105,7 @@ Package mode reads these before planning; greenfield mode uses the fallback colu
 Existing-file check before every Write:
 
 ```bash
-[ -f "<planned-path>" ] && echo "EXISTS — ask" || echo "SAFE — create"
+[ -f "<planned-path>" ] && echo "EXISTS: ask" || echo "SAFE: create"
 [ -f "<dir>/index.ts" ] && echo "APPEND export" || echo "CREATE barrel"
 ```
 
@@ -220,7 +220,7 @@ export const useItemsStore = defineStore('items', () => {
 })
 ```
 
-`services/items.ts` exports `listItems(): Promise<Item[]>` — in greenfield it returns a typed in-memory list; with Firebase it wraps `getDocs(collection(db, 'items'))`.
+`services/items.ts` exports `listItems(): Promise<Item[]>`: in greenfield it returns a typed in-memory list; with Firebase it wraps `getDocs(collection(db, 'items'))`.
 
 ### Composable
 
@@ -312,7 +312,7 @@ Used by `SKILL.md` §M2 for each of the four `Explore` agents. Variables: `{{DIM
 ```
 You are the onboard {{DIMENSION}} analyst for this repository. Read-only.
 
-BUDGET (Medium — skills/_shared/agents.reference.md §3.3):
+BUDGET (Medium; skills/_shared/agents.reference.md §3.3):
 - Max file reads: {{FILE_CAP}}
 - Max web searches: 0
 - Max tool calls: 25 (at 20, finish the current item and reply)
@@ -331,8 +331,8 @@ NAVIGATION: use `LSP` (workspace symbols, goToDefinition, findReferences) for an
 named symbol; fall back to Grep/Glob and `Read --offset` when the LSP tool is
 inactive. Never map the tree by reading whole files.
 
-CHECKLIST — one `### <item>` section per line, in order; write `unknown` with the
-path you looked at when an item cannot be determined:
+CHECKLIST (one `### <item>` section per line, in order; write `unknown` with the
+path you looked at when an item cannot be determined):
 {{CHECKLIST}}
 
 EVIDENCE: every claim names a path (and a line for greps). Count-based claims
@@ -341,7 +341,7 @@ If the budget runs out, emit `PARTIAL: true` and a `MISSING:` line per unvisited
 
 REPLY FORMAT: markdown sections only, no top-level heading (the main thread
 adds `## {{DIMENSION}}`). End with exactly two lines:
-  SCORE: <1-5>/5 — <one-line reason>
+  SCORE: <1-5>/5 (<one-line reason>)
   CONFIRMATION: {{DIMENSION}}: <N sections>
 Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.
 ```
@@ -438,7 +438,7 @@ Architecture and Quality weigh more because they set the cost of every later `bu
 ## Example Map (abridged)
 
 ```markdown
-# Codebase Map — acme-portal
+# Codebase Map: acme-portal
 
 Generated: 2026-09-19T14:02:11Z · blitz onboard · Overall: 3.6/5
 
@@ -452,7 +452,7 @@ Generated: 2026-09-19T14:02:11Z · blitz onboard · Overall: 3.6/5
 | CSS | Tailwind |
 | State | Pinia |
 | Backend | Nitro `server/` + Firebase Auth |
-SCORE: 4/5 — modern stack, `noUncheckedIndexedAccess` off
+SCORE: 4/5 (modern stack, `noUncheckedIndexedAccess` off)
 
 ## Architecture
 … layer table, entry points, one circular import `stores/auth.ts ↔ stores/user.ts`
@@ -467,7 +467,7 @@ SCORE: 3/5
 SCORE: 4/5
 
 ## Recommendations
-1. [High] Tests for `stores/` (0 of 6 files covered) — the layer every page depends on
+1. [High] Tests for `stores/` (0 of 6 files covered): the layer every page depends on
 2. [Medium] Break `stores/auth.ts ↔ stores/user.ts` by moving `currentUser` into `composables/useSession.ts`
 3. [Low] JSDoc on exported composables in `composables/`
 ```
@@ -478,7 +478,7 @@ SCORE: 4/5
 
 Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
 
-### M2 DIMENSIONS — Four `Explore` agents, one message
+### M2 DIMENSIONS: Four `Explore` agents, one message
 
 Spawn all four in **a single assistant message** so they run concurrently. `Explore` is read-only and returns text ([agents.md](/_shared/agents.md) §1.2), so each agent replies with its findings and the main thread writes `${SESSION_TMP_DIR}/map-<dimension>.md`.
 
@@ -491,11 +491,11 @@ Spawn all four in **a single assistant message** so they run concurrently. `Expl
 
 For each: `Agent({ subagent_type: "Explore", model: "haiku", effort: "medium", description: "onboard map <dimension>", run_in_background: true, prompt })`. The prompt is the dimension template in this file §Dimension Agent Prompt, with `{{DIMENSION}}`, `{{INVENTORY_DIR}}`, `{{FILE_CAP}}`, `{{STACK_PROFILE}}` (the Project Context block above), and `{{CHECKLIST}}` (the matching list in §Dimension Checklists) filled in. Medium class: 25 tool calls, ≤250 output lines, 5 minutes. The reply ends with `SCORE: n/5` and one `CONFIRMATION:` line.
 
-Each dimension prompt carries the navigation ladder: **`LSP` first** (workspace symbol search, `goToDefinition`, `findReferences`) for any named symbol, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive — no server for that language, a missing binary, or a cloud session, where Claude Code does not start plugin language servers. Mapping a codebase by grepping and reading whole files is the single largest avoidable context cost in this skill.
+Each dimension prompt carries the navigation ladder: **`LSP` first** (workspace symbol search, `goToDefinition`, `findReferences`) for any named symbol, `Grep`/`Glob` + `Read --offset` as the fallback when the tool is inactive (no server for that language, a missing binary, or a cloud session, where Claude Code does not start plugin language servers). Mapping a codebase by grepping and reading whole files is the single largest avoidable context cost in this skill.
 
 Write each reply verbatim to its `map-*.md` as it arrives. If a reply is empty or has no `SCORE:` line, retry that dimension once with the file cap halved.
 
-### G3 IMPLEMENT — Generate real files
+### G3 IMPLEMENT: Generate real files
 
 Create the files from G2 in order. Every file is complete (this file §File Templates):
 

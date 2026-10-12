@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, AskUserQuestion, Edit(docs/p
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -40,7 +40,7 @@ Read the goal, `docs/plans/BACKLOG.md` (if present) and `git --no-pager log --on
 | **bounded** | 1–5 files, known shape, one module; you can name the files now | short in-chat design (Phase 1b), skip research, 1–6 tasks |
 | **architectural** | new subsystem, cross-cutting change, schema or auth change, ≥6 files, or unknown shape | interview (Phase 1a), research (Phase 2), goal-backward analysis (Phase 2.5), full plan |
 
-**Stop rule (Anthropic guidance):** if the diff can be described in one sentence, stop here and suggest `/blitz:build` inline — print the sentence and `→ /blitz:build "<sentence>"`, write nothing under `docs/plans/`.
+**Stop rule (Anthropic guidance):** if the diff can be described in one sentence, stop here and suggest `/blitz:build` inline: print the sentence and `→ /blitz:build "<sentence>"`, write nothing under `docs/plans/`.
 
 If the slug already exists under `docs/plans/<slug>/`, read `spec.md` and `tasks.sh list <slug>`; you are extending, not replacing. Never re-add existing task ids.
 
@@ -61,11 +61,11 @@ If the slug already exists under `docs/plans/<slug>/`, read `spec.md` and `tasks
 
 Unless `--autonomous`, run the interview with `AskUserQuestion`, **one question per message**, in this order, skipping any the goal already answers:
 
-1. **Purpose** — who needs this and what changes for them when it ships.
-2. **Constraints** — stack, compatibility, deadlines, files or APIs that must not change.
-3. **Success criteria** — 2–5 observable outcomes ("a user can…", "`GET /x` returns…"). These become `spec.md` §Outcomes and the Phase 2.5 rows.
-4. **Edge cases** — failure modes, empty states, auth boundaries, concurrency.
-5. **Tradeoffs** — present 2–3 approaches with one-line cost/benefit each; ask which to take.
+1. **Purpose**: who needs this and what changes for them when it ships.
+2. **Constraints**: stack, compatibility, deadlines, files or APIs that must not change.
+3. **Success criteria**: 2–5 observable outcomes ("a user can…", "`GET /x` returns…"). These become `spec.md` §Outcomes and the Phase 2.5 rows.
+4. **Edge cases**: failure modes, empty states, auth boundaries, concurrency.
+5. **Tradeoffs**: present 2–3 approaches with one-line cost/benefit each; ask which to take.
 
 Then print a ≤15-line design summary (approach, outcomes, out of scope) and ask: "Write the spec and tasks from this?" **Hard gate:** do not write `spec.md` or call `tasks.sh add` until the answer is yes. A "no" or a change loops back to the affected question.
 
@@ -100,16 +100,16 @@ For a **spike**, synthesize the outputs into `docs/research/<date>_<slug>.md` (F
 
 Derive tasks from outcomes, not from a feature list.
 
-1. **Define 2–5 observable outcomes** — concrete, testable statements of what a user or developer can do once the plan ships (from §Outcomes).
-2. **Derive required artifacts** — trace backward per outcome: page → store → schema → API handler → middleware/rules → test.
+1. **Define 2–5 observable outcomes**: concrete, testable statements of what a user or developer can do once the plan ships (from §Outcomes).
+2. **Derive required artifacts**: trace backward per outcome (page → store → schema → API handler → middleware/rules → test).
 3. **Map connections** between adjacent artifact pairs (page calls store, store calls API, handler validates schema, middleware reads auth).
-4. **Build the coverage matrix** — outcomes × artifacts. Empty cells are gaps; every gap becomes a task in Phase 3. Put the matrix in `plan.md` §Coverage.
+4. **Build the coverage matrix**: outcomes × artifacts. Empty cells are gaps; every gap becomes a task in Phase 3. Put the matrix in `plan.md` §Coverage.
 
 ```markdown
 | Outcome  | Schema  | API     | Store   | Page    | Rules   | Test    |
 |----------|---------|---------|---------|---------|---------|---------|
 | Login    | ✓ T-001 | ✓ T-002 | ✓ T-003 | ✓ T-005 | ✓ T-004 | ✓ T-006 |
-| Redirect | —       | —       | ✓ T-003 | —       | ✓ T-004 | ✗ GAP   |
+| Redirect | n/a     | n/a     | ✓ T-003 | n/a     | ✓ T-004 | ✗ GAP   |
 ```
 
 ---
@@ -194,7 +194,7 @@ ship: manual
 
 `plan.md` sections: **Architecture** (approach, the tradeoff chosen and the ones rejected), **File map** (path → change, one line each), **Coverage** (Phase 2.5 matrix; bounded plans write "n/a: bounded"), **Risks** (research gaps, SPIDR splits, migrations), **Solutions consulted** (each `docs/solutions/*.md` read, and the BACKLOG lines absorbed), **Research** (paths of the agent outputs or the `--from-research` doc).
 
-`progress.md` first line: `## <ISO-8601> plan created` followed by one line `Ruling: class=<spike|bounded|architectural> tasks=<n> — <one-line rationale>`.
+`progress.md` first line: `## <ISO-8601> plan created` followed by one line `Ruling: class=<spike|bounded|architectural> tasks=<n>; <one-line rationale>`.
 
 `priority`: P0 for a fix to something broken in production, P1 default, P2 for polish; `status: active` unless the user said to park it (`paused`).
 

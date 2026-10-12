@@ -41,7 +41,7 @@ const emit = defineEmits<{
 - Always type props with an interface and `defineProps<Props>()`.
 - Always type emits with `defineEmits<{...}>()`.
 - Extract complex logic into composables.
-- Keep components focused — under 200 lines when possible.
+- Keep components focused: under 200 lines when possible.
 
 ## Store patterns
 

@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Bash(${CLAUDE_PLUGIN_ROOT}/s
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high (the same session that runs `build`; [agents.md](/_shared/agents.md) §1.3). Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high (the same session that runs `build`; [agents.md](/_shared/agents.md) §1.3). Set once (`claude --model opus --effort high` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -19,7 +19,7 @@ compatibility: ">=2.1.296"
 
 ---
 
-# Check — the quality gate
+# Check: the quality gate
 
 One skill answers "is this done?" for a diff, a plan, or the whole repo. It is **precision-biased**: it runs often, so a false alarm is expensive and low-confidence advisory findings are suppressed; `/blitz:audit` is the recall-biased sibling that re-surfaces them. Deterministic rows run first and carry reject authority; semantic rows are opinion and never flip a verdict on their own. PASS requires `critic --mode reject` to return `LGTM` on the final diff.
 
@@ -39,7 +39,7 @@ Resolve `BASE`, the changed-file set, and the changed packages in a monorepo; re
 
 **Dispatch:** running a row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement, so collect this lane in one `Agent({subagent_type: "Explore", model: "haiku", effort: "low", description: "check det lane"})` given the selected rows and a JSON reply schema ([agents.md](/_shared/agents.md) §1.3). Keep the semantic lane and the PASS/FAIL verdict on the session model. Fall back to running them inline when the lane has ≤5 rows, where the spawn costs more than it saves.
 
-Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is about 120 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`. Read each row's verdict through its `detection.exit` contract ([quality.reference.md](/_shared/quality.reference.md) §Exit-code contract): a grep row **passes on exit 1**, and a row that could not run is `error`, never a pass.
+Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context**: it is about 120 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`. Read each row's verdict through its `detection.exit` contract ([quality.reference.md](/_shared/quality.reference.md) §Exit-code contract): a grep row **passes on exit 1**, and a row that could not run is `error`, never a pass.
 
 ### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
 
