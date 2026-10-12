@@ -15,7 +15,7 @@ Check catalog, migration field maps, the `/verify` seed, and the conflict-catalo
 | D-101 | `scripts/validate-plugin-structure.sh` exit ≠ 0 | FAIL | Fix each listed path; the validator names it | no |
 | D-102 | `jq -e . hooks/hooks.json` fails | FAIL | Repair the JSON; `config-change.sh` blocks commits on this too | no |
 | D-103 | a script referenced by `hooks.json` is missing, not `-x`, or has no shebang | FAIL | `chmod +x hooks/scripts/<name>.sh`; a missing script is a broken install → reinstall the plugin | chmod only |
-| D-104 | `skill-frontmatter-validate.sh --all` exit ≠ 0; cumulative descriptions > 14 000 chars | FAIL / WARN | Edit the named SKILL.md; the budget guard hard-fails at 14 500 | no |
+| D-104 | `skill-frontmatter-validate.sh --all` exit ≠ 0 (this includes cumulative descriptions over the 8 000-char validator budget; the platform cap is about 15 000) | FAIL | Edit the named SKILL.md | no |
 | D-105 | `agent-frontmatter-validate.sh --all` exit ≠ 0 | FAIL | Edit the named agent file | no |
 | D-106 | `markdown-link-validate.sh` reports broken links | WARN | Fix the link; hook mode only warns on commit | no |
 | D-107 | `scripts/gen-catalog.sh --check` diff, dead `/blitz:<name>` reference, numeric inventory in prose | WARN | `scripts/gen-catalog.sh` and edit the prose it names | no |
@@ -138,7 +138,7 @@ jq --arg ref "$(git rev-parse HEAD)" --argjson n "$STALE" '
   | .updated_at = (now|todate)' "$R" > "$R.tmp" && mv "$R.tmp" "$R"
 ```
 
-Other metrics keep their `baseline`/`current`/threshold; `history[]` is not rewritten. Missing file → run the bootstrap snippet in [/_shared/quality.md](/_shared/quality.md) §Ratchet instead.
+Other metrics keep their `baseline`/`current`/threshold; `history[]` is not rewritten. Missing file → run the bootstrap snippet in [/_shared/quality.reference.md](/_shared/quality.reference.md) §Bootstrap and override instead.
 
 ### 5.5 Registries and sprints/
 
@@ -177,9 +177,9 @@ disable-model-invocation: true
 Stack: ${STACK:-unknown}
 
 1. Typecheck: \`${PM:-npm} exec tsc --noEmit\` (skip when no tsconfig.json).
-2. Tests: \`${PM:-npm} run ${TEST_CMD:+test}${TEST_CMD:-test} -- --reporter=dot\` — for a targeted subset use \`\${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh <changed files>\`.
-3. Build: \`${PM:-npm} run ${BUILD_CMD:+build}${BUILD_CMD:-build}\`.
-4. Run: \`${PM:-npm} run ${DEV_CMD:+dev}${DEV_CMD:-dev}\` and open the printed URL; confirm the changed screen renders without console errors (Playwright MCP \`browser_snapshot\` when available).
+2. Tests: \`${PM:-npm} run test -- --reporter=dot\`${TEST_CMD:+ (script: \`$TEST_CMD\`)} — for a targeted subset use \`bash \${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh <changed files>\`.
+3. Build: \`${PM:-npm} run build\`${BUILD_CMD:+ (script: \`$BUILD_CMD\`)}.
+4. Run: \`${PM:-npm} run dev\`${DEV_CMD:+ (script: \`$DEV_CMD\`)} and open the printed URL; confirm the changed screen renders without console errors (Playwright MCP \`browser_snapshot\` when available).
 5. Report the command outputs verbatim, not a summary.
 MD
   echo "seeded .claude/skills/verify/SKILL.md — review and commit it"
@@ -331,7 +331,7 @@ V=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1);
 [ "$(printf '%s\n%s\n' "$M" "$V" | sort -V | head -1)" = "$M" ] || echo "CC-BELOW-FLOOR $V < $M"   # D-110 floor
 ```
 
-`D-103` misses are `FAIL` (`chmod +x hooks/scripts/<name>.sh` is the fix, `fix:auto`). `D-104`/`D-105` violations are `FAIL`; a cumulative-description figure above 14 000 chars is `WARN`. `D-107` is `WARN` (run `scripts/gen-catalog.sh`).
+`D-103` misses are `FAIL` (`chmod +x hooks/scripts/<name>.sh` is the fix, `fix:auto`). `D-104`/`D-105` violations are `FAIL`, including a cumulative-description figure above the validator's 8 000-char budget. `D-107` is `WARN` (run `scripts/gen-catalog.sh`).
 
 `detect-stack.sh` must print something (`D-109`): an empty result means stack-dependent skills (`build`, `check`) will guess commands.
 

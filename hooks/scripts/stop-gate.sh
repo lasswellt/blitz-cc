@@ -4,7 +4,7 @@
 # Strict no-op unless build, check, or next --loop has written a gate file:
 #   .cc-sessions/sessions/<session_id>/gate.json
 #   { "checks": [ {"name": "tsc", "cmd": "npx tsc --noEmit", "timeout": 120}, ... ],
-#     "blocks": 0, "max_blocks": 6, "until": "<phase label>" }
+#     "blocks": 0, "max_blocks": 4, "until": "<phase label>" }
 #
 # When the gate is armed, every check runs in order; the first failure blocks
 # the turn from ending (exit 2, reason on stderr with a 200-char tail of the
@@ -69,7 +69,7 @@ fi
 
 BLOCKS=$(jq -r '.blocks // 0' "$GATE")
 MAX=$(jq -r '.max_blocks // 4' "$GATE")
-case "$BLOCKS$MAX" in *[!0-9]*) BLOCKS=0; MAX=6 ;; esac
+case "$BLOCKS$MAX" in *[!0-9]*) BLOCKS=0; MAX=4 ;; esac
 if [ "$MAX" -gt 4 ]; then MAX=4; fi   # stay well under the platform's 8-continuation cap (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP)
 if [ "$BLOCKS" -ge "$MAX" ]; then
   blitz_log_event "hook" "gate_exhausted" "Stop gate exhausted after $BLOCKS blocks; standing down" \
@@ -89,7 +89,12 @@ while [ "$i" -lt "$N" ]; do
   [ -n "$CMD" ] || continue
   OUT_FILE=$(mktemp)
   RC=0
-  ( cd "$ROOT" && timeout "$TMO" bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
+  if command -v timeout >/dev/null 2>&1; then
+    ( cd "$ROOT" && timeout "$TMO" bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
+  else
+    # No GNU timeout (stock macOS): run unbounded rather than failing every check with 127.
+    ( cd "$ROOT" && bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
+  fi
   if [ "$RC" -ne 0 ]; then
     TAIL=$(tail -c 200 "$OUT_FILE" | tr '\n' ' ')
     rm -f "$OUT_FILE"

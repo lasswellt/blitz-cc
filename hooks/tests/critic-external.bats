@@ -62,6 +62,12 @@ run_critic_quiet() {
   echo "$output" | jq -e '.issues[0].what == "broken"'
 }
 
+@test "single provider: a critic.md-shaped reply (findings[]) is exposed as issues[] too" {
+  BLITZ_TEST_AGY_REPLY='{"verdict":"REJECT","summary":"bad","findings":[{"severity":"blocker","where":"f.ts","what":"stub"}]}' run_critic_quiet --provider agy
+  [ "$status" -eq 3 ]
+  echo "$output" | jq -e '.issues[0].what == "stub" and .confirmed == false'
+}
+
 @test "agy is invoked with --print and slash-command expansion disabled" {
   # The diff under review is untrusted text; a line starting with / must not
   # expand as a slash command inside the critic session.

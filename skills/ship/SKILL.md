@@ -1,7 +1,7 @@
 ---
 name: ship
 description: "Releases finished work: checks the plan's gate, computes semver from commits, writes CHANGELOG, tags, publishes, archives the plan, runs learn. Slash-only. Use for 'ship it', 'cut a release', 'publish', 'release vX.Y.Z', 'tag this'. Refuses when any task is open or the check report is not PASS."
-argument-hint: "[--plan <slug>] [<version>] [--dry-run] [--no-publish]"
+argument-hint: "[--plan <slug>] [<version>] [--dry-run] [--no-publish] [--yes] [--rollback <version>]"
 allowed-tools: Read, Glob, Grep, Skill(blitz:check), Skill(blitz:learn), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Bash(git rev-parse *), Bash(git describe *), Edit(docs/plans/**), Edit(docs/solutions/**), Edit(.cc-sessions/**)
 model: opus
 effort: medium
@@ -54,15 +54,20 @@ Extract from `$ARGUMENTS`:
 
 | Argument | Meaning | Default |
 |---|---|---|
-| `--plan <slug>` | the plan to ship (`docs/plans/<slug>/`) | the single `spec.md` with `status: active`; more than one active plan → stop and ask which |
+| `--plan <slug>` | the plan to ship (`docs/plans/<slug>/`, or `docs/plans/archive/<date>-<slug>/` once `next --loop` row 4 has archived it) | the single `spec.md` with `status: active`; none active → the newest archived plan with `status: done` and no `ship` line in its `progress.md`; more than one candidate → stop and ask which |
 | `<version>` | explicit semver (`2.1.0`, `v2.1.0`) | computed from conventional commits (Phase 2) |
-| `--dry-run` | run every phase up to Phase 4, print what would happen, write nothing outside `${SESSION_TMP_DIR}` | off |
+| `--dry-run` | run every phase up to Phase 4 render-only, print what would happen, write nothing outside `${SESSION_TMP_DIR}` | off |
 | `--no-publish` | tag and release, skip the package registry step | off |
 | `--yes` | skip the Phase 4 confirmation (same effect as `spec.md` `ship: auto`) | off |
+| `--rollback <version>` | revert a shipped release (Phase R, [references/main.md](references/main.md) §Rollback) | off |
 
 ```bash
-SLUG="<slug>"; PLAN_DIR="docs/plans/${SLUG}"
-[ -f "${PLAN_DIR}/spec.md" ] || { echo "ship: no plan at ${PLAN_DIR}"; exit 1; }
+SLUG="<slug>"; PLAN_DIR="docs/plans/${SLUG}"; TASKS_PLAN="$SLUG"
+if [ ! -f "${PLAN_DIR}/spec.md" ]; then   # next --loop row 4 archives the plan before ship runs
+  PLAN_DIR=$(ls -d docs/plans/archive/*-"${SLUG}" 2>/dev/null | tail -1)
+  [ -n "$PLAN_DIR" ] && [ -f "${PLAN_DIR}/spec.md" ] || { echo "ship: no plan at docs/plans/${SLUG} or docs/plans/archive/*-${SLUG}"; exit 1; }
+  export BLITZ_PLANS_DIR=docs/plans/archive; TASKS_PLAN=$(basename "$PLAN_DIR")   # tasks.sh reads the archived copy
+fi
 SHIP_MODE=$(awk '/^ship:/{print $2; exit}' "${PLAN_DIR}/spec.md")   # auto | manual
 ```
 
@@ -77,7 +82,7 @@ Every check below must pass; print the table and stop on the first failure.
 ### 1.1 Every task is `done`
 
 ```bash
-NOT_DONE=$("${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --json \
+NOT_DONE=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$TASKS_PLAN" --json \
   | jq -r '[.[] | select(.status != "done")] | map("\(.id) \(.status)\(if .blocked_reason then " (" + .blocked_reason + ")" else "" end)") | join(", ")')
 [ -z "$NOT_DONE" ] || { echo "BLOCK: tasks not done: ${NOT_DONE}. Run /blitz:build ${SLUG} or /blitz:next."; exit 1; }
 ```
@@ -122,7 +127,7 @@ LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 | Clean tree | any line from `git status --porcelain` (ask to commit or stash) |
 | Release branch | `BRANCH` is not the branch the project releases from (`main`/`master` for trunk-based projects, `release/*` or the plan branch otherwise; ask once when unclear, remember the answer in `progress.md` as a `Ruling:`) |
 | Up to date | `git rev-list --count HEAD..@{u}` is non-zero |
-| Toolchain | `gh auth status` fails and `--no-publish` was not given (GitHub release is skipped with a warning, not a failure) |
+| Toolchain | `npm whoami` (or the stack's registry login) fails while the package is publishable and `--no-publish` was not given; a missing or logged-out `gh` is a warning only (step 5.3 becomes manual) |
 | Dependencies | a lockfile exists but `node_modules` (or the stack's equivalent) does not |
 
 ### 1.4 Gate summary
@@ -183,7 +188,7 @@ Omit empty sections; link hashes when a GitHub remote exists; breaking-change bu
 
 Commit: `git commit -am "chore(release): prepare vX.Y.Z"` with the `Task: <slug>/release` trailer.
 
-`--dry-run` stops here: print the version, the changelog section, and the list of files it would have changed, then `git checkout -- .` to restore them. Nothing else runs.
+`--dry-run` stops here. Under it, Phases 2 and 3 are render-only: the version bump and the changelog section are written to `${SESSION_TMP_DIR}/release-preview.md` together with the list of files that would change, no tracked file is edited and nothing is committed (there is nothing to restore; a `git checkout -- .` on a dirty tree is denied by `block-destructive-git.sh` anyway). Nothing else runs.
 
 ---
 

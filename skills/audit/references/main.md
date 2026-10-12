@@ -6,8 +6,7 @@ This file provides templates, checklists, and schemas used by the audit skill.
 
 ## Agent Prompt Template
 
-<!-- import: /_shared/agents.md -->
-See [/_shared/agents.md](/_shared/agents.md) for canonical boilerplate (BUDGET, WRITE-AS-YOU-GO, HEARTBEAT, PARTIAL, CONFIRMATION) shared across fan-out skills. The audit-specific template below remains the byte-stable spawn source — Invariant 5 (OUTPUT STYLE snippet) requires inline preservation. The shared fragment is the canonical reference + extraction target for future runtime splicing.
+The budget block and write-as-you-go rule come from [agents.reference.md](/_shared/agents.reference.md) §3.3–§3.4; the audit-specific template below is the byte-stable spawn source (the output style is applied by the plugin's output style, not pasted here).
 
 Use this template for every audit agent. Replace `{PLACEHOLDERS}` with agent-specific values.
 
@@ -57,9 +56,9 @@ Write each finding using this exact format:
    - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading — refine or discard.
    - **Negative** ("X is absent from Y"): `grep -in '<4-char-substring-of-X>' Y`. Any hit means re-evaluate (may be over-strict regex).
    - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
-   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test. Per `docs/research/2026-05-16_audit-agent-fp-prevention.md`.
-3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. Orchestrator filters below 80 (tunable via `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`).
-   - Confidence < 50 after falsification: do NOT record as finding; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`.
+   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test.
+3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. The orchestrator ranks by confidence and drops only refuted findings (`--min-confidence low` is the default); it suppresses below a number only when `--min-confidence high` or `BLITZ_AUDIT_CONFIDENCE_THRESHOLD` asks for precision.
+   - A finding your own falsification artifact refuted: do NOT record it; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`. Low confidence alone is not a reason to drop.
    - "No violations found" results: write to a separate `## Verified Clean` section, NOT the findings list. Findings are actionable; clean checks document what was inspected.
    - Count discipline: "N files match X" requires `grep -l X <files> | wc -l` (file count), NOT `grep -rn X | wc -l` (hit count). When they differ, name what you mean ("30 hits across 29 files"). Sample 2-3 alleged matches with Read before recording the count.
 4. Stay within your file cap. Prioritize the most impactful files.
@@ -76,11 +75,6 @@ Write each finding using this exact format:
 - **Findings**: <count> (Critical: N, High: N, Medium: N, Low: N)
 - **Top Concern**: <one-sentence summary of the most important finding>
 - **Overall Assessment**: <one-sentence pillar health assessment>
-
-fillers, pleasantries, hedging. Preserve verbatim: code fences, inline code,
-URLs, file paths, commands, grep patterns, YAML/JSON, headings, table rows,
-error codes, dates, version numbers. No preamble. No trailing summary of work
-already evident in the diff or tool output. Format: fragments OK.
 ```
 
 ---
@@ -167,7 +161,7 @@ already evident in the diff or tool output. Format: fragments OK.
 Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **capability grants, not toggles** (AP-3 / `sec-capability-grant`):
 - [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion — else flag.
 - [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/`, or CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
-- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.md` §3)
+- [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.reference.md` §3)
 - [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
 - [ ] **Pre-trust parsing (AP-1)**: Does any `SessionStart` hook echo project-local fields uncapped, or eval/`source` a project-controlled file? ([/_shared/security.md](/_shared/security.md))
 
@@ -417,7 +411,7 @@ A finding with no executable check is a note under `spec.md` §Out of scope, nev
 
 ## Recall hardening — aggregation, FP-verify panel, deterministic lane, recall instrumentation
 
-Detail for the SKILL.md §"Phase 1.D / 2.0 / 2.5 / 3.5" contract. Source specs: `docs/consolidation/review-audit/audit-spec.md`, `flaw-finding-proof.md`.
+Detail for the SKILL.md §1.5 (deterministic lane), §2.1.4 (aggregation), §2.3.5 (FP-verify panel) and §2.8 (recall instrumentation) contract. Source spec (historical): `docs/consolidation/review-audit/audit-spec.md`.
 
 ### Phase 1.D — deterministic lane
 
@@ -487,52 +481,7 @@ A clean PASS with a large boundary is labeled "passed what we checked," never "p
 
 ## Consolidated Report Template (Phase 2.6)
 
-Write `${AUDIT_RUN}/reports/audit-report.md` using the report template from `references/main.md`:
-
-```markdown
-# Codebase Audit Report
-**Date**: <ISO-8601>
-**Stack**: <detected stack>
-**Files Analyzed**: <count>
-**Agents Succeeded**: <N>/10
-
-## Executive Summary
-<2-3 sentence overview with overall health score>
-
-## Health Scorecard
-| Pillar | Score | Critical | High | Medium | Low |
-|--------|-------|----------|------|--------|-----|
-| Architecture | XX/100 | N | N | N | N |
-| Performance | XX/100 | N | N | N | N |
-| Security | XX/100 | N | N | N | N |
-| Maintainability | XX/100 | N | N | N | N |
-| Robustness | XX/100 | N | N | N | N |
-
-## Critical Findings
-<list all Critical severity findings>
-
-## Findings by Pillar
-### Architecture
-<findings sorted by severity>
-
-### Performance
-...
-
-### Security
-...
-
-### Maintainability
-...
-
-### Robustness
-...
-
-## Hotspot Files
-<top 10 files with most findings>
-
-## Recommended Actions
-<prioritized list of what to fix first>
-```
+Write `${AUDIT_RUN}/reports/audit-report.md` with the single template under [§Report Template](#report-template) above (it carries the Agent Status column, the comparison with the previous audit and the plan section the SKILL.md requires).
 
 ## Plan Emission (Phase 3)
 
@@ -557,7 +506,7 @@ Per-spawn parameters:
 
 Cross-pillar findings synthesized on the main thread in Phase 2 from output files (not peer-to-peer, per [agents.md](/_shared/agents.md)).
 
-**Weight class**: Medium (per [agents.md](/_shared/agents.md)). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 250-line output per pillar, 5-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
+**Weight class**: Heavy (a full audit pillar, [agents.reference.md](/_shared/agents.reference.md) §3.3). File caps per pillar are specified in the roster below. Each agent prompt must also include: max 400-line output per pillar, 8-minute wall-clock budget, mandatory write-as-you-go (step 8 of prompt construction below).
 
 Every agent receives:
 1. The inventory JSON (inline, not a file path).
@@ -595,12 +544,12 @@ Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The
 `prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
 inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
 `Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
-hard-fail. Resume semantics + concurrency cap: [agents.md](/_shared/agents.md)
-§Workflow Dispatch Contract.
+hard-fail. Resume semantics + concurrency cap: [agents.reference.md](/_shared/agents.reference.md)
+§7 Workflow dispatch contract.
 
-- Each `a.prompt` is the pillar template from `references/main.md` — it MUST embed the OUTPUT STYLE snippet (Invariant 5) and the write-as-you-go rule (§1.3 step 8).
-- `model: 'sonnet'` per token-budget routing (explicit — prevents `[1m]` inheritance).
-- `schema` replaces the `classify_output()` gate; `null` entries = failed agents (handled by Phase 2.2).
+- Each `a.prompt` is the pillar template from `references/main.md` with the write-as-you-go rule (§1.3 step 8).
+- `model: 'sonnet'` per token-budget routing (explicit: inheritance would run every pillar on the operator's model and effort).
+- `schema` replaces the fan-out gate's reply classification; `null` entries = failed agents (handled by Phase 2.2).
 - After the workflow returns, proceed to Phase 1.4 / Phase 1.5 / Phase 2 unchanged.
 
 ### 2.3.5 Adversarial FP-verify panel (Phase 2.5)
@@ -632,7 +581,7 @@ const judged = await parallel(args.findings.map(f => () =>
 const survivors = judged.filter(j => !j.refuted).map(j => ({ ...j.f, reproduced: j.reproduced }))  // two independent votes → dropped
 ```
 
-- `schema`-validated verdicts replace inline parsing; `.filter(Boolean)` drops `null` (failed) refuters before the majority count. Deterministic findings never enter `args.findings`.
+- `schema`-validated verdicts replace inline parsing; a `null` (failed) refuter casts no vote (the `c && …` guards above). Deterministic findings never enter `args.findings`.
 
 ### 0.2 Build Codebase Inventory
 
@@ -725,7 +674,7 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
-**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract: `/_shared/sessions.md`; bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract and bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)

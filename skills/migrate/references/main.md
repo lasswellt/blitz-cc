@@ -12,7 +12,7 @@ Common migrations with automated transforms. Check availability before manual fa
 
 | Migration | Codemod Package | Command | Coverage Notes |
 |-----------|----------------|---------|----------------|
-| Vue 2 → Vue 3 | `@vue/compat` | `npx @vue/compat` | Compat build; incremental migration. Covers ~90% of breaking changes. |
+| Vue 2 → Vue 3 | `@vue/compat` | `npm i vue@3 @vue/compat`, then alias `vue` to `@vue/compat` in the bundler config (no CLI) | Compat build; incremental migration. Covers ~90% of breaking changes. |
 | Vue 2 → Vue 3 (transforms) | `vue-codemod` | `npx vue-codemod src/ --all` | AST transforms for template/script changes. |
 | Vue 3.x → 3.y (minor) | N/A | Manual | Minor upgrades rarely have codemods; check changelog. |
 | Nuxt 2 → Nuxt 3 | `nuxi` | `npx nuxi upgrade` | Handles config migration. Manual work for composables and `$fetch`. |
@@ -240,11 +240,7 @@ To keep successful steps:
 
 ### Node.js LTS Schedule
 
-| Version | Status | End of Life |
-|---------|--------|-------------|
-| 22.x | Active LTS | April 2027 |
-| 20.x | Maintenance LTS | April 2026 |
-| 18.x | End of Life | April 2025 |
+Read the current schedule at run time (`nodejs.org` is an allowed `WebFetch` domain for this skill): https://nodejs.org/en/about/previous-releases. A table copied into this file goes stale within a release cycle; the floor the toolchain needs is the one in the project's `package.json` `engines` field or `.nvmrc`.
 
 ## Target Interpretation Examples
 

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # gen-review-md.sh — render a REVIEW.md for hosted Code Review from the check registry.
 # Rows with severity P0/P1 (and P2 with --include-p2) become "Always check" items;
-# CI-enforced checks are listed under "Do not report". Output to stdout, or --write <path>.
+# CI-enforced checks are listed under "Do not report". Output to stdout, or --write <path>;
+# --registry <path> reads another registry file (tests).
 set -euo pipefail
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 REG="$ROOT/skills/_shared/check-registry.json"
 INCLUDE_P2=0; WRITE=""
 while [ $# -gt 0 ]; do
-  case "$1" in --include-p2) INCLUDE_P2=1; shift;; --write) WRITE="$2"; shift 2;; --registry) REG="$2"; shift 2;; *) echo "usage: gen-review-md.sh [--include-p2] [--write path]" >&2; exit 2;; esac
+  case "$1" in --include-p2) INCLUDE_P2=1; shift;; --write) WRITE="$2"; shift 2;; --registry) REG="$2"; shift 2;; *) echo "usage: gen-review-md.sh [--include-p2] [--write path] [--registry path]" >&2; exit 2;; esac
 done
 [ -f "$REG" ] || { echo "gen-review-md: registry not found: $REG" >&2; exit 1; }
 sev='["P0","P1"]'; [ "$INCLUDE_P2" -eq 1 ] && sev='["P0","P1","P2"]'

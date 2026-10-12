@@ -5,7 +5,7 @@ export const meta = {
   phases: [{ title: 'Wave', detail: 'one blitz:dev per task, isolation: worktree, schema-validated reply', model: 'sonnet' }],
 }
 
-// Extracted from skills/build/SKILL.md §Wave (build --parallel). Plugin workflow: runs as
+// Extracted from skills/build/references/main.md §Wave mechanics (build --parallel). Plugin workflow: runs as
 // /blitz:build-wave. The script owns dispatch + schema validation ONLY — no filesystem, no
 // clock (timestamp and randomness calls throw here; the skill stamps timestamps after return).
 //

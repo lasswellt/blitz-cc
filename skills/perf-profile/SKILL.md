@@ -1,6 +1,6 @@
 ---
 name: perf-profile
-description: "Profiles bundle size, runtime performance (Web Vitals) and Lighthouse scores for Vue/Nuxt apps and ranks optimizations (large deps, unused exports, render bottlenecks) by impact. Use for 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
+description: "Profiles bundle size, runtime performance (Web Vitals) and Lighthouse scores for Vue/Nuxt apps and ranks optimizations (large deps, missing code splitting, render bottlenecks) by impact. Use for 'profile perf', 'lighthouse', 'bundle size', 'performance', 'why is this slow', 'optimize Vue/Nuxt'."
 allowed-tools: Read, Glob, Grep, ToolSearch, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
@@ -49,7 +49,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -102,9 +102,9 @@ Run the production build to capture output:
 npx nuxt build 2>&1 | tee ${SESSION_TMP_DIR}/build-output.txt
 ```
 
-If `nuxt build --analyze` is available, use it for detailed chunk analysis:
+For detailed chunk analysis use the Nuxt 3 analyzer (Nuxt 2 only: `nuxt build --analyze`):
 ```bash
-npx nuxt build --analyze 2>&1 | tee ${SESSION_TMP_DIR}/build-output.txt
+npx nuxi analyze 2>&1 | tee ${SESSION_TMP_DIR}/build-output.txt   # report under .nuxt/analyze/
 ```
 
 **Vite:**
@@ -270,7 +270,7 @@ Extract Core Web Vitals from the results:
 | Metric | Target (Good) | Needs Improvement | Poor |
 |--------|--------------|-------------------|------|
 | LCP (Largest Contentful Paint) | < 2.5s | 2.5s - 4.0s | > 4.0s |
-| FID/INP (Interaction to Next Paint) | < 200ms | 200ms - 500ms | > 500ms |
+| INP (Interaction to Next Paint) | < 200ms | 200ms - 500ms | > 500ms |
 | CLS (Cumulative Layout Shift) | < 0.1 | 0.1 - 0.25 | > 0.25 |
 | FCP (First Contentful Paint) | < 1.8s | 1.8s - 3.0s | > 3.0s |
 | TTFB (Time to First Byte) | < 0.8s | 0.8s - 1.8s | > 1.8s |
@@ -312,8 +312,8 @@ Use the same severity levels as audit for compatibility:
 
 | Severity | Criteria |
 |----------|----------|
-| **Critical** | Bundle > 500KB gzipped, CWV in "poor" range, confirmed memory leaks |
-| **High** | Bundle > 250KB gzipped, N+1 queries, missing code splitting on routes, CWV in "needs improvement" range |
+| **Critical** | Total JS > 250KB gzipped (the Critical column of `references/main.md` §Bundle Size Targets), CWV in "poor" range, confirmed memory leaks |
+| **High** | Total JS 150-250KB gzipped (the Warning column), N+1 queries, missing code splitting on routes, CWV in "needs improvement" range |
 | **Medium** | Optimization opportunities with measurable impact, minor anti-patterns, missing lazy loading on non-critical paths |
 | **Low** | Nice-to-have improvements, style-level optimizations, marginal size reductions |
 
@@ -391,14 +391,12 @@ Performance Profile: <stack>
 | Runtime anti-patterns found | `refactor` | Fix performance anti-patterns |
 | Failed Lighthouse audit | `ui-build` | Optimize rendering and layout |
 | Memory leaks detected | `/blitz:build --issue <n>` | Fix specific leak patterns |
-| Low completeness score | `/blitz:check --only completeness` | Check for incomplete implementations affecting perf |
+| Placeholder handlers or stubbed fetches found in Phase 2 | `/blitz:check --only completeness` | Check for incomplete implementations affecting perf |
 
 ### 4.6 Session Cleanup
 
-1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed`
-2. Release any held locks
-3. Kill any remaining dev server processes
-4. Append `session_end` to the operations log
+1. Kill any dev server started in 3.5.
+2. Final phase per [sessions.md](/_shared/sessions.md) §2: `blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'`, log `skill_end` with `{status, summary}`, remove `${SESSION_TMP_DIR}` unless an artifact there is still needed. Never set `status` or `state`; the hook closes the record.
 
 ---
 
@@ -407,7 +405,7 @@ Performance Profile: <stack>
 - **Build fails**: Skip bundle analysis. Focus on runtime patterns. Note in report: "Bundle analysis skipped — build failed. Fix build errors first."
 - **No dev server can be started**: Skip Lighthouse. Note in report: "Lighthouse skipped — dev server could not be started."
 - **Chrome/Playwright not available for Lighthouse**: Try CLI `npx lighthouse` as fallback. If that also fails, skip Lighthouse and note in report.
-- **`cost-of-modules` or analysis tools not available**: Use fallback size estimation from `node_modules` directory sizes and build output parsing.
+- **Bundle analysis tools not available**: Use fallback size estimation from `node_modules` directory sizes and build output parsing.
 - **Lighthouse times out**: Report partial results if available. Note timeout in report.
 - **Dev server started but port conflict**: Try alternative ports (3001, 8080). If all fail, skip Lighthouse.
 - **No source files found**: Report "No source files found in scope" and stop.

@@ -56,7 +56,7 @@ Safety rules, root-cause analyses, risks and trade-offs, destructive-op confirma
 | `full` | Fragments allowed; articles dropped; telegraphic | Agent-to-main-thread reports; verification summaries |
 | `ultra` | Maximum compression; symbol shorthand allowed | Internal checkpoint markers; bulk status lines |
 
-Skills may declare intended intensity via `output_intensity:` SKILL.md frontmatter; default is `lite`. The `BLITZ_OUTPUT_INTENSITY` env var and `.cc-sessions/developer-profile.json` `output_intensity` field override per session/repo.
+Skills may declare intended intensity via `output_intensity:` SKILL.md frontmatter; default is `lite`. Precedence: `BLITZ_OUTPUT_INTENSITY` env var, then the skill's frontmatter, then `lite` (output.md §Intensity override precedence).
 
 ## Examples
 

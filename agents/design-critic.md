@@ -60,7 +60,7 @@ canonical JSON reply contract.
 - Heuristic source (in priority order):
   1. Project's `DESIGN.md` if present in the repo root
   2. [`references-regrounded.md` §8.1](../docs/integrations/impeccable/references-regrounded.md) — the re-grounded design reference + 13-tone palette + NEVER-list mapping (replaces the retired heuristics paraphrase)
-  3. `skills/ui-build/SKILL.md` Phase 3.0.1 inline tone list
+  3. `skills/ui-build/references/main.md` §3.0.1 inline tone list
 
 Read these BEFORE viewing screenshots. Internalize the project's chosen tone, typography pair, palette, and motion principle. Score against THE PROJECT'S choices, not generic taste.
 
@@ -168,7 +168,7 @@ The four impeccable provider-gated tells (`gpt-thin-border-wide-shadow`, `repeat
 When a cross-model second opinion on these tells is wanted, reuse the **critic's** gemini path — the same `@google/gemini-cli` binary and env the adversarial critic uses, not a new Gemini dependency:
 
 ```sh
-# Same env as agents/critic.md §5 (CMC). No new key/config.
+# Same env as agents/critic.md §8 (CMC). No new key/config.
 GEMINI_BIN="${BLITZ_GEMINI_BIN:-gemini}"
 GEMINI_MODEL="${BLITZ_GEMINI_MODEL:-gemini-2.5-pro}"
 # hooks/scripts/critic-external.sh --mode design wraps this for the design lane

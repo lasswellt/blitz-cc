@@ -121,9 +121,9 @@ Write to `DESIGN.md` at the repo root (or the `--out` path). Template:
 
 <list any inference ambiguities the extract surfaced; user resolves before the next ui-build run>
 
-## Drift signals (auto-populated by /blitz:check --only design)
+## Drift signals (manual)
 
-<file:line evidence of code drifting from this DESIGN.md — populated by `check`, NOT by the extraction on first run>
+<file:line evidence of code drifting from this DESIGN.md — paste `/blitz:check --only design` findings here; nothing writes this section automatically>
 ```
 
 ## Step 5: Verification

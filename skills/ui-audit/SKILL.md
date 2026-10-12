@@ -1,13 +1,13 @@
 ---
 name: ui-audit
-description: "Audits a running app across pages and roles: builds a labeled value registry, asserts cross-page invariants (same field, same value; no role leaks), flags placeholders and flapping values, runs UI/UX heuristics. Read-only, loop-safe. Use for 'audit consistency', 'role leak', 'placeholder text'."
-allowed-tools: Read, Glob, Grep, ToolSearch, Edit(docs/crawls/**), Edit(DESIGN.md)
+description: "Audits a running app across pages and roles: builds a labeled value registry, asserts cross-page invariants (same field, same value; no role leaks), flags placeholders and flapping values, runs UI/UX heuristics. Read-only on the target app, loop-safe. Use for 'audit consistency', 'role leak', 'placeholder text'."
+allowed-tools: Read, Glob, Grep, ToolSearch, Edit(docs/crawls/**), Write(docs/crawls/**)
 model: inherit
 compatibility: ">=2.1.296"
-argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop]"
+argument-hint: "[full|smoke|data|buttons|events|consistency|heuristics|role <name>|--loop] [--yes|--ci] [--fast-role-switch] [--verbose]"
 ---
 
-<!-- no-disallowed-tools: not read-only — Writes/Edits the value-registry + audit report artifacts. Excluded from S14-008 disallowed-tools (S14-009 / audit §2 correction). Also excluded for the same reason: check --only wiring (Write+Agent), audit (writes reports), ui-build (writes DESIGN.md). Only `doctor` qualified. -->
+Registry and report writes under `docs/crawls/` are pre-approved; the `jq`/`node` shell steps in the procedures follow the user's permission mode.
 
 ---
 
@@ -30,11 +30,11 @@ You are a cross-page UI/UX auditor. On each run you extract labeled values from 
 These rules override ALL other instructions. Violating any of these is a critical failure.
 
 1. **NEVER click destructive OR mutating buttons** — Delete, Remove, Archive, Disable, Revoke, Destroy, Drop, Purge, Reset, Terminate, Logout, Sign out, Cancel, Submit **AND** mutating verbs: Save, Update, Apply, Publish, Send, Pay, Subscribe, Unsubscribe, Confirm, Create, Add. When in doubt, do not click. An adversarially-labeled button (e.g., "Save" that deletes) is outside this skill's detection envelope — operators relying on `buttons` or `--loop` mode on untrusted apps must sandbox via a read-only role/fixture.
-2. **NEVER fill and submit forms** — tabs, pagination, sort headers, and accordion toggles are OK. Text fields + Submit / Save / Create / Update / Apply are not.
+2. **NEVER fill and submit forms** — tabs, pagination, sort headers, and accordion toggles are OK. Text fields + Submit / Save / Create / Update / Apply are not. One exception: the login form declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.3 to switch roles.
 3. **NEVER interact with confirmation dialogs** — press Escape immediately. Never click OK / Confirm / Yes / Accept.
-4. **NEVER interact with logout / sign-out** — breaks the audit session.
+4. **NEVER interact with logout / sign-out** — breaks the audit session. One exception: the logout path declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.6 between roles.
 5. **NEVER modify or delete target-app data** — no toggle switches that mutate, no edit-in-place fields.
-6. **In `role` modes, never create users dynamically** — all role credentials must come from env vars (`AUDIT_<ROLE>_EMAIL` / `_PASS`); skip any role whose env vars are absent. Credentials are NEVER logged — not to stdout, not to the activity feed, not to the report. Only the boolean presence of each env var is recorded. Violating this is a CRITICAL security regression.
+6. **In `role` modes, never create users dynamically** — all role credentials must come from env vars (`AUDIT_<ROLE>_EMAIL` / `_PASS`); skip any role whose env vars are absent. Credentials are NEVER logged — not to stdout, not to the activity feed, not to the report. Only the boolean presence of each env var is recorded; the value necessarily transits the browser tool call that types it (§R.3), and nowhere else. Violating this is a CRITICAL security regression.
 
 ---
 
@@ -42,7 +42,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-**Register session.** Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per terse-output.md.
+**Register session.** Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch (agent spawn, wave completion, etc.) per output.md.
 ### 0.1 Parse Arguments
 
 | Mode | Argument | Behavior |
@@ -54,7 +54,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 | **Events** | `events` | Intercept analytics events via 3-layer stack: `window.dataLayer` push proxy + `navigator.sendBeacon` wrap + network-level filter (Segment/PostHog/Amplitude/GA4). Drain per-click + per-page, key by `(page, action_trigger)`, persist to registry. Detect cross-page drift + evaluate `event_invariants` (required_props / forbidden_props / scope). See references/main.md § Phase EVENTS. |
 | **Consistency** | `consistency` | Reduce existing registry, evaluate invariants. No browser. Cheap. |
 | **Heuristics** | `heuristics` | Vercel + a11y + severity-tier checks. No data extraction. |
-| **Role** | `role <name>` | Run `full` phases for a single named role. Valid names: `anonymous`, `viewer`, `member`, `admin`, `superadmin`. Unknown name → exit 1 with usage. Creds from env: `AUDIT_<ROLE>_EMAIL` + `AUDIT_<ROLE>_PASS` (anonymous: `AUDIT_ANONYMOUS=true`, default true). Missing env → `ROLE_SKIP` activity-feed event, role skipped silently. See references/main.md § Phase ROLE. |
+| **Role** | `role <name>` | Run `full` phases for a single named role. Valid names: `anonymous`, `viewer`, `member`, `admin`, `superadmin`. Unknown name → exit 1 with usage. Creds from env: `AUDIT_<ROLE>_EMAIL` + `AUDIT_<ROLE>_PASS` (anonymous: `AUDIT_ANONYMOUS=true`, default true). Missing env in `full`/`smoke` → `ROLE_SKIP` activity-feed event, role skipped; in `role <name>` → exit 1 naming the expected vars. See references/main.md § Phase ROLE. |
 | **Loop** | `--loop` | One `(role, page)` pair per tick. Exits cleanly after the tick completes. Use with `/loop 2m /blitz:ui-audit --loop`. After each tick, `ScheduleWakeup(delaySeconds: 120, prompt: "/blitz:ui-audit --loop")` keeps the audit running through idle periods if invoked directly (not via `/loop`). Skip `ScheduleWakeup` when `CLAUDE_CODE_LOOP_MANAGED=1`. For nightly full-matrix runs use a cloud Routine via `/schedule`. |
 | **Yes flag** | `--yes` | ETA-gate bypass for interactive sessions. On presence, exports `UI_AUDIT_YES=1` to child procedures so the >60min gate in references/main.md § 7.2 does not halt. Equivalent to answering "yes, proceed" at the prompt. |
 | **CI flag** | `--ci` | ETA-gate bypass for automation. On presence, exports `UI_AUDIT_CI=1` AND writes one `ci_run` activity-feed event at start for audit trail. Used by nightly pipelines. |
@@ -63,12 +63,14 @@ Arg-parse sets these env vars before any references/main.md procedure runs:
 
 ```bash
 case "$arg" in
-  --yes) export UI_AUDIT_YES=1 ;;
-  --ci)  export UI_AUDIT_CI=1 ;;
+  --yes)              export UI_AUDIT_YES=1 ;;
+  --ci)               export UI_AUDIT_CI=1 ;;
+  --fast-role-switch) export UI_AUDIT_FAST_ROLE_SWITCH=1 ;;   # references/main.md § R.4
+  --verbose)          export UI_AUDIT_VERBOSE=1 ;;            # emit invariant_pass lines (§ 3I.3)
 esac
 ```
 
-`CLAUDE_CODE_AUTONOMY ∈ {high, full}` is treated as implicit `--ci` so `/loop` does not block. Neither `--yes` nor `--ci` affect anything other than the R10 gate.
+`BLITZ_AUTONOMOUS=1` or `CLAUDE_CODE_LOOP_MANAGED=1` is treated as implicit `--ci` so an unattended `/loop` does not block. Neither `--yes` nor `--ci` affect anything other than the R10 gate.
 
 Unknown mode → exit 1 with usage message listing the above.
 
@@ -100,7 +102,7 @@ Read `docs/crawls/latest-tick.json` (if exists). If `status == "crawling"`, emit
 
 See `references/main.md` § **"Phase 1 — LOAD STATE"** for the full procedure. In brief:
 1. Attempt to read `docs/crawls/crawl-visited.json` + `docs/crawls/hierarchy.json`. On success, derive the page list from those.
-2. On absence, fall back to a lightweight internal crawl: load Playwright MCP tools via `ToolSearch`, navigate each route from the declared route manifest (or `.ui-audit.json[pages]` keys), no fix, no screenshots, no interactions.
+2. On absence, fall back to `.ui-audit.json[pages]` keys as the page list and load the Playwright MCP tools via `ToolSearch`; no navigation yet (Phase 2 owns the visit loop), no fix, no screenshots, no interactions.
 3. On Playwright MCP unavailable → exit with error.
 
 ---
@@ -125,13 +127,13 @@ See `references/main.md` §§ **"Phase 3 — CONSISTENCY"**, **"Phase 3 — INVA
 
 ## Phase 4: QUALITY CHECKS
 
-Aggregates the flag catalog from [references/checks.md](references/checks.md). Detectors implemented: NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL (Phase 4 reducer chain, see references/main.md §"Phase 4 — QUALITY CHECKS" for the full reducer schema). Inputs from Phase 2 raw observations; outputs `quality_finding` events to the activity feed.
+Aggregates the flag catalog from [references/checks.md](references/checks.md). Detectors implemented: NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL (Phase 4 reducer chain, see references/main.md §"Phase 4 — QUALITY CHECKS" for the full reducer schema). Inputs from Phase 2 raw observations; outputs `quality_flag` registry lines and a `quality_pass_complete` activity-feed event.
 
 ---
 
 ## Phase 5: HEURISTICS
 
-Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md) — WCAG 2.1 AA contrast, focus-visible coverage, touch-target sizing, tabular-nums on numeric columns, `prefers-reduced-motion` gates, copy heuristics. Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic_finding` events.
+Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md). Categories that run today: `nav_state` (Cat 9, `STATE_NOT_IN_URL`) and `content_copy` (Cat 16a/16b: tabular-nums on numeric columns, copy heuristics), plus `NO_FOCUS_STATE` from the INTERACTIVE pass; contrast, touch-target sizing and `prefers-reduced-motion` are planned categories (references/main.md § 5.5). Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic` registry lines and a `heuristic_pass_complete` event.
 
 The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `design` pillar rows (`design-low-contrast`, `design-*`) as the canonical detection: ui-audit runs them at **runtime** (rendered, cross-role), while `/blitz:check --only design` runs them **statically** at author-time. Dedupe the pattern, not the tempo (the rule lives once in the registry; the two skills are two enforcement sites).
 
@@ -155,10 +157,10 @@ LOAD_AUTH[current_role] → NAVIGATE[current_page] → EXTRACT → QUALITY
 
 The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
 
-Tick state persists in `.cc-sessions/${SESSION_ID}/tmp/loop-state.json` and `docs/crawls/latest-tick.json` gains a `ui_audit_matrix` block (see references/main.md § Phase 6 + § Phase ROLE).
+The tick cursor persists in `docs/crawls/latest-tick.json` under a `ui_audit_matrix` block (references/main.md § Phase 7.1 + § Phase ROLE); scratch files go under `${SESSION_TMP_DIR}`.
 
 Budget: tick <2 minutes. Full matrix runtime varies by `|roles| × |pages|`. ETA printed upfront:
-- **ETA gate (R10):** `full` mode computes `eta = roles_active × len(pages) × 120s`. If `eta > 3600s` (60 min) AND neither `--yes` nor `--ci` flag present, skill exits 1 with a clear message. `CLAUDE_CODE_AUTONOMY ∈ {high, full}` is treated as implicit `--ci` (so `/loop` doesn't block).
+- **ETA gate (R10):** `full` mode computes `eta = roles_active × len(pages) × 120s`. If `eta > 3600s` (60 min) AND neither `--yes` nor `--ci` flag present, skill exits 1 with a clear message. `BLITZ_AUTONOMOUS=1` or `CLAUDE_CODE_LOOP_MANAGED=1` is treated as implicit `--ci` (so an unattended `/loop` doesn't block).
 - **Recommended:** nightly CI for full 5-role runs; smoke (anonymous + admin) for PR gates; `role admin` for targeted admin-boundary audits.
 
 ---

@@ -2,7 +2,8 @@
 set -uo pipefail
 # Detect project tech stack for adaptive skill behavior
 # Output is injected into skill context via !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
-# Results are cached for 1 hour in .cc-sessions/stack-profile.cache
+# The design-adapter profile is cached for 1 hour in .cc-sessions/stack-profile.cache;
+# language stacks are recomputed on every call (see below).
 
 CACHE_FILE=".cc-sessions/stack-profile.cache"
 CACHE_TTL=3600  # 1 hour in seconds
@@ -103,7 +104,7 @@ if [ -f "package.json" ]; then
   [ -n "$INCOMPAT" ] && echo "- **Adapter conflict**: $INCOMPAT — class collisions + unlayered-CSS specificity war; do NOT recommend Tailwind theming on Quasar"
   echo "- **Adapter confidence**: $CONF"
   # Normalized machine token (stable, single-line, parseable). variant codes
-  # collapsed to vN/none; consumers (review --only design, audit --pillar design,
+  # collapsed to vN/none; consumers (check --only design, audit --pillar design,
   # hooks/tests/design-pillar.bats) parse THIS line, not the prose above.
   TOK_VARIANT="${VARIANT:-none}"; TOK_VARIANT="${TOK_VARIANT/tw/v}"   # tw4->v4, tw3->v3
   echo "- **Design Adapter (token)**: \`DESIGN_ADAPTER primary=${PRIMARY} variant=${TOK_VARIANT} secondary=${SECONDARY_ID} incompat=${INCOMPAT:-none} confidence=${CONF}\`"
@@ -154,8 +155,7 @@ fi
 [ -f "composer.lock" ] && echo "- **PHP Deps**: composer"
 
 # Test runners outside the Node ecosystem
-[ -f "pytest.ini" ] && echo "- **Testing**: pytest"
-grep -qs 'pytest' pyproject.toml 2>/dev/null && echo "- **Testing**: pytest"
+{ [ -f "pytest.ini" ] || grep -qs 'pytest' pyproject.toml 2>/dev/null; } && echo "- **Testing**: pytest"
 [ -f "Cargo.toml" ] && echo "- **Testing**: cargo test"
 [ -f "go.mod" ] && echo "- **Testing**: go test"
 

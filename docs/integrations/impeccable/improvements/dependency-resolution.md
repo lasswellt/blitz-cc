@@ -1,5 +1,7 @@
 # dependency-resolution.md — impeccable resolution model + preflight + loud-failure contract
 
+> **Historical spec; implemented** as `scripts/design/preflight.sh`. One claim below is superseded: impeccable's detector is not browser-rendered, so a global install (`npm i -g impeccable@2.3.2`) is supported since 3.8.0 beside the per-project one.
+
 Addresses **Finding 1 (CRITICAL)** and **N1 (HIGH)**. Goal: the design lane must be **always available or loudly unavailable — never silent green.**
 
 ---

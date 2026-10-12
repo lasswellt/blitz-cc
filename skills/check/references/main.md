@@ -6,7 +6,7 @@ Overflow for [SKILL.md](../SKILL.md). Sections: report template, auto-fix strate
 
 ## Report template
 
-Plan scope writes this to `docs/plans/<slug>/check-report.md`; diff and repo scope print it. `next-state.sh` reads only the frontmatter (`result`, `ts`, `ref`) to decide row 3 vs 4, so the frontmatter is the contract and the body is for humans and `learn`.
+Plan scope writes this to `docs/plans/<slug>/check-report.md`; diff and repo scope print it. `next-state.sh` reads only the frontmatter (`result` and `ts`) to decide row 3 vs 4, and `check` itself compares `ref` to `HEAD` for the prior-PASS short-circuit, so the frontmatter is the contract and the body is for humans and `learn`.
 
 ```markdown
 ---
@@ -314,10 +314,9 @@ Detail moved out of the skill body so it stays under the compaction re-attach ca
 Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
 
 ```bash
-TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"
-bash "$TC" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
 for lane in typecheck lint build; do
-  bash "$TC" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
+  bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
 done
 ```
 
@@ -334,14 +333,14 @@ Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md
 
 ```bash
 RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
-SELECTED=$(printf '%s\n' "$CHANGED" | "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "$BASE" | cut -f1)
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-sel"
+SELECTED=$(printf '%s\n' "$CHANGED" | bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "$BASE" | cut -f1)
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-sel"
 npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-selected.json" $SELECTED    # jest: --json --outputFile
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by selector --run-id "$RUN_ID-sel" \
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by selector --run-id "$RUN_ID-sel" \
   --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-selected.json"
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-full"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-full"
 npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-full.json"                  # monorepo: per changed package
-"${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by full --run-id "$RUN_ID-full" \
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by full --run-id "$RUN_ID-full" \
   --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-full.json"
 ```
 
@@ -395,8 +394,8 @@ Order: imports/exports → types → lint → framework → naming → unused. L
 
 | `--only` | Rows | Notes |
 |---|---|---|
-| `completeness` | `o2-anti-mock`, `o2-artifact-l1l2`, det-05/06/07/09/10/15 | the placeholder / stub scan; feeds ratchet `completeness_score` when run from the full pipeline |
-| `wiring` | `o3-wiring`, `o3-orphan-route`, det-16 | `build` calls this after integration work |
+| `completeness` | `check:anti-mock`, `o2-artifact-l1l2`, det-05/06/07/09/10/15 | the placeholder / stub scan; feeds ratchet `completeness_score` when run from the full pipeline |
+| `wiring` | `o3-orphan-route`, det-16 | `build` calls this after integration work |
 | `framework` | `fw-firestore-vue-pinia` (Phase 1.5) | `--fix` applies F5/V3/P2 recipes |
 | `design` | `pillar == design` (Phase 1.6) | preflight banner is mandatory; reduced coverage is never green |
 | `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | when the Skill tool lists `security-review` (the docs name it as model-invokable) run it on the same scope and merge its findings as `Source: security-review`; otherwise print one line pointing at `/security-review` or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |
@@ -427,9 +426,9 @@ Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavail
 Compute the eight metrics with the detectors in [quality.reference.md](/_shared/quality.reference.md) §Ratchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \
   --origin check --verify-cmd "test \$($DETECTOR) -le $MAX::30"
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "T-$NEXT" status=blocked "blocked_reason=ratchet:$METRIC"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "T-$NEXT" status=blocked "blocked_reason=ratchet:$METRIC"
 ```
 
 Deterministic metrics also `git revert --no-edit HEAD` when the regressing commit is a `--fix` commit and the tree is clean (det-19); `test_count` never auto-reverts. Diff scope without a plan appends nothing and reports the regression as P2. `auto_revert.enabled: false` → advisory: task appended, nothing reverted.
@@ -487,21 +486,13 @@ printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BA
 
 Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5` and must survive **FP-verification** (re-read the cited code, reproduce against actual behavior, attach the excerpt) before it is reported. No evidence → dropped. FP-verification never raises confidence; only aggregation does, and `check` does not aggregate (`audit` does).
 
-### 2.1 Survey fan-out
-
-One `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2. Lens roster, prompts and the sequential fallback above 2000 LOC: this file §2.1 Survey fan-out.
+Survey fan-out: one `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2; the lens roster, prompts and the sequential fallback above 2000 LOC are in §2.1 Survey fan-out above.
 
 ### 2.2 Collect
 
 Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
 
-### 2.3 App-level verification
-
-Runs only when the change touches a rendered surface. Procedure: this file §2.3 App-level verification.
-
-### 2.4 `--mutation` (optional)
-
-Off by default; a sampling mutation run over the changed files. Setup and thresholds: this file §2.4 `--mutation`.
+App-level verification (§2.3 above) runs only when the change touches a rendered surface; `--mutation` (§2.4 above) is off by default.
 
 ---
 
@@ -518,7 +509,7 @@ Off by default; a sampling mutation run over the changed files. Setup and thresh
 | otherwise | `medium` |
 
 ```bash
-# GATES_GREEN=1 when Phase 2 left every deterministic gate passing
+# GATES_GREEN=1 when Phase 1 left every deterministic gate passing
 LINES=$(git diff --shortstat "$BASE" | awk '{print $4+$6}')
 RISKY=$(git diff --name-only "$BASE" | grep -ciE 'auth|session|payment|billing|migrat|secret|crypto|permission|tasks\.sh|tasks-guard|stop-gate' || true)
 EFFORT=medium

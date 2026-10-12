@@ -25,7 +25,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 while [ $# -gt 0 ]; do
   case "$1" in
     --root) ROOT="${2:-}"; shift 2 ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "skill-scan: unknown argument: $1" >&2; exit 2 ;;
   esac
 done

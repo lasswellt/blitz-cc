@@ -47,15 +47,20 @@
   },
   "cited_in": [
     "README.md",
+    "SECURITY.md",
     ".claude/CLAUDE.md",
     ".claude-plugin/plugin.json",
+    ".github/workflows/ci.yml",
+    "hooks/scripts/README.md",
+    "mods/blitz-guard/README.md",
     "skills/_shared/agents.md",
+    "skills/_shared/agents.reference.md",
     "skills/_shared/sessions.md",
-    "skills/_shared/agents.md",
-    "skills/_shared/agents.md",
-    "skills/_shared/sessions.md",
+    "skills/_shared/sessions.reference.md",
     "skills/_shared/loop.md",
+    "skills/_shared/loop.reference.md",
     "skills/_shared/quality.md",
-    "skills/_shared/security.md"
+    "skills/_shared/security.md",
+    "skills/_shared/security.reference.md"
   ]
 }

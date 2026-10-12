@@ -24,4 +24,4 @@ Mock the network, clocks, randomness, and third-party SaaS at the wire; never th
 
 ## Reply
 
-Same status enum and JSON block as `agents/dev.md`. `verify[]` tails paste the runner's summary line (`Tests  12 passed (12)`), not the full log. Budget: 10 tool calls per failing spec; on exhaustion reply `BLOCKED` with `escalate: "ESCALATE: spec-investigation-budget-exhausted"` and the last three hypotheses in `summary`.
+Same status enum and JSON block as `agents/dev.md`. `verify[]` tails paste the runner's summary line (`Tests  12 passed (12)`), not the full log. Budget: 10 tool calls per failing spec; on exhaustion reply `BLOCKED` with `blocked_reason: hard_spec`, `escalate: "ESCALATE: hard_spec"` and the last three hypotheses in `summary`.

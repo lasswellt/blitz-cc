@@ -7,8 +7,6 @@ compatibility: ">=2.1.296"
 argument-hint: "[full|smoke|page <path>|fix|--loop] [target]"
 ---
 
----
-
 ## Overview
 
 You are an automated browser tester, site crawler, and visual design analyst. You navigate every reachable page in the application, interact with safe UI elements, capture errors, classify them, and optionally auto-fix source issues. In `--loop` mode, you crawl one page per tick, discover links from the rendered DOM, build a navigational hierarchy of the entire site, perform visual analysis to detect missing data and design inconsistencies, and auto-fix issues as you go.
@@ -43,7 +41,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 Parse the invocation arguments to determine mode and target.
 
@@ -88,6 +86,7 @@ Use ToolSearch to find and load all Playwright MCP browser tools:
 - `browser_resize` — change viewport
 - `browser_console_messages` — read console output
 - `browser_network_requests` — read network activity
+- `browser_evaluate` — run page script (link-extraction fallback, animation disable; `references/main.md`)
 
 If Playwright MCP tools are not available, tell the user and stop.
 
@@ -153,7 +152,7 @@ browserAge = 0
   1. Wait for network idle (no pending requests for 500ms)
   2. Wait for content landmarks (heading, main content area, or data table)
   3. Wait for loading indicators to disappear (spinners, skeletons, progress bars)
-  4. Maximum wait: 10 seconds, then proceed with whatever is loaded
+  4. Maximum wait: 15 seconds, then proceed with whatever is loaded
 
 #### 3.2 Capture Console Errors
 - Read all console messages since navigation
@@ -169,7 +168,7 @@ browserAge = 0
 #### 3.4 Snapshot and Content Quality
 - Take an accessibility snapshot
 - Check for:
-  - **Mock/placeholder data**: Text containing "Lorem ipsum", "test", "TODO", "FIXME", "example.com", "John Doe", "Jane Doe", "foo", "bar"
+  - **Mock/placeholder data**: the placeholder list in `references/main.md` §Content Quality Issues ("Lorem ipsum", "TODO", "FIXME", "example.com", "John Doe", "foo@bar", "test@test"); never bare "test", "foo" or "bar", which match "latest" and "contest"
   - **Broken images**: Images with error state or empty `src`
   - **Dead links**: Links whose `href` is `#` or a script-scheme no-op (`void(0)`)
   - **Empty containers**: Visible sections with no content (missing empty state)
@@ -284,7 +283,7 @@ After applying a fix:
 
 ### 5.5 Fix Quality Gate
 
-Auto-fixes must produce production-ready code. See [Definition of Done](/_shared/quality.md).
+Auto-fixes must produce production-ready code. See [quality.reference.md](/_shared/quality.reference.md) §Definition of Done.
 
 **BANNED in auto-fixes:**
 - Replacing a real error with a silent `return` or empty catch block
@@ -375,6 +374,6 @@ When invoked with `--loop`, Phases 0–2 still execute normally (session registr
 
 Loop mode is designed for `/loop 5m /blitz:browse --loop`. Each tick visits one page, discovers links, fixes issues, and exits. Over many ticks, this builds a complete navigational hierarchy of the site.
 
-**Tick lifecycle**: `SEED → CRAWL → CRAWL → ... → RE-VERIFY → COMPLETE`. Tick budget: <2 minutes (hard timeout: 100 seconds). Full autonomy: auto-approve, auto-commit+push, no user prompts. Crawl limits: max depth 8, max 500 pages (configurable), max 300 ticks.
+**Tick lifecycle**: `SEED → CRAWL → CRAWL → ... → RE-VERIFY → COMPLETE`. Hard budget: 100 seconds per tick (the `/loop 5m` interval leaves slack; over 100 s the tick saves state and exits). Designed for an unattended `/loop`: the operator sets the permission mode ([SECURITY.md](../../SECURITY.md) §Running unattended); the skill never approves anything itself. Crawl limits: max depth 8, max 500 pages (configurable), max 300 ticks.
 
 **Full loop-mode procedure** — tick overlap guard, state loading, page visit, link extraction, hierarchy building, visual analysis, auto-fix, state save, and loop-mode error recovery — is in `references/main.md` section **"Loop Mode — Full Procedure"**.

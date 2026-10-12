@@ -1,12 +1,12 @@
 # Security & Trust Model
 
-Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 3 former files; each appears below as a top-level section with original sub-headings preserved as anchor targets. Inbound `oldfile.md#anchor` links were mechanically rewritten to `security.md#anchor`.
+Consolidated blitz protocol. **Absorbs** (2026-06-06 `_shared` consolidation) 3 former files. The threat model is the section below; the hook-trust boundary and the package install policy live in [security.reference.md](security.reference.md), and inbound `oldfile.md#anchor` links were rewritten to the file that now holds each section.
 
 | Former file | Section |
 |---|---|
 | `threat-model.md` | [Threat Model — Blitz Containment Posture (canonical owner)](#threat-model--blitz-containment-posture-canonical-owner) |
-| `hook-trust.md` | [Hook Trust Boundary (TB-1)](#hook-trust-boundary-tb-1) |
-| `package-install-policy.md` | [Package Install Policy](#package-install-policy) |
+| `hook-trust.md` | [Hook Trust Boundary (TB-1)](security.reference.md#hook-trust-boundary-tb-1) |
+| `package-install-policy.md` | [Package Install Policy](security.reference.md#package-install-policy) |
 
 
 ---

@@ -12,7 +12,7 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-command -v python3 >/dev/null 2>&1 || { echo "check-section-refs: python3 required" >&2; exit 0; }
+command -v python3 >/dev/null 2>&1 || { echo "check-section-refs: python3 required" >&2; exit 2; }
 
 python3 - <<'PY'
 import re, glob, sys
@@ -36,8 +36,9 @@ REF  = {n: sections(f"skills/_shared/{n}.reference.md") for n in NAMES}
 bad = []
 
 # 1. A citation naming <name>.md whose section lives only in <name>.reference.md.
-targets = [f for f in glob.glob("skills/**/*.md", recursive=True)
-           + glob.glob("agents/*.md") + glob.glob("workflows/*.js")]
+targets = (glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md")
+           + glob.glob("workflows/*.js") + glob.glob("hooks/scripts/*.sh")
+           + glob.glob(".claude/rules/*.md") + ["README.md", "SECURITY.md", "hooks/scripts/README.md"])
 for fp in targets:
     for i, line in enumerate(open(fp).read().split("\n"), 1):
         for m in re.finditer(r'_shared/(' + "|".join(NAMES) + r')\.md\)?[^\n]{0,14}?§\s*(\d+)', line):

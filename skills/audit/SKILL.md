@@ -8,18 +8,16 @@ compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For agent prompt templates, pillar checklists, severity schema, and report templates, see [references/main.md](references/main.md)
-- For context window hygiene (10 parallel agents), see [sessions.md](/_shared/sessions.md)
+- For context window hygiene (10 parallel agents), see [sessions.reference.md](/_shared/sessions.reference.md) §8
 - For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.reference.md](/_shared/agents.reference.md) §7
 - For the plan artifacts Phase 3 writes (`spec.md` frontmatter, `tasks.json`, `scripts/tasks.sh`), see [loop.md](/_shared/loop.md)
 - For the check registry the deterministic lane and the security pillar select from, see [quality.reference.md](/_shared/quality.reference.md) §Shared check registry
-<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
+- For subagent spawning (type selection, weight classes, the fan-out gate, visibility), see [agents.md](/_shared/agents.md) and [agents.reference.md](/_shared/agents.reference.md) §3–§4
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
@@ -38,7 +36,7 @@ Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents (
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Create Working Directories
 
@@ -100,14 +98,14 @@ For each agent, construct the prompt using the template from `references/main.md
 
 ### 1.4 Wait for Completion
 
-Poll for agent completion. Check each agent's output file:
+Wait on the background completion notifications (never sleep or poll output files in a loop; [agents.md](/_shared/agents.md) §1.5), then run the fan-out gate ([agents.reference.md](/_shared/agents.reference.md) §4.4) once over the output files:
 ```bash
 for f in ${AUDIT_RUN}/findings/*.md; do
-  [ -s "$f" ] && echo "DONE: $f" || echo "PENDING: $f"
+  [ -s "$f" ] && echo "DONE: $f" || echo "MISSING: $f"
 done
 ```
 
-**Timeout:** If any agent has not produced output after 5 minutes, mark it as failed and proceed.
+**Timeout:** an agent that has not returned after its budget (8 min, Heavy class) plus 30 s is classified MISSING and marked failed.
 
 ---
 
@@ -129,7 +127,7 @@ Group semantic findings by (file, line-range, claim). A finding flagged by **≥
 
 ### 2.1.5 Confidence Threshold Filter
 
-**Recall default (`--min-confidence low`): rank, do not drop.** The threshold only suppresses when precision is explicitly requested. Per `docs/research/2026-05-16_audit-agent-fp-prevention.md`.
+**Recall default (`--min-confidence low`): rank, do not drop.** The threshold only suppresses when precision is explicitly requested (`--min-confidence high`, or `BLITZ_AUDIT_CONFIDENCE_THRESHOLD` set). Agents still score every finding and discard only what their own falsification refuted (references §Agent Prompt Template rule 3).
 
 ```bash
 THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-0}"   # 0 = recall (report all, ranked); raise (e.g. 80) for precision
@@ -246,11 +244,11 @@ With `--plan` the last line reads `Activated: /blitz:next` instead.
 
 ## Error Recovery
 
-A failed pillar is retried once with the file cap halved; a second failure records the pillar as `cannot_verify` rather than dropping it silently. Full matrix: [references/main.md](references/main.md) §Error Recovery.
+A failed pillar is never retried (§2.2): it is logged in `agent-failures.md`, recorded in the report's `coverage_boundary.agents_failed`, and the audit proceeds with what returned. Full matrix: [references/main.md](references/main.md) §Error Recovery.
 
 ## Gotchas
 
-- Spawns 10 parallel agents (8 when claude-security handles the security pillar); MISSING_COUNT ≥ threshold aborts (spawn-protocol §8 gate) — don't pass blank outputs as SUCCESS.
+- Spawns 10 parallel agents (8 when claude-security handles the security pillar); MISSING_COUNT ≥ threshold aborts (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4) — don't pass blank outputs as SUCCESS.
 - Findings without 2-pass Multi-Review agreement are FP-prone; require convergence before reporting.
-- Object-noun routing for "audit X": code→audit, deps/CVEs→`/blitz:dep-health`, Vue/Firestore/Pinia misuse→`/blitz:check --only framework`, cross-page UI→`/blitz:ui-audit`, a change or plan→`/blitz:check`. Registry entry-point table: [quality.md](/_shared/quality.md) §Which entry point.
+- Object-noun routing for "audit X": code→audit, deps/CVEs→`/blitz:dep-health`, Vue/Firestore/Pinia misuse→`/blitz:check --only framework`, cross-page UI→`/blitz:ui-audit`, a change or plan→`/blitz:check`. Registry entry-point table: [quality.reference.md](/_shared/quality.reference.md) §Which entry point.
 - The plan is `paused` by default: `next --loop` ignores it until a human flips `status: active` (or the run used `--plan`). A finding without an executable check is a note, never a task — `tasks.sh` enforces it.

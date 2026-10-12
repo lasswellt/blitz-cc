@@ -11,12 +11,19 @@ Phase procedures + schemas + JS templates for `skills/ui-audit/SKILL.md`. Read t
 Top-level keys:
 
 ```yaml
-baseUrl: string              # Base URL for the target app, e.g. "http://localhost:3000"
-pages: object                # Label map: path -> { label -> {selector, type} }
-invariants: array            # Cross-page numeric/text invariants (currently: equal/gte/lte)
-event_invariants: array      # Analytics event schemas — skeleton, populated in E-011
-role_invariants: array       # Per-role invariants — skeleton, populated in E-012
-role_leak_patterns: array    # Regex strings for role-leak scan — skeleton, populated in E-012
+baseUrl: string                    # Base URL for the target app, e.g. "http://localhost:3000"
+pages: object                      # Label map: path -> { label -> {selector, type} }  (§ 2)
+totals: array                      # BROKEN_TOTAL rules (§ 4.4)
+placeholder_patterns: array        # PLACEHOLDER regexes (§ 2.4)
+invariants: array                  # Cross-page numeric/text invariants: equal/gte/lte (§ 3I)
+heuristics: object                 # enabled_categories, tabular_column_threshold, … (§ 5.1, 5.3, 5.4)
+login_flow: object                 # selectors + landmarks for Phase ROLE § R.3 / § R.6
+analytics_hostnames: array         # hosts whose requests count as analytics events (§ E.1)
+interactive_click_allowlist: array # buttons the INTERACTIVE pass may click (§ I.5)
+event_invariants: array            # analytics event schemas (§ E.7)
+role_invariants: array             # per-role invariants (§ R.7)
+role_leak_patterns: array          # regex strings for the role-leak scan (§ R.8)
+pii_suppressions: array            # labels exempt from the PII scan (§ E.7)
 ```
 
 `pages[path][label]` shape:
@@ -157,17 +164,18 @@ Build label map for `path` from `.ui-audit.json[pages][path]`. If no entry, log 
 })()
 ```
 
-Pass compiled payload as `script` to `browser_evaluate`. Return value: plain object keyed by label.
+Pass the compiled payload as the `function` argument of `browser_evaluate`. Return value: plain object keyed by label.
 
-If return > ~1 KB, offload via `browser_evaluate`'s `filename` param — don't inline giant strings.
+If the return would exceed ~1 KB, split the label set across several `browser_evaluate` calls; never inline giant strings in one reply.
 
 ### 2.4 Coerce + hash + quality-flag (inline JS)
 
 For each `(label, raw)` pair returned:
 
 ```bash
-LABEL_TYPE=$(jq -r ".pages[\"$PATH\"][\"$LABEL\"].type" .ui-audit.json)
-SELECTOR=$(jq -r ".pages[\"$PATH\"][\"$LABEL\"].selector" .ui-audit.json)
+# PAGE holds the page path; never name this variable PATH (that clobbers the shell search path).
+LABEL_TYPE=$(jq -r ".pages[\"$PAGE\"][\"$LABEL\"].type" .ui-audit.json)
+SELECTOR=$(jq -r ".pages[\"$PAGE\"][\"$LABEL\"].selector" .ui-audit.json)
 
 case "$LABEL_TYPE" in
   number)   PARSED=$(echo "$RAW" | node -e 'let s=require("fs").readFileSync(0,"utf8").trim(); let n=Number(s.replace(/[^\d.-]/g,"")); console.log(Number.isFinite(n)?n:"null");') ;;
@@ -197,7 +205,7 @@ TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 TICK=$(jq -r '.ui_audit_matrix.tick // 0' docs/crawls/latest-tick.json 2>/dev/null || echo 0)
 mkdir -p docs/crawls
 jq -c -n \
-  --arg ts "$TS" --arg role "${ROLE:-__default__}" --arg page "$PATH" --arg label "$LABEL" \
+  --arg ts "$TS" --arg role "${ROLE:-__default__}" --arg page "$PAGE" --arg label "$LABEL" \
   --arg raw "$RAW" --argjson parsed "$PARSED" \
   --arg hash "$HASH" --arg selector "$SELECTOR" --argjson tick "$TICK" \
   '{ts:$ts, role:$role, page:$page, label:$label, raw:$raw, parsed:$parsed, hash:$hash, selector:$selector, tick:$tick}' \
@@ -319,8 +327,8 @@ URL_BEFORE = browser_evaluate: window.location.href
 browser_click(element)
 browser_wait_for(time: 1)     # 1s for post-click events to settle
 URL_AFTER = browser_evaluate: window.location.href
-CONSOLE = browser_console_messages(since = START_TS)
-NETWORK = browser_network_requests(since = START_TS, static: false, requestBody: false)
+CONSOLE = browser_console_messages().filter(m => m.timestamp >= START_TS)      # the tool takes no `since`; filter the list
+NETWORK = browser_network_requests().filter(r => r.timestamp >= START_TS && !isStatic(r))
 ERRORS = CONSOLE.filter(m => m.level === 'error')
 NET_FAIL = NETWORK.filter(r => r.status >= 400 || r.status === 0)
 if (ERRORS.length > 0 || NET_FAIL.length > 0) {
@@ -556,12 +564,13 @@ Default transition: logout → navigate login → fill creds from env → submit
 
 ```
 browser_navigate(baseUrl + "/login")
-browser_evaluate:
-  document.querySelector(SELECTORS.email).value = process.env.AUDIT_<ROLE>_EMAIL;
-  document.querySelector(SELECTORS.password).value = process.env.AUDIT_<ROLE>_PASS;
-  document.querySelector(SELECTORS.submit).click();
+browser_type(element: SELECTORS.email,    text: <value of AUDIT_<ROLE>_EMAIL>)   # the skill interpolates the env value;
+browser_type(element: SELECTORS.password, text: <value of AUDIT_<ROLE>_PASS>)    # page scripts have no process.env
+browser_click(element: SELECTORS.submit)
 browser_wait_for(text: SELECTORS.success_landmark, time: SELECTORS.sentinel_timeout || 10)
 ```
+
+The credential transits that one tool call and nothing else: never echo it to stdout, the feed, the registry or the report (SAFETY RULE 6).
 
 Override selectors via `.ui-audit.json[login_flow]`:
 
@@ -819,9 +828,10 @@ Reads `.ui-audit.json[invariants]`. Per invariant: fetch `parsed` at each `{page
 ```bash
 jq --slurpfile cfg .ui-audit.json --slurpfile reg "${SESSION_TMP_DIR}/reduced.json" -n '
   def lookup($src; $r): $r | map(select(.page == $src.page and .label == $src.key)) | first;
-  def cmp_equal($a; $b; $tol): ($a != null and $b != null) and (($a - $b) | fabs) <= $tol;
-  def cmp_gte($a; $b; $tol):   ($a != null and $b != null) and ($a + $tol) >= $b;
-  def cmp_lte($a; $b; $tol):   ($a != null and $b != null) and ($a - $tol) <= $b;
+  def is_num($x): ($x | type) == "number";
+  def cmp_equal($a; $b; $tol): ($a != null and $b != null) and (if is_num($a) and is_num($b) then (($a - $b) | fabs) <= $tol else $a == $b end);
+  def cmp_gte($a; $b; $tol):   ($a != null and $b != null) and is_num($a) and is_num($b) and ($a + $tol) >= $b;
+  def cmp_lte($a; $b; $tol):   ($a != null and $b != null) and is_num($a) and is_num($b) and ($a - $tol) <= $b;
 
   $cfg[0].invariants
   | map({
@@ -1123,7 +1133,7 @@ else:
   wait for each worker's output file, then merge
 ```
 
-**Canonical spawn snippet (>30-page runs)** — copy verbatim (research doc §6.1). `model: "sonnet"` and `effort: "medium"` are explicit per [agents.md](/_shared/agents.md) §1.3: inheritance would run every worker on the operator's model and effort. The `description` is the row label in `/tasks` and the agents view (§1.5).
+**Canonical spawn snippet (>30-page runs)** — copy verbatim. `model: "sonnet"` and `effort: "medium"` are explicit per [agents.md](/_shared/agents.md) §1.3: inheritance would run every worker on the operator's model and effort. The `description` is the row label in `/tasks` and the agents view (§1.5).
 
 ```
 Agent(
@@ -1170,7 +1180,7 @@ if ! jq -c '.' "$WORKER_OUT" >/dev/null 2>&1; then
 fi
 ```
 
-Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category — `/blitz:check --scope plan <slug>` must state the skip.
+Malformed → CONFIG_ERROR, category SKIPPED in Phase 5 summary, file preserved for post-mortem. Zero findings from that category; the heuristics pass fails for it and the report states the skip.
 
 ### 5.3 Category 9 — URL reflects filter/tab/pagination state (`nav_state`)
 
@@ -1263,7 +1273,7 @@ Each match → `heuristic` JSONL LOW with `detail.rule_id: "vercel-cat-16-numera
 
 ### 5.5 Severity tier table
 
-| Tier | When | Blocks `/blitz:check --scope plan <slug>`? |
+| Tier | When | Fails the heuristics pass? |
 |---|---|---|
 | CRITICAL | WCAG 2.1 AA blockers (contrast < 4.5:1, touch target < 44×44pt) — reserved for future categories | Yes — fails heuristics pass |
 | HIGH | STATE_NOT_IN_URL (Cat 9), NO_LABEL / NO_FOCUS_STATE (Phase INTERACTIVE) | Yes |
@@ -1333,8 +1343,8 @@ echo "[ui-audit] ETA for full matrix: ${ROLES_ACTIVE} roles × ${PAGES} pages ×
 
 if [ "${ETA_SECONDS}" -gt 3600 ]; then
   if [ "${UI_AUDIT_YES:-}" = "1" ] || [ "${UI_AUDIT_CI:-}" = "1" ] \
-     || [ "${CLAUDE_CODE_AUTONOMY:-}" = "high" ] || [ "${CLAUDE_CODE_AUTONOMY:-}" = "full" ]; then
-    echo "[ui-audit] Proceeding (--yes or --ci set, or autonomy=high/full)"
+     || [ "${BLITZ_AUTONOMOUS:-}" = "1" ] || [ "${CLAUDE_CODE_LOOP_MANAGED:-}" = "1" ]; then
+    echo "[ui-audit] Proceeding (--yes or --ci set, or an unattended loop)"
   else
     echo "[ui-audit] ETA exceeds 1 hour. Pass --yes for interactive, --ci for automation."
     exit 1
@@ -1388,7 +1398,13 @@ jq -s '
               or .label == "cross-page-divergence"
               or .label == "tick_diff"
               or .label == "quality_flag"
-              or .label == "heuristic")]
+              or .label == "heuristic"
+              or .label == "button_finding"
+              or .label == "event_drift"
+              or .label == "event_invariant_fail"
+              or .label == "role_invariant_fail"
+              or .label == "ROLE_LEAK"
+              or .label == "ROLE_SWITCH_FAILED")]
   | group_by(.detail.severity // "INFO")
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/findings-by-severity.json"
 ```
@@ -1405,6 +1421,11 @@ Findings without `detail.severity` mapped per table. Producers may override.
 | STALE | `tick_diff` with `state: STALE` | LOW |
 | NULL_TRANSITION | `tick_diff` with `state: NULL_TRANSITION` | HIGH |
 | CHANGED | `tick_diff` with `state: CHANGED` | INFO |
+| Button finding (INTERACTIVE § I.3 / § I.5) | `button_finding` | MED (CLICK_ERROR: HIGH) |
+| Event drift / event invariant (EVENTS § E.6 / § E.7) | `event_drift`, `event_invariant_fail` | MED / HIGH |
+| Role invariant (ROLE § R.7) | `role_invariant_fail` | HIGH |
+| Role leak (ROLE § R.8) | `ROLE_LEAK` | CRITICAL |
+| Role switch failed (ROLE § R.5) | `ROLE_SWITCH_FAILED` | HIGH |
 | NULL_VALUE (quality flag) | `quality_flag` with `flag: NULL_VALUE` | HIGH (if label declared), MED otherwise |
 | PLACEHOLDER | `quality_flag` with `flag: PLACEHOLDER` | HIGH |
 | NEGATIVE_COUNT | `quality_flag` with `flag: NEGATIVE_COUNT` | HIGH |

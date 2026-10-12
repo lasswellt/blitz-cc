@@ -42,9 +42,10 @@ npx nuxt build 2>&1
 
 **Build with bundle analyzer:**
 ```bash
-npx nuxt build --analyze 2>&1
+npx nuxi analyze 2>&1        # Nuxt 3: report under .nuxt/analyze/
+# Nuxt 2 only: npx nuxt build --analyze
 ```
-Generates visual bundle analysis report if `@nuxt/webpack-builder` or analyze option is configured.
+Generates a visual bundle analysis report for the Vite or webpack builder Nuxt is configured with.
 
 **Inspect Nitro output:**
 ```bash
@@ -265,8 +266,9 @@ const [user, orders, reviews] = await Promise.all([
 
 **Grep pattern:**
 ```bash
-# Sequential awaits that could be parallelized
-grep -rn "await.*\nawait" --include="*.ts" --include="*.vue" . | grep -v "node_modules"
+# Sequential awaits that could be parallelized: an await on the line right after another await
+# (grep matches one line at a time, so use -A1 and keep the continuation lines)
+grep -rnA1 'await ' --include="*.ts" --include="*.vue" . | grep -v "node_modules" | grep -E '^[^:]+-[0-9]+-.*await '
 ```
 
 #### 3.3 Unbounded Collection Queries
@@ -428,7 +430,7 @@ done
 
 ### 2.1 Vue-Specific Anti-Patterns
 
-Scan source files for performance anti-patterns. Use the patterns from `references/main.md`.
+Scan source files for performance anti-patterns using the patterns in Categories 1-4 above.
 
 **Reactive overhead:**
 - Reactive objects in module scope (should be in `setup()` or composables)

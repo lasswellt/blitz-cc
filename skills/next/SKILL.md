@@ -2,7 +2,7 @@
 name: next
 description: "Recommends or, with --loop, dispatches the next unit of work from docs/plans/*/tasks.json and the inbox. Use for 'what next', 'where are we', 'run the loop' or any autonomous tick. One tick reconciles state, runs one row (build, check, learn+archive), commits with a Task: trailer, exits."
 argument-hint: "[--loop] [--plan <slug>]"
-allowed-tools: Read, Glob, Grep, Skill(blitz:build), Skill(blitz:check), Skill(blitz:learn), ScheduleWakeup, ListAgents, SendMessage, Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh *), Bash(git status *), Bash(git rev-parse *), Edit(docs/plans/**), Edit(docs/solutions/**), Edit(.cc-sessions/**)
+allowed-tools: Read, Glob, Grep, Skill(blitz:build), Skill(blitz:check), Skill(blitz:learn), ScheduleWakeup, ListAgents, SendMessage, Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh *), Bash(git status *), Bash(git rev-parse *), Edit(docs/plans/**), Edit(docs/solutions/**), Edit(.cc-sessions/**)
 disallowed-tools: AskUserQuestion
 model: inherit
 compatibility: ">=2.1.296"
@@ -14,7 +14,7 @@ compatibility: ">=2.1.296"
 Two modes:
 
 1. **Default (suggest)** — `/blitz:next` reads state and prints the recommended next blitz command. No dispatch, no writes beyond inbox triage.
-2. **`--loop` (one tick)** — `/blitz:next --loop` reads state, triages the inbox, executes **one row**, commits + pushes, and exits so the scheduler can re-tick. Sets autonomy `full`. This is the only autonomous entry point for blitz.
+2. **`--loop` (one tick)** — `/blitz:next --loop` reads state, triages the inbox, executes **one row**, commits + pushes, and exits so the scheduler can re-tick. Exports `BLITZ_AUTONOMOUS=1` and `BLITZ_DISPATCH=agent` (§3.1). This is the only autonomous entry point for blitz.
 
 The loop is `research → plan → build → check → ship`, with `learn` feeding `docs/solutions/` back into `plan`. State lives in `docs/plans/<slug>/{spec.md,tasks.json,progress.md,check-report.md}` and git, never in the conversation ([loop.md](/_shared/loop.md)). `ship` is slash-only (`disable-model-invocation: true`) and is never dispatched from here.
 
@@ -24,7 +24,7 @@ The loop is `research → plan → build → check → ship`, with `learn` feedi
 
 ## Flag Parsing
 
-`--loop` (unattended tick) · `--dry` · `--plan <slug>` · `--limit N` · `--autonomous`. Everything else is an error, not a default.
+`--loop` (unattended tick) · `--plan <slug>`. Everything else is an error, not a default.
 
 Parse order, precedence, and what each flag changes in Phases 0–4: [references/main.md](references/main.md) §Flag Parsing.
 
@@ -61,12 +61,12 @@ Drain `inbox.jsonl` before deciding: a blocked or needs-input line outranks any 
 
 ## Phase 1: DECIDE
 
-Pick the lowest matching row; `next-state.sh` already computed it, this phase only maps it to an action ([loop.reference.md](/_shared/loop.reference.md) §`next` decision rows`next` decision rows).
+Pick the lowest matching row; `next-state.sh` already computed it, this phase only maps it to an action ([loop.reference.md](/_shared/loop.reference.md) §`next` decision rows).
 
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
 | 0 | `inbox_pending > 0` after triage, or `sessions_waiting > 0`, or `kill_switch` | the pending items | `LOOP_DEFER` |
-| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}), or `loop_breaker.open` | the escalation (plan, id, reason, `last_verify.tail`) | notify (§4 order), then `LOOP_ESCALATE` |
+| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}), or `loop_breaker.open` | the escalation (plan, id, reason, `last_verify.tail`) | notify (Phase 4 order), then `LOOP_ESCALATE` |
 | 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | `Skill({ skill: "blitz:build", args: "<slug> --autonomous" })` for `next_task` |
 | 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | `Skill({ skill: "blitz:check", args: "--scope plan <slug> --fix" })` |
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`; `Skill({ skill: "blitz:learn", args: "<slug>" })`; move to `docs/plans/archive/<date>-<slug>/`; print `Ready: /blitz:ship --plan <slug>` |
@@ -96,11 +96,11 @@ Follow with one sentence on what the command will do, then stop. Row 1 prints th
 
 Observe → Decide happened in Phases 0–1; this is Act + Report. Every step is loop-only.
 
-### 3.1 Set autonomy = full
+### 3.1 Set the unattended environment
 
-Suppress all sub-skill confirmation prompts. Remaining safety overrides (always logged, never silently bypassed): rollback of tracked plan files, deleting user files outside the task's `files`. All other decisions auto-approved.
+With `BLITZ_AUTONOMOUS=1` the child skills skip their own task-boundary stops; the remaining safety overrides (always logged, never silently bypassed) are rollback of tracked plan files and deleting user files outside the task's `files`. Permission prompts are the platform's, not blitz's: an unattended loop needs auto mode or allow rules ([SECURITY.md](../../SECURITY.md) §Running unattended).
 
-Setting autonomy = full only suppresses blitz's OWN confirmation prompts — it does not cover a platform Workflow per-run confirmation. Force the portable dispatch path for every child skill this loop dispatches — an unattended loop must not stall on a platform Workflow per-run confirmation:
+The variable does not cover a platform Workflow per-run confirmation either, so force the portable dispatch path for every child skill this loop dispatches — an unattended loop must not stall on a platform Workflow per-run confirmation:
 
 ```bash
 export BLITZ_DISPATCH=agent   # loop-safe: child fan-out skills take the Agent() path (no Workflow confirm prompt)
@@ -115,7 +115,7 @@ Writes `gate.json` for the tick so the Stop hook can hold the turn until verific
 
 ### 3.3 Session-conflict pre-check (soft fail)
 
-`ListAgents` (rows per [sessions.reference.md](/_shared/sessions.reference.md) §3). If another live `build` / `check` session (overlay `state ∈ {working, blocked}`, not stale) holds the same plan, do NOT abort — message it and defer per §5 (`SendMessage(to, "blitz: next --loop deferring to your build <slug>", notify_when_idle: true)` when the tool is available; WARN-only text otherwise). A peer with `waitingFor ≠ null` is never messaged — that is row 0.
+`ListAgents` (rows per [sessions.reference.md](/_shared/sessions.reference.md) §3). If another live `build` / `check` session (overlay `state ∈ {working, blocked}`, not stale) holds the same plan, do NOT abort — message it and defer per [sessions.reference.md](/_shared/sessions.reference.md) §5 (`SendMessage(to, "blitz: next --loop deferring to your build <slug>", notify_when_idle: true)` when the tool is available; WARN-only text otherwise). A peer with `waitingFor ≠ null` is never messaged — that is row 0.
 
 ```
 [next --loop] tick:
@@ -143,7 +143,7 @@ echo "Ready: /blitz:ship --plan ${SLUG}"
 
 `learn` runs before the move so it reads the plan at its tracked path; `ship` finds the archived plan by slug. Never dispatch `ship`, `plan`, `research`, or `audit` from a tick — they need a human or a prompt. **Do NOT dispatch `/blitz:next --loop` from here**: that recurses.
 
-Rows 0, 1, and 5 dispatch nothing. Row 1 notifies first (Phase 4 order), appends a `Ruling:` line to `progress.md` naming the task and reason, then prints its marker. Row 5 calls `ScheduleWakeup stop:true` only in self-paced mode (§3.6) and prints `LOOP_DONE`.
+Rows 0, 1, and 5 dispatch nothing. Row 1 notifies first (Phase 4 order), appends a `Ruling:` line to `progress.md` naming the task and reason, then prints its marker. Row 5 calls `ScheduleWakeup stop:true` only in self-paced mode (§3.7) and prints `LOOP_DONE`.
 
 ### 3.6 Commit + push the tick
 
@@ -200,7 +200,7 @@ Notify through the first available channel, then print `LOOP_ESCALATE`. The body
 
 1. A channel `reply` tool (Telegram/Discord/iMessage channel attached to the session) — reply with the body.
 2. `PushNotification`.
-3. An inbox line: `blitz_inbox_append escalation "<plan>/<id> <reason>: <tail ≤120 chars>"` (`source: skill`, `status: pending`), which row 0 surfaces on every later tick until a human triages it.
+3. An inbox line: `blitz_inbox_append escalation "<plan>/<id> <reason>: <tail ≤120 chars>"` (`status: pending`; the helper records `source: hook`), which row 0 surfaces on every later tick until a human triages it.
 
 Never notify twice for the same task in one tick; a re-fire re-prints, it does not re-send.
 

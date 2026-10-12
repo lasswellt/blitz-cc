@@ -5,7 +5,7 @@ absorbs: codebase-audit (core, 5-pillar) + code-sweep Tier-2/3 + code-doctor-at-
 registry: check-provenance.json (consolidated_target ∈ {audit, both})
 critic: agents/critic.md (redesigned) + adversarial-verify panel; BLITZ_DUAL_CRITIC=1 default
 dispatch: Workflow (pilot, WIRED) with Agent() fallback per agent-orchestration.md
-status: spec
+status: historical spec (2026-05-29); the shipped contract is skills/audit/SKILL.md (the dual critic is opt-in via --dual, the registry is skills/_shared/check-registry.json, and the files named below as agent-orchestration.md, check-provenance.json and /blitz:review no longer exist)
 ---
 
 # /blitz:audit

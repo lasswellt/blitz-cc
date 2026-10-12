@@ -7,14 +7,14 @@
 # file does not run, so the two cannot drift apart silently.
 #
 # Skipped here, with a note: the token-count step (needs ANTHROPIC_API_KEY; it is
-# advisory in CI too) and the mod step when the `claude` CLI is absent.
+# advisory in CI too), the Cisco scanner when `skill-scanner` is not installed,
+# and the mod step when the `claude` CLI is absent.
 #
 # Usage: scripts/ci-local.sh [--fast]   (--fast skips the bats suites)
 # Exit: 0 every gate passed · 1 one or more failed (all are run; failures listed)
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-export LC_ALL="${LC_ALL:-C.UTF-8}"   # gen-catalog cuts descriptions by character
 FAST=0; [ "${1:-}" = "--fast" ] && FAST=1
 FAILED=()
 

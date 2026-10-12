@@ -2,7 +2,7 @@
 name: onboard
 description: "Sets a project up for blitz: scaffolds a new Vue/Nuxt/Firebase app or package, or maps an existing repo into CODEBASE-MAP.md. Use for 'new project', 'scaffold', 'set up a Nuxt app', 'add a package', 'I inherited this repo', 'map the codebase', or when no CODEBASE-MAP.md exists."
 argument-hint: "[--greenfield <name>|--map] [--package <name>]"
-allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(CLAUDE.md), Edit(docs/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *)
+allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(CLAUDE.md), Edit(AGENTS.md), Edit(CODEBASE-MAP.md), Edit(docs/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh)
 model: inherit
 compatibility: ">=2.1.296"
 ---
@@ -13,9 +13,9 @@ compatibility: ">=2.1.296"
 
 ## Additional Resources
 - Artifacts the rest of the loop reads (`docs/plans/`, `docs/solutions/`, `.cc-sessions/`): [/_shared/loop.md](/_shared/loop.md)
-- Package install policy (resolve to registry latest, never a version from memory) — applies to every `pnpm add` / `npm install` here: [/_shared/security.md](/_shared/security.md) §Package Install Policy
-- Spawn contract, `Explore` type, budget block: [/_shared/agents.md](/_shared/agents.md) §1.2, §3.3
-- Session record and activity feed: [/_shared/sessions.md](/_shared/sessions.md) §2, §9
+- Package install policy (resolve to registry latest, never a version from memory) — applies to every `pnpm add` / `npm install` here: [/_shared/security.reference.md](/_shared/security.reference.md) §Package Install Policy
+- `Explore` type: [/_shared/agents.md](/_shared/agents.md) §1.2 · spawn contract and budget block: [/_shared/agents.reference.md](/_shared/agents.reference.md) §3.3
+- Session record: [/_shared/sessions.md](/_shared/sessions.md) §2 · activity feed: [/_shared/sessions.reference.md](/_shared/sessions.reference.md) §9
 - Scaffold trees, convention detection, file templates, map checklists, dimension prompt: [references/main.md](references/main.md)
 
 ---
@@ -37,7 +37,7 @@ Preamble: claim the session record (`skill: onboard`, `working_on: "<mode> <name
 3. **Never install a framework or large library without confirmation.** Small dev deps (types, test utils) are fine.
 4. **Existing conventions win** over best practice when they conflict.
 5. **TypeScript always**, unless the project is JS-only.
-6. **Map mode is read-only** except for `CODEBASE-MAP.md` and `${SESSION_TMP_DIR}/`.
+6. **Map mode is read-only** except for `CODEBASE-MAP.md`, the `## Testing` block it appends to `CLAUDE.md` / `AGENTS.md` (M4), and `${SESSION_TMP_DIR}/`.
 
 ---
 
@@ -92,7 +92,7 @@ Project Setup: <name>
   Confirm choices? [y/n]
 ```
 
-Defaults when the operator says "just pick": Nuxt 3, Tailwind, no backend, Vitest, pnpm. When `UI != None`, add `impeccable` to `devDependencies` so `/blitz:ui-audit` and `/blitz:check --only design` have their semantic lane in this project (target-project dependency, never a plugin one; resolve to registry latest).
+Defaults when the operator says "just pick": Nuxt 3, Tailwind, no backend, Vitest, pnpm. When `UI != None`, add `impeccable@2.3.2` to `devDependencies` so `/blitz:ui-audit` and `/blitz:check --only design` have their semantic lane in this project (target-project dependency, never a plugin one; this is the pin `scripts/design/preflight.sh` checks, a peer-constraint pin per the install policy).
 
 ### G2 DESIGN — Plan the file set
 
@@ -105,7 +105,7 @@ Onboard Plan: <mode> "<name>"
     2. nuxt.config.ts | vite.config.ts
     3. tsconfig.json, vitest.config.ts
     4. app.vue + pages/index.vue | src/App.vue + src/main.ts + src/router/index.ts
-    5. stores/app.ts, composables/useAsync.ts, types/index.ts
+    5. stores/app.ts, services/items.ts, composables/useAsync.ts, types/index.ts
     6. tests/app.test.ts
     7. docs/plans/.gitkeep, docs/solutions/.gitkeep
     8. .claude/settings.json, .gitignore, README.md

@@ -35,16 +35,16 @@ TASK <ID>: <title>                                                           # i
 SCOPE_FILES (the only paths you may edit):                                   # item 4
 - <files[0]>
 - <files[1]>
-If you need a file not listed, STOP and reply BLOCKED with
+If the task needs a file not listed and it is not a ≤3-file Tier-1/2 touch, STOP and reply BLOCKED with
   escalate: "ESCALATE: scope-expansion-needed (file: <path>, reason: <one line>)"
 Do not silently expand scope — that produces fixes that pass locally and break
-other tasks' assumptions. ≤3 Tier-1/2 files outside scope are DONE_WITH_CONCERNS; more is Tier 3.
+other tasks' assumptions. ≤3 Tier-1/2 files outside scope are DONE_WITH_CONCERNS (list them in concerns[]); more is Tier 3.
 
 VERIFY (run each; paste each ≤200-char tail into the reply):                 # item 5
 - <verify[0].cmd>            (timeout <verify[0].timeout>s)
 - <verify[1].cmd>            (timeout <verify[1].timeout>s)
 
-<--parallel only: work on branch build/<slug>/<role> inside your worktree.>   # item 9 (variable half)
+<--parallel only: work on branch build/<slug>/<ID> inside your worktree.>     # item 9 (variable half)
 
 <fix rounds 4-5 only:>
 PRIOR ATTEMPTS (from progress.md; do not repeat them):
@@ -77,7 +77,7 @@ SUMMARY=$(printf '%s' "$REPLY_JSON" | jq -r '.summary // ""' | cut -c1-200)
 printf '%s' "$REPLY_JSON" | jq -r '.files_changed[]?' | grep -vE '^(/|\.\./)' > "${SESSION_TMP_DIR}/${ID}-files.txt"   # repo-relative only
 ```
 
-`MALFORMED` is a failed round; the re-spawn narrows the prompt (drop the plan excerpt, keep items 1-11) — never identical.
+`MALFORMED` is a failed round; the re-spawn narrows the prompt (drop the plan excerpt, keep items 1-5 and 8; 6, 7, 9, 10 and 11 arrive through the hook) — never identical.
 
 ---
 
@@ -127,7 +127,8 @@ Stuck detection per agent: no reply by wall-clock + 30 s → `SendMessage(to: "d
 Task-id order, main branch, one branch at a time:
 
 ```bash
-BRANCH=$(git branch --list "build/${SLUG}/*" --format='%(refname:short)' | while read -r b; do git log -1 --grep "Task: ${SLUG}/${ID}" --format=%H "$b" >/dev/null 2>&1 && echo "$b" && break; done)
+# `git log --grep` exits 0 on no match, so test the output, not the exit code.
+BRANCH=$(git branch --list "build/${SLUG}/*" --format='%(refname:short)' | while read -r b; do [ -n "$(git log -1 --grep "Task: ${SLUG}/${ID}" --format=%H "$b" 2>/dev/null)" ] && { echo "$b"; break; }; done)
 if git merge-tree --write-tree HEAD "$BRANCH" >/dev/null 2>&1; then
   git merge --no-ff "$BRANCH" -m "feat(${SLUG}): merge ${ID}" -m "Task: ${SLUG}/${ID}"
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$ID" || FIX_QUEUE+=("$ID")
@@ -198,7 +199,7 @@ Pre-existing tests that turn red are **Critical** and outrank new-test failures:
 
 - `isolation: "worktree"` creates `.claude/worktrees/<id>` from `HEAD` when `worktree.baseRef: "head"` (the §0.4 precondition); the platform locks it while the agent runs and sweeps unlocked worktrees by `cleanupPeriodDays`.
 - Never remove a worktree that `claude agents --json` still lists — it holds uncommitted work.
-- `build/<slug>/<role>` is a label on the agent's commits and branch; blitz does not track or prune it. After a clean merge `git branch -d` is safe (refuses unmerged) but optional; leave conflicting branches for inspection.
+- `build/<slug>/<ID>` is a label on the agent's commits and branch (the platform's own `worktree-agent-<hex>` branch is the agent's starting point); blitz does not track or prune it. After a clean merge `git branch -d` is safe (refuses unmerged) but optional; leave conflicting branches for inspection.
 - `/blitz:sessions worktrees` lists what the platform left behind; `.cc-sessions/` is gitignored runtime output and the gate file is removed by `build` itself on every exit path.
 
 Escape hatches: `BLITZ_DISPATCH=agent|workflow`, `CLAUDE_CODE_DISABLE_WORKFLOWS=1`, `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS`, `BLITZ_FIX_ROUNDS_MAX` (default 5), `BLITZ_AUTONOMOUS=1` (set by `next --loop`).
@@ -318,7 +319,7 @@ Per iteration:
    | 5 | `verify[]` commands verbatim with timeouts | `tasks[].verify` |
    | 6 | Never-edit: `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `.cc-sessions/**`, test files unless `role: test`, project additions | this skill |
    | 7 | Reply contract + JSON block ([agents.reference.md](/_shared/agents.reference.md) §4.2) | agents.md |
-   | 8 | `BUDGET (Heavy)`: 25 reads, 0 searches, 40 tool calls (finish at 35), 400 lines, 8 min | agents.md §3.3 |
+   | 8 | `BUDGET (Heavy)`: 25 reads, 0 searches, 40 tool calls (finish at 35), 400 lines, 8 min | agents.reference.md §3.3 |
    | 9 | Commit `feat(<slug>/<role>): <ID> <title>` + trailer `Task: <slug>/<ID>`; one commit; `fix(<slug>/<role>): … — during <ID>` for Tier-1 auto-fixes | this skill |
    | 10 | `Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.` | output.md |
    | 11 | Stop conditions: reply when `verify[]` passes; `BLOCKED` on any `ESCALATE:`; stop before a new file at ≤3 calls left | agents.md |
@@ -346,7 +347,7 @@ BASE_REF=$(jq -r '.worktree.baseRef // "fresh"' .claude/settings.json 2>/dev/nul
 # D-314 pre-flight: a stale worktree-agent-<8hex> branch is silently reused by a
 # colliding id and carries a prior session's commits into this wave (GH#51596).
 # This is the only place the collision can be caught; WorktreeCreate is not a
-# hook blitz may register (agents.md §6).
+# hook blitz may register (agents.reference.md §6).
 git for-each-ref --format='%(refname:short)' 'refs/heads/worktree-agent-*' 'refs/heads/worktree-build-*' |
   while read -r b; do
     n=$(git rev-list --count "origin/HEAD..$b" 2>/dev/null || echo 0)

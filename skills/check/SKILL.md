@@ -1,12 +1,12 @@
 ---
 name: check
 description: "Runs the quality gate on a diff, a plan, or the repo: tsc/lint/tests/build, registry checks, task verify[], critic review; writes check-report.md. Use for 'check this', 'review my changes', 'run the gates', 'is this done', 'is this mergeable', 'check wiring/completeness/framework/design/security'."
-argument-hint: "[--scope diff|plan <slug>|repo] [--only completeness|wiring|framework|design|security] [--fix] [--comment] [--mutation] [--dual]"
+argument-hint: "[--scope diff|plan <slug>|repo] [--only completeness|wiring|framework|design|security] [--fix] [--comment] [--mutation] [--dual] [--min-confidence high|low] [--baseline <metric>] [--force]"
 allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-registry-validate.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh *), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Bash(git show *), Bash(git rev-parse *), Bash(git ls-files *), Edit(docs/plans/**), Edit(docs/sweeps/**), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort low. Set once (`claude --model opus --effort low` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high (the same session that runs `build`; [agents.md](/_shared/agents.md) §1.3). Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -39,7 +39,7 @@ Resolve `BASE`, the changed-file set, and the changed packages in a monorepo; re
 
 **Dispatch:** running a row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement, so collect this lane in one `Agent({subagent_type: "Explore", model: "haiku", effort: "low", description: "check det lane"})` given the selected rows and a JSON reply schema ([agents.md](/_shared/agents.md) §1.3). Keep the semantic lane and the PASS/FAIL verdict on the session model. Fall back to running them inline when the lane has ≤5 rows, where the spawn costs more than it saves.
 
-Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is ~98 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`. Read each row's verdict through its `detection.exit` contract ([quality.reference.md](/_shared/quality.reference.md) §Exit-code contract): a grep row **passes on exit 1**, and a row that could not run is `error`, never a pass.
+Run everything; collect, do not stop at the first failure. No grep pattern lives in this file: every row is cited by id and its `detection.command` runs from [check-registry.json](/_shared/check-registry.json). **Query that file with `jq`; never read it into context** — it is about 120 KB of data and the selector in [quality.reference.md](/_shared/quality.reference.md) §Selection contract returns only the ids and commands this run needs. The selector also drops rows whose `stacks[]` does not match `scripts/toolchain.sh stacks`, so a Go or Python repository never runs the Vue/Firestore packs or `npx impeccable`. Read each row's verdict through its `detection.exit` contract ([quality.reference.md](/_shared/quality.reference.md) §Exit-code contract): a grep row **passes on exit 1**, and a row that could not run is `error`, never a pass.
 
 ### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
 
@@ -49,17 +49,17 @@ Gate commands resolve per detected stack from the toolchain table; a lane with n
 
 Select `consolidated_target ∈ {check, both}` and `lane == deterministic`; run each row's `detection.command` over `$CHANGED` (`repo` scope: over everything). Reject-authority hits (`severity ∈ {P0, P1, P2}`) go straight to the blocker list and bypass the confidence gate; P3 hits are advisory. The shortcut detectors without a hook (det-05…10, 14, 15, 16, 20) run here; det-01/02/13 also re-scan the diff in case a hook was bypassed.
 
-### 1.3 Anti-mock scan (`o2-anti-mock`, `o2-artifact-l1l2`, det-09, det-10)
+### 1.3 Anti-mock scan (`check:anti-mock`, `o2-artifact-l1l2`, det-09, det-10)
 
-Run the `o2-*` rows over the diff. Any hit in non-test code is a **Critical** finding (registry P3 with reject-lane evidence, surfaced as blocker per the Definition of Done in [quality.md](/_shared/quality.md) §Anti-mock rules). Record `file:line pattern`.
+Run the `check:anti-mock` and `o2-*` rows over the diff. The rows are P3 in the registry; a hit in non-test code is promoted to a **Critical** blocker by the Definition of Done ([quality.reference.md](/_shared/quality.reference.md) §Anti-mock rules). Record `file:line pattern`.
 
-### 1.4 Wiring (`o3-wiring`, `o3-orphan-route`, det-16)
+### 1.4 Wiring (`o3-orphan-route`, det-16)
 
 Conditional: run when the diff adds files under `stores/|composables/|pages/|server/api/|routes/|functions/` or new exports. Findings map high → Major, medium → Minor, low → Info and feed the Phase 2 reviewer context.
 
 ### 1.5 Framework rules (`fw-firestore-vue-pinia`)
 
-Gated by the stack banner (`HAS_FIRESTORE`, `HAS_VUEFIRE`, `HAS_VUE`, `HAS_PINIA` from `package.json`); only detected rule sets run. Rule table with ids F1–F10, V1–V5, G1–G5, P1–P4, D1, DUP1: `references/main.md` §Framework rules. Context rules (F2 `onSnapshot` without `onUnmounted`, F6 `getDocs(collection(` without `query(`) check the whole file. Skip lines carrying `// code-doctor-ignore: <ruleId>`. `--fix` applies only `auto_fix: true` rows (F5, V3, P2) with the recipes in `references/main.md`, then re-greps the fixed rule ids; a remaining hit is `fix_partial`.
+Gated by `grep -E '"firebase"|"firestore"|"vuefire"|"vue"|"pinia"' package.json` (the detect-stack banner lists the stack, not per-rule flags); only detected rule sets run. Rule table with ids F1–F10, V1–V5, G1–G5, P1–P4, D1, DUP1: `references/main.md` §Framework rules. Context rules (F2 `onSnapshot` without `onUnmounted`, F6 `getDocs(collection(` without `query(`) check the whole file. Skip lines carrying `// code-doctor-ignore: <ruleId>`. `--fix` applies only `auto_fix: true` rows (F5, V3, P2) with the recipes in `references/main.md`, then re-greps the fixed rule ids; a remaining hit is `fix_partial`.
 
 ### 1.6 Design lane (`pillar == design`)
 
@@ -89,7 +89,7 @@ Every metric must be at or below its baseline; a regression is a FAIL the verdic
 
 ### 4.2 Security posture gate (every run)
 
-Runs the `sec-*` registry rows on every check, not only with `--security`. Row set and the `/security-review` handoff: [references/main.md](references/main.md) §4.2 Security posture gate.
+Runs the `sec-*` registry rows on every check, not only under `--only security`. Row set and the `/security-review` handoff: [references/main.md](references/main.md) §4.2 Security posture gate.
 
 ### 4.3 Critic `--mode reject`
 
@@ -159,5 +159,5 @@ Final block: `[check] <result> scope=<s> ref=<sha> gates=<n>/<n> findings=C<n>/M
 | `--fix` loop fails `max` times on one issue | stop that category, list it under Manual fixes; plan scope appends a task via `tasks.sh add … --origin check` |
 | No test runner / no build script | gate `SKIPPED`, coverage noted; not FAIL |
 | Critic MALFORMED / MISSING | one re-spawn with the same inputs; second failure = REJECT |
-| Ratchet file missing | run the bootstrap block in [quality.md](/_shared/quality.md) §Bootstrap, baseline from this run, no regression possible on first run |
+| Ratchet file missing | run the bootstrap block in [quality.reference.md](/_shared/quality.reference.md) §Bootstrap and override, baseline from this run, no regression possible on first run |
 | Kill switch (`.cc-sessions/STOP`) mid-run | every tool call is denied; remove the gate file when the switch is lifted and re-run from Phase 0 |

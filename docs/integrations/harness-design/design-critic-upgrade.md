@@ -1,5 +1,7 @@
 # design-critic-upgrade.md — The live-navigating evaluator spec (Gap 1)
 
+> **Implemented** (2.3.0): `agents/design-critic.md` carries the Playwright subset this spec proposes. The acceptance greps below were written against the tree of that time; the tone list and the dev-server handling now live in `skills/ui-build/references/main.md`.
+
 **Extends:** `agents/design-critic.md` and `skills/ui-build/SKILL.md` Phase 5.4.
 **Concept:** harness-model §3 · **Gap:** gap-fixes Gap 1 (archived design history; see git tag `validation-v1.16.0` / pre-v2.4.1 history).
 **Goal:** Move the design evaluator from scoring a static screenshot to *navigating the live rendered app* before scoring — without breaking the read-screenshots-not-source rule and with a clean static fallback.

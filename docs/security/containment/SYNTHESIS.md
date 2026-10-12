@@ -1,5 +1,7 @@
 # SYNTHESIS — Sequenced, Blast-Radius-Ordered Containment Epics
 
+> **Historical (2026-05-31).** Every epic below has landed (status in [docs/EPICS.md](../../EPICS.md)); TB-5 was added after this plan. File paths named here are from the v2 tree and may no longer exist.
+
 > The integration plan. Framework-first, then gaps in descending blast-radius order. Each step has **grep-based acceptance**. The security-pillar checks become a **permanent `/blitz:audit` gate** at the end. Implementation runs behind Blitz's normal gates (sprint-review 8 invariants) **plus** the new security-pillar gate.
 
 Sequence rationale (from the article): build the framework first (so guards register against a posture, not scatter), then close gaps by blast radius — persistent-state poisoning is highest because a poisoned carry-forward entry is reloaded every session *and* sprintified.

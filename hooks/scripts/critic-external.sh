@@ -399,8 +399,12 @@ if [ "${#PROVIDERS[@]}" -eq 1 ]; then
   provider="${PROVIDERS[0]}"
   run_one "$provider" || exit 1
   VERDICT="$(jq -r '.verdict // empty' "$WORK/$provider.json")"
+  # A pre-pass reply follows critic.md §7 and carries findings[]; research and
+  # design replies carry issues[]. Expose both as issues[] so check reads one key
+  # whether one provider or a panel answered.
   jq --argjson n "$REDACTED" --argjson x "$REJECT_EXIT" \
-    '. + {redacted: $n} + (if .verdict == "REJECT" and $x == 3 then {confirmed: false} else {} end)' "$WORK/$provider.json"
+    '. + {redacted: $n, issues: ((.issues // []) + (.findings // []))}
+       + (if .verdict == "REJECT" and $x == 3 then {confirmed: false} else {} end)' "$WORK/$provider.json"
   case "$VERDICT" in
     LGTM|PASS)
       exit 0 ;;

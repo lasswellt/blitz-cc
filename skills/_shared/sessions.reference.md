@@ -34,10 +34,9 @@ blitz_session_stale ".cc-sessions/sessions/<sid>.json" "$VIEW" && echo stale
 
 | `kind` | Written by | Meaning |
 |---|---|---|
-| `needs_input` | `notification-log.sh` (permission / idle prompt / elicitation) | a session is waiting on a human |
-| `permission_denied` | `permission-denied.sh` | a tool call was denied; never auto-retried |
+| `needs_input` | `notification-log.sh` (idle prompt / elicitation) | a session is waiting on a human |
+| `permission` | `notification-log.sh` (permission prompt), `permission-denied.sh` (a denial; never auto-retried) | a tool call waits on, or was refused by, a permission decision |
 | `hook_failure` | `stop-failure.sh`, `config-change.sh` (validate fail) | a hook or validator failed |
-| `notification` | `notification-log.sh` (any other notification) | informational |
 | `escalation` | `next --loop` (row 1, `LOOP_ESCALATE` fallback) | a task is `blocked` for a reason a human must rule on |
 | `quarantine` | `startup-validate.sh` | a persistent-state line was quarantined |
 
@@ -86,13 +85,14 @@ The auth line is mandatory on Windows and in PID-1 containers (no peer-credentia
 `pre-compact-snapshot.sh` (`PreCompact`) writes `.cc-sessions/HANDOFF.json` every time a compaction fires; `session-start.sh` surfaces it on the next `SessionStart` when it is ≤24 h old and ignores it otherwise. Compaction is therefore also a checkpoint, and `/compact` before a break is cheap.
 
 ```json
-{"session_id":"<sid>","ts":"<ISO-8601>","skill":"<skill>|null",
+{"ts":"<ISO-8601>","session":"<sid>","trigger":"pre-compact",
  "plan":"<slug>|null","task":"<T-id>|null",
  "gate":".cc-sessions/sessions/<sid>/gate.json|null",
- "never_edit":["docs/plans/<slug>/tasks.json","docs/plans/<slug>/progress.md"],
- "branch":"<git branch>","uncommitted":["<path>"],
- "last_activity":["<last feed lines for this session>"],
- "resume_instructions":"Read HANDOFF.json + last 30 feed lines, restate the in-flight task in ≤3 sentences, continue from the next dispatch."}
+ "never_edit":["docs/plans/*/tasks.json (scripts/tasks.sh only)","docs/plans/*/progress.md (main thread only)"],
+ "phase":"<gate.json until label>","branch":"<git branch>","head_sha":"<sha>",
+ "uncommitted":["<path>"],"recent_files":["<path>"],
+ "last_activity":"<last feed lines for this session>",
+ "resume_hint":"Compaction fired. Read HANDOFF.json, docs/plans/<plan>/progress.md and git log --grep Task:, restate the in-flight task in ≤3 sentences, keep the gate armed and the never_edit list, then continue."}
 ```
 
 Compaction must not drop: the `gate` path (the Stop gate is still armed), the `never_edit` list (structural constraints, not memory), and the current `plan`/`task`. Add the same three to the compaction instructions in the consumer's `CLAUDE.md` (§8). On resume: display the summary, log a feed `decision` ("Resuming from HANDOFF.json (session: <old sid>)"), continue from `task`; if the plan is gone, say so and fall through to `next`.
@@ -150,14 +150,14 @@ The feed carries **loop and skill events only**. Per-edit file logging is not re
 | `permission_denied` | `permission-denied.sh` | `{tool_name}` |
 | `config_change` | `config-change.sh` | `{source, validate: pass\|fail\|skipped}` |
 | `handoff_written` | `pre-compact-snapshot.sh` | `{plan, task}` |
-| `stop_failure` / `worktree_create` / `worktree_remove` / `override` | like-named hook | per script header |
+| `stop_failure` / `worktree_remove` / `override` | like-named hook | per script header |
 
 Skills never re-emit hook-owned events (`session_*`, `mailbox`, `needs_input`, …); the `Stop` idle transition is record-only and has no feed line. `message` ≤200 chars (300 is the audit threshold); move detail into `detail`.
 
 Inbox line (§4) and mailbox line (§5), same discipline (append-only, injection-scanned, untrusted on read):
 
 ```json
-{"ts":"<ISO-8601>","id":"inb-<8hex>","source":"hook|skill|loop","kind":"needs_input|permission_denied|hook_failure|notification|escalation|quarantine","session":"<session_id>","text":"<≤200 chars>","status":"pending|converted|dismissed"}
+{"ts":"<ISO-8601>","id":"inb-<8hex>","source":"hook|skill|loop","kind":"needs_input|permission|hook_failure|escalation|quarantine","session":"<session_id>","text":"<≤200 chars>","status":"pending|converted|dismissed"}
 {"ts":"<ISO-8601>","from":"<session_id>|unknown","to":"<target_session_id>","kind":"note|unblock|halt","text":"<≤500 chars>"}
 ```
 
@@ -167,7 +167,7 @@ Reading: at preamble step 7, print the last 30 min of feed lines as a summary (o
 
 ## 10. Kill switch and cleanup
 
-**Kill switch.** `touch .cc-sessions/STOP` makes `kill-switch.sh` (PreToolUse `*`) deny every tool call in every session under this root until the file is removed. It is the operator's hard stop; a `halt` mailbox line is the soft one. `next --loop` checks for it before dispatch and prints `LOOP_DONE` with the reason.
+**Kill switch.** `touch .cc-sessions/STOP` makes `kill-switch.sh` (PreToolUse `*`) deny every tool call in every session under this root until the file is removed. It is the operator's hard stop; a `halt` mailbox line is the soft one. `next --loop` checks for it before dispatch and prints `LOOP_DEFER` (row 0) with the reason.
 
 **Cleanup — hook-owned.** `session-end.sh` closes the record (§2) and logs `session_end`; a skill that dies of context exhaustion still gets a correct close. `/blitz:sessions prune` removes records closed > 7 d, mailboxes whose target record is closed > 7 d, `HANDOFF.json` older than 24 h and stale `quarantine/` entries after review. Mailbox files are truncated by their own `Stop` hook on delivery. `.cc-sessions/` is gitignored runtime output.
 

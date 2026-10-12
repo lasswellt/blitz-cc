@@ -1,7 +1,7 @@
 ---
 name: todo
 description: "Use when the user says 'todo: X', 'remember to X', 'add a todo', 'what's on my todo list', or when Claude surfaces a follow-up that should not become a stale TODO comment. Tracks ideas, follow-ups, and tech debt in docs/plans/BACKLOG.md (markdown checklist). Modes: add, list, check, resolve."
-allowed-tools: Read, Glob, Grep, Edit(docs/plans/**)
+allowed-tools: Read, Glob, Grep, Edit(docs/plans/BACKLOG.md), Write(docs/plans/BACKLOG.md), Bash(date *)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "<add <text> [#tag] | list [#tag] | check | resolve <n|substring>>"
@@ -9,11 +9,11 @@ argument-hint: "<add <text> [#tag] | list [#tag] | check | resolve <n|substring>
 
 # Todo — the backlog
 
-Track development ideas, follow-up items, and technical debt discovered during work so they are not lost or left as stale TODO comments in code. Lightweight: no session preamble, no verbose progress. Freeform activity-feed logging from `CLAUDE.md` still applies.
+Track development ideas, follow-up items, and technical debt discovered during work so they are not lost or left as stale TODO comments in code. Lightweight: no session preamble, no verbose progress; log `skill_start`/`skill_end` feed lines only ([output.md](/_shared/output.md) §Console Output).
 
 ## Storage
 
-`docs/plans/BACKLOG.md` — tracked in git, one checklist line per item ([loop.md](/_shared/loop.md) §Files). `/blitz:plan` reads the open lines when it brainstorms a plan; a line that became a plan task is checked off with the plan slug.
+`docs/plans/BACKLOG.md` — tracked in git, one checklist line per item ([loop.md](/_shared/loop.md) §Artifacts). `/blitz:plan` reads the open lines when it brainstorms a plan; a line that became a plan task is checked off with the plan slug.
 
 ```markdown
 # Backlog

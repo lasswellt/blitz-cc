@@ -10,21 +10,26 @@ set -euo pipefail
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT"
 OUT="docs/CATALOG.md"
-MODE="write"; [ "${1:-}" = "--check" ] && MODE="check"
+case "${1:-}" in
+  --check) MODE="check" ;;
+  "")      MODE="write" ;;
+  *) echo "usage: scripts/gen-catalog.sh [--check]" >&2; exit 2 ;;
+esac
 
 fm() {  # fm <file> <key> — frontmatter scalar (single line), quotes stripped
   awk -v k="$2" 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit} NR>1 && index($0, k":")==1 {sub("^" k ":[ ]*",""); gsub(/^"|"$/,""); print; exit}' "$1"
 }
 fm_desc() {  # description may be a block scalar (|) on agents: take first paragraph
-  # Truncation uses bash substring, not `cut -c`: cut counts bytes and would
-  # slice a multibyte character in half, emitting U+FFFD into the catalog.
+  # Truncation counts characters, not bytes: `cut -c` and a bash substring under
+  # a non-UTF-8 locale both slice a multibyte character in half and emit U+FFFD,
+  # which made `--check` depend on the caller's LC_ALL. python3 decodes first.
   local d
   d=$(awk 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit}
        /^description: *\|/ {blk=1; next}
        blk && /^  / {sub(/^  /,""); if ($0=="") exit; printf "%s ", $0; next}
        blk && !/^  / {exit}
        /^description:/ {sub(/^description:[ ]*/,""); gsub(/^"|"$/,""); print; exit}' "$1" | sed 's/ *$//')
-  printf '%s\n' "${d:0:240}"
+  printf '%s' "$d" | python3 -c 'import sys; s=sys.stdin.buffer.read().decode("utf-8","replace"); print(s[:240])'
 }
 
 render() {

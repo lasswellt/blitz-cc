@@ -8,7 +8,8 @@ export const meta = {
   ],
 }
 
-// Extracted from skills/check/SKILL.md Phases 2.1 and 4.3. Plugin workflow: runs as
+// Extracted from skills/check/SKILL.md Phase 2 and Phase 4.3 (survey spawn detail in
+// skills/check/references/main.md §2.1 Survey fan-out). Plugin workflow: runs as
 // /blitz:review-fanout. No filesystem, no clock — the script dispatches and validates only.
 //
 // args shape (required):

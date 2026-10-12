@@ -13,8 +13,8 @@ compatibility: ">=2.1.296"
 
 ## Additional Resources
 - Artifacts, `tasks.json` schema, `spec.md` frontmatter, `progress.md` ledger, structural rules: [/_shared/loop.md](/_shared/loop.md)
-- Why tests alone are not evidence, Definition of Done, anti-mock rules: [/_shared/quality.md](/_shared/quality.md)
-- When to spawn research agents, budget block, write-as-you-go: [/_shared/agents.md](/_shared/agents.md) §2–§3
+- Why tests alone are not evidence, the three verdicts: [/_shared/quality.md](/_shared/quality.md) · Definition of Done, anti-mock rules: [/_shared/quality.reference.md](/_shared/quality.reference.md)
+- When to spawn research agents: [/_shared/agents.md](/_shared/agents.md) §2 · budget block, write-as-you-go: [/_shared/agents.reference.md](/_shared/agents.reference.md) §3
 - Research-agent prompt templates and the verify-command template table: [references/main.md](references/main.md)
 - Session record and activity feed: [/_shared/sessions.md](/_shared/sessions.md)
 
@@ -69,7 +69,7 @@ Unless `--autonomous`, run the interview with `AskUserQuestion`, **one question 
 
 Then print a ≤15-line design summary (approach, outcomes, out of scope) and ask: "Write the spec and tasks from this?" **Hard gate:** do not write `spec.md` or call `tasks.sh add` until the answer is yes. A "no" or a change loops back to the affected question.
 
-With `--autonomous`: no questions. Pick the approach with the fewest new files that meets every stated outcome, write every inferred answer as one bullet in `spec.md` §Assumptions, and continue. `next --loop` and `-p` workers always run this path.
+With `--autonomous`: no questions. Pick the approach with the fewest new files that meets every stated outcome, write every inferred answer as one bullet in `spec.md` §Assumptions, and continue. `-p` workers and sessions with `BLITZ_AUTONOMOUS=1` always run this path (`next --loop` never dispatches `plan`).
 
 ### 1b. Bounded: in-chat design
 
@@ -136,14 +136,14 @@ Pick commands from the template table in [references/main.md](references/main.md
 ### 3.3 Add tasks (only through `tasks.sh`)
 
 ```bash
-T="${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh"
-bash "$T" init <slug>
-bash "$T" add <slug> --id T-001 --title "Add Session schema + zod validator" --role backend \
+# Literal path on every call: the pre-approval rule matches `bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *`, not a variable.
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" init <slug>
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add <slug> --id T-001 --title "Add Session schema + zod validator" --role backend \
   --files src/schemas/session.ts,src/schemas/session.test.ts --origin plan \
   --verify-cmd "npx vitest run src/schemas/session.test.ts --reporter=dot::300" \
   --verify-cmd "grep -qE 'export (const|function) sessionSchema' src/schemas/session.ts::10" \
   --verify-cmd "! grep -nE 'TODO|return \{\}' src/schemas/session.ts::10"
-bash "$T" add <slug> --id T-002 --title "..." --role frontend --depends T-001 --files ... --verify-cmd ...
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add <slug> --id T-002 --title "..." --role frontend --depends T-001 --files ... --verify-cmd ...
 ```
 
 Ids are `T-001`, `T-002`, … in dependency order. `--role` ∈ `backend|frontend|infra|test`. Never open `tasks.json` in `Edit`/`Write`; the `tasks-guard.sh` hook denies it and the attempt lands in the inbox.
@@ -151,12 +151,12 @@ Ids are `T-001`, `T-002`, … in dependency order. `--role` ∈ `backend|fronten
 ### 3.4 DAG validation
 
 ```bash
-bash "$T" list <slug> --json | jq -r '.[] | .id as $i | .depends_on[] | "\($i) \(.)"'
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list <slug> --json | jq -r '.[] | .id as $i | .depends_on[] | "\($i) \(.)"'
 ```
 
 - No circular dependencies; every `depends_on` id exists in this plan.
 - At least one task has no dependencies.
-- `bash "$T" next <slug>` prints a task (the first runnable one); if it prints nothing while tasks are open, the graph is wrong.
+- `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" next <slug>` prints a task (the first runnable one); if it prints nothing while tasks are open, the graph is wrong.
 - On a cycle, interactive: report it and ask which edge to drop; `--autonomous`: drop the edge whose target has the most dependents, append a `decision` feed line, re-validate.
 
 ---
@@ -205,7 +205,7 @@ Off by default. When set and `gh auth status` succeeds: one issue per task, titl
 ### 4.2 Print and hand off
 
 ```bash
-bash "$T" list <slug>
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list <slug>
 ```
 
 Print the table, then the next step:

@@ -23,6 +23,8 @@ Scaffold trees, convention detection, file templates (greenfield and package mod
 │   └── useAsync.ts
 ├── stores/
 │   └── app.ts
+├── services/
+│   └── items.ts
 ├── server/
 │   └── api/
 ├── types/
@@ -50,6 +52,7 @@ Scaffold trees, convention detection, file templates (greenfield and package mod
 │   ├── components/
 │   ├── composables/useAsync.ts
 │   ├── stores/app.ts
+│   ├── services/items.ts
 │   ├── types/index.ts
 │   └── assets/
 ├── vite.config.ts
@@ -323,6 +326,10 @@ INPUTS (read these first; do not re-scan the tree):
 
 STACK PROFILE:
 {{STACK_PROFILE}}
+
+NAVIGATION: use `LSP` (workspace symbols, goToDefinition, findReferences) for any
+named symbol; fall back to Grep/Glob and `Read --offset` when the LSP tool is
+inactive. Never map the tree by reading whole files.
 
 CHECKLIST — one `### <item>` section per line, in order; write `unknown` with the
 path you looked at when an item cannot be determined:

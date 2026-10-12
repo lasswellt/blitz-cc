@@ -14,8 +14,10 @@
 #   scripts/check-version-sync.sh --quiet  # exit code only, no output
 #
 # Called by:
-#   - hooks/scripts/pre-commit-validate.sh (on git commit, warns only)
-#   - can be invoked manually or by the release skill
+#   - hooks/scripts/pre-commit-validate.sh (on git commit: blocks when
+#     .claude-plugin/plugin.json is staged, warns otherwise)
+#   - scripts/ci-local.sh and CI (blocking)
+#   - can be invoked manually or by the ship skill
 
 set -euo pipefail
 
@@ -60,6 +62,17 @@ if [[ -f "$MARKETPLACE" ]]; then
     | sed -E 's/.*"([^"]+)"$/\1/')
   if [[ -n "$MK_VERSION" && "$MK_VERSION" != "$AUTHORITATIVE" ]]; then
     log "  drift: $MARKETPLACE has \"version\": \"$MK_VERSION\" (expected $AUTHORITATIVE)"
+    DRIFT=$((DRIFT + 1))
+  fi
+fi
+
+# --- 2b. blitz-guard: the marketplace entry vs the mod's own manifest ---
+MOD_JSON="mods/blitz-guard/.claude-plugin/plugin.json"
+if [[ -f "$MOD_JSON" && -f "$MARKETPLACE" ]] && command -v jq >/dev/null 2>&1; then
+  MOD_V=$(jq -r '.version // empty' "$MOD_JSON" 2>/dev/null || true)
+  MK_MOD_V=$(jq -r '.plugins[] | select(.name == "blitz-guard") | .version // empty' "$MARKETPLACE" 2>/dev/null || true)
+  if [[ -n "$MOD_V" && -n "$MK_MOD_V" && "$MOD_V" != "$MK_MOD_V" ]]; then
+    log "  drift: $MARKETPLACE lists blitz-guard $MK_MOD_V but $MOD_JSON says $MOD_V"
     DRIFT=$((DRIFT + 1))
   fi
 fi

@@ -13,7 +13,7 @@ Thumbs.db
 # Debug logs
 *.log
 
-# Python bytecode cruft (scripts/*.py)
+# Python bytecode cruft (inline python3 heredocs in the scripts)
 __pycache__/
 *.pyc
 
@@ -30,11 +30,6 @@ __pycache__/
 # plugin development on this machine, NOT shipped with the plugin)
 docs/_research/
 docs/audits/
-
-# Legacy temp files from skill execution (migrated to .cc-sessions/)
-/tmp/
-
-.cc-sessions/KNOWLEDGE.md
 
 # audit skill output (generated; not source)
 .review/

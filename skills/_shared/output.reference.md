@@ -28,7 +28,7 @@ backup. There is no automated rollback. Type the database name to confirm.
 <!-- /exempt -->
 ```
 
-**Audit.** `check` grep-checks for `<!-- exempt: ` markers in agent prompt templates and skill outputs; missing markers around safety/destructive content is a WARN, present-but-misused markers are a BLOCKER.
+No validator or registry row checks these markers; they are a convention for human readers of the output.
 
 ---
 

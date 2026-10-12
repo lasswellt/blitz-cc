@@ -11,11 +11,12 @@
 # from repo content would be arbitrary execution on every edit.
 #
 # Usage:
-#   toolchain.sh detect [--refresh]     write/refresh .cc-sessions/toolchain.json
-#   toolchain.sh stacks                 print detected stack ids, one per line
-#   toolchain.sh resolve <lane> <file>  print the winning row as JSON, or nothing
-#   toolchain.sh run <lane> <file>      resolve then exec; stdout is tool output
-#   toolchain.sh explain                human-readable table of what resolved
+#   toolchain.sh detect                        write .cc-sessions/toolchain.json (recomputed on every call)
+#   toolchain.sh stacks                        print detected stack ids, one per line
+#   toolchain.sh lanes                         one "<lane>\t<stack>\t<row id>" line per resolving pair
+#   toolchain.sh resolve <lane> <file> [stack] print the winning row as JSON, or nothing
+#   toolchain.sh run <lane> [file]             resolve then exec; stdout is tool output
+#   toolchain.sh explain                       human-readable table of what resolved
 #
 # Exit: 0 when a row ran or none applied; the tool's own status is reported in
 # the `run` JSON on stderr, never as this script's exit code.
@@ -241,9 +242,9 @@ cmd_explain() {
 }
 
 case "${1:-}" in
-  detect)  shift; cmd_detect "${1:-}" ;;
+  detect)  shift; cmd_detect ;;
   lanes)   shift; cmd_lanes ;;
-  stacks)  shift; cmd_stacks "${1:-}" ;;
+  stacks)  shift; cmd_stacks ;;
   resolve) shift; cmd_resolve "${1:-}" "${2:-}" "${3:-}" ;;
   run)     shift; cmd_run "${1:-}" "${2:-}" ;;
   explain) shift; cmd_explain ;;

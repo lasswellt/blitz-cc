@@ -33,7 +33,7 @@ EOF
 }
 
 case "$TOOL" in
-  Bash)
+  Bash|PowerShell)
     CMD="$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")"
     [[ -z "$CMD" ]] && exit 0
 
@@ -86,8 +86,11 @@ case "$TOOL" in
 
     # Existing test file? Compare assertion count: must not drop to zero.
     if [[ -f "$FILE_PATH" ]]; then
-      OLD_COUNT=$(grep -cE '\b(it|test|expect|assert|should)\b' "$FILE_PATH" 2>/dev/null || echo 0)
-      NEW_COUNT=$(echo "$CONTENT" | grep -cE '\b(it|test|expect|assert|should)\b' || echo 0)
+      # grep -c prints the count even when it is 0 (and exits 1), so no `|| echo 0`
+      # fallback: that appended a second "0" line and broke the arithmetic below.
+      OLD_COUNT=$(grep -cE '\b(it|test|expect|assert|should)\b' "$FILE_PATH" 2>/dev/null) || true
+      NEW_COUNT=$(printf '%s' "$CONTENT" | grep -cE '\b(it|test|expect|assert|should)\b') || true
+      : "${OLD_COUNT:=0}" "${NEW_COUNT:=0}"
       if (( OLD_COUNT > 0 )) && (( NEW_COUNT == 0 )); then
         block "Write to $FILE_PATH removes all assertions ($OLD_COUNT → 0)."
       fi
@@ -95,7 +98,8 @@ case "$TOOL" in
     ;;
 
   Edit|MultiEdit)
-    # Edits are partial; defer to PostToolUse audit. Allow.
+    # Edits are partial; an Edit that strips assertions is left to the critic
+    # (det-01/det-13) and `check`. Allow.
     exit 0
     ;;
 esac

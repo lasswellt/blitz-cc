@@ -171,17 +171,17 @@ Fix all failures before Phase 5. Maximum 3 fix iterations.
 
 ### Implementation Rules
 
-Every data-displaying component MUST handle three states:
+Every data-displaying component MUST handle four states, checked in this order (error before empty: a failed fetch leaves `items` empty, and the user must see the error, not "no data"):
 ```vue
 <template>
   <!-- LOADING STATE -->
   <LoadingSkeleton v-if="loading" />
 
-  <!-- EMPTY STATE -->
-  <EmptyState v-else-if="!items?.length" />
-
   <!-- ERROR STATE -->
   <ErrorDisplay v-else-if="error" :error="error" />
+
+  <!-- EMPTY STATE -->
+  <EmptyState v-else-if="!items?.length" />
 
   <!-- POPULATED STATE -->
   <div v-else>
@@ -221,7 +221,7 @@ File creation pattern: create `.vue` file → add TypeScript types → export fr
 ```bash
 CHANGED_FILES=$(git diff --name-only HEAD~1 -- '*.vue' '*.ts')
 ```
-Invoke: `/blitz:check --only completeness` scoped to changed files. Three-state coverage (check 2.10) must pass for all new data views. Critical/high findings must be resolved before proceeding.
+Invoke: `/blitz:check --only completeness` scoped to changed files. Four-state coverage (the 3.1 template; verified by the 5.1 checklist and the `design-critic` UX dimension, no registry row) must hold for all new data views. Critical/high findings must be resolved before proceeding.
 
 ### 5.2 Accessibility Audit
 

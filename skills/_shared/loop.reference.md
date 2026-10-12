@@ -116,7 +116,7 @@ Interactive runs never write the file. Never wire a prompt-type Stop hook in the
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`, dispatch `learn <slug>`, archive the plan, print `Ready: /blitz:ship --plan <slug>` |
 | 5 | nothing open | `LOOP_DONE` | `ScheduleWakeup stop:true` (self-paced only) + `LOOP_DONE` |
 
-Every tick: triage the inbox first (`blocked` older than 24 h → one escalation line; `quarantine` → surface the path, never load it; items older than 7 d fold into one "needs triage" line; `needs_input`/`permission` for a session whose state ∈ {done, failed, stopped} are dismissed), then evaluate rows, then commit with the `Task:` trailer and push. Row 4 archives to `docs/plans/archive/<date>-<slug>/` after `learn` returns.
+Every tick: triage the inbox first (`escalation` older than 24 h → one escalation line; `quarantine` → surface the path, never load it; items older than 7 d fold into one "needs triage" line; `needs_input`/`permission` for a session whose state ∈ {done, failed, stopped} are dismissed), then evaluate rows, then commit with the `Task:` trailer and push. Row 4 archives to `docs/plans/archive/<date>-<slug>/` after `learn` returns.
 
 ### Markers
 

@@ -30,7 +30,7 @@ compatibility: ">=2.1.296"
 | `--from-diff` | no plan: mine the current diff (`git diff HEAD` plus staged) and the last 10 commits on this branch; `<slug>` becomes the note name (ask for one when absent, kebab-case) |
 | none | the single active plan; more than one → ask which |
 
-Print `[learn] plan=<slug> source=<plan-dir|diff>`.
+Preamble: claim the hook-created session record per [sessions.md](/_shared/sessions.md) §2 steps 1-7 (`skill: learn`, `working_on: "learn <slug>"`) and log `skill_start`. Print `[learn] plan=<slug> source=<plan-dir|diff>`.
 
 ---
 
