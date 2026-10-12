@@ -9,7 +9,7 @@ Read `package.json` to determine the backend framework and database. Detect ever
 - **Runtime**: `firebase-functions`, `express`, `fastify`, `hono`, `@google-cloud/*`, or another backend framework.
 - **Database**: `firebase-admin` (Firestore), `pg` / `@prisma/client` (PostgreSQL), `mongoose` (MongoDB), etc.
 - **Validation**: `zod`, `joi`, `yup`, `class-validator`, etc.
-- **Module system**: `"type"` in `package.json` — CJS for Cloud Functions unless ESM is explicitly configured.
+- **Module system**: `"type"` in `package.json`; CJS for Cloud Functions unless ESM is explicitly configured.
 - **Monorepo context**: identify the backend package and its shared dependencies.
 
 ## Cloud Function pattern
@@ -18,19 +18,19 @@ Follow the numbered comment flow for all callable functions:
 
 ```typescript
 export const myFunction = onCall(async (request) => {
-  // 1. Auth — verify the caller is authenticated
+  // 1. Auth: verify the caller is authenticated
   const uid = requireAuth(request);
 
-  // 2. Validate — parse and validate input with schema
+  // 2. Validate: parse and validate input with schema
   const data = MyInputSchema.parse(request.data);
 
-  // 3. Business logic — perform the operation
+  // 3. Business logic: perform the operation
   const result = await performOperation(data);
 
-  // 4. Audit — log the action for compliance
+  // 4. Audit: log the action for compliance
   await auditLog({ action: "myFunction", uid, detail: { /* relevant data */ } });
 
-  // 5. Return — send typed response
+  // 5. Return: send typed response
   return { success: true, data: result };
 });
 ```
@@ -57,7 +57,7 @@ type MyInput = z.infer<typeof MyInputSchema>;
 
 - **CJS for Cloud Functions**: `require` / `module.exports` if the functions package uses CommonJS (check `"type"`).
 - **ESM for frontend packages**: `import` / `export` for packages with `"type": "module"`.
-- **Shared packages**: must be compatible with consumers — check their module system.
+- **Shared packages**: must be compatible with consumers; check their module system.
 
 ## Authorization variants
 

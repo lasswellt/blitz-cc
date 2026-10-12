@@ -1,4 +1,4 @@
-# Codebase Audit — Reference Material
+# Codebase Audit: Reference Material
 
 This file provides templates, checklists, and schemas used by the audit skill.
 
@@ -53,16 +53,16 @@ Write each finding using this exact format:
 
 1. Write each finding to your output file AS YOU DISCOVER IT. Do not accumulate.
 2. **Falsify before recording.** Before writing any finding, construct an artifact (Bash command, file Read) that would refute the claim. Include the artifact + its output in the Evidence field.
-   - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading — refine or discard.
+   - **Count-based** ("N hits of X"): `grep -n 'pattern' <file> | head -3`. If sampled hits are inside paths/filenames rather than prose content, the claim is misleading: refine or discard.
    - **Negative** ("X is absent from Y"): `grep -in '<4-char-substring-of-X>' Y`. Any hit means re-evaluate (may be over-strict regex).
    - **Pattern-duplication** ("X duplicated across N files"): require N ≥ 35% of in-scope files AND Read 2 alleged duplicates. Verify structurally identical, not merely sharing a keyword.
-   - This is artifact construction, NOT self-judgment. The shell decides — your role is to design the falsification test.
+   - This is artifact construction, NOT self-judgment. The shell decides; your role is to design the falsification test.
 3. **Score confidence 0-100 on every finding.** Add `Confidence: <0-100>` line to Evidence. Rubric: 0=false-positive, 25=might-be-real, 50=real-but-minor, 75=real-and-important, 100=definitely-real. Mirrors Anthropic's Code Review Plugin. The orchestrator ranks by confidence and drops only refuted findings (`--min-confidence low` is the default); it suppresses below a number only when `--min-confidence high` or `BLITZ_AUDIT_CONFIDENCE_THRESHOLD` asks for precision.
    - A finding your own falsification artifact refuted: do NOT record it; log one line to `## Discarded Drafts` at the file bottom: `- <claim> (Confidence N, refuted by <artifact>)`. Low confidence alone is not a reason to drop.
    - "No violations found" results: write to a separate `## Verified Clean` section, NOT the findings list. Findings are actionable; clean checks document what was inspected.
    - Count discipline: "N files match X" requires `grep -l X <files> | wc -l` (file count), NOT `grep -rn X | wc -l` (hit count). When they differ, name what you mean ("30 hits across 29 files"). Sample 2-3 alleged matches with Read before recording the count.
 4. Stay within your file cap. Prioritize the most impactful files.
-5. Read files fully before judging — do not flag issues based on file names alone.
+5. Read files fully before judging; do not flag issues based on file names alone.
 6. Be specific: cite exact file paths, line numbers, and code snippets.
 7. Do not report style-only issues unless they indicate a deeper problem.
 8. If you find a security vulnerability, always mark it Critical or High.
@@ -157,9 +157,9 @@ Write each finding using this exact format:
 - [ ] **Authentication flows**: Are tokens stored securely? Are refresh mechanisms implemented correctly?
 - [ ] **Error information leakage**: Do error responses expose stack traces, internal paths, or sensitive data?
 
-#### Containment Scope (sec-containment) — applies to agent/plugin codebases (blitz-self-audit)
+#### Containment Scope (sec-containment): applies to agent/plugin codebases (blitz-self-audit)
 Per [/_shared/security.md](/_shared/security.md). Frame `allowed-tools` as **capability grants, not toggles** (AP-3 / `sec-capability-grant`):
-- [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion — else flag.
+- [ ] **Capability grants**: Does any agent/skill `allowed-tools` grant a capability broader than its role? `Bash` on a read-only agent = exec+egress; `WebFetch` on a non-network agent = egress; `Write/Edit` on a read-only audit skill = mutation. Each over-grant needs a `# capability rationale:` comment, a `disallowed-tools` declaration, or a documented `<!-- no-disallowed-tools: -->` exclusion; else flag.
 - [ ] **Persistent-state validation (TB-2)**: Does startup load `.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/`, or CLAUDE.md without `startup-validate.sh` (schema + injection scan + provenance)? (`sec-startup-schema`/`sec-startup-injection`)
 - [ ] **Sub-agent trust (TB-3)**: Do agents that ingest external content tag `source_trust: "untrusted"`, and does the main thread cap+scan interpolated reply fields? (`agents.reference.md` §3)
 - [ ] **Fetched-content inspection (TB-4)**: Do WebFetch/MCP returns + MCP tool descriptions pass content inspection before reasoning? Rug-pull hash on tool descriptions? (`sec-content-inspection`)
@@ -263,11 +263,11 @@ health_score = max(0, 100 - (normalized_penalty * 5))
 Overall health score = average of all 5 pillar scores.
 
 Interpretation:
-- **90-100**: Excellent — minor improvements only
-- **70-89**: Good — some areas need attention
-- **50-69**: Fair — significant issues to address
-- **30-49**: Poor — major remediation needed
-- **0-29**: Critical — fundamental problems present
+- **90-100**: Excellent (minor improvements only)
+- **70-89**: Good (some areas need attention)
+- **50-69**: Fair (significant issues to address)
+- **30-49**: Poor (major remediation needed)
+- **0-29**: Critical (fundamental problems present)
 
 ---
 
@@ -376,15 +376,15 @@ Files with the most findings across all pillars:
 
 Prioritized list of remediation actions:
 
-1. **[CRITICAL]** <action> — Addresses findings: <finding-ids>
-2. **[HIGH]** <action> — Addresses findings: <finding-ids>
+1. **[CRITICAL]** <action> (addresses findings: <finding-ids>)
+2. **[HIGH]** <action> (addresses findings: <finding-ids>)
 3. ...
 
 ---
 
 ## Plan
 
-`docs/plans/audit-YYYY-MM-DD/` — spec.md (paused), tasks.json (N tasks), M findings kept as notes.
+`docs/plans/audit-YYYY-MM-DD/`: spec.md (paused), tasks.json (N tasks), M findings kept as notes.
 ```
 
 ---
@@ -409,23 +409,23 @@ A finding with no executable check is a note under `spec.md` §Out of scope, nev
 
 ---
 
-## Recall hardening — aggregation, FP-verify panel, deterministic lane, recall instrumentation
+## Recall hardening: aggregation, FP-verify panel, deterministic lane, recall instrumentation
 
 Detail for the SKILL.md §1.6 (deterministic lane), §2.2 (aggregation), §2.6 (FP-verify panel) and §2.11 (recall instrumentation) contract. Source spec (historical): `docs/consolidation/review-audit/audit-spec.md`.
 
 ### Deterministic lane (§1.6)
 
-Load `/_shared/check-registry.json`, select `lane=="deterministic" && consolidated_target in {audit,both}`. Run each row's `detection.command` across the codebase (grep/tsc/import-graph). Zero-FP, no aggregation needed. Write findings to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. These complement the semantic pillars — the two lanes catch disjoint bug classes (a deleted-test/broken-build has no semantic signature; a wrong answer-key has no structural signature).
+Load `/_shared/check-registry.json`, select `lane=="deterministic" && consolidated_target in {audit,both}`. Run each row's `detection.command` across the codebase (grep/tsc/import-graph). Zero-FP, no aggregation needed. Write findings to `${AUDIT_RUN}/findings/00-deterministic.md` tagged `lane: deterministic`. These complement the semantic pillars: the two lanes catch disjoint bug classes (a deleted-test/broken-build has no semantic signature; a wrong answer-key has no structural signature).
 
 ### Design pillar (adapter-aware, §1.6 with `--pillar design`)
 
 Triggered by `--pillar design` (or auto when a UI stack is detected). Extends the deterministic lane (§1.6) with the framework-adaptive design lane (specs: `docs/integrations/impeccable/`).
 
-0. **Preflight (never silent green).** Run `scripts/design/preflight.sh <target-repo>`. Record the `DESIGN_LANE_STATUS` line. If `semantic != OK` (impeccable at the pin in neither the target project nor a global install), emit the `DESIGN_LANE_UNAVAILABLE` line into `00-design.md`'s `## Lane status` block and the audit summary, run only the deterministic regex rows, and mark the design pillar's semantic coverage as a `coverage_boundary` — do not report the pillar as clean. With `--strict`, treat `semantic=ABSENT` as a hard fail. impeccable is a **target-project** dep (`npm i -D impeccable@2.3.2`), never a plugin dep.
+0. **Preflight (never silent green).** Run `scripts/design/preflight.sh <target-repo>`. Record the `DESIGN_LANE_STATUS` line. If `semantic != OK` (impeccable at the pin in neither the target project nor a global install), emit the `DESIGN_LANE_UNAVAILABLE` line into `00-design.md`'s `## Lane status` block and the audit summary, run only the deterministic regex rows, and mark the design pillar's semantic coverage as a `coverage_boundary`; do not report the pillar as clean. With `--strict`, treat `semantic=ABSENT` as a hard fail. impeccable is a **target-project** dep (`npm i -D impeccable@2.3.2`), never a plugin dep.
 1. **Resolve the adapter.** Parse the `DESIGN_ADAPTER primary=… variant=… secondary=… incompat=… confidence=…` token line emitted by `scripts/detect-stack.sh` (machine line, not prose).
 2. **Select + gate.** From the registry, take `pillar == design` rows. A row fires iff `adapter ∈ inclusion(primary) ∪ secondary` AND NOT (`reconciliation.relaxFor` includes `primary`), where `inclusion`: `none→{universal}`, `tailwind→{universal,tailwind}`, `tailwind-md3→{universal,tailwind,tailwind-md3}`, `vuetify→{universal,vuetify}`, `quasar→{universal,quasar}`. So Layer 0 (universal) always runs; Layer 1/2 gate to the stack; `bounce-easing`/`ghost-card` suppress where the stack prescribes spring/elevation. No cross-stack false positives.
-3. **Run once, filter.** Vendored rows (`detection.type == command`) all share the **key-free** `npx impeccable detect --json <targets>` — run it **once**, then attribute each output hit (`{antipattern, file, line, snippet}`) to the design row whose `detection.filter == antipattern`. The provider-gated tells (impeccable `--gpt`/`--gemini`) are NOT requested here; they are judged in the `design-critic` semantic lane via the critic's gemini CLI (`BLITZ_GEMINI_BIN`). New L1/L2 rows (`detection.type == regex`) run their own command, then apply the registry `design.exclude` set (two-step scoped filter: drop files matching `files` OR containing a `contentGuard`; drop lines matching a `lineGuard`) so token-definition surfaces, comments, and SVG paint don't false-positive; FP-verify each survivor before reporting. The consolidated `design-raw-color-literal` picks its message from `perAdapter` by the detected adapter. Write to `${AUDIT_RUN}/findings/00-design.md` tagged `pillar: design`.
-4. **Semantic aggregator.** For the design pillar, the semantic lane is **not** the 10 code-audit passes — it is `agents/design-critic.md` over rendered screenshots (5 dimensions; Creative Distinction scored against generic-within-the-stack's-idiom, per the adapter). Spawn it when screenshots are available (Playwright/dev-server); else note in `coverage_boundary`.
+3. **Run once, filter.** Vendored rows (`detection.type == command`) all share the **key-free** `npx impeccable detect --json <targets>`: run it **once**, then attribute each output hit (`{antipattern, file, line, snippet}`) to the design row whose `detection.filter == antipattern`. The provider-gated tells (impeccable `--gpt`/`--gemini`) are NOT requested here; they are judged in the `design-critic` semantic lane via the critic's gemini CLI (`BLITZ_GEMINI_BIN`). New L1/L2 rows (`detection.type == regex`) run their own command, then apply the registry `design.exclude` set (two-step scoped filter: drop files matching `files` OR containing a `contentGuard`; drop lines matching a `lineGuard`) so token-definition surfaces, comments, and SVG paint don't false-positive; FP-verify each survivor before reporting. The consolidated `design-raw-color-literal` picks its message from `perAdapter` by the detected adapter. Write to `${AUDIT_RUN}/findings/00-design.md` tagged `pillar: design`.
+4. **Semantic aggregator.** For the design pillar, the semantic lane is `agents/design-critic.md` over rendered screenshots (5 dimensions; Creative Distinction scored against generic-within-the-stack's-idiom, per the adapter), **not** the 10 code-audit passes. Spawn it when screenshots are available (Playwright/dev-server); else note in `coverage_boundary`.
 5. **Verdict authority.** Design rows are advisory (P3) except `design-low-contrast` (P2 → reject, a11y) and `design-quasar-tailwind-coexist` (P1 → reject, build conflict). `coverage_boundary` (§Recall instrumentation) records which engines ran (static vs browser-render) + any adapter-gated rows skipped.
 
 ### Multi-Review aggregation (§2.2)
@@ -462,7 +462,7 @@ effective_confidence = base_confidence * fp_factor   # refuted (0.0) -> dropped
 
 A finding that a run reproduced is never dropped by reading alone.
 
-Survivors attach the reproducing excerpt. A semantic finding is `advisory` regardless of confidence (registry downgrade rule) — high confidence raises rank, never authority. This is the structural cure for the v1.16.0 inflated-count incident (counts reported as findings without sampled code). Parity: native `/code-review` validation agent, <1% FP.
+Survivors attach the reproducing excerpt. A semantic finding is `advisory` regardless of confidence (registry downgrade rule): high confidence raises rank, never authority. This is the structural cure for the v1.16.0 inflated-count incident (counts reported as findings without sampled code). Parity: native `/code-review` validation agent, <1% FP.
 
 ### Recall instrumentation (`coverage_boundary`, §2.11)
 
@@ -542,7 +542,7 @@ echo "[audit] dispatch=${BLITZ_DISPATCH:-auto} use_workflow=${USE_WORKFLOW}" >&2
 - **`USE_WORKFLOW` truthy AND `Workflow` tool available** → §1.2 (Workflow path).
 - **else, or on ANY `Workflow` failure** → fall back to §1.1 (`Agent()` path). Never hard-fail.
 - Log the chosen path to the activity-feed: `detail.dispatch: "workflow"|"agent"`.
-- All filesystem I/O (Phase 0 inventory, Phase 2 report, ratchet.json, activity-feed) stays in this skill's main-thread Bash — the `Workflow` script touches none of it (hybrid wrapper boundary).
+- All filesystem I/O (Phase 0 inventory, Phase 2 report, ratchet.json, activity-feed) stays in this skill's main-thread Bash; the `Workflow` script touches none of it (hybrid wrapper boundary).
 
 ### 1.1 Spawn 10 Pillar Agents via Agent Tool (default path)
 
@@ -550,7 +550,7 @@ Spawn all 10 agents using the `Agent` tool, all in **a single assistant message*
 
 Per-spawn parameters:
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails)
-- `model: sonnet`, `effort: medium` (explicit — inheritance would run every pillar on the operator's model and effort)
+- `model: sonnet`, `effort: medium` (explicit: inheritance would run every pillar on the operator's model and effort)
 - `description: audit <agent-name>` (row label in `/tasks` and the agents view; [agents.md](/_shared/agents.md) §1.5)
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
@@ -571,18 +571,18 @@ Every agent receives:
 
 **2 independent same-scope passes per pillar**: both agents in a pillar audit the *full* pillar surface independently (not a frontend/backend split). Their overlap is the agreement signal §2.2 aggregates: a finding both passes flag is high-confidence; one-pass findings are low-confidence. (Distinct breadth is recovered by aggregation across the two passes + the deterministic lane, §1.6.)
 
-| # | Agent Name | Pillar | Scope (full pillar — independent pass) | File Cap | Output File |
+| # | Agent Name | Pillar | Scope (full pillar, independent pass) | File Cap | Output File |
 |---|-----------|--------|-------|----------|-------------|
 | 1 | `arch-a` | Architecture | Components/stores/composables/router/layouts + functions/schemas/API/DB models | 14 | `findings/01-arch-a.md` |
-| 2 | `arch-b` | Architecture | (same scope as `arch-a` — independent pass) | 14 | `findings/02-arch-b.md` |
+| 2 | `arch-b` | Architecture | (same scope as `arch-a`, independent pass) | 14 | `findings/02-arch-b.md` |
 | 3 | `perf-a` | Performance | Re-renders/memory/bundle/lazy + cold-starts/DB queries/batch/caching | 12 | `findings/03-perf-a.md` |
-| 4 | `perf-b` | Performance | (same scope as `perf-a` — independent pass) | 12 | `findings/04-perf-b.md` |
+| 4 | `perf-b` | Performance | (same scope as `perf-a`, independent pass) | 12 | `findings/04-perf-b.md` |
 | 5 | `sec-a` | Security | DB/storage rules, auth/CORS/CSP + XSS/middleware/input-validation/secrets | 12 | `findings/05-sec-a.md` |
-| 6 | `sec-b` | Security | (same scope as `sec-a` — independent pass) | 12 | `findings/06-sec-b.md` |
+| 6 | `sec-b` | Security | (same scope as `sec-a`, independent pass) | 12 | `findings/06-sec-b.md` |
 | 7 | `maint-a` | Maintainability | Naming/complexity/duplication/dead-code + type-safety/consistency/error-types/reuse | 14 | `findings/07-maint-a.md` |
-| 8 | `maint-b` | Maintainability | (same scope as `maint-a` — independent pass) | 14 | `findings/08-maint-b.md` |
+| 8 | `maint-b` | Maintainability | (same scope as `maint-a`, independent pass) | 14 | `findings/08-maint-b.md` |
 | 9 | `robust-a` | Robustness | Error boundaries/feedback/edge/offline + error-handling/transactions/logging/retries | 12 | `findings/09-robust-a.md` |
-| 10 | `robust-b` | Robustness | (same scope as `robust-a` — independent pass) | 12 | `findings/10-robust-b.md` |
+| 10 | `robust-b` | Robustness | (same scope as `robust-a`, independent pass) | 12 | `findings/10-robust-b.md` |
 
 `--dual` adds cross-model agreers for the Security pillar (highest-stakes; self-critique-paradox mitigation).
 
@@ -591,10 +591,10 @@ Every agent receives:
 Dispatch the 10 pillar agents as one `parallel()` with `schema:` validation. The script owns dispatch only; this skill collects the validated return + the agents' findings files in Phase 2 exactly as the `Agent()` path does.
 
 **Dispatch:** invoke the plugin workflow `/blitz:audit-sweep` (`workflows/audit-sweep.js`) with
-`args: { roster: [{ name, prompt }, …], findingsSchema }` — the roster is the 10-agent table below with each
+`args: { roster: [{ name, prompt }, …], findingsSchema }`: the roster is the 10-agent table below with each
 `prompt` filled from the pillar template (agent name, pillar, scope, file cap, output path, checklist, stack,
 inventory inline). It returns `{ agents: [{ name, ok, result }] }`. **On any failure** (tool absent, no
-`Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)** — never
+`Workflow(<name>)` allow rule in a `-p` run, script error, abort) **fall back to §1.1 (`Agent()`)**; never
 hard-fail. Resume semantics + concurrency cap: [agents.reference.md](/_shared/agents.reference.md)
 §7 Workflow dispatch contract.
 
@@ -628,7 +628,7 @@ Run the registry deterministic checks ([`/_shared/check-registry.json`](/_shared
 
 Per surviving finding (post-dedup), spawn the three refuters of §Adversarial FP-verify panel (correctness on sonnet, security on opus, reproduces on sonnet with execution evidence), through `Workflow` `parallel()` or `Agent()` per [agents.md](/_shared/agents.md). Each re-reads the cited `file:line` and attempts to **REFUTE** against actual behavior (default refuted if not reproducible); **two independent votes → drop** the finding, where one model family is one vote and an executed refutation is its own, and a finding a run reproduced is never dropped. Survivors attach a reproducing excerpt; nothing is reported without it (registry downgrade rule; native `/code-review` validation parity, <1% FP). Semantic findings remain `advisory` regardless of confidence (rank ↑, never authority). Deterministic findings (base 1.0) skip the panel: the mechanism is the verification. Detail: this file §Recall hardening.
 
-When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding — each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
+When the §1.0 gate selected the `Workflow` path, dispatch the panel as a nested `parallel()` per finding: each finding's lenses verify concurrently while other findings are still being judged (pipeline over findings, barrier over lenses). On any `Workflow` failure, fall back to `Agent()`.
 
 ```js
 // args: { findings:[{key,desc,fileLine}], verdictSchema }
@@ -664,7 +664,7 @@ mkdir -p "${REPORT_DIR}"
 cp "${AUDIT_RUN}/reports/audit-report.md" "${REPORT_DIR}/audit-$(date +%Y%m%d).md"
 ```
 
-**Opt-in HTML twin (additive — report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract and bash bodies: `hooks/scripts/_lib/html.sh` — source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
+**Opt-in HTML twin (additive; report `.md` only):** after the cp, emit an HTML twin of the human-facing report via the `emit_html()` helper (contract and bash bodies: `hooks/scripts/_lib/html.sh`; source it, never inline). Audit reports may quote fetched/untrusted content → pass the `untrusted` trust arg (body HTML-escaped into `<pre>`, TB-4). Twin the report `.md` only; `docs/plans/audit-<date>/` (`spec.md`, `tasks.json`) is never twinned. Default (`BLITZ_OUTPUT_FORMAT` unset) is a no-op.
 
 ```bash
 . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"   # canonical emit_html/sanitize_html bodies (never inline)
@@ -699,7 +699,7 @@ Health: Architecture NN · Performance NN · Security NN · Maintainability NN �
 Security: <registry sec-* rows run; claude-security delegated | one-line recommendation from §1.3>.
 
 ## Out of scope
-- Findings with no executable check (notes, not tasks): <finding — file:line — why no check>
+- Findings with no executable check (notes, not tasks): <finding, file:line, why no check>
 - Pillars/lanes not run: <from coverage_boundary>
 EOS
 ```

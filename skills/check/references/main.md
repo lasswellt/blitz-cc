@@ -1,4 +1,4 @@
-# Check — references
+# Check: references
 
 Overflow for [SKILL.md](../SKILL.md). Sections: report template, auto-fix strategies, changed-package detection, framework rule table, mutation-testing recipe. Registry ids are the contract: this file names rows, it never re-implements their grep.
 
@@ -17,7 +17,7 @@ scope: plan | diff | repo
 plan: <slug>            # plan scope only
 ---
 
-# Check — <slug | diff @ ref | repo>
+# Check: <slug | diff @ ref | repo>
 
 **Result:** PASS | CONDITIONAL | FAIL · **Base:** <base sha> · **Files:** <n> · **LOC:** <n>
 
@@ -31,7 +31,7 @@ plan: <slug>            # plan scope only
 |---|---|---|---|
 | tsc | <n> errors | <n> errors | PASS/FAIL |
 | lint | <n> errors, <n> warnings | <n> errors, <n> warnings | PASS/FAIL |
-| tests (selected) | <p>/<t> passed · ratio <r> | — | calibration |
+| tests (selected) | <p>/<t> passed · ratio <r> | n/a | calibration |
 | tests (full) | <p>/<t> passed · escaped <n> | <p>/<t> passed | PASS/FAIL/SKIPPED |
 | build | PASS/FAIL | PASS/FAIL | PASS/FAIL |
 
@@ -39,15 +39,15 @@ plan: <slug>            # plan scope only
 
 | Task | passes | last_verify.ok | failed | tail |
 |---|---|---|---|---|
-| T-001 | true | true | — | — |
+| T-001 | true | true | none | none |
 | T-002 | false | false | `npx vitest run src/x.test.ts` | <≤200 chars> |
 
 ## Held-out checks (critic-authored, plan scope)
 
 | Task | ok | Command | Tail |
 |---|---|---|---|
-| T-001 | true | `node -e "import('./src/health.ts').then(m=>process.exit(m.health().ok?0:1))"` | — |
-| T-002 | null | — | no runnable surface: route needs the emulator |
+| T-001 | true | `node -e "import('./src/health.ts').then(m=>process.exit(m.health().ok?0:1))"` | none |
+| T-002 | null | none | no runnable surface: route needs the emulator |
 
 ## Cannot verify (survey)
 
@@ -97,7 +97,7 @@ Commits: `<sha> fix(check): …` (one line each). Manual fixes: listed under Bef
 
 | Metric | Baseline | Current | Threshold | Δ | Action |
 |---|---|---|---|---|---|
-| type_errors | 0 | 0 | 0 (absolute) | 0 | — |
+| type_errors | 0 | 0 | 0 (absolute) | 0 | none |
 | as_any_count | 7 | 5 | 5 | ↓ tightened | history appended |
 | test_count | 120 | 118 | 120 | ↓ regression | T-014 blocked `ratchet:test_count` |
 
@@ -264,11 +264,11 @@ Rule sets load only when the stack banner detects the dependency (`grep -E '"fir
 
 ### Auto-fix recipes
 
-**F5** — pattern `\.docs\.map\s*\(\s*(\w+)\s*=>\s*\1\.data\(\)\s*\)` → `.docs.map(($1) => ({ id: $1.id, ...$1.data() }))`.
+**F5**: pattern `\.docs\.map\s*\(\s*(\w+)\s*=>\s*\1\.data\(\)\s*\)` → `.docs.map(($1) => ({ id: $1.id, ...$1.data() }))`.
 
-**V3** — keep the first `const db = useFirestore()`, delete the others, rewrite downstream references to the surviving variable name.
+**V3**: keep the first `const db = useFirestore()`, delete the others, rewrite downstream references to the surviving variable name.
 
-**P2** — before: `const store = useMyStore(); watch(() => store.someValue, cb)`; after: `const store = useMyStore(); const { someValue } = storeToRefs(store); watch(someValue, cb)`; add `storeToRefs` to the `pinia` import.
+**P2**: replace `const store = useMyStore(); watch(() => store.someValue, cb)` with `const store = useMyStore(); const { someValue } = storeToRefs(store); watch(someValue, cb)`; add `storeToRefs` to the `pinia` import.
 
 After each recipe re-grep the fixed rule id in the file; a remaining hit is logged `fix_partial` and handed to the human.
 
@@ -356,7 +356,7 @@ Lane order, the registry rows and the verdict rules stay in SKILL.md; the blocks
 Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes            # lane<TAB>stack<TAB>row-id: what will actually run
 for lane in typecheck lint build; do
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
 done
@@ -369,7 +369,7 @@ done
 | tests | selected run, then one full run (below); `toolchain.sh run test` outside the JS/TS ecosystems | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
 | build | `toolchain.sh run build` | pass, error tail |
 
-A lane with no resolving row for a stack is **skipped, not passed** — record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
+A lane with no resolving row for a stack is **skipped, not passed**: record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
 
 Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md](/docs/guides/tia.md)):
 
@@ -428,7 +428,7 @@ Every prompt states the order: **spec compliance first** (does the diff do what 
 
 ### 2.2 Collect
 
-Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
+Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify; <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
 
 App-level verification (§2.3 below) runs only when the change touches a rendered surface; `--mutation` (§2.4 below) is off by default.
 
@@ -442,15 +442,20 @@ Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavail
 
 ## Phase 3: `--fix`
 
-Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md) §Arming table):
+Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md) §Arming table). Every `cmd` resolves from the toolchain table, one `typecheck` row per detected stack plus the `lint` row where the table has one; `check` names no tool itself (the resolution rules are `build`'s [references/main.md](../../build/references/main.md) §Gate commands):
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
-jq -n --arg until "check ${SLUG:-diff} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},
-  {name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$until}' > "$GATE_DIR/gate.json"
+TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"; STACKS=$(bash "$TC" stacks)
+gate_rows() { for ST in $STACKS; do bash "$TC" resolve "$1" "" "$ST"; done \
+  | jq -c --arg l "$1" --argjson t "$2" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
+CHECKS=$({ gate_rows typecheck 180; gate_rows lint 180; } | jq -sc .)
+[ "$CHECKS" != "[]" ] && jq -nc --argjson c "$CHECKS" --arg until "check ${SLUG:-diff} fix" '{checks:$c, blocks:0, max_blocks:4, until:$until}' > "$GATE_DIR/gate.json"
 # … fixes …
 rm -f "$GATE_DIR/gate.json"    # before Phase 5 and on every early exit
 ```
+
+A row carrying `{file}` is a per-file checker and cannot gate a tree, so it is left out and that lane counts as skipped for the stack; no resolving row for any lane leaves `CHECKS` empty and writes no file, so the gate never blocks on a checker the project does not have.
 
 | Category | Strategy | Max attempts |
 |---|---|---|

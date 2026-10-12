@@ -1,4 +1,4 @@
-# Ship — reference
+# Ship: reference
 
 Overflow for [SKILL.md](../SKILL.md): the changelog template, publish steps per stack, merge-back, and the rollback recipe. `SKILL.md` owns the phase order and the safety rules; nothing here relaxes them.
 
@@ -98,10 +98,10 @@ Entered from a Phase 5 failure or `--rollback vX.Y.Z`. First assess, then undo i
 ### R.2 Undo (reverse order)
 
 ```bash
-# GitHub release — confirmation required
+# GitHub release: confirmation required
 gh release delete vX.Y.Z --yes
 
-# Remote tag — confirmation required, cannot be undone
+# Remote tag: confirmation required, cannot be undone
 git push origin :refs/tags/vX.Y.Z
 
 # Local tag
@@ -128,7 +128,7 @@ Rollback vX.Y.Z (<slug>):
   Local tag:      DELETED | NOT_FOUND
   Merge:          REVERTED | NOT_NEEDED
   Prep commit:    REVERTED | NOT_FOUND
-  Package:        <name>@X.Y.Z still published — run: npm deprecate … | NOT_PUBLISHED
+  Package:        <name>@X.Y.Z still published (run: npm deprecate …) | NOT_PUBLISHED
   Plan:           docs/plans/<slug>/ (status: active) | left archived
 Next: fix the cause, then /blitz:ship --plan <slug> <next-version>
 ```

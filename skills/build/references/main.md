@@ -1,4 +1,4 @@
-# Build — reference
+# Build: reference
 
 Overflow for [../SKILL.md](../SKILL.md). Contracts cited here are canonical in [agents.md](/_shared/agents.md) (spawn spec, reply enum, fix loop, worktrees) and [loop.md](/_shared/loop.md) (tasks.json, progress.md, gate); this file holds the templates and procedures `build` pastes or runs.
 
@@ -15,17 +15,17 @@ ROLE: <backend|frontend|infra|test>                                         # it
 PROJECT CONVENTIONS (discovered by build T.1; follow them, do not re-derive):
 <auth pattern · error format · response envelope · validation · component style ·
  store pattern · loading UI · test structure · naming>
-REUSE THESE — do not recreate:
-- <path> — <what it provides>
+REUSE THESE (do not recreate):
+- <path>: <what it provides>
 
-BUDGET (Heavy — skills/_shared/agents.reference.md §3.3):                              # item 8
+BUDGET (Heavy; skills/_shared/agents.reference.md §3.3):                              # item 8
 - Max file reads: 25
 - Max web searches: 0
 - Max tool calls: 40 (at 35, finish the current step and reply)
 - Max output: 400 lines
 - Wall-clock: 8 minutes
 
-NEVER EDIT (project additions only — the standing list arrives from the hook):  # item 6
+NEVER EDIT (project additions only; the standing list arrives from the hook):  # item 6
 <project additions; omit this block when the project adds nothing>
 
 TASK <ID>: <title>                                                           # items 1-2
@@ -37,7 +37,7 @@ SCOPE_FILES (the only paths you may edit):                                   # i
 - <files[1]>
 If the task needs a file not listed and it is not a ≤3-file Tier-1/2 touch, STOP and reply BLOCKED with
   escalate: "ESCALATE: scope-expansion-needed (file: <path>, reason: <one line>)"
-Do not silently expand scope — that produces fixes that pass locally and break
+Do not silently expand scope: that produces fixes that pass locally and break
 other tasks' assumptions. ≤3 Tier-1/2 files outside scope are DONE_WITH_CONCERNS (list them in concerns[]); more is Tier 3.
 
 VERIFY (run each; paste each ≤200-char tail into the reply):                 # item 5
@@ -53,11 +53,11 @@ PRIOR ATTEMPTS (from progress.md; do not repeat them):
 
 **Items 6 (standing never-edit list), 7 (reply contract and status enum), 9 (commit format), 10 (output style) and 11 (stop conditions) are NOT in this template.** `hooks/scripts/subagent-context.sh` injects them from [spawn-invariant.md](/_shared/spawn-invariant.md) on `SubagentStart`, byte-identical on every spawn, which is what keeps the subagent's prompt cache intact. Pasting them here as well would duplicate ~2.3 KB into every spawn and defeat the point. Only each item's variable half stays: the project's own never-edit additions, and the `--parallel` branch line.
 
-When the hook cannot run — `BLITZ_DISABLE_SPAWN_INVARIANT=1`, a non-blitz agent type, or a host without bash — inline [spawn-invariant.md](/_shared/spawn-invariant.md) into the prompt instead. Status meanings and main-thread actions: [agents.reference.md](/_shared/agents.reference.md) §4.1. A spawn missing any of items 1–5 or 8 is a bug in `build`, not in the agent.
+When the hook cannot run (`BLITZ_DISABLE_SPAWN_INVARIANT=1`, a non-blitz agent type, or a host without bash), inline [spawn-invariant.md](/_shared/spawn-invariant.md) into the prompt instead. Status meanings and main-thread actions: [agents.reference.md](/_shared/agents.reference.md) §4.1. A spawn missing any of items 1–5 or 8 is a bug in `build`, not in the agent.
 
 ### Resume payload (fix rounds 1-3)
 
-`SendMessage(to: "dev-<ID>", message: …)` — one failing item per message, remaining work stated explicitly:
+`SendMessage(to: "dev-<ID>", message: …)`: one failing item per message, remaining work stated explicitly:
 
 ```
 verify item <n> failing: <cmd>
@@ -77,7 +77,7 @@ SUMMARY=$(printf '%s' "$REPLY_JSON" | jq -r '.summary // ""' | cut -c1-200)
 printf '%s' "$REPLY_JSON" | jq -r '.files_changed[]?' | grep -vE '^(/|\.\./)' > "${SESSION_TMP_DIR}/${ID}-files.txt"   # repo-relative only
 ```
 
-`MALFORMED` is a failed round; the re-spawn narrows the prompt (drop the plan excerpt, keep items 1-5 and 8; 6, 7, 9, 10 and 11 arrive through the hook) — never identical.
+`MALFORMED` is a failed round; the re-spawn narrows the prompt (drop the plan excerpt, keep items 1-5 and 8; 6, 7, 9, 10 and 11 arrive through the hook); never identical.
 
 ---
 
@@ -91,7 +91,7 @@ DONE=$(printf '%s' "$TASKS" | jq -c '[.[] | select(.status=="done") | .id]')
 # wave 0: open tasks whose depends_on ⊆ done; wave N: ⊆ done ∪ waves<N. Pure function of tasks.json.
 ```
 
-Then, within each wave, in id order: keep a task only if its `files` are disjoint from every task already kept in this wave (exact path match); a task dropped for overlap waits for the next wave. Cap 4; overflow queues by `schema/type > server > store > component > test` (by `role` then path). A wave that empties while open tasks remain is a `depends_on` cycle: print it, `BLOCKED: dependency cycle`, stop — never partial execution.
+Then, within each wave, in id order: keep a task only if its `files` are disjoint from every task already kept in this wave (exact path match); a task dropped for overlap waits for the next wave. Cap 4; overflow queues by `schema/type > server > store > component > test` (by `role` then path). A wave that empties while open tasks remain is a `depends_on` cycle: print it, `BLOCKED: dependency cycle`, stop; never partial execution.
 
 Print the plan:
 
@@ -118,7 +118,7 @@ Both paths carry the same 11-item prompt. `build-wave.js` owns dispatch and sche
 Monitor(command: "tail -f ${SESSION_TMP_DIR}/wave-<N>.log | grep --line-buffered 'DONE\|BLOCKED\|NEEDS_CONTEXT'", timeout: 1800)
 ```
 
-Every watch has a deadline (max 30 min; use `timeout: 600` under `-p`; `persistent` no longer exists). Re-arm at every wave boundary. Agents on the Agent path do not write that log — the orchestrator appends one `<ID> <STATUS> <summary≤80>` line per reply it receives, so each Monitor event row reads `T-004 DONE …` (≥2.1.284) — and the tail is a wake-up, not the source of truth; `ListAgents` polling every 2-3 turns covers a deadline that expires mid-wave. The Workflow barrier replaces Monitor inside a wave.
+Every watch has a deadline (max 30 min; use `timeout: 600` under `-p`; `persistent` no longer exists). Re-arm at every wave boundary. Agents on the Agent path do not write that log; the orchestrator appends one `<ID> <STATUS> <summary≤80>` line per reply it receives, so each Monitor event row reads `T-004 DONE …` (≥2.1.284), and the tail is a wake-up, not the source of truth; `ListAgents` polling every 2-3 turns covers a deadline that expires mid-wave. The Workflow barrier replaces Monitor inside a wave.
 
 Stuck detection per agent: no reply by wall-clock + 30 s → `SendMessage(to: "dev-<ID>", message: "STATUS?")`; nothing in 90 s → classify `MISSING` → `BLOCKED circuit-breaker`, `attempts=+1`; do not wait further and do not block the barrier on it.
 
@@ -134,12 +134,12 @@ if git merge-tree --write-tree HEAD "$BRANCH" >/dev/null 2>&1; then
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$ID" || FIX_QUEUE+=("$ID")
 else
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "$ID" blocked_reason=scope-expansion-needed
-  printf '## %s build %s blocked\nRuling: conflict — %s touched files another task changed; re-plan files[] (%s, wave %s)\n' \
+  printf '## %s build %s blocked\nRuling: conflict; %s touched files another task changed; re-plan files[] (%s, wave %s)\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$ID" "$ID" "$ID" "$WAVE" >> "docs/plans/${SLUG}/progress.md"
 fi
 ```
 
-`git merge-tree --write-tree` exits non-zero on conflict without touching the index; a conflicting branch is left in place for a human (or a re-plan of `files[]`) and never auto-resolved — 42% of cross-agent conflicts are structural. Tasks in `FIX_QUEUE` enter the fix loop after the wave's merges finish, agent resumed by name (`dev-<ID>`) when it still exists, fresh spawn otherwise.
+`git merge-tree --write-tree` exits non-zero on conflict without touching the index; a conflicting branch is left in place for a human (or a re-plan of `files[]`) and never auto-resolved: 42% of cross-agent conflicts are structural. Tasks in `FIX_QUEUE` enter the fix loop after the wave's merges finish, agent resumed by name (`dev-<ID>`) when it still exists, fresh spawn otherwise.
 
 **After the wave's merges finish**, re-verify the tasks the merge could have broken. A clean textual merge is not a semantic one: two tasks can each pass alone and break each other once combined, and `merge-tree` cannot see that. Re-running every task is the safe answer and the slow one, so re-verify exactly the tasks whose `files[]` the merged paths touch:
 
@@ -164,13 +164,13 @@ A task that fails here is demoted from `done` back to `in_progress` with `passes
 
 Run after the last wave (SKILL.md §P.6). `/blitz:check --only wiring` first; then confirm each item, fixing inline when fewer than 3 are open, otherwise one `dev` with `ROLE: frontend`, Medium budget (15 reads, 25 tool calls, 5 min), `SCOPE_FILES` = the files the findings name. Every item ends confirmed or recorded as a `Ruling:`; a silent half-integration is the failure this pass exists to prevent.
 
-1. **Navigation entries** — every new page/route has its entry in the app's navigation config.
-2. **Design tokens** — new components use existing tokens (color, spacing, typography); no hardcoded values.
-3. **Layout consistency** — new pages use the correct layout wrapper; breakpoints match existing pages.
-4. **State wiring** — new stores are initialized; composables registered where the framework requires it; store actions call real APIs (build:integration).
-5. **Accessibility** — interactive elements carry ARIA attributes, keyboard navigation, focus management.
-6. **Loading and error states** — async operations show loading; errors are surfaced, not swallowed.
-7. **Route guards** — protected routes carry the project's auth guard.
+1. **Navigation entries**: every new page/route has its entry in the app's navigation config.
+2. **Design tokens**: new components use existing tokens (color, spacing, typography); no hardcoded values.
+3. **Layout consistency**: new pages use the correct layout wrapper; breakpoints match existing pages.
+4. **State wiring**: new stores are initialized; composables registered where the framework requires it; store actions call real APIs (build:integration).
+5. **Accessibility**: interactive elements carry ARIA attributes, keyboard navigation, focus management.
+6. **Loading and error states**: async operations show loading; errors are surfaced, not swallowed.
+7. **Route guards**: protected routes carry the project's auth guard.
 
 Commit `feat(<slug>/integration): wiring pass`.
 
@@ -191,7 +191,7 @@ Every command below resolves from the toolchain table (`bash "${CLAUDE_PLUGIN_RO
 
 Order inside a round: types → imports → logic → tests. Commit each round `fix(<slug>): integration round <n>` with a `Task: <slug>/integration` trailer. Round 5 (or the last round taken) always gets one full sweep to catch cross-package regressions. Print the saving when it exists (`full 45s → selective 12s`).
 
-Pre-existing tests that turn red are **Critical** and outrank new-test failures: round 1 decides whether the behavior change was intended (update the old test) or not (fix the new code); round 2 unresolved → `Ruling: defer — <test> regression needs a human` and `BLOCKED:`.
+Pre-existing tests that turn red are **Critical** and outrank new-test failures: round 1 decides whether the behavior change was intended (update the old test) or not (fix the new code); round 2 unresolved → `Ruling: defer; <test> regression needs a human` and `BLOCKED:`.
 
 ---
 
@@ -212,7 +212,7 @@ SKILL.md §Gate builds `gate.json` from the toolchain table so the Stop hook run
 `build` removes no worktree and deletes no branch. Platform facts ([agents.reference.md](/_shared/agents.reference.md) §6):
 
 - `isolation: "worktree"` creates `.claude/worktrees/<id>` from `HEAD` when `worktree.baseRef: "head"` (the §0.4 precondition); the platform locks it while the agent runs and sweeps unlocked worktrees by `cleanupPeriodDays`.
-- Never remove a worktree that `claude agents --json` still lists — it holds uncommitted work.
+- Never remove a worktree that `claude agents --json` still lists; it holds uncommitted work.
 - `build/<slug>/<ID>` is a label on the agent's commits and branch (the platform's own `worktree-agent-<hex>` branch is the agent's starting point); blitz does not track or prune it. After a clean merge `git branch -d` is safe (refuses unmerged) but optional; leave conflicting branches for inspection.
 - `/blitz:sessions worktrees` lists what the platform left behind; `.cc-sessions/` is gitignored runtime output and the gate file is removed by `build` itself on every exit path.
 
@@ -239,7 +239,7 @@ No agents, no plan. Do the work on the main thread.
 
 ### I.1 `--issue N` (prepended when present)
 
-Fetch and classify before touching code — salvaged from the retired fix-issue skill:
+Fetch and classify before touching code (salvaged from the retired fix-issue skill):
 
 ```bash
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
@@ -253,7 +253,7 @@ Record title, body, labels, comments, state (warn if closed), milestone. Classif
 
 ```
 Root Cause Analysis
-Issue: #<n> — <title>
+Issue: #<n> (<title>)
 Cause: <1-2 sentences>
 Location: <file:line>
 Mechanism: <data flow / timing>
@@ -324,7 +324,7 @@ Per iteration:
 1. **Select.** `TASK_JSON=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" next "$SLUG")`; empty → §T.6. A `<task-id>` argument pins `TASK_JSON` to that task and exits after it. A cycle in `depends_on` (Kahn layering never empties while open tasks remain) is a hard failure: print the cycle, `BLOCKED: dependency cycle`, stop.
 2. **Mark.** `tasks.sh set "$SLUG" "$ID" status=in_progress`; append `## <ISO> build <ID> start (attempt <attempts+1>)` to `progress.md`; feed `task_start {plan, task}`.
 3. **Arm the gate** when `--autonomous` (§Gate).
-4. **Spawn one `dev`** with fresh context — `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", prompt: <11-item spec>)` (foreground: the next task waits on it). When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, drop `name` (a named call without `isolation` becomes a teammate that loses its `skills` preload and cannot be resumed) and use the returned agent id wherever this file says `dev-<ID>` ([agents.md](/_shared/agents.md) §1.5). The spec ([agents.reference.md](/_shared/agents.reference.md) §3.1; template below):
+4. **Spawn one `dev`** with fresh context: `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", prompt: <11-item spec>)` (foreground: the next task waits on it). When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, drop `name` (a named call without `isolation` becomes a teammate that loses its `skills` preload and cannot be resumed) and use the returned agent id wherever this file says `dev-<ID>` ([agents.md](/_shared/agents.md) §1.5). The spec ([agents.reference.md](/_shared/agents.reference.md) §3.1; template below):
 
    | # | Item | Source |
    |---|---|---|
@@ -335,7 +335,7 @@ Per iteration:
    | 6 | Never-edit: `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `.cc-sessions/**`, test files unless `role: test`, project additions | this skill |
    | 7 | Reply contract + JSON block ([agents.reference.md](/_shared/agents.reference.md) §4.2) | agents.md |
    | 8 | `BUDGET (Heavy)`: 25 reads, 0 searches, 40 tool calls (finish at 35), 400 lines, 8 min | agents.reference.md §3.3 |
-   | 9 | Commit `feat(<slug>/<role>): <ID> <title>` + trailer `Task: <slug>/<ID>`; one commit; `fix(<slug>/<role>): … — during <ID>` for Tier-1 auto-fixes | this skill |
+   | 9 | Commit `feat(<slug>/<role>): <ID> <title>` + trailer `Task: <slug>/<ID>`; one commit; `fix(<slug>/<role>): … (during <ID>)` for Tier-1 auto-fixes | this skill |
    | 10 | `Output: terse-technical per output.md; fragments OK; preserve code, paths, commands, JSON verbatim.` | output.md |
    | 11 | Stop conditions: reply when `verify[]` passes; `BLOCKED` on any `ESCALATE:`; stop before a new file at ≤3 calls left | agents.md |
 
@@ -349,9 +349,9 @@ Per iteration:
    | `NEEDS_CONTEXT` | answer once via `SendMessage(to: "dev-<ID>")` with the missing fact; no attempt consumed; wait for the next reply |
    | `BLOCKED` | `tasks.sh set … attempts=+1`; map `escalate` to `blocked_reason`; Tier 3/4 reason → §T.5 ruling now; else → §T.4 |
 
-6. **Verify on main.** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$ID"` — the only path to `status: done`. Pass → append `## <ISO> verify <ID> ok=true`, feed `verification {command: "tasks.sh verify <slug> <ID>", result: pass}`, `task_complete {summary}`; confirm the agent's commit carries the trailer (`git log -1 --grep "Task: $SLUG/$ID"`), else commit its files yourself with the item-9 format. Fail → `set attempts=+1`, append `## <ISO> verify <ID> ok=false failed="<cmd>" tail="<200 chars>"`, → §T.4.
+6. **Verify on main.** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$ID"` is the only path to `status: done`. Pass → append `## <ISO> verify <ID> ok=true`, feed `verification {command: "tasks.sh verify <slug> <ID>", result: pass}`, `task_complete {summary}`; confirm the agent's commit carries the trailer (`git log -1 --grep "Task: $SLUG/$ID"`), else commit its files yourself with the item-9 format. Fail → `set attempts=+1`, append `## <ISO> verify <ID> ok=false failed="<cmd>" tail="<200 chars>"`, → §T.4.
 7. **Disarm** the gate (`rm -f "$GATE_DIR/gate.json"`) before the next spawn or any exit.
-8. **Continue** while `--autonomous`; otherwise print the task's row (§Report) and stop so the user can review — the next `/blitz:build <slug>` resumes from `tasks.sh next`.
+8. **Continue** while `--autonomous`; otherwise print the task's row (§Report) and stop so the user can review; the next `/blitz:build <slug>` resumes from `tasks.sh next`.
 
 ### 0.4 Parallel preconditions ([agents.reference.md](/_shared/agents.reference.md) §5.2)
 
@@ -389,14 +389,14 @@ Fall back to sequential, with the reason printed, when any of these fails: `work
    bash "$TC" run build 2>&1 | tail -20
    ```
    **Gate:** every resolving lane is green or its pre-existing errors are cataloged before any spawn. A stack with no row for a lane is recorded `skipped`, never green (the rule `check` applies in its §1.1 Gates).
-3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE — do not recreate**. This block goes verbatim into every spawn prompt (item 3 of the spec; see this file §Spawn prompt template).
+3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE (do not recreate)**. This block goes verbatim into every spawn prompt (item 3 of the spec; see this file §Spawn prompt template).
 4. Read `docs/plans/<slug>/plan.md` and the tail of `progress.md` (last 20 lines): they are the recovery map. Trust them and `git log --grep 'Task: <slug>/'` over any recollection, especially after compaction (`HANDOFF.json` names the plan, task, gate path, and never-edit list).
 
 ### T.4 Fix loop ([agents.reference.md](/_shared/agents.reference.md) §8)
 
 | Round | Who | How |
 |---|---|---|
-| 1-3 | same `dev-<ID>` (sonnet) | `SendMessage(to: "dev-<ID>", message: "verify item <n> failing: <200-char tail>; fix <file> only")` — state remaining work explicitly, never a bare "continue"; one failing item per message |
+| 1-3 | same `dev-<ID>` (sonnet) | `SendMessage(to: "dev-<ID>", message: "verify item <n> failing: <200-char tail>; fix <file> only")`: state remaining work explicitly, never a bare "continue"; one failing item per message |
 | 4-5 | fresh `dev` on opus | new `Agent(subagent_type: "blitz:dev", description: "build <ID> fix <n>", model: "opus", effort: "high")`, full 11-item spec plus the `progress.md` tail (last 3 verify tails and rulings) |
 | after 5 | main thread | adjudicate (§T.5) |
 

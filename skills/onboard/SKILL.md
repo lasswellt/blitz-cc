@@ -6,14 +6,14 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Edit(CLAUDE.md), Edit(AGENTS
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort medium. Set once (`claude --model opus --effort medium` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - Artifacts the rest of the loop reads (`docs/plans/`, `docs/solutions/`, `.cc-sessions/`): [/_shared/loop.md](/_shared/loop.md)
-- Package install policy (resolve to registry latest, never a version from memory) — applies to every `pnpm add` / `npm install` here: [/_shared/security.reference.md](/_shared/security.reference.md) §Package Install Policy
+- Package install policy (resolve to registry latest, never a version from memory; applies to every `pnpm add` / `npm install` here): [/_shared/security.reference.md](/_shared/security.reference.md) §Package Install Policy
 - `Explore` type: [/_shared/agents.md](/_shared/agents.md) §1.2 · spawn contract and budget block: [/_shared/agents.reference.md](/_shared/agents.reference.md) §3.3
 - Session record: [/_shared/sessions.md](/_shared/sessions.md) §2 · activity feed: [/_shared/sessions.reference.md](/_shared/sessions.reference.md) §9
 - Scaffold trees, convention detection, file templates, map checklists, dimension prompt: [references/main.md](references/main.md)
@@ -41,7 +41,7 @@ Preamble: claim the session record (`skill: onboard`, `working_on: "<mode> <name
 
 ---
 
-## Phase 0: MODE — Pick greenfield, map, or package
+## Phase 0: MODE (Pick greenfield, map, or package)
 
 ```bash
 MODE=""
@@ -67,9 +67,9 @@ Log `decision` with `detail: {choice: "<mode>", reason: "<signal>"}`. Then follo
 
 ## §G Greenfield and package
 
-### G1 DISCOVER — Conventions and stack
+### G1 DISCOVER: Conventions and stack
 
-**Package mode** — scan the workspace before planning anything:
+**Package mode.** Scan the workspace before planning anything:
 
 ```bash
 find . -path '*/components/*' -name '*.vue' -o -path '*/stores/*' -name '*.ts' | grep -v node_modules | head -20
@@ -79,7 +79,7 @@ ls packages/*/package.json packages/*/tsconfig.json 2>/dev/null | head
 
 Extract file naming, directory grouping, component style, store syntax, test location and naming, import aliases, package manager (detection table and fallbacks: [references/main.md](references/main.md) §Convention Detection). Read 2–3 exemplar files per category to confirm; a sibling package's `package.json` and `tsconfig.json` are the templates.
 
-**Greenfield mode** — the Project Context block above already reports what `detect-stack.sh` can see (usually nothing). Confirm the stack once:
+**Greenfield mode.** The Project Context block above already reports what `detect-stack.sh` can see (usually nothing). Confirm the stack once:
 
 ```
 Project Setup: <name>
@@ -94,7 +94,7 @@ Project Setup: <name>
 
 Defaults when the operator says "just pick": Nuxt 3, Tailwind, no backend, Vitest, pnpm. When `UI != None`, add `impeccable@2.3.2` to `devDependencies` so `/blitz:ui-audit` and `/blitz:check --only design` have their semantic lane in this project (target-project dependency, never a plugin one; this is the pin `scripts/design/preflight.sh` checks, a peer-constraint pin per the install policy).
 
-### G2 DESIGN — Plan the file set
+### G2 DESIGN: Plan the file set
 
 Build the planned file list from the stack (trees in [references/main.md](references/main.md) §Scaffold Trees) and print it before creating anything:
 
@@ -117,11 +117,11 @@ Onboard Plan: <mode> "<name>"
 
 Package mode plans `packages/<name>/{package.json, tsconfig.json, vitest.config.ts, src/index.ts, tests/index.test.ts}` plus the workspace registration (`pnpm-workspace.yaml` glob already covers it, or add the path). Wait for confirmation.
 
-### G3 IMPLEMENT — Generate real files
+### G3 IMPLEMENT: Generate real files
 
 Writes the real files the onboarding produces, never placeholders. File list and templates: [references/main.md](references/main.md) §G3 IMPLEMENT.
 
-### G4 VERIFY — Type-check, lint, test
+### G4 VERIFY: Type-check, lint, test
 
 ```bash
 npx tsc --noEmit --pretty false 2>&1 | tail -20          # or npx vue-tsc --noEmit
@@ -171,7 +171,7 @@ Skip to **Final** below.
 
 ## §M Map an existing repo
 
-### M1 INVENTORY — One scan, shared by every agent
+### M1 INVENTORY: One scan, shared by every agent
 
 Keep this in the main thread so four agents do not each re-grep the tree:
 
@@ -189,7 +189,7 @@ wc -l < "${SESSION_TMP_DIR}/source-files.txt"
 
 If `source-files.txt` is empty: write a minimal `CODEBASE-MAP.md` ("empty repository, N config files") and go to M4.
 
-### M2 DIMENSIONS — Four `Explore` agents, one message
+### M2 DIMENSIONS: Four `Explore` agents, one message
 
 Four read-only `Explore` agents (haiku), all dispatched in one message, each writing its `map-*.md` verbatim as it returns. Dimension roster, prompts and caps: [references/main.md](references/main.md) §M2 DIMENSIONS.
 
@@ -202,12 +202,12 @@ for d in technology architecture quality concerns; do
 done
 ```
 
-`MISSING ≥ 2` → abort with the list; a two-dimension map misleads. `MISSING == 1` after the retry → emit that section as `> not analyzed — dimension agent failed` rather than omitting it. Treat any `PARTIAL: true` marker inside a file as known-incomplete and carry its `MISSING:` items into Recommendations.
+`MISSING ≥ 2` → abort with the list; a two-dimension map misleads. `MISSING == 1` after the retry → emit that section as `> not analyzed: dimension agent failed` rather than omitting it. Treat any `PARTIAL: true` marker inside a file as known-incomplete and carry its `MISSING:` items into Recommendations.
 
 Then think across dimensions (this is the only place the main thread adds value beyond concatenation): high coverage on the wrong layer, an architecture that fights the stack, a concern that compounds an architectural gap. Write `CODEBASE-MAP.md` at the repo root:
 
 ```markdown
-# Codebase Map — <project-name>
+# Codebase Map: <project-name>
 
 Generated: <ISO-8601> · blitz onboard · Overall: <score>/5
 
@@ -220,7 +220,7 @@ Generated: <ISO-8601> · blitz onboard · Overall: <score>/5
 ## Concerns
 <map-concerns.md>
 ## Recommendations
-1. [High] <cross-dimensional item — file paths, one line of why>
+1. [High] <cross-dimensional item: file paths, one line of why>
 2. [Medium] …
 3. [Low] …
 ```

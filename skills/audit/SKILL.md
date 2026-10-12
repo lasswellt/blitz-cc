@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, Bash(${CLAUDE_PLUGIN_ROOT}/s
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -32,7 +32,7 @@ Run a comprehensive 5-pillar code quality audit by spawning 10 parallel agents (
 
 ---
 
-## Phase 0: SETUP — Prepare Audit Environment
+## Phase 0: SETUP (Prepare Audit Environment)
 
 ### 0.0 Register Session
 
@@ -65,7 +65,7 @@ If found, note the date and key findings for comparison.
 
 ---
 
-## Phase 1: SPAWN AUDIT AGENTS — Parallel Analysis
+## Phase 1: SPAWN AUDIT AGENTS (Parallel Analysis)
 
 ### 1.0 Select Dispatch Mode (capability gate)
 
@@ -88,7 +88,7 @@ The `sec-*` registry rows run before any external scanner, and a scanner finding
 For each agent, construct the prompt using the template from `references/main.md`. The prompt MUST include:
 
 1. **Role statement**: "You are a senior code auditor specializing in {PILLAR}."
-2. **Scope definition**: "{SCOPE} — examine up to {FILE_CAP} files."
+2. **Scope definition**: "{SCOPE}: examine up to {FILE_CAP} files."
 3. **Stack context**: The detected stack profile.
 4. **Entry points**: Both passes in a pillar get the **full** pillar entry-point set from inventory (independent passes; the overlap is what §2.2 aggregates). Do NOT tell the two passes about each other.
 5. **Checklist**: The pillar-specific audit checklist from `references/main.md`.
@@ -113,7 +113,7 @@ done
 
 The `det-*` and `check:*` rows the selection contract returns for this project's `stacks`, run alongside the pillar agents and read through each row's `detection.exit` contract. Selection and dispatch: [references/main.md](references/main.md) §1.6 Deterministic lane.
 
-## Phase 2: COMPILE RESULTS — Consolidate Findings
+## Phase 2: COMPILE RESULTS (Consolidate Findings)
 
 ### 2.1 Read All Findings
 
@@ -123,7 +123,7 @@ Read every file in `${AUDIT_RUN}/findings/`. For each file:
 
 ### 2.2 Multi-Review aggregation
 
-Group semantic findings by (file, line-range, claim). A finding flagged by **≥2 independent same-scope passes → `confidence: high` (base 0.85)**; flagged once → `low` (0.50). This is the agreement signal the §1.1 roster (2 independent passes/pillar) exists to produce (SWRBench 2509.01494, +43.67% F1 — consistency across independent runs separates real issues from sporadic hallucinations). Deterministic-lane findings (`00-deterministic.md`) keep their own base_confidence (mechanism = verification). Detail: [references/main.md](references/main.md) §Recall hardening.
+Group semantic findings by (file, line-range, claim). A finding flagged by **≥2 independent same-scope passes → `confidence: high` (base 0.85)**; flagged once → `low` (0.50). This is the agreement signal the §1.1 roster (2 independent passes/pillar) exists to produce (SWRBench 2509.01494, +43.67% F1: consistency across independent runs separates real issues from sporadic hallucinations). Deterministic-lane findings (`00-deterministic.md`) keep their own base_confidence (mechanism = verification). Detail: [references/main.md](references/main.md) §Recall hardening.
 
 ### 2.3 Confidence Threshold Filter
 
@@ -134,7 +134,7 @@ THRESHOLD="${BLITZ_AUDIT_CONFIDENCE_THRESHOLD:-0}"   # 0 = recall (report all, r
 # Rank findings by effective_confidence; drop only if Confidence < THRESHOLD.
 # Refuted findings (fp_factor 0, §2.6) are ALWAYS dropped regardless of THRESHOLD.
 # Findings missing Confidence: <0-100> field trigger detector #20 at critic stage
-# (advisory; not auto-dropped — surface to user as "unscored finding" in the report).
+# (advisory, not auto-dropped: surface to user as "unscored finding" in the report).
 ```
 
 Report shows: total findings parsed, findings filtered below threshold, findings missing confidence score (detector #20 trigger).
@@ -144,7 +144,7 @@ Report shows: total findings parsed, findings filtered below threshold, findings
 For each failed agent:
 1. Log the failure in `${AUDIT_RUN}/reports/agent-failures.md`.
 2. If fewer than 7 of 10 agents succeeded, warn the user that coverage is incomplete.
-3. Do NOT retry — proceed with available findings.
+3. Do NOT retry; proceed with available findings.
 
 ### 2.5 Deduplicate Findings
 
@@ -160,10 +160,10 @@ A read-only panel tries to falsify each surviving finding; one that cannot be re
 ### 2.7 Classify and Sort
 
 Group findings by pillar, then sort by severity within each pillar:
-1. **Critical** — Security vulnerabilities, data loss risks, production blockers
-2. **High** — Significant quality issues, performance bottlenecks
-3. **Medium** — Code quality concerns, maintainability issues
-4. **Low** — Suggestions, style improvements, minor optimizations
+1. **Critical**: Security vulnerabilities, data loss risks, production blockers
+2. **High**: Significant quality issues, performance bottlenecks
+3. **Medium**: Code quality concerns, maintainability issues
+4. **Low**: Suggestions, style improvements, minor optimizations
 
 ### 2.8 Generate Statistics
 
@@ -183,9 +183,9 @@ Copies the run's report out of `${AUDIT_RUN}` into the project. Paths and naming
 
 ### 2.11 Coverage boundary (recall instrumentation)
 
-Emit a required `coverage_boundary` block in the report — agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is labeled "passed what we checked," never "passed everything." Detail: [references/main.md](references/main.md) §Recall hardening.
+Emit a required `coverage_boundary` block in the report: agents failed/timed-out, registry checks skipped (by `det-NN`/`sem-*` id), files over cap unread, lanes not run. A clean PASS with a large boundary is labeled "passed what we checked," never "passed everything." Detail: [references/main.md](references/main.md) §Recall hardening.
 
-## Phase 3: EMIT TASKS — Findings Become a Paused Plan
+## Phase 3: EMIT TASKS (Findings Become a Paused Plan)
 
 Audit output the loop can execute: `docs/plans/audit-<YYYY-MM-DD>/{spec.md, tasks.json}` ([loop.md](/_shared/loop.md) §Artifacts). No separate index or registry file. `tasks.json` is written only through `scripts/tasks.sh` (a PreToolUse hook denies `Edit`/`Write` on it). Never arm `gate.json` here: `rm -f ".cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json"`. Flag: `--plan` sets `AUDIT_PLAN_FLAG=1` (the plan is written `status: active` and `next --loop` picks it up on the next tick); default is `paused`.
 
@@ -209,7 +209,7 @@ Every task carries a `verify[]` check the loop can run without a human (tasks.sh
 | Semantic finding whose fix is the presence of a pattern | `grep -qE '<pattern>' <file>` (add `--test-only-ok` only when a test is the sole check) |
 | Semantic finding with no pattern (design smell, "consider splitting", naming) | **no task** → note in `spec.md` §Out of scope |
 
-Timeout suffix `::60` (`::300` for `tsc`/import-graph rows). Run each candidate command once before emitting: a check that already passes on the unfixed tree is not a check — pick another pattern or demote the theme to a note.
+Timeout suffix `::60` (`::300` for `tsc`/import-graph rows). Run each candidate command once before emitting: a check that already passes on the unfixed tree is not a check; pick another pattern or demote the theme to a note.
 
 ### 3.3 Write the Plan
 
@@ -248,7 +248,7 @@ A failed pillar is never retried (§2.4): it is logged in `agent-failures.md`, r
 
 ## Gotchas
 
-- Spawns 10 parallel agents (8 when claude-security handles the security pillar); MISSING_COUNT ≥ threshold aborts (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4) — don't pass blank outputs as SUCCESS.
+- Spawns 10 parallel agents (8 when claude-security handles the security pillar); MISSING_COUNT ≥ threshold aborts (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4); don't pass blank outputs as SUCCESS.
 - Findings without 2-pass Multi-Review agreement are FP-prone; require convergence before reporting.
 - Object-noun routing for "audit X": code→audit, deps/CVEs→`/blitz:dep-health`, Vue/Firestore/Pinia misuse→`/blitz:check --only framework`, cross-page UI→`/blitz:ui-audit`, a change or plan→`/blitz:check`. Registry entry-point table: [quality.reference.md](/_shared/quality.reference.md) §Which entry point.
-- The plan is `paused` by default: `next --loop` ignores it until a human flips `status: active` (or the run used `--plan`). A finding without an executable check is a note, never a task — `tasks.sh` enforces it.
+- The plan is `paused` by default: `next --loop` ignores it until a human flips `status: active` (or the run used `--plan`). A finding without an executable check is a note, never a task; `tasks.sh` enforces it.

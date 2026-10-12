@@ -1,4 +1,4 @@
-# Plan — references
+# Plan: references
 
 Companion to [SKILL.md](../SKILL.md). Two sections: the research-agent prompts that Phase 2 spawns, and the verify-command template table that Phase 3 draws from. Canonical spawn boilerplate (preamble, budget block, write-as-you-go) is in [/_shared/agents.reference.md](/_shared/agents.reference.md) §3; the blocks below inline it so a prompt can be pasted whole.
 
@@ -16,7 +16,7 @@ if ${OUT_DIR}/research-<name>.md does not exist and is non-empty when you finish
 Resolve any ${VAR} in the path with Bash before your first write; never
 write to a literal placeholder path.
 
-BUDGET (Medium — skills/_shared/agents.reference.md §3.3):
+BUDGET (Medium; skills/_shared/agents.reference.md §3.3):
 - Max file reads: 15
 - Max web searches: 8 (0 for the codebase analyst)
 - Max tool calls: 25 (at 20, finish the current step and reply)
@@ -57,10 +57,10 @@ INSTRUCTIONS:
 1. For each outcome, identify external APIs, services, or protocols involved.
 2. Research current best practices, authentication patterns, rate limits, and error handling.
 3. Look for official documentation, migration guides, and known gotchas.
-4. Write findings to: ${OUT_DIR}/research-domain.md — stub the file first, then append as you go.
+4. Write findings to: ${OUT_DIR}/research-domain.md (stub the file first, then append as you go).
 
 OUTPUT FORMAT:
-## Outcome: <n> — <outcome text>
+## Outcome <n>: <outcome text>
 ### External Dependencies
 - <API/service name>: <key findings>
 ### Patterns & Best Practices
@@ -95,7 +95,7 @@ INSTRUCTIONS:
 5. Write findings to: ${OUT_DIR}/research-library.md
 
 OUTPUT FORMAT:
-## Outcome: <n> — <outcome text>
+## Outcome <n>: <outcome text>
 ### Required Packages
 | Package | Version | Purpose | Compat Notes |
 |---------|---------|---------|--------------|
@@ -131,7 +131,7 @@ INSTRUCTIONS:
 5. Write findings to: ${OUT_DIR}/research-codebase.md
 
 OUTPUT FORMAT:
-## Outcome: <n> — <outcome text>
+## Outcome <n>: <outcome text>
 ### Existing Patterns to Reuse
 - <file path>: <what it provides>
 ### Integration Points
@@ -165,7 +165,7 @@ INSTRUCTIONS:
 5. Write findings to: ${OUT_DIR}/research-infra.md
 
 OUTPUT FORMAT:
-## Outcome: <n> — <outcome text>
+## Outcome <n>: <outcome text>
 ### Infrastructure Changes Required
 - <resource>: <change description>
 ### Security Rules Updates
@@ -226,11 +226,11 @@ After drafting each task but **before** accepting it, run the bulk-task guard (c
 **Reject or split** any task matching either criterion:
 
 1. **File-count heuristic** (two-band):
-   - `task.files.length > 5` AND the plan class is not `spike` — **mandatory split**.
-   - `task.files.length` in `{4, 5}` — **soft warn**: append a `decision` line to the activity feed; allow only if no other task shares a parent directory with it.
-   - `task.files.length` in `{1, 2, 3}` — **green**.
+   - `task.files.length > 5` AND the plan class is not `spike`: **mandatory split**.
+   - `task.files.length` in `{4, 5}`: **soft warn**. Append a `decision` line to the activity feed; allow only if no other task shares a parent directory with it.
+   - `task.files.length` in `{1, 2, 3}`: **green**.
 
-2. **Horizontal-scope language** — title or notes matches (case-insensitive):
+2. **Horizontal-scope language** (title or notes matches, case-insensitive):
    - `/all \w+ (files|components|modals|routes|tests|pages)/`
    - `/(via|using) (pattern|glob|regex)/`
    - `/across the codebase/`

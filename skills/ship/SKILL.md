@@ -213,11 +213,11 @@ Wait for `y` unless `ship: auto` or `--yes`. A `n` keeps the prep commit on the 
 
 Run in order; on any failure jump to Phase R with the list of what completed.
 
-1. **Tag** — `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
-2. **Push** — `git push origin "$BRANCH" && git push origin vX.Y.Z`.
-3. **GitHub release** — `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file "${SESSION_TMP_DIR}/release-notes.md" --target "$BRANCH"`. Without `gh`, print the notes and the manual step; not a failure.
-4. **Publish** — skipped under `--no-publish` or when the package is `"private": true` / has no registry. Otherwise per stack ([references/main.md](references/main.md#publish-per-stack)): `npm publish` (with `--provenance` when running in CI), `pip`/`cargo`/marketplace equivalents. A publish that fails after the tag exists is reported, not rolled back: the tag and release stand, the user re-runs the publish command.
-5. **Merge back** — only when `BRANCH` is not the integration branch: `git checkout <target> && git merge --no-ff --no-edit "$BRANCH" && git push origin <target>`, then return to `BRANCH`. Conflicts stop the skill (safety rule 6); details in [references/main.md](references/main.md#merge-back).
+1. **Tag**: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
+2. **Push**: `git push origin "$BRANCH" && git push origin vX.Y.Z`.
+3. **GitHub release**: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file "${SESSION_TMP_DIR}/release-notes.md" --target "$BRANCH"`. Without `gh`, print the notes and the manual step; not a failure.
+4. **Publish**: skipped under `--no-publish` or when the package is `"private": true` / has no registry. Otherwise per stack ([references/main.md](references/main.md#publish-per-stack)): `npm publish` (with `--provenance` when running in CI), `pip`/`cargo`/marketplace equivalents. A publish that fails after the tag exists is reported, not rolled back: the tag and release stand, the user re-runs the publish command.
+5. **Merge back**: only when `BRANCH` is not the integration branch: `git checkout <target> && git merge --no-ff --no-edit "$BRANCH" && git push origin <target>`, then return to `BRANCH`. Conflicts stop the skill (safety rule 6); details in [references/main.md](references/main.md#merge-back).
 
 ---
 

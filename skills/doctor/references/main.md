@@ -1,4 +1,4 @@
-# Doctor — reference
+# Doctor: reference
 
 Check catalog, migration field maps, the `/verify` seed, and the conflict-catalog schema for `/blitz:doctor`. The SKILL.md body carries the phase order; this file carries the exact detectors and the migration mechanics.
 
@@ -27,7 +27,7 @@ Check catalog, migration field maps, the `/verify` seed, and the conflict-catalo
 
 | Id | Detector | Severity | Remediation | Auto |
 |---|---|---|---|---|
-| D-201 | `test -f .cc-sessions/STOP` | FAIL (verdict UNHEALTHY) | `rm .cc-sessions/STOP` — an operator put it there; confirm with them first | no |
+| D-201 | `test -f .cc-sessions/STOP` | FAIL (verdict UNHEALTHY) | `rm .cc-sessions/STOP` (an operator put it there; confirm with them first) | no |
 | D-202 | `blitz_session_stale <record> "$VIEW"` true for a `status: active` record | WARN | next `SessionStart` sweep closes it; `--fix` closes it now (`status: failed`, `failed_reason: stale_session_cleanup`, `state: ended`) | yes |
 | D-203 | `sessions/<sid>/gate.json` with record `state: ended` or no record | WARN | `rm .cc-sessions/sessions/<sid>/gate.json` | yes |
 | D-204 | `jq 'select(.status=="pending")' inbox.jsonl` count; `kind: escalation` older than 24 h | WARN / FAIL | `/blitz:next` (triage) or `/blitz:sessions attention` | no |
@@ -97,7 +97,7 @@ ship: manual
 Stories migrated: <ids>. Review, then set `status: active` to let `next` pick it up.
 ```
 
-`progress.md` gets one entry: `## <ts> doctor migrate — N stories → tasks`. A `plan.md` is not written; the v2 story bodies stay under `sprints/` (gitignored) and `notes` points at them.
+`progress.md` gets one entry: `## <ts> doctor migrate: N stories → tasks`. A `plan.md` is not written; the v2 story bodies stay under `sprints/` (gitignored) and `notes` points at them.
 
 ### 5.2 Carry-forward → tasks
 
@@ -147,7 +147,7 @@ Other metrics keep their `baseline`/`current`/threshold; `history[]` is not rewr
 ### Verification after migration
 
 1. Phase 3.7 (D-312, D-313) on every written `tasks.json`.
-2. `bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh"` — quarantine of a migrated file means the story text tripped the injection scan; report the path, do not edit the quarantined copy.
+2. `bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh"`: quarantine of a migrated file means the story text tripped the injection scan; report the path, do not edit the quarantined copy.
 3. `scripts/next-state.sh` must list the new plans under `paused_plans`.
 
 Report: `Migration: <n> plans, <n> tasks (<n> test-only), <n> legacy records removed, ratchet re-baselined | partial: <ids>`.
@@ -177,12 +177,12 @@ disable-model-invocation: true
 Stack: ${STACK:-unknown}
 
 1. Typecheck: \`${PM:-npm} exec tsc --noEmit\` (skip when no tsconfig.json).
-2. Tests: \`${PM:-npm} run test -- --reporter=dot\`${TEST_CMD:+ (script: \`$TEST_CMD\`)} — for a targeted subset use \`bash \${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh <changed files>\`.
+2. Tests: \`${PM:-npm} run test -- --reporter=dot\`${TEST_CMD:+ (script: \`$TEST_CMD\`)}; for a targeted subset use \`bash \${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh <changed files>\`.
 3. Build: \`${PM:-npm} run build\`${BUILD_CMD:+ (script: \`$BUILD_CMD\`)}.
 4. Run: \`${PM:-npm} run dev\`${DEV_CMD:+ (script: \`$DEV_CMD\`)} and open the printed URL; confirm the changed screen renders without console errors (Playwright MCP \`browser_snapshot\` when available).
 5. Report the command outputs verbatim, not a summary.
 MD
-  echo "seeded .claude/skills/verify/SKILL.md — review and commit it"
+  echo "seeded .claude/skills/verify/SKILL.md; review and commit it"
 fi
 ```
 
@@ -274,7 +274,7 @@ Everything under `.cc-sessions/` is hook-owned and untrusted (TB-2). Doctor coun
 | D-201 | `.cc-sessions/STOP` exists | **FAIL, printed first and last** | Kill switch is on: every tool call in every session under this root is denied by `kill-switch.sh`. `rm .cc-sessions/STOP` when you mean it. Doctor itself cannot run tools while it exists, so this finding normally arrives from a hook message. |
 | D-202 | `status: active` records whose `last_activity` > 30 min with no live overlay row, or `started` > 4 h | WARN | The `SessionStart` sweep closes them on the next session; `--fix` runs `blitz_session_stale` per record now and marks them `failed/stale_session_cleanup`. |
 | D-203 | `.cc-sessions/sessions/<sid>/gate.json` whose record is `state: ended` or missing | WARN | Orphan Stop gate: `rm` it (`fix:auto`). A gate for a live session is left alone. |
-| D-204 | `inbox.jsonl` lines with `status: pending` — count, oldest age, `kind` histogram | WARN when >0; FAIL when any `kind: escalation` is older than 24 h | `/blitz:next` triages; `/blitz:sessions attention` lists them. |
+| D-204 | `inbox.jsonl` lines with `status: pending`: count, oldest age, `kind` histogram | WARN when >0; FAIL when any `kind: escalation` is older than 24 h | `/blitz:next` triages; `/blitz:sessions attention` lists them. |
 | D-205 | `activity-feed.jsonl` > 500 lines | WARN (>1000: FAIL) | `/blitz:sessions prune`; retention rule in sessions.md §9. |
 | D-206 | `quarantine/` non-empty | WARN | Review each file, then delete; never move it back without reading it. |
 | D-207 | `HANDOFF.json` older than 24 h | INFO | `/blitz:sessions prune` removes it. |
@@ -340,7 +340,7 @@ V=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1);
 ## D-318 Model routing
 
 ```bash
-# D-318 — env or settings that override blitz's per-agent model/effort routing
+# D-318: env or settings that override blitz's per-agent model/effort routing
 for v in CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL; do
   val=$(printenv "$v"); [ -z "$val" ] && val=$(jq -r --arg k "$v" '.env[$k] // empty' .claude/settings.json ~/.claude/settings.json 2>/dev/null | head -1)
   [ -n "$val" ] && echo "D-318 $v=$val"
