@@ -21,6 +21,12 @@
 # Exit: 0 ok · 1 verify failed · 2 usage/contract error · 3 not found
 set -euo pipefail
 
+# Shared helpers: blitz_mktemp_in (temp file beside the target; `mktemp -p` is
+# GNU-only) and blitz_timeout (per-check deadline on hosts without GNU `timeout`).
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=../hooks/scripts/_lib/common.sh
+. "$SCRIPT_DIR/../hooks/scripts/_lib/common.sh" || { echo "tasks.sh: cannot load hooks/scripts/_lib/common.sh" >&2; exit 2; }
+
 PLANS_DIR="${BLITZ_PLANS_DIR:-}"
 if [ -z "$PLANS_DIR" ]; then
   ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
@@ -51,7 +57,7 @@ require_file() { [ -f "$1" ] || { echo "tasks.sh: no tasks.json for plan (expect
 atomic_write() {  # atomic_write <file> <json>
   local f="$1" json="$2" tmp
   printf '%s' "$json" | jq -e . >/dev/null || die "refusing to write invalid JSON to $f"
-  tmp=$(mktemp -p "$(dirname "$f")" .tasks.XXXXXX)
+  tmp=$(blitz_mktemp_in "$(dirname "$f")" .tasks) || die "cannot create a temp file beside $f"
   printf '%s\n' "$json" > "$tmp" && mv "$tmp" "$f"
 }
 bump() { jq --arg now "$(ISO)" '.updated = $now'; }
@@ -69,13 +75,18 @@ cmd_list() {
   local plan="$1"; shift
   local status="" json=0
   while [ $# -gt 0 ]; do
-    case "$1" in --status) status="$2"; shift 2;; --json) json=1; shift;; *) die "unknown flag $1";; esac
+    case "$1" in
+      --status) [ $# -ge 2 ] || die "--status needs a value: open|in_progress|done|blocked"; status="$2"; shift 2;;
+      --json) json=1; shift;;
+      *) die "unknown flag $1";;
+    esac
   done
+  # The enum is the tasks.json contract (loop.md §Structural rules); anything else is a typo, not a filter.
+  case "$status" in ''|open|in_progress|done|blocked) ;; *) die "status '$status' must be open|in_progress|done|blocked";; esac
   local f; f=$(plan_file "$plan"); require_file "$f"
-  local filter='.tasks'
-  [ -n "$status" ] && filter="[.tasks[] | select(.status == \"$status\")]"
-  if [ "$json" -eq 1 ]; then jq -c "$filter" "$f"; return 0; fi
-  jq -r "$filter | .[] | \"\(.id)\t\(.status)\t\(if .passes then \"pass\" else \"fail\" end)\t\(.attempts // 0)\t\(.title)\"" "$f" | column -t -s $'\t' 2>/dev/null || jq -r "$filter | .[] | \"\(.id) \(.status) \(.title)\"" "$f"
+  local filter='[.tasks[] | select($s == "" or .status == $s)]'
+  if [ "$json" -eq 1 ]; then jq -c --arg s "$status" "$filter" "$f"; return 0; fi
+  jq -r --arg s "$status" "$filter | .[] | \"\(.id)\t\(.status)\t\(if .passes then \"pass\" else \"fail\" end)\t\(.attempts // 0)\t\(.title)\"" "$f" | column -t -s $'\t' 2>/dev/null || jq -r --arg s "$status" "$filter | .[] | \"\(.id) \(.status) \(.title)\"" "$f"
 }
 
 cmd_add() {
@@ -181,7 +192,7 @@ cmd_verify() {
     out=$(mktemp)
     rc=0
     t0=$(NOW_MS)
-    ( cd "$root" && timeout "$tmo" bash -c "$cmd" ) >"$out" 2>&1 || rc=$?
+    ( cd "$root" && blitz_timeout "$tmo" bash -c "$cmd" ) >"$out" 2>&1 || rc=$?
     t1=$(NOW_MS); dur=$((t1 - t0)); [ "$dur" -lt 0 ] && dur=0
     # 2 KB is the difference between "the critic reads the tail" and "the
     # critic re-runs the suite"; more than that is a log, not evidence.

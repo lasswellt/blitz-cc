@@ -1,7 +1,7 @@
 # Framework Adapter Profiles
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0). Original Blitz authorship. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** doc #2 of 8. Fills the adapter contract ([`normalized-model.md`](normalized-model.md) §4) for each stack, verified against current primary sources. Detection signals feed [`adapter-detection.md`](adapter-detection.md); conformance rules feed [`detector-rebuild.md`](detector-rebuild.md).
+> **Status:** adapter-profile doc of the impeccable spec series. Fills the adapter contract ([`normalized-model.md`](normalized-model.md) §4) for each stack, verified against current primary sources. Detection signals feed [`adapter-detection.md`](adapter-detection.md); conformance rules feed [`detector-rebuild.md`](detector-rebuild.md).
 > **Verified:** 2026-05-30. Versions: Tailwind **v4.3.0** · Quasar **2.19.3** · Vuetify **4.0.8** (stable) / **3.12.7** (maintained) · MD3 `material-web` main + `material-tokens`.
 
 ---
