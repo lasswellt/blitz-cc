@@ -53,7 +53,7 @@ Append-only. One line per observation. Latest-wins-by-`(role, page, label, ts)`.
 ```
 
 Field semantics:
-- `role`: `"__default__"` when not multi-role (E-012 adds real roles).
+- `role`: `"__default__"` when not multi-role; Phase ROLE supplies the real role names.
 - `raw`: exact `.textContent.trim()` — never a11y-tree text.
 - `parsed`: type-coerced per label `type`. `null` on null `raw` or coercion fail.
 - `hash`: `printf '%s' "$raw" | (sha256sum 2>/dev/null || shasum -a 256) | cut -c1-8`. NOT md5sum (macOS portability).
@@ -67,7 +67,7 @@ Overwritten on every non-`consistency`-only run. Severity-grouped; template in P
 
 ## Phase 0 — CONTEXT
 
-See `SKILL.md` § "Phase 0: CONTEXT". Session registration + arg parse + config load + browse-state overlap check live in SKILL.md. This file holds phases 1-6 procedures only.
+See `SKILL.md` § "Phase 0: CONTEXT". Session registration + arg parse + config load + browse-state overlap check live in SKILL.md. This file holds the procedures for phases 1 to 7 and for the mode-conditional INTERACTIVE, EVENTS and ROLE phases.
 
 ---
 
@@ -100,6 +100,7 @@ If `STATE_SOURCE=fallback`:
    ToolSearch: query="select:browser_navigate,browser_snapshot,browser_evaluate,browser_wait_for,browser_console_messages,browser_network_requests"
    ```
    If any of 6 tools missing, print `[ui-audit] Playwright MCP tools unavailable — install the playwright plugin or run blitz:browse first.` and exit 1.
+   Tool and parameter names in this file (`url`; `time`, `text`, `textGone`; `function`; `element` + `ref`; `onlyErrors`) were checked against the MCP server bundled with Playwright 1.56.1 (`playwright/lib/mcp`, the code `@playwright/mcp` wraps); a newer plugin build can add parameters, so read the schema `ToolSearch` returns before the first call and follow it on any mismatch.
 
 2. Build `PAGE_LIST` from `.ui-audit.json[pages]` keys. If empty, exit Phase 1 with `PAGE_LIST = []` and log INFO — Phase 2 no-ops.
 
@@ -122,18 +123,18 @@ fi
 
 ## Phase 2 — DATA EXTRACTION
 
-Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` in the baseline (multi-role in E-012).
+Per page, 5-step loop. Emits one JSONL line per `(role, page, label)`. `role` is `__default__` outside the role modes; Phase ROLE sets it.
 
 ### 2.1 Navigate + settle
 
 ```
-browser_navigate(url = baseUrl + path)
-# Settle:
-browser_wait_for(textGone = "<spinner-or-loading-label>", time = 1)
-# Fallback hard timeout — no networkidle in Playwright MCP.
+browser_navigate(url: baseUrl + path)
+# Settle: wait for the loading indicator to disappear, then a short fixed pause.
+browser_wait_for(textGone: "<spinner-or-loading-label>")
+browser_wait_for(time: 1)        # `time` is an unconditional sleep in seconds; the server has no networkidle option
 ```
 
-Max settle: 10s. Proceed with whatever rendered at timeout.
+Max settle: 10s (the skill's own ceiling around these calls; the tool takes no timeout). Proceed with whatever rendered at timeout.
 
 ### 2.2 Render confirm (optional, first tick per page only)
 
@@ -191,7 +192,7 @@ HASH=$(printf '%s' "${RAW:-}" | (sha256sum 2>/dev/null || shasum -a 256) | cut -
 Inline quality flags (Phase 4 subset — full catalog in `references/checks.md`):
 
 - `NULL_VALUE` — `RAW` null or empty.
-- `PLACEHOLDER` — `RAW` matches compiled union of `BUILTIN_PATTERN` (`/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`) + user `.ui-audit.json.placeholder_patterns` (compiled once at config-load with try/catch — malformed → `CONFIG_ERROR` finding, no crash). **ReDoS guard:** reject patterns (a) >200 chars or (b) with nested quantifiers `(x+)+` / `(x*)*` / `(x+)*` / `(x*)+` (detected via `/\([^)]*[+*][^)]*\)[+*]/`). Rejected → `CONFIG_ERROR` with `detail.issue: "pattern_redos_risk"`. See S8-004.
+- `PLACEHOLDER` — `RAW` matches compiled union of `BUILTIN_PATTERN` (`/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`) + user `.ui-audit.json.placeholder_patterns` (compiled once at config-load with try/catch — malformed → `CONFIG_ERROR` finding, no crash). **ReDoS guard:** reject patterns (a) >200 chars or (b) with nested quantifiers `(x+)+` / `(x*)*` / `(x+)*` / `(x*)+` (detected via `/\([^)]*[+*][^)]*\)[+*]/`). Rejected → `CONFIG_ERROR` with `detail.issue: "pattern_redos_risk"`.
 - `NEGATIVE_COUNT` — `LABEL_TYPE == count && PARSED < 0`.
 
 Each flag emits one JSONL line with `label: "quality_flag"` + `detail: {flag, target_label, severity}` (schema in `references/checks.md`).
@@ -277,11 +278,11 @@ Applied to each I.1 element. Findings → `button_finding` JSONL with `detail: {
 
 ### I.4 Focus probe (NO_FOCUS_STATE)
 
-Per-element `browser_evaluate`. Cap **10 focus probes per page** (emit `focus_probe_capped` INFO with total if exceeded).
+Per-element `browser_evaluate` (`function` only: a zero-argument function with the selector interpolated through `JSON.stringify`). Cap **10 focus probes per page** (emit `focus_probe_capped` INFO with total if exceeded).
 
 ```js
-(selector) => {
-  const el = document.querySelector(selector);
+() => {
+  const el = document.querySelector(/* JSON.stringify(selector) */ '<selector>');
   if (!el) return {ok: false, reason: 'element-gone'};
   el.focus();
   const s = window.getComputedStyle(el);
@@ -323,20 +324,23 @@ Extensible via `.ui-audit.json[interactive_click_allowlist]: [<css-selector>, ..
 
 ```
 START_TS = now()
-URL_BEFORE = browser_evaluate: window.location.href
-browser_click(element)
+URL_BEFORE     = browser_evaluate(function: "() => window.location.href")
+CONSOLE_BEFORE = browser_console_messages(onlyErrors: true).length   # no `since` parameter: count, then take the tail
+NETWORK_BEFORE = browser_network_requests().length                   # no parameters: one rendered line per request
+browser_click(element: <I.1 label>, ref: <ref from the page snapshot>)   # see Element refs below
 browser_wait_for(time: 1)     # 1s for post-click events to settle
-URL_AFTER = browser_evaluate: window.location.href
-CONSOLE = browser_console_messages().filter(m => m.timestamp >= START_TS)      # the tool takes no `since`; filter the list
-NETWORK = browser_network_requests().filter(r => r.timestamp >= START_TS && !isStatic(r))
-ERRORS = CONSOLE.filter(m => m.level === 'error')
-NET_FAIL = NETWORK.filter(r => r.status >= 400 || r.status === 0)
+URL_AFTER = browser_evaluate(function: "() => window.location.href")
+ERRORS   = browser_console_messages(onlyErrors: true)[CONSOLE_BEFORE:]   # lines: "[ERROR] <text> @ <url>:<line>"
+NETWORK  = browser_network_requests()[NETWORK_BEFORE:]                   # lines: "[METHOD] <url> => [<status>] <statusText>"
+NET_FAIL = NETWORK.filter(line => !isStatic(line) && (status(line) >= 400 || status(line) == null))  # no status rendered = no response
 if (ERRORS.length > 0 || NET_FAIL.length > 0) {
   emit CLICK_ERROR finding with {label, severity: "CRITICAL", errors: ERRORS, network: NET_FAIL}
 }
 # Always emit the click record (even on success) so Phase 5 Cat 9 can read url_before/url_after.
 emit click_record with {label, element_type, url_before: URL_BEFORE, url_after: URL_AFTER, ts: START_TS}
 ```
+
+**Element refs.** `browser_click` and `browser_type` take `element` (a human-readable description, shown in the permission prompt) and `ref` (that element's `eN` reference in the most recent `browser_snapshot`). I.1 enumerates through `browser_evaluate` and yields no refs, so take one `browser_snapshot` per page after settle and resolve each candidate to its ref by role and accessible name (the I.1 `label`); a candidate with no snapshot ref is skipped with a `click_ref_unresolved` INFO, never clicked by selector.
 
 **Click cap.** Max 10 safe clicks per page. On hit: `safe_click_capped` INFO with `{capped_at: 10, remaining: <count>}`.
 
@@ -395,7 +399,7 @@ navigator.sendBeacon = function(url, data) {
 };
 ```
 
-**Layer C — Network-level (post-hoc)**. After each action, read `browser_network_requests({static:false, requestBody:true, requestHeaders:false})`, filter POST bodies by hostname. Default list:
+**Layer C — Network-level (post-hoc)**. After each action, read `browser_network_requests()` (no parameters; one rendered line per request, `[METHOD] <url> => [<status>] <statusText>`) and keep the lines whose URL hostname is in the list below. The tool exposes neither request bodies nor headers, so Layer C records that an analytics request fired (method, URL, status) while Layers A and B carry the payloads; a network-layer `analytics_event` line has `detail.props: null`. Default list:
 
 - `api.segment.io` — Segment
 - `app.posthog.com`, `*.i.posthog.com` — PostHog
@@ -458,7 +462,7 @@ Hash with **key-sorted JSON** so prop order doesn't cause false drift:
 HASH=$(printf '%s' "$PROPS_JSON" | jq --sort-keys -c . | (sha256sum 2>/dev/null || shasum -a 256) | cut -c1-8)
 ```
 
-Write `hash` on JSONL line. Phase 3 drift (§ E.6, S7-007) groups by `event_name`, flags differing hashes across pages.
+Write `hash` on JSONL line. Cross-page drift (§ E.6) groups by `event_name`, flags differing hashes across pages.
 
 ### E.6 Cross-page event drift (undeclared)
 
@@ -563,12 +567,15 @@ ETA gate (R10) applies only to `full` (multi-role × all-pages × 2min/tick). Sm
 Default transition: logout → navigate login → fill creds from env → submit → wait for success landmark. Reliable across all cookie types (HttpOnly, SameSite, Secure). ~5s per transition.
 
 ```
-browser_navigate(baseUrl + "/login")
-browser_type(element: SELECTORS.email,    text: <value of AUDIT_<ROLE>_EMAIL>)   # the skill interpolates the env value;
-browser_type(element: SELECTORS.password, text: <value of AUDIT_<ROLE>_PASS>)    # page scripts have no process.env
-browser_click(element: SELECTORS.submit)
-browser_wait_for(text: SELECTORS.success_landmark, time: SELECTORS.sentinel_timeout || 10)
+browser_navigate(url: baseUrl + "/login")
+browser_snapshot()                                   # yields the eN refs the next three calls need
+browser_type(element: "email field",    ref: <ref of SELECTORS.email>,    text: <value of AUDIT_<ROLE>_EMAIL>)   # the skill interpolates the env value;
+browser_type(element: "password field", ref: <ref of SELECTORS.password>, text: <value of AUDIT_<ROLE>_PASS>)    # page scripts have no process.env
+browser_click(element: "submit button",  ref: <ref of SELECTORS.submit>)
+browser_wait_for(text: SELECTORS.success_landmark)   # server default timeout; see sentinel_timeout below
 ```
+
+`ref` is the control's reference in the snapshot: resolve each configured selector to it by role and accessible name, reading the element's `name`, `aria-label` or placeholder through `browser_evaluate` when the snapshot alone is ambiguous. `browser_wait_for` takes no timeout and its `time` parameter is an unconditional sleep, so `sentinel_timeout` (seconds) is the skill's ceiling on the whole login transition: retry the R.5 sentinel read until it elapses, then treat the transition as failed.
 
 The credential transits that one tool call and nothing else: never echo it to stdout, the feed, the registry or the report (SAFETY RULE 6).
 
@@ -605,7 +612,7 @@ Write to `.auth/<role>.json` (add `/.auth/` to `.gitignore`).
 Restore:
 
 ```
-browser_navigate(baseUrl)   # must be same-origin for cookie injection
+browser_navigate(url: baseUrl)   # must be same-origin for cookie injection
 browser_evaluate: replay localStorage + sessionStorage via setItem loop;
                   for each cookie pair: document.cookie = "k=v; path=/"
 ```
@@ -617,10 +624,10 @@ browser_evaluate: replay localStorage + sessionStorage via setItem loop;
 After every role transition (scripted-login OR storageState-restore), sentinel-check logged-in role:
 
 ```
-browser_navigate(baseUrl + SELECTORS.profile_path)
-EMAIL = browser_evaluate:
-  document.querySelector(SELECTORS.profile_email_selector)?.textContent?.trim() || null
-assert EMAIL === process.env.AUDIT_<ROLE>_EMAIL
+browser_navigate(url: baseUrl + SELECTORS.profile_path)
+EMAIL = browser_evaluate(function:
+  "() => document.querySelector(<JSON.stringify(SELECTORS.profile_email_selector)>)?.textContent?.trim() || null")
+assert EMAIL === <value of AUDIT_<ROLE>_EMAIL>   # compared by the skill; page scripts have no process.env
 ```
 
 **On mismatch (EMAIL !== expected) or null:**
@@ -736,7 +743,7 @@ const BUILTIN_PATTERNS = [
 **Per page per non-admin role:**
 
 ```
-browser_evaluate: document.documentElement.outerHTML
+html = browser_evaluate(function: "() => document.documentElement.outerHTML")
 matches = [...BUILTIN_PATTERNS, ...compiled_custom_patterns].filter(re => re.test(html));
 if (matches.length > 0) {
   emit ROLE_LEAK finding with {role, page, matched_patterns: matches.map(r => r.source), severity: "CRITICAL"};
@@ -753,49 +760,25 @@ Reduces append-only registry to latest-wins state, detects cross-page divergence
 
 ### 3.1 Reduce registry
 
-Write reduced snapshot to `${SESSION_TMP_DIR}/reduced.json`:
+Write reduced snapshot to `${SESSION_TMP_DIR}/reduced.json`. Every reducer in this file starts from the same observation filter, `is_obs`, defined once as `IS_OBS_DEF` in § Shared templates and prepended to each jq program; no site restates the label list.
 
 ```bash
-jq -s '
-  [.[] | select(.ts != null and .label != null
-                and .label != "quality_flag"
-                and .label != "heuristic"
-                and .label != "cross-page-divergence"
-                and .label != "invariant_fail"
-                and .label != "tick_diff"
-                and .label != "analytics_event"
-                and .label != "button_finding"
-                and .label != "interactive_audit_summary"
-                and .label != "role_invariant_fail")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs)]
   | group_by([.role, .page, .label])
   | map(max_by(.ts))
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/reduced.json"
 ```
 
-`select` excludes finding/meta-event label families — emitted INTO registry but must not feed back as observations. Canonical exclude set (sync with § 4.2 + Shared-templates reducer):
-- `quality_flag`, `heuristic` — Phase 4/5 findings
-- `cross-page-divergence`, `invariant_fail` — Phase 3 findings
-- `tick_diff` — flapping/stale/null-transition
-- `analytics_event` — Phase EVENTS (separate reducer)
-- `button_finding`, `interactive_audit_summary` — Phase INTERACTIVE
-- `role_invariant_fail` — Phase ROLE
+`is_obs` keeps label observations and drops the finding and meta-event lines that Phases 3 to 6 and the INTERACTIVE, EVENTS and ROLE phases append to the same file; those lines must never feed back as observations. The label list lives in one place: § Shared templates, "Observation filter".
 
 ### 3.2 Cross-page divergence
 
 Label appearing on multiple pages with different `parsed` = divergence. For each label with >1 distinct parsed value:
 
 ```bash
-jq -s '
-  [.[] | select(.ts != null and .label != null
-                and .label != "quality_flag"
-                and .label != "heuristic"
-                and .label != "cross-page-divergence"
-                and .label != "invariant_fail"
-                and .label != "tick_diff"
-                and .label != "analytics_event"
-                and .label != "button_finding"
-                and .label != "interactive_audit_summary"
-                and .label != "role_invariant_fail")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs)]
   | group_by(.label)
   | map({
       label: .[0].label,
@@ -916,57 +899,55 @@ Numeric tolerance only. For `text` labels, `tolerance: 0` + `check: "equal"` is 
 
 ## Phase 3 — FLAPPING/STALE
 
-Tick-over-tick hash diff classifies each `(role, page, label)` into 5 states. Requires ≥3 prior observations to detect FLAPPING; fewer degrades gracefully.
+Tick-over-tick hash diff classifies each `(role, page, label)` into 5 states from a window of the four most recent observations. STABLE, CHANGED and NULL_TRANSITION need two observations, STALE needs three, FLAPPING needs four; fewer degrades gracefully (§ 3F.3).
 
 ### 3F.1 Build per-key history
 
 ```bash
-jq -s '
-  [.[] | select(.ts != null and .label != null
-                and .label != "quality_flag"
-                and .label != "heuristic"
-                and .label != "cross-page-divergence"
-                and .label != "invariant_fail"
-                and .label != "tick_diff"
-                and .label != "analytics_event"
-                and .label != "button_finding"
-                and .label != "interactive_audit_summary"
-                and .label != "role_invariant_fail")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs)]
   | group_by([.role, .page, .label])
   | map({
       key: {role: .[0].role, page: .[0].page, label: .[0].label},
-      hist: (sort_by(.ts) | reverse | .[0:3] | map({ts, hash, raw, parsed}))
+      hist: (sort_by(.ts) | reverse | .[0:4] | map({ts, hash, raw, parsed}))
     })
 ' docs/crawls/page-data-registry.jsonl > "${SESSION_TMP_DIR}/history.json"
 ```
 
-`hist` = 3 most-recent observations, newest first.
+`hist` = up to 4 most-recent observations, newest first (`hist[0]` is the current tick).
 
 ### 3F.2 Classify
 
-Per `{key, hist}`:
+Per `{key, hist}`, with `h0..h3 = hist[0..3].hash`. Evaluate the rows top to bottom and take the first match, so the two revert-shaped states can never both fire:
 
-| State | Rule | Severity | Silent? |
-|---|---|---|---|
-| `STABLE` | `len(hist) >= 2 && hist[0].hash == hist[1].hash` | — | Yes |
-| `CHANGED` | `len(hist) >= 2 && hist[0].hash != hist[1].hash` (not STALE/FLAPPING) | INFO | No (`value_change`) |
-| `STALE` | `len(hist) >= 2 && hist[0].hash == hist.find(prev2).hash && hist[0].hash != hist[1].hash` — reverted to 2 ticks ago | LOW | No |
-| `FLAPPING` | `len(hist) == 3 && hist[0].hash == hist[2].hash && hist[0].hash != hist[1].hash` — oscillates over 3 ticks | MED | No |
-| `NULL_TRANSITION` | `hist[0].parsed == null && any(hist[1..].parsed != null)` — real → null | HIGH | No |
+| Order | State | Rule | Severity | Silent? |
+|---|---|---|---|---|
+| 1 | `NULL_TRANSITION` | `hist[0].parsed == null && any(hist[1..].parsed != null)`: a real value became null | HIGH | No |
+| 2 | `STABLE` | `len(hist) >= 2 && h0 == h1` | none | Yes |
+| 3 | `FLAPPING` | `len(hist) == 4 && h0 == h2 && h1 == h3 && h0 != h1`: strict A-B-A-B alternation across the whole window | MED | No |
+| 4 | `STALE` | `len(hist) >= 3 && h0 == h2 && h0 != h1`, row 3 not matched: the value reverted to the one seen two ticks ago (A-B-A, or A-B-A-C with `C != B`) | LOW | No |
+| 5 | `CHANGED` | `len(hist) >= 2 && h0 != h1`, none of the above | INFO | No (`value_change`) |
 
-Only `STABLE` silent. Others emit finding line:
+STALE and FLAPPING share the A-B-A prefix; the fourth observation separates them. An A-B-A window of three observations is STALE until a fourth arrives: `B` as `hist[3]` upgrades it to FLAPPING, any other value keeps it STALE, and a repeat of `A` on the next tick (`A-A-B-A`) makes it STABLE.
+
+Only `STABLE` is silent. The others emit a finding line:
 
 ```jsonl
-{"ts":"<ISO>","role":"<r>","page":"<p>","label":"tick_diff","raw":null,"parsed":null,"hash":"<sha8>","selector":null,"tick":<t>,"detail":{"target_label":"<label>","state":"FLAPPING|STALE|CHANGED|NULL_TRANSITION","severity":"HIGH|MED|LOW|INFO","history_hashes":[<3>]}}
+{"ts":"<ISO>","role":"<r>","page":"<p>","label":"tick_diff","raw":null,"parsed":null,"hash":"<sha8>","selector":null,"tick":<t>,"detail":{"target_label":"<label>","state":"FLAPPING|STALE|CHANGED|NULL_TRANSITION","severity":"HIGH|MED|LOW|INFO","history_hashes":[<up to 4, newest first>]}}
 ```
 
 Plus activity-feed event (`flapping`, `stale`, `null_transition`, `value_change`).
 
 ### 3F.3 Tick-count fallback
 
-When `len(hist) < 3`, FLAPPING undetectable. Expected on first + second tick — no finding, log INFO. STALE also requires `len(hist) >= 3`.
+| `len(hist)` | Evaluable states |
+|---|---|
+| 1 | none: first observation of the key, log INFO |
+| 2 | NULL_TRANSITION, STABLE, CHANGED |
+| 3 | the above plus STALE |
+| 4 | the above plus FLAPPING |
 
-NULL_TRANSITION detectable at `len(hist) >= 2`.
+A window too short for a state is not a finding; the key is re-evaluated on the next tick.
 
 
 
@@ -985,14 +966,8 @@ Phase 2 already appends `quality_flag` JSONL for NULL_VALUE, PLACEHOLDER, NEGATI
 Detects format change across observations (decimal flip, currency symbol vanish, thousands swap, negative style change). Requires ≥2 observations per key with `type ∈ {number, currency}`.
 
 ```bash
-jq -s '
-  [.[] | select(.label != null
-                and .label != "quality_flag"
-                and .label != "heuristic"
-                and .label != "cross-page-divergence"
-                and .label != "invariant_fail"
-                and .label != "tick_diff"
-                and .label != "analytics_event")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs)]
   | group_by([.role, .page, .label])
   | map({key: {role:.[0].role, page:.[0].page, label:.[0].label},
          hist: (sort_by(.ts) | .[-4:])})
@@ -1029,9 +1004,8 @@ For each key, compute MODE tuple of `hist[0..-2]` (all but latest). Compare to `
 Current `parsed === 0` AND `max(history[0..-2].parsed) > 0` over last 5 observations. Requires ≥3 observations with `type ∈ {number, count, currency}`.
 
 ```bash
-jq -s '
-  [.[] | select(.ts != null and .label != null
-                and (.parsed | type) == "number")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs and (.parsed | type) == "number")]
   | group_by([.role, .page, .label])
   | map({key: {role:.[0].role, page:.[0].page, label:.[0].label},
          hist: (sort_by(.ts) | .[-5:])})
@@ -1288,105 +1262,11 @@ Reporter (Phase 6) groups by tier — coordinator ensures `detail.severity` is s
 {"ts":"<ISO>","session":"<sid>","skill":"ui-audit","event":"heuristic_pass_complete","message":"Phase 5 complete — <N> findings","detail":{"total_findings":<n>,"by_category":{"nav_state":<n>,"content_copy":<n>},"by_severity":{"CRITICAL":<n>,"HIGH":<n>,"MED":<n>,"LOW":<n>}}}
 ```
 
-
-## Phase 7 — LOOP MATRIX (role × page cadence)
-
-> **Section ordering:** Phase 7 appears before Phase 6 REPORT here because it forward-references Phase 6. Execution order: numeric phases 0 → 1 → 2 → 3 → 4 → 5 → 6; INTERACTIVE / EVENTS / ROLE / 7 LOOP MATRIX are mode-conditional extensions. See § 6.6 for loop reporter cadence.
-
-
-Active when `--loop`. One `(role, page)` per tick. State machine:
-
-```
-LOAD_AUTH[current_role]
-  → NAVIGATE[current_page]
-  → EXTRACT        (Phase 2)
-  → QUALITY        (Phase 4 inline flags)
-  → EVENT_DRAIN    (Phase EVENTS § E.4 — post-page drain only, no clicks in pure loop)
-  → INVARIANTS     (Phase 3 numeric + Phase EVENTS § E.6/E.7 event + Phase ROLE § R.7 role)
-  → WRITE[role,page]  (registry lines)
-  → ADVANCE CURSOR
-  → NEXT
-```
-
-### 7.1 `latest-tick.json` extension — `ui_audit_matrix` block
-
-Top-level `ui_audit_matrix`:
-
-```json
-"ui_audit_matrix": {
-  "mode": "role_matrix | single_role | single_page",
-  "pass": 1,
-  "current_role": "<name>",
-  "current_page_idx": 4,
-  "pages": ["<path>", ...],
-  "roles_complete": ["anonymous", "viewer"],
-  "roles_pending": ["admin", "member", "superadmin"],
-  "matrix_started": "<ISO-8601>",
-  "eta_seconds": 12000,
-  "matrix_idle": false
-}
-```
-
-Persisted at END of each tick so `/loop`'s fresh context can resume. `matrix_idle: true` → 2-pass cycle complete; subsequent ticks no-op.
-
-### 7.2 ETA gate (R10)
-
-On `full` entry:
-
-```bash
-ROLES_ACTIVE=$(count roles with env vars present)
-PAGES=$(len .ui-audit.json[pages])
-ETA_SECONDS=$((ROLES_ACTIVE * PAGES * 120))
-ETA_MIN=$((ETA_SECONDS / 60))
-
-echo "[ui-audit] ETA for full matrix: ${ROLES_ACTIVE} roles × ${PAGES} pages × 2min = ${ETA_MIN} minutes"
-
-if [ "${ETA_SECONDS}" -gt 3600 ]; then
-  if [ "${UI_AUDIT_YES:-}" = "1" ] || [ "${UI_AUDIT_CI:-}" = "1" ] \
-     || [ "${BLITZ_AUTONOMOUS:-}" = "1" ] || [ "${CLAUDE_CODE_LOOP_MANAGED:-}" = "1" ]; then
-    echo "[ui-audit] Proceeding (--yes or --ci set, or an unattended loop)"
-  else
-    echo "[ui-audit] ETA exceeds 1 hour. Pass --yes for interactive, --ci for automation."
-    exit 1
-  fi
-fi
-```
-
-`--yes`/`--ci` parsed in SKILL.md Phase 0.1, exported to shell env before main.md runs. Equivalent except for audit trail: `--ci` writes one `ci_run` activity-feed event at start.
-
-### 7.3 2-pass termination
-
-- **Pass 1** (`ui_audit_matrix.pass = 1`): seeds registry. Every `(role, page)` once. FLAPPING not evaluable (needs ≥3 obs) — skip.
-- **Pass 2** (`ui_audit_matrix.pass = 2`): re-visits every pair to detect drift. Phase 3 FLAPPING/STALE now has enough history.
-- **After pass 2**: set `matrix_idle: true`. Subsequent ticks exit with `matrix_idle` event. Re-run requires deleting `ui_audit_matrix` from `latest-tick.json`.
-
-### 7.4 Cursor advancement
-
-```
-# Pseudocode
-if (current_page_idx + 1) < len(pages):
-  current_page_idx += 1
-else:
-  current_page_idx = 0
-  roles_complete.append(current_role)
-  current_role = roles_pending.shift()
-  if current_role === undefined:
-    if pass < 2:
-      pass += 1
-      current_role = roles_complete[0]
-      roles_pending = roles_complete[1:]
-      roles_complete = []
-    else:
-      matrix_idle = true
-```
-
-Each tick writes `latest-tick.json` BEFORE exiting so mid-tick interruption doesn't lose cursor (pairs may re-run; nothing silently skipped).
-
 ---
 
 ## Phase 6 — REPORT
 
-Aggregates all findings from Phase 3 (divergence + invariant + tick-diff), 4 (quality flags), 5 (heuristics — E-009 territory). Writes markdown + stdout + activity-feed completion.
+Aggregates all findings from Phase 3 (divergence + invariant + tick-diff), 4 (quality flags) and 5 (heuristics). Writes markdown + stdout + activity-feed completion.
 
 ### 6.1 Collect findings
 
@@ -1523,7 +1403,97 @@ Rerunning `consistency` on unchanged registry produces byte-identical content (o
 3. By `page` alphabetically
 4. By `tick` ascending
 
+---
 
+## Phase 7 — LOOP MATRIX (role × page cadence)
+
+Mode-conditional extension of phases 0 to 6; the loop reporter cadence is § 6.6. Active when `--loop`. One `(role, page)` per tick. State machine:
+
+```
+LOAD_AUTH[current_role]
+  → NAVIGATE[current_page]
+  → EXTRACT        (Phase 2)
+  → QUALITY        (Phase 4 inline flags)
+  → EVENT_DRAIN    (Phase EVENTS § E.4 — post-page drain only, no clicks in pure loop)
+  → INVARIANTS     (Phase 3 numeric + Phase EVENTS § E.6/E.7 event + Phase ROLE § R.7 role)
+  → WRITE[role,page]  (registry lines)
+  → ADVANCE CURSOR
+  → NEXT
+```
+
+### 7.1 `latest-tick.json` extension — `ui_audit_matrix` block
+
+Top-level `ui_audit_matrix`:
+
+```json
+"ui_audit_matrix": {
+  "mode": "role_matrix | single_role | single_page",
+  "pass": 1,
+  "current_role": "<name>",
+  "current_page_idx": 4,
+  "pages": ["<path>", ...],
+  "roles_complete": ["anonymous", "viewer"],
+  "roles_pending": ["admin", "member", "superadmin"],
+  "matrix_started": "<ISO-8601>",
+  "eta_seconds": 12000,
+  "matrix_idle": false
+}
+```
+
+Persisted at END of each tick so `/loop`'s fresh context can resume. `matrix_idle: true` → 2-pass cycle complete; subsequent ticks no-op.
+
+### 7.2 ETA gate (R10)
+
+On `full` entry:
+
+```bash
+ROLES_ACTIVE=$(count roles with env vars present)
+PAGES=$(len .ui-audit.json[pages])
+ETA_SECONDS=$((ROLES_ACTIVE * PAGES * 120))
+ETA_MIN=$((ETA_SECONDS / 60))
+
+echo "[ui-audit] ETA for full matrix: ${ROLES_ACTIVE} roles × ${PAGES} pages × 2min = ${ETA_MIN} minutes"
+
+if [ "${ETA_SECONDS}" -gt 3600 ]; then
+  if [ "${UI_AUDIT_YES:-}" = "1" ] || [ "${UI_AUDIT_CI:-}" = "1" ] \
+     || [ "${BLITZ_AUTONOMOUS:-}" = "1" ] || [ "${CLAUDE_CODE_LOOP_MANAGED:-}" = "1" ]; then
+    echo "[ui-audit] Proceeding (--yes or --ci set, or an unattended loop)"
+  else
+    echo "[ui-audit] ETA exceeds 1 hour. Pass --yes for interactive, --ci for automation."
+    exit 1
+  fi
+fi
+```
+
+`--yes`/`--ci` parsed in SKILL.md Phase 0.1, exported to shell env before main.md runs. Equivalent except for audit trail: `--ci` writes one `ci_run` activity-feed event at start.
+
+### 7.3 2-pass termination
+
+- **Pass 1** (`ui_audit_matrix.pass = 1`): seeds the registry. Every `(role, page)` once; a key with one observation has no tick-diff state (§ 3F.3).
+- **Pass 2** (`ui_audit_matrix.pass = 2`): re-visits every pair. With two observations per key, STABLE, CHANGED and NULL_TRANSITION are evaluable. STALE needs a third observation and FLAPPING a fourth; the registry is append-only across runs, so they surface on the next matrix run (or on later `full` runs) once the window is deep enough.
+- **After pass 2**: set `matrix_idle: true`. Subsequent ticks exit with `matrix_idle` event. Re-run requires deleting `ui_audit_matrix` from `latest-tick.json`.
+
+### 7.4 Cursor advancement
+
+```
+# Pseudocode
+if (current_page_idx + 1) < len(pages):
+  current_page_idx += 1
+else:
+  current_page_idx = 0
+  roles_complete.append(current_role)
+  current_role = roles_pending.shift()
+  if current_role === undefined:
+    if pass < 2:
+      pass += 1
+      current_role = roles_complete[0]
+      roles_pending = roles_complete[1:]
+      roles_complete = []
+    else:
+      matrix_idle = true
+```
+
+Each tick writes `latest-tick.json` BEFORE exiting so mid-tick interruption doesn't lose cursor (pairs may re-run; nothing silently skipped).
 
 ---
 
@@ -1554,22 +1524,38 @@ Passed verbatim to `browser_evaluate`. Built per-page from `.ui-audit.json[pages
 
 `>>` is race-safe for a single ui-audit session (matches `crawl-ledger.jsonl` precedent in `skills/browse/references/main.md`). No `flock`. Concurrent sessions blocked by conflict matrix (see `skills/_shared/sessions.md`).
 
+### Observation filter (`is_obs`)
+
+Findings and observations share `docs/crawls/page-data-registry.jsonl`. One jq definition decides which lines are observations; every reducer in this file (§ 3.1, § 3.2, § 3F.1, § 4.2, § 4.3) prepends it with `jq -s "${IS_OBS_DEF}"'…'`. A new finding or meta-event label is added here and nowhere else.
+
+```bash
+# Set once per run, before the first reducer. jq 1.6+ (IN).
+IS_OBS_DEF='
+  def is_obs:
+    .ts != null and .label != null
+    and ((.label | IN(
+      "quality_flag", "heuristic",                                   # Phase 4 / Phase 5 findings
+      "cross-page-divergence", "invariant_fail", "tick_diff",        # Phase 3 findings
+      "analytics_event", "analytics_event_warning",
+      "event_drift", "event_invariant_fail",                         # Phase EVENTS
+      "button_finding", "interactive_audit_summary", "click_record", # Phase INTERACTIVE
+      "role_invariant_fail", "ROLE_LEAK", "ROLE_SWITCH_FAILED",      # Phase ROLE
+      "CONFIG_ERROR"                                                 # any phase
+    )) | not);
+'
+```
+
+The null guards on `.ts` and `.label` drop partial-write rows left by a crash; the label list drops every **finding line** (meta-events written into the same file) so none pollutes reduced observation state.
+
 ### Latest-wins reducer
 
 ```bash
-jq -s '
-  [.[] | select(.ts != null and .label != null
-                and .label != "quality_flag"
-                and .label != "heuristic"
-                and .label != "cross-page-divergence"
-                and .label != "invariant_fail"
-                and .label != "tick_diff")]
+jq -s "${IS_OBS_DEF}"'
+  [.[] | select(is_obs)]
   | group_by([.role, .page, .label])
   | map(max_by(.ts))
 ' docs/crawls/page-data-registry.jsonl
 ```
-
-Null-guards on `.ts` + `.label` protect against partial-write rows from a crash (domain-researcher gate). `.label != ...` guards exclude **finding lines** (meta-events written into same file) so they never pollute reduced observation state. Same guards as § 3.1.
 
 ### Activity-feed event format
 

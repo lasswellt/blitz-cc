@@ -2,7 +2,7 @@
 name: ui-build
 description: "Use when the user says 'build a page', 'create UI', 'add a form', 'build UI for X', 'add a screen', or 'extract design system' / 'build DESIGN.md'. Discovers the project's components, tokens, and conventions (extracting DESIGN.md when absent), then builds production-grade Vue 3 UI native to it."
 argument-hint: "<feature description>"
-allowed-tools: Read, Glob, Grep, ToolSearch, AskUserQuestion, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(git diff *), Bash(git --no-pager diff *)
+allowed-tools: Read, Glob, Grep, ToolSearch, Skill(blitz:check), AskUserQuestion, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(git diff *), Bash(git --no-pager diff *)
 model: inherit
 compatibility: ">=2.1.296"
 paths:
@@ -135,10 +135,9 @@ Before entering Phase 5, verify:
 | Lint | 0 errors (warnings OK) | Fix before proceeding |
 | Component size | No file > 300 lines | Extract sub-components |
 | Three-state coverage | All data views have loading, error, and empty states | Add missing states |
-| Hardcoded colors | None — design tokens only | Replace with tokens |
-| **Banned fonts** | None of `Inter`, `Roboto`, `Arial`, `Space Grotesk` as primary in CSS/Tailwind | Replace with project DESIGN.md typography pair |
-| **`prefers-reduced-motion`** | Required if any `animate-`, `transition-`, or motion library used | Add `@media (prefers-reduced-motion: reduce) { ... }` override |
-| **`console.log`** | Zero in `.vue`/`.ts` source | Remove or replace with structured logger |
+| **Design lane** | `/blitz:check --only design` over the diff: no finding on `design-raw-color-literal` (design tokens only, no hardcoded colors) or on `design-overused-font-static` / `design-overused-font` (`Inter`, `Roboto`, `Arial`, `Space Grotesk` as primary), and no P0 to P2 finding on any other `design-*` row | Replace literals with tokens and fonts with the DESIGN.md typography pair; re-run the lane |
+| **`prefers-reduced-motion`** | Required if any `animate-`, `transition-`, or motion library used (no registry row: inline grep) | Add `@media (prefers-reduced-motion: reduce) { ... }` override |
+| **`console.log`** | Zero in `.vue`/`.ts` source (no registry row: inline grep) | Remove or replace with structured logger |
 | **Inline `style="..."`** | Forbidden except for dynamic dimensions (e.g., calc'd widths) | Move to scoped styles or design tokens |
 
 ```bash
@@ -146,26 +145,20 @@ npm run type-check 2>&1 | tail -20
 npx eslint <new-files> 2>&1 | tail -20
 wc -l <new-vue-files> | sort -n | tail -5
 
-# Aesthetic gates
+# Checks with no registry row stay inline; fonts and color literals are the design lane's job (below).
 CHANGED=$(git diff --name-only HEAD -- '*.vue' '*.css' '*.ts' '*.tsx')
 [ -z "$CHANGED" ] || {
-  # Banned-font check (allow as fallback after a custom font-family token, but not as primary)
-  grep -lE "font-family:\s*['\"]?(Inter|Roboto|Arial|Space Grotesk)" $CHANGED 2>/dev/null \
-    && echo "FAIL: banned font detected in primary position; use DESIGN.md typography pair"
-  # Hardcoded color check
-  grep -lE "#[0-9a-fA-F]{3,6}|rgb\(|hsl\(" $CHANGED 2>/dev/null \
-    && echo "WARN: hardcoded color detected; prefer CSS var / design token"
-  # prefers-reduced-motion required if animate-/transition- used
   for f in $CHANGED; do
     grep -qE "(animate-|transition-|@keyframes|motion\.|useMotion)" "$f" 2>/dev/null \
       && ! grep -qE "prefers-reduced-motion" "$f" "$(dirname "$f")"/*.css 2>/dev/null \
       && echo "FAIL: $f uses motion but no prefers-reduced-motion override"
   done
-  # console.log
   grep -lE "console\.(log|debug|info)\(" $CHANGED 2>/dev/null \
     && echo "FAIL: console.log present"
 }
 ```
+
+**Design lane.** Invoke `Skill({ skill: "blitz:check", args: "--only design" })` once (scope `diff`, read-only, no inline greps). It prints the `DESIGN_LANE_STATUS` preflight line first, then the `design-*` findings ranked by `effective_confidence`. The gate fails on any finding on `design-raw-color-literal`, `design-overused-font-static` or `design-overused-font`, and on any P0 to P2 finding on another `design-*` row; P3 findings on the remaining rows are advisory and go into the Phase 5.4 critique prompt. `DESIGN_LANE_UNAVAILABLE` means the semantic (impeccable) rows did not run: the deterministic rows still gate, and the reduced coverage is stated to the user and in the 5.4.2 prompt, never counted as a pass.
 
 Fix all failures before Phase 5. Maximum 3 fix iterations.
 

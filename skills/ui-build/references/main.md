@@ -338,6 +338,6 @@ Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** as 
 
 #### 3.0.2 Document choices to DESIGN.md
 
-Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — template in [references/design-extract.md](design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../../docs/integrations/impeccable/references-regrounded.md)); inline aesthetic greps in the Implementation Gate are superseded by `/blitz:check --only design`.
+Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — template in [references/design-extract.md](design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../../docs/integrations/impeccable/references-regrounded.md)); the Implementation Gate (SKILL.md Phase 4) enforces them through `/blitz:check --only design`, with no inline aesthetic greps.
 
 Brownfield without `DESIGN.md` never reaches this step: Phase 1 already ran the extraction.
