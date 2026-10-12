@@ -44,7 +44,7 @@ Configured parent/child relationship: sum of declared child `parsed` values != p
 
 ---
 
-## Interactive-element checks (CAP-014 / E-010)
+## Interactive-element checks
 
 These are orthogonal to data-quality flags — they target interactive elements, not labeled values. Findings surface as `button_finding` registry lines. Full detection procedures in `skills/ui-audit/references/main.md` § Phase INTERACTIVE § I.3.
 

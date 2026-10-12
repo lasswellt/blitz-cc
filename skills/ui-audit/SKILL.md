@@ -84,7 +84,7 @@ Read `.ui-audit.json` at the project root.
 |---|---|
 | `full`, `smoke`, `consistency`, `heuristics`, `role <name>` | Error — config required. Print `See .ui-audit.json.example at repo root for schema.` and exit 1. |
 | `data` | Stub with `{baseUrl: detected, pages: {}, invariants: []}` and proceed (extraction has no labels to pull — emits INFO "no labels declared"). |
-| `buttons`, `events` | Stub (implementations in E-010 / E-011 supply defaults). |
+| `buttons`, `events` | Stub; the INTERACTIVE and EVENTS phases supply defaults. |
 
 Validate the loaded JSON: top-level keys `baseUrl` (string), `pages` (object), `invariants` (array). Missing required key → error with a pointer to `.ui-audit.json.example`.
 
@@ -121,7 +121,7 @@ See `references/main.md` §§ **"Phase 3 — CONSISTENCY"**, **"Phase 3 — INVA
 - Reduce the append-only registry to latest-per-(role,page,label) state via `jq group_by`.
 - Detect cross-page value divergence; suppress divergences covered by declared invariants.
 - Evaluate `equal` / `gte` / `lte` invariants with tolerance. Emit `invariant_fail` + `invariant_pass` events to the activity feed.
-- Run tick-over-tick hash diff to classify STABLE / CHANGED / STALE / FLAPPING / NULL_TRANSITION per (role, page, label).
+- Run tick-over-tick hash diff over the four most recent observations to classify STABLE / CHANGED / STALE / FLAPPING / NULL_TRANSITION per (role, page, label).
 
 ---
 
@@ -155,7 +155,7 @@ LOAD_AUTH[current_role] → NAVIGATE[current_page] → EXTRACT → QUALITY
   → ADVANCE CURSOR → NEXT
 ```
 
-The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
+The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds the registry; pass 2 adds the second observation that CHANGED, STABLE and NULL_TRANSITION need; STALE and FLAPPING need three and four observations and surface on later runs, references/main.md § 3F.3). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
 
 The tick cursor persists in `docs/crawls/latest-tick.json` under a `ui_audit_matrix` block (references/main.md § Phase 7.1 + § Phase ROLE); scratch files go under `${SESSION_TMP_DIR}`.
 

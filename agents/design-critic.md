@@ -144,10 +144,12 @@ Return ONLY this JSON, nothing else:
 }
 ```
 
-Verdict thresholds:
-- **PASS**: all 5 dimensions ≥7. Surface to ui-build as ready to ship.
-- **ITERATE**: 1–2 dimensions in [5, 7). Specific, actionable critique. ui-build Phase 5.4.2 may run one more revision.
-- **REWORK**: any dimension <5, or 3+ dimensions <7. The implementation has fundamental issues; ui-build should escalate to user, not auto-iterate.
+Verdict thresholds (the critic's reading of its own scores):
+- **PASS**: all 5 dimensions ≥7.
+- **ITERATE**: 1–2 dimensions in [5, 7). Specific, actionable critique.
+- **REWORK**: any dimension <5, or 3+ dimensions <7. The implementation has fundamental issues.
+
+**The verdict is advisory.** `skills/ui-build/references/main.md` §5.4.2 owns the iteration policy: from the `scores` object, the score trend across evaluations and the task's `design_quality` tier it decides whether to refine, pivot to another tone, run a single revision or escalate to the user, inside its own ceiling. ITERATE does not entitle a revision and REWORK does not force an escalation; both summarise the scores for the caller, and when the label and the policy disagree the policy wins.
 
 `severity` mapping in `issues[]`: dimension <5 → blocker; 5 ≤ x <7 → major; 7 ≤ x <8 → minor. Score 8+ generates no issue entry.
 
