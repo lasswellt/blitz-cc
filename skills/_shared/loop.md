@@ -26,7 +26,7 @@ Siblings: [sessions.md](/_shared/sessions.md), [agents.md](/_shared/agents.md), 
 | `docs/solutions/<slug>.md` | `learn` (idempotent); frontmatter `{tags, stack, files, symptoms}` | `plan` (cap 5), `startup-validate.sh` | tracked |
 | `.cc-sessions/sessions/<sid>/gate.json` | the arming skill (`build`, `check --fix`, `next --loop`) | `stop-gate.sh` | runtime |
 | `.cc-sessions/HANDOFF.json` | `pre-compact-snapshot.sh` (plan, task, gate path, never-edit list) | the session after compaction | runtime |
-| `.cc-sessions/inbox.jsonl` | hooks (`notification-log`, `permission-denied`, `startup-validate`, `worktree-create`, `stop-failure`), skills via `blitz_inbox_append` | `next` triage, `sessions attention` | runtime |
+| `.cc-sessions/inbox.jsonl` | hooks (`notification-log`, `permission-denied`, `startup-validate`, `stop-failure`), `scripts/test-listener.sh`, skills via `blitz_inbox_append` | `next` triage, `sessions attention` | runtime |
 | `.cc-sessions/STOP` | a human (`touch`) | `kill-switch.sh` (PreToolUse `*`) | runtime |
 
 `tasks.json` and `docs/solutions/` are persistent memory that drives later work; they get provenance (`origin`), a startup shape/injection scan, and quarantine ([security.md](/_shared/security.md)).
@@ -47,8 +47,9 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
   "passes": false, "status": "open|in_progress|done|blocked",
   "blocked_reason": null,   // hard_spec|oracle-underivable|test-assertion-suspect|scope-expansion-needed|circuit-breaker|dependency-missing|ratchet:<metric>
   "attempts": 0,
-  "last_verify": {"ts":"","ok":false,"failed":"","tail":"",
-                  "runs":[{"cmd":"…","exit":0,"duration_ms":8421,"tail":"…","recorded_at":"…"}]},
+  "last_verify": null,      // null until the first `tasks.sh verify`, then:
+                            // {"ts":"…","ok":false,"failed":"<cmd>","tail":"…",
+                            //  "runs":[{"cmd":"…","exit":0,"duration_ms":8421,"tail":"…","recorded_at":"…"}]}
   "origin": "plan|audit|check|learn|issue:<n>", "notes": "" }
 ```
 
@@ -114,9 +115,9 @@ Hook- or script-enforced; prose alone is not a control.
 | `verify[]` non-empty; behavior tasks carry at least one non-test check (grep, shell, e2e) beside the test command | `plan` rejects the task; `tasks.sh add` refuses an empty list; `startup-validate.sh` flags it |
 | Only `scripts/tasks.sh` writes `tasks.json` | `tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on `docs/plans/*/tasks.json` |
 | `status: done` ⇒ `passes == true` ∧ `last_verify.ok == true` | `tasks.sh set … status=done` refuses otherwise; `tasks.sh verify` is the only path that flips `passes` |
-| Main thread only: `tasks.json` and `progress.md` are on every dev agent's never-edit list; `build` writes them at task boundaries on the main branch | `dev` frontmatter + `pre-edit-guard.sh`; `pre-compact-snapshot.sh` carries the never-edit list through compaction |
+| Main thread only: `tasks.json` and `progress.md` are on every dev agent's never-edit list; `build` writes them at task boundaries on the main branch | `tasks-guard.sh` for `tasks.json`; `progress.md` only by the hook-injected never-edit list ([spawn-invariant.md](spawn-invariant.md), prose, no hook denies it); `pre-compact-snapshot.sh` carries the list through compaction |
 | `attempts` increments per failed build attempt; `blocked` at 3 or on `ESCALATE:` | `build` via `tasks.sh set … attempts=+1`; the breaker is skipped when the same call sets `status` or `blocked_reason` explicitly (the unblock recipe is `set … status=open attempts=0`) |
-| Fix rounds ≤3 on the same `dev` (sonnet); rounds 4–5 spawn a fresh `dev` on opus; round 5 adjudicates to `blocked` with a `Ruling:` | `build` |
+| Fix rounds ≤3 on the same `dev` (sonnet); rounds 4–5 spawn a fresh `dev` on opus only under `--autonomous` or `next --loop` while `BLITZ_FIX_ROUNDS_MAX` (default 5) allows, after `build` re-opens the task past the breaker; round 5 adjudicates to `blocked` with a `Ruling:` | `build` ([agents.reference.md](agents.reference.md) §8) |
 | Kill switch: while `.cc-sessions/STOP` exists every tool call is denied | `kill-switch.sh` (PreToolUse `*`) |
 | `tasks.json` and `docs/solutions/*.md` are scanned at startup (shape, ids, injection, quarantine) | `startup-validate.sh` |
 | Parallel builds are opt-in: sequential `dev` per task by default; `--parallel` only when ≥3 open tasks have disjoint `files`, cap 4, worktree isolation, sequential merge behind `git merge-tree` | `build`; see [agents.md](/_shared/agents.md) |

@@ -7,8 +7,8 @@ Claude Projects (beta from 2026-09-17) turns a project into a **coordinator** pl
 | blitz concept | Projects concept | Notes |
 |---|---|---|
 | build --parallel wave (N tasks in parallel worktrees) | N threads, one branch each | One thread per task id; the coordinator merges sequentially with a `git merge-tree` pre-check. |
-| orchestrator agent (`agents/orchestrator.md`) | coordinator | Routes freeform input; explicit `/blitz:*` commands still bypass it inside a thread. |
-| `.cc-sessions/KNOWLEDGE.md` | project memory | Copy the durable `project` lessons into the project's memory once; threads read it at start. Per `knowledge-protocol.md` §8, `user`-type lessons stay in auto memory. |
+| `/blitz:next` (advisor mode) | coordinator | Reads `tasks.json` and the inbox and names the next command; explicit `/blitz:*` commands still run directly inside a thread. |
+| `docs/solutions/` (written by `learn`) | project memory | Copy the durable solutions into the project's memory once; threads read them at start through `plan`. |
 | `/goal` check-ins (30 min, doubling) | project check-in frequency | Set the project cadence to the wave cadence; the Stop gate (`gate.json`) still runs inside each thread. |
 | `check --scope plan` PASS gate | thread merge gate | Run `/blitz:check --scope plan <slug> --fix` in the coordinator thread after the wave threads merge. |
 
@@ -52,7 +52,7 @@ A local session connected to Remote Control can list and message your cloud sess
 ## Checklist before the first unattended run
 
 - [ ] `/blitz:doctor` reports no FAIL findings and the `/verify` recipe exists.
-- [ ] `.claude/settings.json` sets `crossSessionInbound`, `isolatePeerMachines`, and allow rules for the tools the loop needs (`Workflow(<name>)` if the skills dispatch plugin workflows).
+- [ ] `.claude/settings.json` sets `crossSessionInbound`, `isolatePeerMachines`, and allow rules for the tools the loop needs (`Workflow(blitz:<name>)` if the skills dispatch plugin workflows).
 - [ ] `/goal` line printed by build / next is pasted into the coordinator thread, or the Stop gate alone is accepted as the terminating condition.
 - [ ] Journal restore (TIA, ratchet) is wired.
 - [ ] Inbox triage is read by someone: `/blitz:sessions attention` on a schedule, or the Routine's completion notification.

@@ -69,9 +69,9 @@ vi.mock('../services/analytics', () => ({
   trackPageView: vi.fn(),
 }))
 
-// Mock with partial override (keep real exports)
-vi.mock('../config', () => ({
-  ...vi.importActual('../config'),
+// Mock with partial override (keep real exports); importActual is async
+vi.mock('../config', async () => ({
+  ...(await vi.importActual<typeof import('../config')>('../config')),
   API_BASE_URL: 'http://test-api.example.com',
 }))
 ```
@@ -246,6 +246,9 @@ import { useSearch } from '../useSearch'
 // }
 
 describe('useSearch', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
   it('should initialize with empty query', () => {
     const [result] = withSetup(() => useSearch())
     expect(result.query.value).toBe('')
@@ -256,7 +259,7 @@ describe('useSearch', () => {
     const [result] = withSetup(() => useSearch())
     result.query.value = 'test'
     await nextTick()
-    vi.advanceTimersByTime(300)
+    await vi.advanceTimersByTimeAsync(300)   // async variant: the debounce chain awaits
     await nextTick()
     expect(result.results.value.length).toBeGreaterThan(0)
   })

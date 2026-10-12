@@ -1,5 +1,7 @@
 # Blitz Surface Map — Security Artifacts in the Risk × Layer Matrix
 
+> **Historical snapshot (2026-05-31).** The gaps marked below were closed in the 2.x releases and 3.11.0; the file paths are from the v2 tree. The current posture is [`skills/_shared/security.md`](../../../skills/_shared/security.md) and `SECURITY.md`.
+
 > Companion to the security posture in [`skills/_shared/security.md`](../../../skills/_shared/security.md) (the containment model that promoted from this research pass). Classifies **what Blitz already has** before adding anything. Every cell is filled from the live tree (file:line confirmed 2026-05-31). Thin/empty cells are named as gaps.
 
 The point of this map: Blitz already has substantial environment-layer machinery. The integration is *not* "add more checks" — it is (1) name the framework that organizes the existing guards, and (2) close the specific empty cells.

@@ -5,7 +5,7 @@ paths:
 
 # Hook authoring contract
 
-Index and per-event rationale: `hooks/scripts/README.md`. Security posture: `skills/_shared/security.md` §4 (hook-trust boundary).
+Index and per-event rationale: `hooks/scripts/README.md`. Security posture: `skills/_shared/security.md` §Guard posture; the hook-trust boundary is `skills/_shared/security.reference.md` §Hook Trust Boundary (TB-1).
 
 - `#!/usr/bin/env bash`, `set -euo pipefail`, source `_lib/common.sh`, read stdin exactly once (`INPUT=$(cat)`), extract fields with `blitz_extract`, build JSON with `jq -nc`, never `printf`.
 - Common stdin fields on every event: `session_id`, `prompt_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `permission_mode`, `effort.level`, `hook_event_name`; `agent_id`/`agent_type` in subagent context. Event extras are listed in the README's Conventions section.

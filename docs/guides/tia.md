@@ -25,7 +25,7 @@ Inside a blitz session the wiring is automatic: `post-edit-test.sh` records ever
 
 - `trigger`: `post-edit` (heartbeat), `check`, `ci`.
 - `selected_by`: `selector` or `full` — lets you compare the two populations later.
-- `runs_started == runs_recorded` is the health invariant. Every caller bumps `runs_started` (`--start`) before the runner and the listener bumps `runs_recorded` after parsing. Drift > 3 raises a `hook_failure` inbox item; `/blitz:doctor` reports the delta.
+- `runs_started == runs_recorded` is the health invariant. Every caller bumps `runs_started` (`--start`) before the runner and the listener bumps `runs_recorded` after parsing. Drift > 3 raises a `hook_failure` inbox item, which `/blitz:sessions attention` and the `next --loop` triage surface.
 - Writers take a `noclobber` lock (5 s spin, stale after 60 s), so parallel CI shards can append to a shared journal without interleaving.
 - Maintenance: `scripts/test-listener.sh --prune` keeps the last 5 000 lines / 30 days.
 - A malformed or empty report never fails the caller: the listener logs a `warning` to the activity feed and exits 0 — the run shows up as started-but-not-recorded, which is the point.
@@ -37,7 +37,7 @@ Inside a blitz session the wiring is automatic: `post-edit-test.sh` records ever
 | Reason | Source | Notes |
 |---|---|---|
 | `sibling` | `<name>.test.<ext>`, `<name>.spec.<ext>`, `__tests__/<name>.<ext>` | the old `post-edit-test.sh` matcher |
-| `graph` | reverse import closure changed → test files | Vitest: static resolver (relative imports, `tsconfig` `paths`, Nuxt `~/` `@/` `~~/` `@@/`). Jest: `npx jest --findRelatedTests --listTests` |
+| `graph` | reverse import closure changed → test files | Vitest: static resolver (relative imports, `tsconfig` `paths`, Nuxt `~/` `@/` `~~/` `@@/`). Jest: `node_modules/.bin/jest --findRelatedTests --listTests` (never a launcher) |
 | `recent-fail` | journal: test files that failed in the last 5 runs | |
 | `co-change` | journal: test files that failed in any run whose `changed` intersects the current change | learns coupling the graph cannot see (fixtures, env, generated code) |
 | `full` | every `**/*.{test,spec}.*` + `__tests__/**` | `--full`, or automatically when the change touches `package.json` / lockfiles / `vitest|vite|jest` config / `tsconfig*` / test setup files, exceeds 40 files, or `escaped_failures_recent` has a non-zero entry in the last 3 check runs |
@@ -109,4 +109,4 @@ Adapted from Anthropic's account of running CI once agents write most of the cod
 - **Runner's own graph.** Import analysis is the test runner's problem (or, here, a 60-line static resolver with the same resolution rules); we do not add a second module system.
 - **Calibration is mandatory.** Selection without a periodic full run drifts toward false confidence. Sprint close and the nightly job are the two points where the full population is measured and `escaped_failures` is written back into the selector's own inputs.
 
-Related: `skills/_shared/quality.md` §Advisory metrics and §Verification stack; `skills/check/SKILL.md` §Tests; `hooks/scripts/heartbeat.sh`.
+Related: `skills/_shared/quality.reference.md` §Ratchet (the `tia_*` advisory metrics) and §Verification stack; `skills/check/references/main.md` §1.1 Gates; `hooks/scripts/heartbeat.sh`.

@@ -9,14 +9,14 @@ argument-hint: "<file-path>"
 
 ## Additional Resources
 - For Vitest/Jest patterns, Vue component testing, and Firestore rules testing, see [references/main.md](references/main.md)
-- For deterministic test patterns on async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`) and the mocking policy, see [references/deterministic-tests.md](references/deterministic-tests.md)
-- For the Definition of Done (anti-mock rows, ratchet metrics), see [/_shared/quality.md](/_shared/quality.md)
-- For Spec Fix Mode (HARD_SPEC classifier, verification-first oracle template, per-spec turn cap) when fixing failing specs, see [`agents/test-writer.md`](/agents/test-writer.md) §Spec Fix Mode
+- Deterministic patterns for async/timing/mock-heavy targets (fake-timer footguns, seeded randomness, MSW vs `vi.mock`) and the mocking policy: [references/deterministic-tests.md](references/deterministic-tests.md)
+- Definition of Done, anti-mock rows, ratchet metrics: [/_shared/quality.reference.md](/_shared/quality.reference.md)
+- Spec Fix Mode (HARD_SPEC classifier, verification-first oracle, per-spec turn cap) for failing specs: [`agents/test-writer.md`](/agents/test-writer.md) §Spec Fix Mode
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ## Mocking policy
 
-Mock only true externals (network, clocks, randomness, third-party SaaS); never the module under test, its collaborators under `src/`, Firestore rules or component internals. Prefer emulator-backed tests (`firebase emulators:exec`, `@firebase/rules-unit-testing`) over mocks for Firebase code; a `vi.mock` of a `src/` path raises the `mocks_in_src` ratchet and `check` flags it. Full table and rules: [references/deterministic-tests.md](references/deterministic-tests.md) §Mocking policy.
+Mock only true externals (network, clocks, randomness, third-party SaaS); never the module under test, its collaborators under `src/`, Firestore rules or component internals. Prefer emulator-backed tests (`firebase emulators:exec`, `@firebase/rules-unit-testing`) over mocks for Firebase code; every `vi.mock`/`jest.mock` call in a file under `src/` (outside `__tests__/`) counts toward the `mocks_in_src` ratchet (det-03, counted by file location); co-located suites use MSW, emulators or a `tests/` setup file. Full table and rules: [references/deterministic-tests.md](references/deterministic-tests.md) §Mocking policy.
 
 ---
 
@@ -28,7 +28,7 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ## Phase 0: PARSE TARGET — Identify What to Test
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 Extract target file path from `$ARGUMENTS`. If not provided, ask the user. Validate:
 ```bash
@@ -146,7 +146,7 @@ For each exported function/component/composable, generate test cases following t
 
 Order: happy path → error paths → edge cases → boundary conditions.
 
-Mock strategy per dependency type, within the [Mocking policy](#mocking-policy): network → MSW or a mocked HTTP client; router → mock `useRouter`/`useRoute`; third-party services → recorded handlers; file system → mock fs; time-dependent → fake timers, seeded RNG. Stores, composables and other modules under `src/` are exercised for real (`createTestingPinia` with real actions, emulator-backed Firebase).
+Mock strategy per dependency type, within the [Mocking policy](#mocking-policy): network → MSW or a mocked HTTP client; router → mock `useRouter`/`useRoute`; third-party services → recorded handlers; file system → mock fs; time-dependent → fake timers, seeded RNG. Stores, composables and other modules under `src/` are exercised for real (`createTestingPinia({ stubActions: false })` in component tests, `setActivePinia(createPinia())` in store tests, emulator-backed Firebase).
 
 ---
 
@@ -348,7 +348,7 @@ Follow-up suggestions:
 | 2 | **Target has no exports** | No `export` keywords found | Check for default export or side-effect modules. For side-effect modules, test observable effects. If truly nothing to test, inform user. |
 | 3 | **Mock setup fails** | `vi.mock()` or `jest.mock()` throws | Verify module path is correct (relative vs alias). Check if the module uses default vs named exports. Try manual mock in `__mocks__/` directory. |
 | 4 | **Vue mount crashes** | `mount()` or `shallowMount()` throws during test | Check for missing global plugins (Pinia, Router, Quasar, Vuetify). Add required plugins to `global.plugins`. Try `shallowMount` instead of `mount`. |
-| 5 | **Async test hangs** | Test times out without resolving | Add explicit `vi.useFakeTimers()` for timer-dependent code. Ensure all promises are awaited. Add `vi.runAllTimers()` after triggering async operations. Set explicit timeout: `it('...', async () => {...}, 10000)`. |
+| 5 | **Async test hangs** | Test times out without resolving | Add explicit `vi.useFakeTimers()` for timer-dependent code. Ensure all promises are awaited. Add `await vi.runAllTimersAsync()` after triggering async operations. Set explicit timeout: `it('...', async () => {...}, 10000)`. |
 | 6 | **Import resolution fails** | Module not found errors | Check for path aliases (`@/`, `~/`, `#imports`). Verify tsconfig paths are configured for the test runner. Add `resolve.alias` to vitest/jest config if needed. |
 | 7 | **Type errors in test file** | TypeScript compilation errors | Ensure test data satisfies the full interface (not partial). Use `as` casting only as last resort. Check if `@types/*` packages are installed for test utilities. |
 | 8 | **Snapshot mismatch** | Snapshot tests fail on first run | Do not use snapshot tests in generated code — prefer explicit assertions. If project uses snapshots extensively, generate with `--updateSnapshot` flag on first run only. |

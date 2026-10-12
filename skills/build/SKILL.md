@@ -14,7 +14,7 @@ compatibility: ">=2.1.296"
 ## Additional Resources
 Each protocol is a small contract file plus a reference loaded on demand. Read the contract; open the reference only for the row you need.
 
-- Task file schema, `blocked_reason` vocabulary, structural rules: [loop.md](/_shared/loop.md) · gate arming, markers, `progress.md` ledger format: [loop.reference.md](/_shared/loop.reference.md)
+- Task file schema, `blocked_reason` vocabulary, `progress.md` ledger format, structural rules: [loop.md](/_shared/loop.md) · gate arming, markers: [loop.reference.md](/_shared/loop.reference.md)
 - `dev` roster entry, model routing, when to spawn: [agents.md](/_shared/agents.md) · 11-item spawn spec, reply status enum, fix loop, deviation tiers, worktree platform facts, `--parallel` preconditions, `Workflow` contract: [agents.reference.md](/_shared/agents.reference.md)
 - Structural done, the three verdicts: [quality.md](/_shared/quality.md) §Structural done · Definition of Done, anti-mock rows, ratchet: [quality.reference.md](/_shared/quality.reference.md)
 - Session claim, conflict matrix: [sessions.md](/_shared/sessions.md) · feed schema, HANDOFF.json, mailbox: [sessions.reference.md](/_shared/sessions.reference.md)
@@ -112,7 +112,7 @@ Kahn layering on `depends_on` over open tasks: wave 0 = no unmet deps; wave N = 
 Mark every task in the wave `in_progress` and append its start line. Then:
 
 - **Workflow path** when the `Workflow` tool is present and `BLITZ_DISPATCH != agent`: call `/blitz:build-wave` with `args: { plan, wave, tasks: [{id, role, prompt}], replySchema }` — `prompt` is the 11-item spec, `replySchema` the §4.2 JSON. It returns `{ wave, tasks: [{id, ok, result}] }`; `result: null` = the agent died → treat as `BLOCKED circuit-breaker`. Any failure (tool absent, not allowed in `-p`, script error) → Agent path, never hard-fail. Feed `task_start.detail.dispatch: "workflow"|"agent"`.
-- **Agent path**: one `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", isolation: "worktree", run_in_background: true, prompt: <spec>)` per task, all launched before waiting. Item 9 adds: branch label `build/<slug>/<role>`; commit inside the worktree.
+- **Agent path**: one `Agent(subagent_type: "blitz:dev", description: "build <ID>", name: "dev-<ID>", model: "sonnet", effort: "medium", isolation: "worktree", run_in_background: true, prompt: <spec>)` per task, all launched before waiting. Item 9 adds: branch label `build/<slug>/<ID>` (per task, so two same-role tasks in one wave never share a branch); commit inside the worktree.
 
 Arm the gate under `--autonomous` with `until: "build <slug> wave <N>"`.
 
@@ -159,12 +159,11 @@ Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BL
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
-SELECTED=$("${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
+SELECTED=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
 jq -n --arg sel "$SELECTED" --arg until "build ${SLUG} ${ID}" '{
-  checks: [
-    {name: "tsc",   cmd: "npx tsc --noEmit --pretty false", timeout: 180},
-    {name: "tests", cmd: ("npx vitest run --reporter=dot " + $sel), timeout: 300}
-  ], blocks: 0, max_blocks: 4, until: $until }' > "$GATE_DIR/gate.json"
+  checks: ([{name: "tsc", cmd: "npx tsc --noEmit --pretty false", timeout: 180}]
+           + (if ($sel | gsub(" "; "")) == "" then [] else [{name: "tests", cmd: ("npx vitest run --reporter=dot " + $sel), timeout: 300}] end)),
+  blocks: 0, max_blocks: 4, until: $until }' > "$GATE_DIR/gate.json"   # no selected tests: arm tsc only
 ```
 
 Skip the `tests` check when the selector returns nothing. The hook stands down on `LOOP_DONE`, `LOOP_ESCALATE`, `LOOP_DEFER`, `BLOCKED:`, `ESCALATE:`. **Disarm (`rm -f "$GATE_DIR/gate.json"`) after every `tasks.sh verify`, before every marker, and on every early exit** — a leftover gate blocks the next unrelated turn until `max_blocks`. Never wire a prompt-type Stop hook; a user `/goal` is one already.

@@ -9,7 +9,6 @@ Scope: Vitest and Jest recipes, seeded randomness, MSW, property-based tests, an
 - [trunk.io — How to avoid flaky tests in vitest](https://trunk.io/blog/how-to-avoid-and-detect-flaky-tests-in-vitest)
 - [fast-check.dev — Beyond flaky tests: controlled randomness](https://fast-check.dev/blog/2025/03/28/beyond-flaky-tests-bringing-controlled-randomness-to-vitest/)
 - [Vitest fake timers docs](https://vitest.dev/api/vi.html#vi-usefaketimers)
-- `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 (failure modes and footgun warnings)
 
 ---
 
@@ -181,7 +180,7 @@ Every failure is reproducible from `seed`. Shipped pattern from `fast-check.dev`
 
 ## Counter-evidence and caveats (must read before adopting)
 
-Per `docs/research/2026-05-16_agent-success-recipes-spec-fixing.md` F3 + F6:
+From the spec-fixing field reports the recipe above was drawn from:
 
 1. **Fake timers deadlock on async chains** (Vitest sync variant) — fix is the `Async` variant; tutorials often skip this.
 2. **Determinism via low temperature is not absolute** — empirical study (arxiv 2509.19185, 39 frameworks, 439 apps) found non-determinism persists even with fixed low temperature and Top-P. This recipe addresses runtime determinism; LLM-generation determinism is a separate concern.
@@ -205,7 +204,7 @@ Evidence: over 1.2M commits, agent-authored commits add mocks in 36% of cases vs
 
 Rules:
 
-1. A `vi.mock` / `jest.mock` of a path under `src/` is a smell; every added mock in `src/` raises the `mocks_in_src` ratchet metric (registry `det-03`, P2 reject) and `check` flags the delta.
+1. A `vi.mock` / `jest.mock` of a collaborator under `src/` is a smell. The `mocks_in_src` ratchet metric (registry `det-03`, P2 reject) counts every `vi.mock`/`jest.mock` call in files located under `src/` outside `__tests__/`, whatever is mocked, and `check` flags the delta; co-located suites that must mock an external keep that mock in a `tests/` setup file.
 2. Prefer emulator-backed integration tests over mocks for Firebase code: `firebase emulators:exec --only firestore,functions "npx vitest run <file> --reporter=dot"` and `@firebase/rules-unit-testing` for rules assertions (`assertSucceeds` / `assertFails`).
 3. A test whose only assertions are on mock calls (`toHaveBeenCalledWith`) does not count toward "new public functions have at least one test" (DoD §Testing).
 4. When the oracle cannot be derived without mocking the unit itself, stop and reply `ESCALATE: oracle-underivable`; `build` records it as `blocked_reason`.

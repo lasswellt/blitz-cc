@@ -152,8 +152,8 @@ Shared boundary = group.
 | State | Condition | Display |
 |-------|-----------|---------|
 | Loading | `loading === true` | [skeleton description] |
-| Empty | `!data?.length` | [empty state description] |
 | Error | `error !== null` | [error display description] |
+| Empty | `!data?.length` | [empty state description] |
 | Populated | `data?.length > 0` | [normal content description] |
 
 #### Children

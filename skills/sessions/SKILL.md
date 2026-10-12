@@ -91,7 +91,7 @@ Empty queue → print exactly `HEARTBEAT_OK` (the `/blitz:next --loop` heartbeat
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/sessions-dashboard.sh" $( [ "$HTML" = 1 ] && echo --html )
 ```
 
-Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Worktrees, Inbox, Timeline = last 200 feed lines, Agent usage by task from `agent-usage.jsonl`, Token estimate) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: the header of `hooks/scripts/_lib/html.sh`). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4), and the agent-usage $ column is a band, not a bill — say so when quoting them.
+Writes `.cc-sessions/dashboard.md` (sections: Sessions, Attention queue, Locks (a legacy v2 field, empty in v3), Inbox, Timeline = last 200 feed lines, Agent usage by task from `agent-usage.jsonl`, Token estimate; worktrees are the `worktrees` mode above, not a dashboard section) and prints it. `--html` sources `hooks/scripts/_lib/html.sh` and twins it to `.cc-sessions/dashboard.html` (trusted tier — every quoted field already sanitized ≤120 chars; converter output scrubbed by `sanitize_html`; contract: the header of `hooks/scripts/_lib/html.sh`). Works with zero sessions and without the `claude` CLI (overlay columns show `-`). Token figures are estimates (transcript size / 4), and the agent-usage $ column is a band, not a bill — say so when quoting them.
 
 ### 1.4 `prune` — closed records older than 7 days
 

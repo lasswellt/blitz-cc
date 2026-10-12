@@ -6,14 +6,14 @@ Detail split out of [quality.md](quality.md) so the contract every skill loads s
 
 ## Shared check registry
 
-[check-registry.json](/_shared/check-registry.json) (schema `blitz-check-registry/2.0`) is the single source of truth for every check that `check` and `audit` run. Consumers **select rows**; `agents/critic.md` and `agents/research-critic.md` **enforce rows**. No grep pattern lives in a skill or agent body; cite ids (`det-NN`, `sem-*`, `o2-*`, `o3-*`, `fw-*`, `design-*`, `sec-*`, `tia-*`) and run `detection.command`. `hooks/scripts/check-registry-validate.sh` asserts the schema and the derivation invariant below at commit time.
+[check-registry.json](/_shared/check-registry.json) (schema `blitz-check-registry/2.0`) is the single source of truth for every check that `check` and `audit` run. Consumers **select rows**; `agents/critic.md` and `agents/research-critic.md` **enforce rows**. No grep pattern lives in a skill or agent body; cite ids (`det-NN`, `sem-*`, `o2-*`, `o3-*`, `fw-*`, `design-*`, `sec-*`, `tia-*`, `check:*`) and run `detection.command`. `hooks/scripts/check-registry-validate.sh` asserts the schema and the derivation invariant below at commit time.
 
 ### Axes
 
 | Axis | Values | Meaning |
 |---|---|---|
 | `lane` | `deterministic` \| `semantic` | detection mechanism (below) |
-| `pillar` | completeness, wiring, framework, design, security, architecture, perf, maintainability, robustness | grouping for `--only <pillar>` and audit fan-out |
+| `pillar` | architecture, performance, security, maintainability, robustness, shortcut, wiring, completeness, framework, design | grouping for `--only <pillar>` and audit fan-out |
 | `severity` | P0–P3 | triage and ratchet importance; **not** verdict authority |
 | `verdict_authority` | `reject` \| `advisory` | derived, never set per run |
 | `consolidated_target` | `check` \| `audit` \| `both` \| `orthogonal` | which entry point selects the row |
@@ -64,7 +64,7 @@ effective_confidence = base_confidence × fp_verification_factor
 
 ### Selection contract
 
-`check-registry.json` is ~98 KB of data. **Query it; never read it into context.** Reading the file costs ~24K tokens to obtain the handful of rows an invocation runs.
+`check-registry.json` is about 120 KB of data. **Query it; never read it into context.** Reading the file costs about 30K tokens to obtain the handful of rows an invocation runs.
 
 ```
 check_checks   = checks.filter(c => c.consolidated_target in {check, both})
@@ -94,7 +94,7 @@ jq -r --argjson stacks "${STACKS:-[]}" --arg target check --arg lane determinist
 
 Swap `--arg lane semantic` for the semantic lane, and `--arg target audit` for `audit`. To pull one row by id: `jq -r --arg id det-11 '.checks[] | select(.id==$id)'`.
 
-`check` suppresses what `audit` re-surfaces: a single-pass semantic finding `check` drops as low-confidence is what `audit`'s aggregation lifts to high confidence. Orthogonal domains stay out of the registry: `dep-health`, `perf-profile`, `ui-audit`, `browse`.
+`check` suppresses what `audit` re-surfaces: a single-pass semantic finding `check` drops as low-confidence is what `audit`'s aggregation lifts to high confidence. Orthogonal domains (`dep-health`, `perf-profile`, `ui-audit`, `browse`) are not selected by `check` or `audit`; the two `tia-*` rows carry `consolidated_target: orthogonal` for the ratchet only.
 
 ### Which entry point
 
@@ -331,7 +331,7 @@ Regenerate after any registry edit (`check-registry-validate.sh` then `gen-revie
 
 ## Verification stack
 
-Four layers, one owner and one kind of verdict each. They compose; none replaces another. Contracts and the ladder live in [loop.md](/_shared/loop.md).
+Four layers, one owner and one kind of verdict each. They compose; none replaces another. Contracts and the ladder live in [loop.reference.md](/_shared/loop.reference.md) §Stop gate.
 
 | Layer | Mechanism | Owner | Decides |
 |---|---|---|---|
@@ -340,4 +340,4 @@ Four layers, one owner and one kind of verdict each. They compose; none replaces
 | Adversarial | `agents/critic.md --mode reject` on the diff, fresh context, no Write/Edit | `check` Phase 4.3 | LGTM / REJECT |
 | App-level | `/verify` recipe recorded at `.claude/skills/verify/SKILL.md` (bundled, user-only); `check` reads and replays it | user | the app runs and behaves |
 
-The gate is a no-op without `gate.json`; `max_blocks` (4) stays under the platform's 5-consecutive-block cap; the plugin never wires a prompt-type Stop hook (it would collide with a user `/goal`). "Selected tests pass" means the sibling + import-graph + journal-history set; the full suite runs once at `check` to measure what the selector missed.
+The gate is a no-op without `gate.json`; `max_blocks` (4) stays under the platform's 8-continuation cap (`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`); the plugin never wires a prompt-type Stop hook (it would collide with a user `/goal`). "Selected tests pass" means the sibling + import-graph + journal-history set; the full suite runs once at `check` to measure what the selector missed.

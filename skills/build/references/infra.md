@@ -6,8 +6,8 @@
 
 - **Restrictive by default**: security rules, IAM bindings, and network config open only what is explicitly needed. Default-deny.
 - **No secrets in the tree**: environment variables go in `.env.example` (placeholders only). Real secrets live in the CI secret store / cloud secret manager. Never commit credentials, tokens, or service-account keys.
-- **Tier 4 (escalate, never auto-fix)**: production deploy changes, IAM/permission changes, secrets management, new cloud services, destructive IaC plans. Reply `BLOCKED` with `blocked_reason: hard_spec` and the completed work described.
-- **Version pins**: pin third-party GitHub Actions to a full-length commit SHA with a comment naming the tag; first-party actions may use a major tag. Resolve CLI tools to registry latest unless reproducibility forces a pin. Never invent a version from memory ([/_shared/security.md](/_shared/security.md)).
+- **Tier 4 (escalate, never auto-fix)**: production deploy changes, IAM/permission changes, secrets management, new cloud services, destructive IaC plans. Reply `BLOCKED` with `blocked_reason: circuit-breaker`, `escalate: "ESCALATE: tier-4 <what>"` and the completed work described.
+- **Version pins**: pin third-party GitHub Actions to a full-length commit SHA with a comment naming the tag; first-party actions may use a major tag. Resolve CLI tools to registry latest unless reproducibility forces a pin. Never invent a version from memory ([/_shared/security.reference.md](/_shared/security.reference.md) §Package Install Policy).
 
 ## Stack detection
 

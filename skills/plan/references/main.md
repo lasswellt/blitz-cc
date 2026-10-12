@@ -201,7 +201,7 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 | export existence | `node -e "const m=require('./<built-file>'); if(typeof m.<name>!=='function') process.exit(1)"` | 30 | a compiled entry point must expose `<name>`; for ESM/TS sources prefer the `grep_present` row |
 | lint on files | `npx eslint <file1> <file2> --max-warnings 0` | 120 | any JS/TS change; use the project's lint command from `package.json` when it differs |
 | bulk batch count | `[ "$(grep -rlE '<new-pattern>' <dir> \| wc -l)" -ge <n> ]` | 30 | a SPIDR split batch: proves the migration reached ≥ `<n>` files in `<dir>` |
-| doc exists (spike) | `test -s docs/research/<date>_<slug>.md` | 5 | the only task of a spike plan; pass `--test-only-ok` is not needed (this is not a test runner) |
+| doc exists (spike) | `test -s docs/research/<date>_<slug>.md` | 5 | the only task of a spike plan; `--test-only-ok` is not needed (`test -s` is not a test runner) |
 | shell script | `bash scripts/<check>.sh` | 120 | a bespoke check that exercises the change end to end (CLI output, generated file shape); the script lives in the repo, not in the command string |
 
 ### Composition rules
@@ -211,7 +211,7 @@ Every `--verify-cmd` takes the form `"<cmd>::<timeout-seconds>"`. Substitute rea
 - Minimum for an infra task: the emulator row that covers the change + `grep_present` on the rule/config key.
 - Minimum for a `role: test` task: the test row alone with `--test-only-ok`, plus `--notes "test-only: <why no non-test check applies>"`.
 - Order rows cheapest first (`grep` → `tsc` → unit test → emulator → Playwright); `tasks.sh verify` stops at the first failure and the 200-char tail is what `build` reads.
-- Quote patterns for the shell that `tasks.sh verify` runs (`bash -c`); escape `{` `}` `|` inside `grep -E` alternations as shown.
+- Quote patterns for the shell that `tasks.sh verify` runs (`bash -c`). The `\|` in the table above is markdown escaping for the table cell only: in the real command keep `|` bare (in ERE `\|` is a literal pipe and the alternation never matches) and backslash only `{` and `}`: `! grep -nE 'TODO|return \{\}' src/x.ts`, `grep -qE 'export (const|function) x' src/x.ts`.
 
 ---
 

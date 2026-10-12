@@ -8,26 +8,24 @@ compatibility: ">=2.1.296"
 ---
 > **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
-<!-- import: from _shared/sessions.md §Canonical block — Project Context with stack detection -->
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
 - For research document template, research types, and section guidelines, see [references/main.md](references/main.md)
-- For context window hygiene, see [sessions.md](/_shared/sessions.md)
+- For context window hygiene, see [sessions.reference.md](/_shared/sessions.reference.md) §8
 - For how `plan --from-research <doc>` consumes the Recommendation, see [loop.md](/_shared/loop.md) and `skills/plan/SKILL.md`
 - For the opt-in `Workflow` (dynamic-workflows) dispatch path + capability gate, see [agents.reference.md](/_shared/agents.reference.md) §7
-<!-- import: from _shared/loop.md §Canonical block — Spawn + Output Style cross-refs -->
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
+- For subagent spawning (type selection, weight classes, the fan-out gate, visibility), see [agents.md](/_shared/agents.md) and [agents.reference.md](/_shared/agents.reference.md) §3–§4
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
-All research output must satisfy the [Definition of Done](/_shared/quality.md). No placeholder sections.
+All research output must satisfy the Definition of Done ([quality.reference.md](/_shared/quality.reference.md) §Definition of Done). No placeholder sections.
 
 ---
 
 # Research Skill
 
-Investigate a topic by spawning parallel research agents, collecting findings, and synthesizing a structured research document at `docs/research/<date>_<topic>.md` (tracked; `docs/research/` is the legacy gitignored location). Its `## Recommendation` is what `/blitz:plan --from-research <doc>` reads. Execute every phase in order. Do NOT skip phases.
+Investigate a topic by spawning parallel research agents, collecting findings, and synthesizing a structured research document at `docs/research/<date>_<topic>.md` (tracked; never write to the legacy `docs/_research/`). Its `## Recommendation` is what `/blitz:plan --from-research <doc>` reads. Execute every phase in order. Do NOT skip phases.
 
 Two modes:
 - **Topic research** (default, `$1` = topic): Phases 0–4 below.
@@ -41,7 +39,7 @@ Read-only: answers "how does this repo do X" with `path:line` cites, no agents, 
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Extract Research Topic
 
@@ -97,7 +95,7 @@ Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, 
 SPAWN_INFRA=false
 # Detect via package.json deps + CLAUDE_PLUGIN env
 if grep -qE '"(firebase|firebase-admin|@google-cloud|aws-sdk|@aws-sdk|@azure|stripe|twilio)"' package.json 2>/dev/null \
-   || grep -qE 'firebase\.json|wrangler\.toml|serverless\.yml|terraform/' . 2>/dev/null; then
+   || ls firebase.json wrangler.toml serverless.yml >/dev/null 2>&1 || [ -d terraform ]; then
   SPAWN_INFRA=true
 fi
 
@@ -107,7 +105,7 @@ fi
 [ "$SPAWN_INFRA" = false ] && echo "[research] infra-analyst skipped (no cloud/infra detected; set BLITZ_RESEARCH_FORCE_INFRA=1 to override)" >&2
 ```
 
-Saves ~$0.10/run on ~40% of runs (token-economics §9 Gap 6).
+Saves roughly $0.10 per run on about 40% of runs.
 
 ### 1.2.6 Select Dispatch Mode (capability gate)
 
@@ -138,7 +136,7 @@ Spawn each agent in **a single assistant message** (so they run concurrently) us
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails the write)
 - `model:`/`effort:` per §1.2, always explicit
 - `description: research <agent-name>` (row label in `/tasks` and the agents view, §1.5)
-- `prompt`: the agent prompt template from Section 1.5 below, filled with topic, questions, output path, and stack profile
+- `prompt`: the agent prompt template from §1.6 below, filled with topic, questions, output path, and stack profile
 - `run_in_background: true` (Phase 1.7 waits on notifications)
 
 Each agent prompt MUST include: research topic + questions; detected stack profile; output file path (`${SESSION_TMP_DIR}/research/<agent-name>.md`); research limits (§1.5); write-as-you-go rule ("Stub your output file with `# IN PROGRESS` before your first tool call. Append findings as you discover them. Do NOT accumulate in memory.").
@@ -156,7 +154,7 @@ Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-pe
 
 ### 1.6 Agent Prompt Templates
 
-The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates — paste from there into each Agent() spawn. Orchestrator MAY mark the canonical preamble `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens (after Haiku-routing migration).
+The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates — paste from there into each Agent() spawn, byte-identical every time, so the subagent prompt cache hits ([agents.md](/_shared/agents.md) §1.3).
 
 **Templates by role** (all consume the canonical preamble):
 - `library-docs` — model: haiku. Official docs, API surface, version compat.
@@ -180,13 +178,13 @@ done
 
 ## Phase 2: COLLECT AND VALIDATE — Gather All Findings
 
-### 2.1 Classify Outputs (canonical gate from spawn-protocol §8)
+### 2.1 Classify Outputs (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4)
 
 Every agent reply is classified before it enters synthesis; an unclassified reply is dropped, not trusted ([agents.reference.md](/_shared/agents.reference.md) §4.4). Gate table: [references/main.md](references/main.md) §2.1 Classify Outputs.
 
 ### 2.2 Summarize Each Agent File (Haiku — token saving)
 
-Compress via Haiku summarization-on-read before synthesis (Pattern B from token-economics §5; saves ~$0.26/run on ~100K tokens):
+Compress via Haiku summarization-on-read before synthesis (saves roughly $0.26 per run on ~100K tokens):
 
 ```bash
 for f in "${EXPECTED_OUTPUTS[@]}"; do
@@ -237,7 +235,7 @@ Before finalizing:
 - Implementation sketch references real project paths and patterns.
 - No agent's findings are silently dropped.
 - Quantified claims ("migrate 130 files") cite how the number was obtained (a grep, a count, a doc) — never a bare figure.
-- `## Recommendation` has a `### Decision` and a `### Rationale`; `plan --from-research` rejects a doc without them.
+- `## Recommendation` has a `### Decision` and a `### Rationale`; `plan --from-research` reads those two headings as its contract.
 
 ### 3.2.5 Citation Validation (research-critic agent)
 
@@ -246,7 +244,7 @@ Every cited URL is probed and classified LIVE / DEAD / LIKELY_HALLUCINATED / UNK
 ### 3.3 Clean Up (CONDITIONAL — preserve findings on failure)
 
 ```bash
-DOC_PATH="docs/research/${TIMESTAMP}_${TOPIC_SLUG}.md"
+DOC_PATH="docs/research/${TODAY}_${TOPIC_SLUG}.md"   # the documented name; TIMESTAMP is for scratch files only
 SYNTHESIS_OK=false
 if [ -f "$DOC_PATH" ] && [ "$(wc -l < "$DOC_PATH")" -ge 50 ]; then
   if [ "${CRITIC_VERDICT:-PASS}" = "PASS" ]; then
@@ -297,5 +295,5 @@ Suggest next steps. Full research-outcome → skill table: [references/main.md](
 
 - Agent-output classify gate: MISSING/EMPTY/MALFORMED ≥ threshold → ABORT (§2.1); never pass blanks through as SUCCESS.
 - Citation-validity critic returning CITATIONS_MISSING blocks Phase 3.3 cleanup — the findings dir is preserved for inspection, not deleted.
-- `--codebase` never writes: no doc, no scratch files, no session record. A cite you did not open this turn is a guess — mark it "Not verified".
+- `--codebase` still runs preamble steps 1-3 (PATCH on the hook's record, `working_on: codebase <question>`) but writes no document and no scratch files. A cite you did not open this turn is a guess — mark it "Not verified".
 - `infra-analyst` is conditional (§1.2.5 spawn-N gate) — don't assume all 4 agents run.

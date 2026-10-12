@@ -1,7 +1,7 @@
 # Design Criteria — shared rubric (generator + evaluator single source)
 
 Canonical definitions of the 5 design dimensions, used **both** as generation steering
-(`skills/ui-build/SKILL.md` Phase 3) and as the scoring rubric
+(`skills/ui-build/references/main.md` §3.0.1) and as the scoring rubric
 (`agents/design-critic.md` §2). Handing the same criteria to the generator that the
 evaluator grades against produces measurable first-iteration lift before any evaluator
 cycle runs — the criteria themselves steer the model off generic defaults.

@@ -1,13 +1,11 @@
 ---
 name: dep-health
-description: "Audits npm dependencies for known vulnerabilities, outdated versions and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (CSV/JSON). Use for 'check deps', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', weekly sweeps."
-allowed-tools: Read, Glob, Grep, WebFetch(domain:registry.npmjs.org), WebFetch(domain:github.com), WebFetch(domain:raw.githubusercontent.com), WebFetch(domain:api.osv.dev), WebFetch(domain:pypi.org), WebFetch(domain:nodejs.org), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(docs/guides/**), Edit(.cc-sessions/**)
+description: "Audits npm dependencies for known vulnerabilities, outdated versions and license compliance. Modes: audit (read-only scan), upgrade (interactive bumps), report (full markdown report). Use for 'check deps', 'audit dependencies', 'security vulnerabilities', 'outdated packages', 'license check', weekly sweeps."
+allowed-tools: Read, Glob, Grep, WebFetch(domain:registry.npmjs.org), WebFetch(domain:github.com), WebFetch(domain:raw.githubusercontent.com), WebFetch(domain:api.osv.dev), WebFetch(domain:pypi.org), WebFetch(domain:nodejs.org), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(.cc-sessions/**)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "<audit|upgrade|report>"
 ---
-
-<!-- no-disallowed-tools: not read-only — `upgrade` mode Edits package.json, `report` mode Writes CSV/JSON. disallowed-tools:[Edit,Write] would break those modes (S14-009 / audit §2 correction; only `doctor` qualified). -->
 
 ## Additional Resources
 - For package manager commands, license tables, and report templates, see [references/main.md](references/main.md)
@@ -22,7 +20,7 @@ Analyze npm packages for security vulnerabilities, outdated versions, license co
 
 ---
 
-All code produced must satisfy the [Definition of Done](/_shared/quality.md). No placeholder implementations.
+All code produced must satisfy the Definition of Done ([quality.reference.md](/_shared/quality.reference.md) §Definition of Done). No placeholder implementations.
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
@@ -41,7 +39,7 @@ All code produced must satisfy the [Definition of Done](/_shared/quality.md). No
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -98,7 +96,8 @@ Read `package.json` and extract:
 Execute the appropriate audit command (see [references/main.md](references/main.md) for PM-specific variants):
 
 ```bash
-${PM} audit --json 2>&1 ```
+${PM} audit --json 2>&1
+```
 
 If the command exits with a non-zero code, it indicates vulnerabilities were found (this is expected — do not treat as a failure).
 
@@ -217,9 +216,9 @@ ${PM} test 2>&1 | tail -30
 
 Record baseline pass/fail counts.
 
-### 4.3 Upgrade Patches
+### 4.3 Update within declared ranges
 
-Run the package manager's update command for patch versions only:
+Run the package manager's update command. It moves every dependency to the newest version its declared range allows, which under `^` is minor **and** patch, so get 4.4's confirmation first for any package whose minor bump needs sign-off, or narrow that package to `~` before updating:
 
 ```bash
 # npm
@@ -353,7 +352,7 @@ Show up to 10 priorities, ordered by severity.
 If mode is `audit` or `report`, also print:
 ```
 Full report: ${SESSION_TMP_DIR}/dep-health-report.md
-Run '/dep-health upgrade' to apply safe upgrades.
+Run /blitz:dep-health upgrade to apply safe upgrades.
 ```
 
 ### 5.4 Follow-Up Suggestions
@@ -367,9 +366,7 @@ Run '/dep-health upgrade' to apply safe upgrades.
 
 ### 5.5 Session Cleanup
 
-1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed`
-2. Release any held locks
-3. Append `session_end` to the operations log
+Final phase per [sessions.md](/_shared/sessions.md) §2: `blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'`, log `skill_end` with `{status, summary}`, and remove `${SESSION_TMP_DIR}` unless an artifact there is still needed. Never set `status` or `state`; the hook closes the record.
 
 ---
 

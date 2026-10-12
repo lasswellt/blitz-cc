@@ -26,7 +26,7 @@ Every `dev` / `test-writer` spawn carries all eleven items. **Items 6, 7, 9, 10 
 
 ### 3.1b Preloaded skills
 
-An agent that needs a skill on every run lists it in `skills:` frontmatter. The cost is the skill's full body injected per spawn, so this is deliberate, not a convenience: `test-writer` ← `test-gen` is the only default. Everything else is fetched through the `Skill` tool when the agent actually needs it. The Task tools (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) and `TodoWrite` are off on current models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and v3 never uses them: `docs/plans/<slug>/tasks.json` is the task list.
+An agent that needs a skill on every run lists it in `skills:` frontmatter. The cost is the skill's full body injected per spawn, so this is deliberate, not a convenience: no blitz agent preloads one today (`test-writer` reaches `test-gen` through the `Skill` tool). Everything is fetched through the `Skill` tool when the agent actually needs it. The Task tools (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) and `TodoWrite` are off on current models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and v3 never uses them: `docs/plans/<slug>/tasks.json` is the task list.
 
 ### 3.2 Generic preamble (file-producing agents)
 

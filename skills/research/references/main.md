@@ -254,20 +254,20 @@ If no specific stack detected, use generic Node.js/TypeScript patterns; note whe
 
 ## Agent Prompt Templates
 
-Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the main thread can apply `cache_control: {type: "ephemeral", ttl: "1h"}` once the total static prefix crosses 1024 tokens.
+Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the subagent prompt cache hits on every spawn ([agents.md](/_shared/agents.md) §1.3 cost controls).
 
 ### Canonical Preamble (paste verbatim)
 
 ```
-pleasantries, hedging. Preserve verbatim: code fences, inline code, URLs, file paths,
-commands, grep patterns, YAML/JSON, headings, table rows, error codes, dates, version
-numbers. No preamble. No trailing summary of work already evident in the diff or tool
-output. Format: fragments OK.
+OUTPUT STYLE: terse-technical per /_shared/output.md. No fillers, pleasantries, hedging.
+Preserve verbatim: code fences, inline code, URLs, file paths, commands, grep patterns,
+YAML/JSON, headings, table rows, error codes, dates, version numbers. No preamble. No
+trailing summary of work already evident in the diff or tool output. Format: fragments OK.
 
 BUDGET: Medium-class agent. Hard wall-clock budget 3 minutes. Respect the per-agent
-limits in SKILL.md §1.5 (max searches, max files read, max output lines). Use HEARTBEAT
-lines between phases (`HEARTBEAT: <phase> at <ISO-8601>`). Emit PARTIAL marker block
-when ≤3 tool calls remain or budget is approaching.
+limits in SKILL.md §1.5 (max searches, max files read, max output lines). When ≤3 tool
+calls remain or the budget is approaching, stop, write what you have to your output
+file, and reply BLOCKED with blocked_reason circuit-breaker (agents.reference.md §4.1).
 
 WRITE-AS-YOU-GO: Stub your output file with `# IN PROGRESS` before your first tool call.
 Append findings as you discover them. Do NOT accumulate in memory — every section gets
@@ -429,7 +429,7 @@ Synthesizer MAY strip these from the final doc OR convert to paraphrase. Produci
 
 ### Outcome-based acceptance criteria (preferred over artifact-based)
 
-Per validity research §9, acceptance checks (the `verify[]` a task carries once `plan` derives it) that name implementation files by exact path are forward-coupled to implementation decisions made later. A hypothetical `precompact-handoff.sh` acceptance check illustrates this: criterion referenced a file that landed elsewhere; only an OR-fallback rescued the check.
+Acceptance checks (the `verify[]` a task carries once `plan` derives it) that name implementation files by exact path are forward-coupled to implementation decisions made later. A hypothetical `precompact-handoff.sh` acceptance check illustrates this: criterion referenced a file that landed elsewhere; only an OR-fallback rescued the check.
 
 Prefer:
 - ✅ Outcome: `when PreCompact fires, .cc-sessions/HANDOFF.json contains the active plan slug`
@@ -439,9 +439,9 @@ OR-fallbacks (`test -f path-A || test -f path-B`) remain valid for compatibility
 
 ---
 
-## Agent Output Format (legacy — agents now use REPLY CONTRACT JSON)
+## Agent Output Format (the findings file)
 
-Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. From v1.11 forward, agents return canonical JSON to the main thread AND write Markdown findings (the file uses this format; the JSON references it).
+Agents return canonical JSON to the main thread AND write their Markdown findings in this shape (the JSON references the file).
 
 ```markdown
 # <Agent Name> — Research Findings
@@ -466,6 +466,7 @@ Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. 
 - **Key insight**: <one sentence>
 - **Confidence level**: <High | Medium | Low>
 - **Gaps**: <what could not be determined>
+```
 
 ---
 
@@ -482,7 +483,6 @@ Pre-v1.11, each research agent wrote findings to a Markdown file in this shape. 
 | Feature approach decided | `ui-build` | Build the feature UI. |
 | Security concern identified | `audit` | Audit for related vulnerabilities. |
 | Performance approach selected | `test-gen` | Generate performance-related tests. |
-```
 
 ---
 
@@ -521,7 +521,7 @@ return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, res
 
 Answer a question about the current codebase from evidence, not memory. Rules:
 
-1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; if `autonomy=high|full`, skip the question and state the assumption in one line.
+1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; when `AskUserQuestion` is unavailable (`-p`) or `BLITZ_AUTONOMOUS=1`, skip the question and state the assumption in one line.
 2. **Locate — semantic first, grep second.** Resolve a symbol in this order, stopping at the first that works:
    1. **`LSP`** — workspace symbol search → `goToDefinition` → `findReferences`. One call returns the definition and every call site as a location list. Use it whenever the target is a symbol (function, type, class, constant) in a language with a running server.
    2. **`Grep` / `Glob`** from the most specific term outward (symbol → import sites → routes/config), then `Read` with an `offset` around each hit. Use this when the `LSP` tool is inactive: no language server for the file's language, a binary that is not installed, or a **cloud session**, where Claude Code does not start plugin language servers at all.
@@ -570,7 +570,7 @@ Use the template from `references/main.md`. Required sections:
 7. **Risks** — Known risks, mitigations, open questions.
 8. **References** — All cited docs, articles, discussions.
 
-### 2.1 Classify Outputs (canonical gate from spawn-protocol §8)
+### 2.1 Classify Outputs (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4)
 
 Run the standard classifier BEFORE reading findings. MISSING / EMPTY / MALFORMED outputs MUST NOT silently pass through as SUCCESS:
 
@@ -582,7 +582,7 @@ EXPECTED_OUTPUTS=(
 )
 [ "$SPAWN_INFRA" = true ] && EXPECTED_OUTPUTS+=("${SESSION_TMP_DIR}/research/infra-analyst.md")
 
-# classify_output() and gate logic from /_shared/agents.reference.md §8
+# classify_output() mirrors the fan-out gate in /_shared/agents.reference.md §4.4
 classify_output() {
   local f="$1"
   if [ ! -f "$f" ]; then echo MISSING; return; fi
@@ -625,8 +625,8 @@ After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetc
 Agent({
   subagent_type: "blitz:research-critic",
   description: "research citation-critic",
-  prompt: "Probe all citations in docs/research/${TIMESTAMP}_${TOPIC_SLUG}.md.
-           Return canonical JSON with verdict (PASS | CITATIONS_MISSING) and
+  prompt: "Probe all citations in docs/research/${TODAY}_${TOPIC_SLUG}.md.
+           Return canonical JSON with verdict (PASS | UNVERIFIED | CITATIONS_MISSING) and
            per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
            Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
 })

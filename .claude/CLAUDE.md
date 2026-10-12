@@ -6,8 +6,8 @@ This repo is the **blitz** Claude Code plugin: skills in `skills/` (auto-discove
 
 - Skill and agent authoring contract: `.claude/rules/skills.md` (loads when you touch `skills/**` or `agents/**`).
 - Hook authoring contract: `.claude/rules/hooks.md` (loads when you touch `hooks/**`); index in `hooks/scripts/README.md`.
-- Shared protocols, one file per concern: `loop.md` (artifacts, `tasks.json`, `next` rows, gates), `sessions.md`, `agents.md`, `quality.md`, `security.md`, `output.md`.
-- Validators: `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh --all`, `scripts/validate-plugin-structure.sh`, `scripts/check-version-sync.sh`, `scripts/gen-catalog.sh --check`, `scripts/skill-scan.sh`, `bats hooks/tests/`; for the optional mod, `claude plugin validate mods/blitz-guard` and `claude plugin test mods/blitz-guard`. Run them with `</dev/null` from a non-tty shell.
+- Shared protocols, one file per concern: `loop.md` (artifacts, `tasks.json`, structural rules; its `.reference.md` holds the `next` rows and the Stop gate), `sessions.md`, `agents.md`, `quality.md`, `security.md`, `output.md`.
+- Validators: `hooks/scripts/{skill,agent}-frontmatter-validate.sh --all`, `hooks/scripts/markdown-link-validate.sh`, `scripts/validate-plugin-structure.sh`, `scripts/check-version-sync.sh`, `scripts/gen-catalog.sh --check`, `scripts/skill-scan.sh`, `bats hooks/tests/`; for the optional mod, `claude plugin validate mods/blitz-guard` and `claude plugin test mods/blitz-guard`. Run them with `</dev/null` from a non-tty shell.
 
 ## Working here
 

@@ -1,7 +1,7 @@
 # Migration Spec — absorbing the design pillar into Blitz
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0). Original Blitz authorship. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** doc #6 of 8. Disposition of every Blitz design-surface overlap: retire (with coverage proof), reconcile (adapter-aware), update (orchestrator + quality-matrix). Conformance checklist + merge gate.
+> **Status:** historical spec; implemented. Paths it disposes of (`skills/design-extract/`, `agents/orchestrator.md`, `quality-engine.md`, `/blitz:review`, `sprint-review`) are from the v2 tree: today the extractor is `skills/ui-build/references/design-extract.md` and the review lane is `/blitz:check --only design`. Disposition of every Blitz design-surface overlap: retire (with coverage proof), reconcile (adapter-aware), update (orchestrator + quality-matrix). Conformance checklist + merge gate.
 
 ---
 

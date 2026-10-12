@@ -1,8 +1,6 @@
 # ui-audit — UI/UX Heuristic Patterns
 
-> **SKELETON — populated in E-009 (CAP-012) — DO NOT treat as shipping checklist.**
->
-> This reference ships the heading structure + pointers to upstream rule sources so CAP-008 AC2 closes and Phase 5 (HEURISTICS) has a stable reference. Full rule implementations land in E-009.
+Catalog for Phase 5 (HEURISTICS): severity tiers, the categories that run, and the upstream rule sources. The reducer chain that applies them is in `references/main.md` § Phase 5.
 
 Findings produced by this module surface as `file:line` (when the rule applies to source code) or `page:heuristic` (when the rule applies to rendered DOM) in `docs/crawls/ui-audit-report.md`.
 
@@ -17,7 +15,7 @@ Findings produced by this module surface as `file:line` (when the rule applies t
 | **MED** | Non-tabular-nums numeric columns; missing `prefers-reduced-motion` gates | Warn |
 | **LOW** | Copy issues (non-Title-Case headings, missing curly quotes, non-numerals in counts) | Info |
 
-Tiering borrowed from UI/UX Pro Max + Vercel guidelines. See research doc §3.6.
+Tiering borrowed from UI/UX Pro Max + Vercel guidelines.
 
 ---
 
@@ -50,7 +48,7 @@ See `references/main.md § Phase 5 § 5.4`.
 
 Upstream: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
 
-<!-- TODO(E-009 / CAP-012): borrow the 10-tier severity ladder + pre-delivery checklist rules for accessibility, touch targets, feedback timing, contrast. -->
+Not yet borrowed (planned categories): the 10-tier severity ladder and the pre-delivery checklist rules for accessibility, touch targets, feedback timing and contrast.
 
 ---
 
@@ -58,9 +56,7 @@ Upstream: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
 
 Upstream: https://github.com/bencium/bencium-claude-code-design-skill
 
-Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3B82F6` SaaS blue, decorative shadows/gradients, glassmorphism clichés. Opinionated — gate behind `.ui-audit.json[enable_bencium_opinions]: true`.
-
-<!-- TODO(E-009 / CAP-012): optional opinionated ruleset — gated so the default heuristics pass does not fire on teams using these typefaces intentionally. -->
+Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3B82F6` SaaS blue, decorative shadows/gradients, glassmorphism clichés. Opinionated — gate behind `.ui-audit.json[enable_bencium_opinions]: true` so the default heuristics pass does not fire on teams using these typefaces intentionally (not yet implemented).
 
 ---
 

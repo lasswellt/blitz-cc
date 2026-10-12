@@ -182,4 +182,9 @@ for f in "$SESSIONS_DIR"/sessions/*.json "$SESSIONS_DIR"/*.json; do
     "$(jq -nc --arg sid "$SID" --argjson rel "$RELEASED" --arg rec "${f#"$ROOT"/}" '{session:$sid,locks_released:$rel,record:$rec,reason:"stale_session_cleanup"}')"
 done
 
+# --- TB-2: persistent-state scan on every start (shape + injection markers) ---
+# Advisory here: findings print into the session context and the skill preamble
+# (sessions.md §2 step 5) performs the quarantine move. Never blocks startup.
+bash "$(dirname "$0")/startup-validate.sh" </dev/null 2>&1 || true
+
 exit 0

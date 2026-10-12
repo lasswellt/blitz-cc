@@ -17,6 +17,7 @@ plugin makes Claude *do*.
 | `sessions-attention` | one pending `inbox.jsonl` line → `/blitz:sessions attention` lists it | regex, llm | `--scaffold`, `--allow-tools Bash` |
 | `spec-conflict-canary` | the task's test asserts `add(2, 3) === 6` while the spec says 5 → `build` ends T-001 `blocked` with `test-assertion-suspect`; test untouched, no special-casing | regex over trace, `tool_used: Edit/Write` on the test `max 0`, llm | `--scaffold`, `--allow-tools Bash` |
 | `critic-false-block` | a correct, tested, in-scope implementation → `check --scope plan` ends PASS with critic LGTM; any REJECT is a false block | `tool_used: Bash` (verify), `tool_used: Edit max 0`, llm | `--scaffold`, `--allow-tools Bash`; `--runs 5`+ |
+| `polyglot-ratchet` | a Python + Rust repo with no `package.json`: `check --scope repo` resolves `mypy` and `cargo check` from the toolchain table and reports their diagnostics; never runs npm/npx/tsc/eslint | `tool_used: Bash` (toolchain.sh), `tool_used: Bash max 0` on npm/npx, llm | `--scaffold`, `--allow-tools Bash` |
 
 ## Run
 
@@ -51,7 +52,7 @@ with-arm (halves cost) while iterating on graders.
 
 ## Cost caveat
 
-Each case runs 3× per arm by default, so a full two-arm run is ~30 agent runs plus three judge
+Each case runs 3× per arm by default, so a full two-arm run over the ten cases is ~60 agent runs plus three judge
 calls per `llm` grader per run. `doctor-on-self`, `check-gate` and `build-inline` are the expensive
 ones (skills that shell out). Use `--runs 1`, `--ablation none`, `--tag`/`--case`, and
 `--max-cost-usd` while developing; pin `--model` and `--judge-model` in CI so a model rollout

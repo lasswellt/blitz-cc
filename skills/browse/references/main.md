@@ -848,9 +848,9 @@ Loop mode designed for `/loop 5m /blitz:browse --loop`. Each tick visits one pag
 
 **Tick lifecycle**: `SEED → CRAWL → CRAWL → ... → RE-VERIFY → COMPLETE`
 
-**Tick budget**: < 2 minutes per tick (hard timeout: 100 seconds). 5-minute loop interval provides buffer. If any phase exceeds remaining time, skip to Phase 7-LOOP (Save State) and exit gracefully.
+**Tick budget**: 100 seconds hard per tick; the 5-minute loop interval provides buffer. If any phase exceeds remaining time, skip to Phase 7-LOOP (Save State) and exit gracefully.
 
-**Autonomy**: Full. Auto-approve all, auto-commit+push, no user prompts.
+**Autonomy**: designed for an unattended `/loop`; commits and pushes its crawl state. The permission mode is the operator's (auto mode or allow rules, `SECURITY.md` §Running unattended); the skill cannot approve its own calls.
 
 **Crawl limits** (prevent crawler traps):
 - **Max depth**: 8 levels from root. Deeper pages not enqueued.
@@ -1334,7 +1334,7 @@ Print full site map tree. Skill will no-op on subsequent ticks (check `latest-ti
 #### 7.6 Session Cleanup
 - Log to activity feed: `skill_end` or `phase_complete` (per tick)
 - Update session JSON: status and last_activity
-- On COMPLETE: full session cleanup per session-lifecycle.md
+- On COMPLETE: patch `working_on` to the outcome and log `skill_end` per sessions.md §2 (final phase)
 
 ---
 

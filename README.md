@@ -34,7 +34,7 @@ Blitz replaces self-report with structure. Four invariants hold while Claude wor
 | Tests are never the only evidence | `tasks.sh add` refuses an empty or test-only `verify[]` |
 | Nothing reaches PASS without an adversarial read | the `critic` agent: fresh context, no write tools, looking for one reason to reject |
 
-The rest is consequence. Dev agents get one task each and never see the ledger. A Stop hook refuses to end a build turn while the type-check fails. `touch .cc-sessions/STOP` denies every tool call until you remove it.
+The rest is consequence. Dev agents get one task each and never see the ledger. A Stop hook blocks an armed build turn, up to four times, while the type-check or the selected tests fail. `touch .cc-sessions/STOP` denies every tool call until you remove it.
 
 Design decisions and the evidence behind them: [`docs/reviews/2026-09-19_v3-agentic-restructure/`](docs/reviews/2026-09-19_v3-agentic-restructure/README.md).
 
@@ -52,10 +52,12 @@ Pin the version and leave auto-update off for any plugin that runs hooks; read t
 Optional: the `blitz-guard` mod (Claude Code ≥2.1.287) adds checks a shell hook cannot make: blitz agents never start as agent-team teammates or on haiku, critics stay read-only by agent id, and plan progress shows in the status line. It sits on top of the hooks and never replaces them. Details: [mods/blitz-guard/README.md](mods/blitz-guard/README.md).
 
 ```
-/plugin install blitz-guard --marketplace lasswellt/blitz-cc
-``` For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
+/plugin install blitz-guard@blitz
+```
 
-**Requires** Claude Code ≥ 2.1.296 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one the guards fail open. Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
+For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
+
+**Requires** Claude Code ≥ 2.1.296 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one every blocking guard fails closed and refuses every Write, Edit and Bash call (advisory hooks fail open). Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
 
 ```bash
 /blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY
@@ -88,7 +90,7 @@ flowchart LR
 | `research` | parallel investigators plus a citation critic; `--codebase` answers "how does this repo do X" without writing | `docs/research/` |
 | `plan` | classifies the ask (spike, bounded, architectural), interviews unless `--autonomous`, mines `docs/solutions/` and the backlog, emits tasks carrying verify commands for the detected stack | `docs/plans/<slug>/` |
 | `build` | inline for a one-sentence change; otherwise one `dev` agent per task, fix rounds capped then escalated to a fresh opus agent, circuit breaker at three attempts, opt-in `--parallel` waves, `--issue N` | code, `progress.md`, task state via `tasks.sh` |
-| `check` | typecheck, lint, tests, build, registry detectors, test-impact analysis, anti-mock, `tasks.sh verify` per task, a critic survey and then the adversarial gate; `--fix`, `--comment`, `--security` | `check-report.md` |
+| `check` | typecheck, lint, tests, build, registry detectors, test-impact analysis, anti-mock, `tasks.sh verify` per task, a critic survey and then the adversarial gate; `--fix`, `--comment`, `--only security` | `check-report.md` |
 | `next` | deterministic observation via `scripts/next-state.sh`, one row, one dispatch; `--loop` is headless-safe | commits carrying a `Task:` trailer |
 | `ship` | slash-only, pinned model: gates, version, changelog, tag, archive, then `learn` | release commit, `docs/plans/archive/` |
 | `learn` | mines rulings, check reports and `Task:` commits into reusable solutions | `docs/solutions/<slug>.md` |
@@ -102,7 +104,7 @@ Everything else — `audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-
 | # | Condition | `--loop` does |
 |---|---|---|
 | 0 | kill switch, inbox pending after triage, or a session waiting on input | `LOOP_DEFER` |
-| 1 | a task blocked on a spec question the model cannot answer | notify, then `LOOP_ESCALATE` |
+| 1 | a task blocked on a spec question the model cannot answer, or the loop circuit breaker is open (3 ticks without progress, or 5 with the same error) | notify, then `LOOP_ESCALATE` |
 | 2 | an `in_progress` task, or an `open` task whose dependencies are `done` | dispatch `build` |
 | 3 | every task `done`, check report stale | dispatch `check` |
 | 4 | check report PASS and fresh | mark done, run `learn`, archive, print `Ready: /blitz:ship` |
@@ -123,34 +125,36 @@ Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled f
     { "cmd": "! grep -nE 'TODO|return \\{\\}' src/server/health.ts", "timeout": 10 }
   ],
   "passes": false, "status": "open", "blocked_reason": null, "attempts": 0,
-  "last_verify": { "ts": "", "ok": false, "failed": "", "tail": "" }, "origin": "plan", "notes": "" }
+  "last_verify": null,   // {ts, ok, failed, tail, runs[]} once tasks.sh verify has run
+  "origin": "plan", "notes": "" }
 ```
 
 The second verify command is the point. Every frontier model saturates the tests it can see while failing held-out ones, so each task carries at least one non-test check — a grep, a shell assertion, an e2e run — beside its test command. `tasks.sh verify` runs them under `timeout`, records a truncated evidence tail, and is the only path to `status: done`.
 
-Persistent state is treated as memory, because it is: `tasks.json` and `docs/solutions/` steer later work, so they carry an `origin`, are schema-checked and injection-scanned at session start, and a malformed or poisoned task file is quarantined before anything reads it.
+Persistent state is treated as memory, because it is: `tasks.json` and `docs/solutions/` steer later work, so every task carries an `origin`, both are schema-checked and injection-scanned at session start, and a malformed or poisoned task file is quarantined before anything reads it.
 
 ---
 
 ## The enforcement layer
 
-Hooks fire at the tool boundary, where argument beats none. Each guard below blocks the call and logs an override path rather than arguing in prose.
+Hooks fire at the tool boundary, where a block beats an argument. Each guard below denies the call and names its escape hatch rather than arguing in prose.
 
 | Event | What runs |
 |---|---|
 | `PreToolUse` | kill switch · `tasks.json` guard · `--no-verify` · destructive git on a dirty tree · destructive SQL outside a migration · test deletion · `as any` insertion · test disabling · commit-time validators |
-| `PostToolUse` | format · impacted tests · skill and agent frontmatter · the type-error ratchet |
-| `Stop` / `StopFailure` | the gate: a build turn cannot end while its typecheck or selected tests fail |
+| `PostToolUse` / `PostToolBatch` | format · impacted tests · skill and agent frontmatter · the diagnostic ratchet · heartbeat and test selection |
+| `Stop` | the gate: an armed build turn cannot end while its typecheck or selected tests fail (up to four blocks, then it stands down and logs it) |
 | `SessionStart` / `SessionEnd` | session records, activity feed, startup validation and quarantine |
 | `PreCompact` | `HANDOFF.json` — plan, task, gate path, never-edit list |
-| `SubagentStart` | the spawn invariant, byte-identical for every dev and critic agent |
-| `Notification` / `PermissionDenied` / `ConfigChange` / `WorktreeRemove` | inbox lines and cleanup |
+| `SubagentStart` / `SubagentStop` | the spawn invariant, byte-identical for every dev and test-writer agent · the per-subagent cost ledger |
+| `UserPromptExpansion` | feed tail, peers and inbox count injected into every `/blitz:*` prompt |
+| `Notification` / `PermissionDenied` / `StopFailure` / `ConfigChange` / `WorktreeRemove` | inbox lines and cleanup |
 
-The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.md); the authoring contract is `.claude/rules/hooks.md`; the bats suite under `hooks/tests/` covers each guard's block, its pass-through and its escape hatch.
+The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.md); the authoring contract is `.claude/rules/hooks.md`; the bats suite under `hooks/tests/` covers the command guards' block, pass-through and escape hatch.
 
 ### Critics
 
-`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no write tools, reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright.
+`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no Write or Edit (Bash held to a read subset by its prompt, and by `blitz-guard` when installed), reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright.
 
 A critic from a different model family catches blindspots the home model has on its own work, so the gate can be routed outside Claude entirely. `hooks/scripts/critic-external.sh` lifts the critic agent's body verbatim and hands it to a non-Claude CLI — `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI), or `codex` (OpenAI Codex CLI) — holding it to the same JSON reply contract and the same exit codes.
 
@@ -169,12 +173,12 @@ Each agent runs on the cheapest model that can do its job, at an explicit effort
 
 | Lane | Model · effort | Price per Mtok (in · out · cache read) |
 |---|---|---|
-| Deterministic collectors, triage, summaries | `haiku` (Haiku 5.5) · low | $0.10 · $0.50 · n/a |
-| Retrieval research, codebase mapping (multi-step search) | `haiku` (Haiku 5.5) · medium | $0.10 · $0.50 · n/a |
+| Deterministic collectors, triage, summaries | `haiku` (Haiku 5.5) · low | $0.10 · $0.50 · $0.005 (assumed) |
+| Retrieval research, codebase mapping (multi-step search) | `haiku` (Haiku 5.5) · medium | $0.10 · $0.50 · $0.005 (assumed) |
 | `dev`, `test-writer`, survey critics, codebase analysis | `sonnet` (Sonnet 5.5) · medium | $2 · $10 · $0.10 |
 | `critic --mode reject` (`medium` on small all-green diffs), fix rounds 4–5 | `opus` (Opus 5.5) · high | $4 · $20 · $0.20 |
 
-Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. Each `dev` is named `dev-T-004`, so a `SendMessage` resumes it with its context; that needs no agent teams, and blitz keeps its agents as subagents even when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set. Detail: `skills/_shared/agents.md` §1.3 and §1.5.
+Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. Each `dev` is named `dev-T-004` (always in a wave; on the sequential path unless agent teams are on, when the agent id addresses it instead), so a `SendMessage` resumes it with its context; that needs no agent teams, and blitz keeps its agents as subagents even when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set. Detail: `skills/_shared/agents.md` §1.3 and §1.5.
 
 ### One registry, two lanes
 
@@ -192,7 +196,7 @@ The loop is language-neutral: a plan is JSON, a verify command is a shell comman
 | Python | `pyproject.toml`, `setup.cfg`, `requirements.txt` | ruff, black | ruff, flake8 | mypy, pyright |
 | Rust | `Cargo.toml` | rustfmt | clippy | `cargo check` |
 | Go | `go.mod` | gofmt | `go vet` | `go build` |
-| JVM | `pom.xml`, `build.gradle` | spotless | — | gradle |
+| JVM | `gradlew` (Gradle wrapper; Maven has no rows yet) | — | — | `./gradlew` |
 | Ruby | `Gemfile` | rubocop | rubocop | — |
 | .NET | `*.csproj`, `*.sln` | `dotnet format` | — | `dotnet build` |
 | Deno, PHP, Elixir, Swift | `deno.json`, `composer.json`, `mix.exs`, `Package.swift` | see the table | | |
@@ -223,6 +227,7 @@ blitz-cc/
 │                          check-registry.json · design-criteria.md
 ├── agents/                dev · critic · test-writer · research-critic · design-critic
 ├── hooks/                 hooks.json (event wiring) · scripts/ (README.md indexes them) · tests/ (bats)
+├── mods/blitz-guard/      optional Claude Mod: teammate and haiku refusal, critic read-only shell, status line
 ├── scripts/               tasks.sh · next-state.sh · toolchain.sh · detect-stack.sh · gen-catalog.sh · validators
 ├── workflows/             build-wave · review-fanout · audit-sweep
 ├── templates/             blitz-check.yml · loop.md · toolchain.default.json
@@ -232,11 +237,11 @@ blitz-cc/
 
 A project using blitz keeps `docs/plans/<slug>/`, `docs/solutions/` and `docs/plans/BACKLOG.md` in git, and `.cc-sessions/` out of it — session records, inbox, activity feed, `HANDOFF.json`, the ratchet baseline, the test journal, and `STOP`.
 
-Each shared protocol is one file per concern: `loop.md` (artifacts, task schema, decision rows, gates), `sessions.md` (records, inbox, mailbox, conflict matrix), `agents.md` (roster, spawn spec, fix rounds, parallelism, worktrees), `quality.md` (definition of done, registry, ratchet, verification stack), `security.md` (trust boundaries TB-1…TB-5, memory poisoning, kill switch, supply chain), `output.md` (terse output, feed and inbox line schemas). Each has a `.reference.md` sibling holding the long tail, so a skill loads the contract without the appendix.
+Each shared protocol is one file per concern: `loop.md` (artifacts, task schema, structural rules; the decision rows and gates sit in its reference), `sessions.md` (records, inbox, mailbox, conflict matrix), `agents.md` (roster, spawn spec, fix rounds, parallelism, worktrees), `quality.md` (definition of done, registry, ratchet, verification stack), `security.md` (trust boundaries TB-1…TB-5, memory poisoning, kill switch, supply chain), `output.md` (terse output, feed and inbox line schemas). Each has a `.reference.md` sibling holding the long tail, so a skill loads the contract without the appendix.
 
 ### Environment flags
 
-Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_TIA_DISABLE`, `BLITZ_DISABLE_SPAWN_INVARIANT`. Worktrees and branches: `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_SKIP_BRANCH_CLEANUP`. Critics and dispatch: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_CRITIC_PROVIDER`, `BLITZ_CRITIC_PANEL`, `BLITZ_DUAL_CRITIC`, `BLITZ_USE_GEMINI_CRITIC` (legacy alias), `BLITZ_CRITIC_ARG_CAP`, `BLITZ_GEMINI_BIN|MODEL|FLAGS`, `BLITZ_AGY_BIN|MODEL|FLAGS`, `BLITZ_COPILOT_BIN|MODEL|FLAGS`, `BLITZ_CODEX_BIN|MODEL|FLAGS`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_FIX_ROUNDS_MAX`. Every disable flag logs its use.
+Hook-enforced guards: `BLITZ_OVERRIDE_NO_VERIFY` (the one opt-out that logs its use), `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_TIA_DISABLE`, `BLITZ_DISABLE_SPAWN_INVARIANT`, `BLITZ_SKIP_BRANCH_CLEANUP`. Safety opt-outs, launch environment only and never unattended: `BLITZ_GUARD_FAIL_OPEN` (blocking guards fail open), `BLITZ_CRITIC_NO_REDACT` (the diff leaves the machine unredacted), `BLITZ_CRITIC_EXTERNAL_VETO` (external REJECTs block unconfirmed). Critics: `BLITZ_CRITIC_PROVIDER`, `BLITZ_CRITIC_PANEL`, `BLITZ_CRITIC_ARG_CAP`, `BLITZ_GEMINI_BIN|MODEL|FLAGS`, `BLITZ_AGY_BIN|MODEL|FLAGS`, `BLITZ_COPILOT_BIN|MODEL|FLAGS`, `BLITZ_CODEX_BIN|MODEL|FLAGS`. Loop and verify caps: `BLITZ_LOOP_NO_PROGRESS_MAX`, `BLITZ_LOOP_SAME_ERROR_MAX`, `BLITZ_VERIFY_EVIDENCE_CAP`. Followed by skill prose rather than a hook: `BLITZ_DISPATCH` (auto, workflow, agent), `BLITZ_AUTONOMOUS`, `BLITZ_DUAL_CRITIC`, `BLITZ_USE_GEMINI_CRITIC` (legacy alias for `BLITZ_CRITIC_PROVIDER=gemini`), `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_FIX_ROUNDS_MAX`, `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_BASE`. The full inventory, including path and cap overrides, is in `hooks/scripts/README.md` §Conventions.
 
 ---
 
@@ -246,19 +251,18 @@ Guards: `BLITZ_OVERRIDE_NO_VERIFY`, `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISA
 
 ## Contributing
 
-Run the validators before you commit; the pre-commit hook runs them again and blocks on drift:
+Run `scripts/ci-local.sh` before you commit: it runs every gate of CI's `validate` job (frontmatter and registry validators, links and section citations, version sync, plugin structure, the catalog check, the supply-chain scan, the mod's validate and test, and the bats suite), and `hooks/tests/ci-local.bats` fails if the two drift. The pre-commit hook re-checks staged SKILL.md frontmatter, section citations and the registry, and blocks a version-bump commit whose references drifted.
 
-```bash
-hooks/scripts/skill-frontmatter-validate.sh --all
-hooks/scripts/agent-frontmatter-validate.sh --all
-hooks/scripts/markdown-link-validate.sh --all
-scripts/validate-plugin-structure.sh
-scripts/check-version-sync.sh
-scripts/gen-catalog.sh --check
-bats hooks/tests/
-```
+Authoring rules live in `.claude/rules/skills.md` and `.claude/rules/hooks.md`; they load automatically when you touch `skills/**`, `agents/**` or `hooks/**`. After adding, removing or renaming a component, run `scripts/gen-catalog.sh` and commit the catalog: prose never carries an inventory. After each model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
 
-Authoring rules live in `.claude/rules/skills.md` and `.claude/rules/hooks.md`; they load automatically when you touch `skills/**`, `agents/**` or `hooks/**`. After adding, removing or renaming a component, run `scripts/gen-catalog.sh` and commit the catalog — prose never carries an inventory. After each model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
+### Release process
+
+A version is released when its tag exists. A bumped `version` in `.claude-plugin/plugin.json` or a CHANGELOG headline on `main` is not a release, and the version badge above reads the latest GitHub release, so an untagged version never shows there.
+
+1. Bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (both entries; `scripts/check-version-sync.sh` fails on drift) and turn the CHANGELOG `[Unreleased]` entry into `## [X.Y.Z] · <date> · <headline>`.
+2. Open a pull request and merge it once CI is green.
+3. Tag the merge commit and publish the release from the tag: `git tag -a vX.Y.Z <merge-sha> -m "Release vX.Y.Z" && git push origin vX.Y.Z`, then `gh release create vX.Y.Z --title "vX.Y.Z: <headline>" --notes-file <notes>` with the CHANGELOG section as notes. The tag and release are a maintainer step: a Claude Code cloud session cannot push tags or create releases in this repository, so a session that merges the pull request hands this step back.
+4. Anything that listens for releases (the plugin directory's webhook, the badge, `/plugin` update checks against the marketplace) sees the version only after step 3.
 
 ## Acknowledgments
 

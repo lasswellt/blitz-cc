@@ -79,28 +79,28 @@ Run every class below and record **every** candidate reject finding with its evi
 
 ### 2.1 Shortcut detectors (registry rows)
 
-**Canonical source: [`/_shared/check-registry.json`](/_shared/check-registry.json).** Load the `det-*` rows whose `verdict_authority == "reject"` (det-01, det-02, det-03, det-04, det-06, det-07, det-11, det-12, det-13, det-14, det-15, det-18, det-19) and run each row's `detection.command` — these are the checks that may flip the verdict. The advisory `det-*` rows (det-05, det-08, det-09, det-10, det-16, det-17, det-20) append to `findings[]` only and never set REJECT. Severity ≠ verdict authority ([/_shared/quality.md](/_shared/quality.md) §Shared check registry). The bash block below mirrors the high-yield reject detectors:
+**Canonical source: [`/_shared/check-registry.json`](/_shared/check-registry.json).** Load the `det-*` rows whose `verdict_authority == "reject"` (det-01, det-02, det-03, det-04, det-06, det-07, det-11, det-12, det-13, det-14, det-15, det-18, det-19) and run each row's `detection.command` — these are the checks that may flip the verdict. The advisory `det-*` rows (det-05, det-08, det-09, det-10, det-16, det-17, det-20) append to `findings[]` only and never set REJECT. Severity ≠ verdict authority ([/_shared/quality.reference.md](/_shared/quality.reference.md) §Shared check registry). The bash block below mirrors the high-yield detectors; the ids are the registry's, and the last two are advisory:
 
 ```bash
 # det-01 test deletion
 git log --since='1 day ago' --diff-filter=D --name-only -- '*.test.*' '*.spec.*' | grep -v '^commit'
 
-# det-13 --no-verify in commit history
+# det-02 --no-verify in commit history
 git log --since='1 day ago' --grep='no-verify' --all
 
 # det-04 as any insertions in non-test code
 git diff "${BASE:-HEAD~5}"...HEAD -- src/ | grep -E '^\+' | grep -E '\bas any\b' | grep -v '__tests__\|\.test\.\|\.spec\.' | head -10
 
-# det-02 .skip/.only/xit/xdescribe in tests
+# det-13 .skip/.only/xit/xdescribe in tests
 grep -rEn '\.(skip|only)\(|\bxit\b|\bxdescribe\b|\bxtest\b' --include='*.test.*' --include='*.spec.*' .
 
 # det-03 mock count delta in src/
 grep -rEn '\b(vi\.mock|jest\.mock|sinon\.stub)\b' src/ --exclude-dir=__tests__ 2>/dev/null | wc -l
 
-# det-06 hardcoded localhost/ports/credentials in src
+# det-15 hardcoded localhost/ports, det-07 credentials in src
 grep -rEn '(localhost|127\.0\.0\.1|0\.0\.0\.0):[0-9]{3,5}|password\s*=\s*["\x27]' src/ 2>/dev/null | head -10
 
-# det-11 throw new Error('Not implemented') / return {} stubs
+# det-09 / det-10 (advisory: findings[] only, never REJECT) throw new Error('Not implemented') / return {} stubs
 grep -rEn "throw new Error.*[Nn]ot\s*[Ii]mplemented|return\s*\{\s*\}\s*\$" src/ 2>/dev/null | head
 ```
 
@@ -153,7 +153,7 @@ Tasks with `status: blocked` are SKIPPED and reported as advisory with their `bl
 For 3 randomly chosen files from `git diff --name-only "${BASE:-HEAD~3}"...HEAD -- 'src/**/*.ts' 'src/**/*.vue'`:
 - Read top imports.
 - For each named import, grep the codebase + `node_modules/<pkg>/package.json` to verify the symbol exists.
-- Any `Cannot find` result: REJECT (det-07; FP-verify first, §4).
+- Any `Cannot find` result: REJECT (det-11; FP-verify first, §4).
 
 ### 2.7 --no-verify reflog scan
 
@@ -162,7 +162,7 @@ git reflog --all --grep-reflog='no-verify' | head
 git log --all --since='3 days ago' --grep='no-verify' --pretty='%h %s' | head
 ```
 
-If any commit landed via --no-verify: REJECT (det-13).
+If any commit landed via --no-verify: REJECT (det-02).
 
 ### 2.8 Test file rename / disappearance
 
@@ -170,7 +170,7 @@ If any commit landed via --no-verify: REJECT (det-13).
 git log --since='1 day ago' --diff-filter=R --name-status | grep -E '\.test\.|\.spec\.' | head
 ```
 
-If a test file was renamed to a non-test suffix: REJECT (det-01).
+If a test file was renamed to a non-test suffix: REJECT (det-14).
 
 ### 2.8b Special-casing (FP-verify before it can block)
 
@@ -231,7 +231,7 @@ If REJECT: `summary` names the reject findings by registry id; order `findings[]
 - **Bias toward rejection on ground truth**: a §2.1–2.8 check you could not run (tool missing, command errored) is a reject finding with `confirmed: true` and the error as evidence. The cost of one false REJECT (the user re-runs `check`) is much lower than one false LGTM (broken code lands).
 - **Verdict-flip asymmetry**: "bias toward rejection" applies to §2.1–2.8 (ground truth: git/tsc/reflog/ratchet/`tasks.sh verify`) ONLY. §2.9 and any registry `advisory` row (det-05, det-08, det-09, det-10, det-16, det-17, det-20) append to `findings[]` and **never** set `verdict=REJECT`. Per the self-critique paradox (Snorkel 2025-11-26; arxiv 2402.08115), an over-eager critic hallucinates flaws on opinion-anchored checks — so only facts may reject. A finding may flip the verdict iff its registry `verdict_authority == "reject"`.
 - **Reject findings bypass the confidence gate**: a `reject`-authority deterministic finding surfaces regardless of `base_confidence` (e.g. det-06 env-fallback, 0.75). Facts are not confidence-triaged (registry `confidence_gate.reject_bypass`).
-- **FP-verify before blocking (base_confidence < 1.0)**: for det-07/det-10/det-15 and any semantic finding handed up, re-read the cited file:line and confirm the flaw **reproduces against actual behavior** (not just pattern presence) before REJECT; attach the reproducing excerpt to the finding. No reproducing evidence → downgrade to advisory (cannot flip verdict). Checks with `base_confidence == 1.0` (tsc/reflog/git/`tasks.sh verify`) skip this — the mechanism is the verification.
+- **FP-verify before blocking (base_confidence < 1.0)**: for det-06/det-07/det-15 and any semantic finding handed up, re-read the cited file:line and confirm the flaw **reproduces against actual behavior** (not just pattern presence) before REJECT; attach the reproducing excerpt to the finding. No reproducing evidence → downgrade to advisory (cannot flip verdict). Checks with `base_confidence == 1.0` (tsc/reflog/git/`tasks.sh verify`) skip this — the mechanism is the verification.
 
 ---
 
@@ -298,12 +298,7 @@ No fix prescriptions inside `what`; `dev` decides how. Every finding cites a fil
 
 ## 7. Reply contract (both modes)
 
-End your output with exactly one verdict line, then the JSON block:
-
-```
-VERDICT: LGTM | REJECT      (MODE: reject)
-VERDICT: CLEAN | FINDINGS   (MODE: survey)
-```
+The `verdict` field carries the decision (`LGTM | REJECT` in reject mode, `CLEAN | FINDINGS` in survey mode). `check` parses the reply as JSON and derives the verdict from `findings[]`, so nothing precedes the block:
 
 ```
 Return ONLY this JSON, nothing else (no markdown fence, no preamble):
@@ -340,7 +335,7 @@ Selection at `check` Phase 4.3:
 | `BLITZ_CRITIC_PROVIDER=<p>` | Replace in-Claude critic with that provider |
 | `BLITZ_USE_GEMINI_CRITIC=1` | Legacy alias for `BLITZ_CRITIC_PROVIDER=gemini` |
 | `BLITZ_CRITIC_PANEL=agy,copilot` | Fan out to several families; a REJECT blocks only once confirmed (below) |
-| `BLITZ_DUAL_CRITIC=1` | Pair in-Claude with the external one; require both LGTM (highest signal, ~2× cost) |
+| `BLITZ_DUAL_CRITIC=1` | Pair in-Claude with the external one; an external REJECT becomes `EXTERNAL_CLAIMS:` for this critic and blocks only when reproduced (`BLITZ_CRITIC_EXTERNAL_VETO=1` restores require-both-LGTM; highest signal, ~2× cost) |
 
 **External REJECTs are claims, not vetoes.** In `pre-pass` mode `critic-external.sh` exits 3 on a REJECT (single provider or panel): the reply's `issues[]` go to this critic as `EXTERNAL_CLAIMS:` (§2.8c) and block only if reproduced. The best cross-model reviewer in a 900-session planted-error study reached 28.6% precision, while pairing it with a same-model reviewer lifted recall from 42.7% to 56.7% (arXiv 2610.01471): external providers add recall, and confirmation removes their false positives. `BLITZ_CRITIC_EXTERNAL_VETO=1` restores the old any-REJECT-blocks rule (exit 2). Before any provider call the script redacts secrets from the prompt (`redacted` in the reply counts them). Research and design modes are unchanged.
 

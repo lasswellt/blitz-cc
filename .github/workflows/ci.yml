@@ -92,7 +92,7 @@ jobs:
 
       - name: Hook tests (bats)
         run: |
-          command -v bats >/dev/null || sudo apt-get update && sudo apt-get install -y bats
+          command -v bats >/dev/null || { sudo apt-get update && sudo apt-get install -y bats; }
           command -v bats >/dev/null || { echo "bats missing"; exit 1; }   # HTC-4: fail, don't skip vacuously
           bats hooks/tests/
           bash hooks/scripts/tests/test-link-resolver.sh
@@ -128,7 +128,7 @@ jobs:
         run: |
           set +e
           mkdir -p evals/results
-          # Flags per `claude plugin eval --help` (2.1.276). --scaffold runs our own fixture.sh files;
+          # Flags per `claude plugin eval --help` on the pinned CLI. --scaffold runs our own fixture.sh files;
           # --allow-tools Bash is required by the doctor/next/sessions cases (sandboxed).
           claude plugin eval . \
             --trust-plugin \

@@ -48,3 +48,27 @@ load '_helpers'
   assert_allows "block-test-deletion.sh" \
     "$(fake_tool_input "rm -rf node_modules/.cache/test")"
 }
+
+# ---------------------------------------------------------------------------
+# Write branch (a test file emptied of every assertion) and the PowerShell tool,
+# which shares the Bash|PowerShell matcher.
+# ---------------------------------------------------------------------------
+
+@test "blocks a Write that strips every assertion from an existing test file" {
+  local f; f="$(mktemp -d)/a.test.ts"
+  printf 'it("a", () => { expect(1).toBe(1) })\n' > "$f"
+  assert_blocks "block-test-deletion.sh" \
+    "$(jq -n --arg fp "$f" '{tool_name:"Write",tool_input:{file_path:$fp,content:"const x = 1;\n"},session_id:"t"}')"
+}
+
+@test "allows a Write that keeps assertions in an existing test file" {
+  local f; f="$(mktemp -d)/a.test.ts"
+  printf 'it("a", () => { expect(1).toBe(1) })\n' > "$f"
+  assert_allows "block-test-deletion.sh" \
+    "$(jq -n --arg fp "$f" '{tool_name:"Write",tool_input:{file_path:$fp,content:"it(\"b\", () => { expect(2).toBe(2) })\n"},session_id:"t"}')"
+}
+
+@test "blocks rm of a test file issued through the PowerShell tool" {
+  assert_blocks "block-test-deletion.sh" \
+    "$(jq -n '{tool_name:"PowerShell",tool_input:{command:"rm tests/user.test.js"},session_id:"t"}')"
+}

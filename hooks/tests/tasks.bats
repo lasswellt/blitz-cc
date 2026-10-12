@@ -25,6 +25,15 @@ teardown() { teardown_fake_repo; }
   [ "$status" -eq 0 ]
 }
 
+@test "add treats non-JS runners (rspec, dotnet test, mix test) as test-only" {
+  run bash "$TASKS" add demo --id T-001 --title "x" --verify-cmd "bundle exec rspec spec/a_spec.rb"
+  [ "$status" -eq 2 ]
+  run bash "$TASKS" add demo --id T-001 --title "x" --verify-cmd "dotnet test" --verify-cmd "mix test"
+  [ "$status" -eq 2 ]
+  run bash "$TASKS" add demo --id T-001 --title "x" --verify-cmd "bundle exec rspec spec/a_spec.rb" --verify-cmd "! grep -q TODO lib/a.rb"
+  [ "$status" -eq 0 ]
+}
+
 @test "add stores verify commands with timeouts and defaults" {
   bash "$TASKS" add demo --id T-001 --title "first" --files a.ts,b.ts --verify-cmd "true::30" --verify-cmd "! grep -q TODO a.ts"
   [ "$(jq -r '.tasks[0].verify[0].timeout' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "30" ]

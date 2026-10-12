@@ -1,7 +1,7 @@
 # Adapter Detection — the deterministic selector
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0). Original Blitz authorship. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** spine doc #3 of 8. Pairs with [`normalized-model.md`](normalized-model.md) (the model this selector routes). Per-stack signals verified against the four research passes feeding [`framework-profiles.md`](framework-profiles.md).
+> **Status:** historical spec; implemented in `scripts/detect-stack.sh` (`DESIGN_ADAPTER` line). `/blitz:review` below is today's `/blitz:check --only design`. Pairs with [`normalized-model.md`](normalized-model.md) (the model this selector routes). Per-stack signals verified against the four research passes feeding [`framework-profiles.md`](framework-profiles.md).
 
 ---
 

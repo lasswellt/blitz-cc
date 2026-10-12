@@ -1,7 +1,7 @@
 # Detector Rebuild — the layered, adapter-aware deterministic lane
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0) — `cli/engine/registry/antipatterns.mjs` (41 rules), `cli/engine/rules/checks.mjs`, engines `{browser, regex, static-html, visual}`. Original Blitz authorship. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** doc #4 of 8 — **the keystone** (the deterministic design lane Blitz lacks). Consumes [`normalized-model.md`](normalized-model.md) facets + reconciliations, [`framework-profiles.md`](framework-profiles.md) conformance rules, [`adapter-detection.md`](adapter-detection.md) `stack` signal. Emits records into [`check-registry.json`](../../../skills/_shared/check-registry.json) under a new `design` pillar.
+> **Status:** historical spec; implemented (the `design` pillar rows in the registry). `/blitz:review` below is today's `/blitz:check --only design`. **The keystone** (the deterministic design lane Blitz lacks). Consumes [`normalized-model.md`](normalized-model.md) facets + reconciliations, [`framework-profiles.md`](framework-profiles.md) conformance rules, [`adapter-detection.md`](adapter-detection.md) `stack` signal. Emits records into [`check-registry.json`](../../../skills/_shared/check-registry.json) under a new `design` pillar.
 
 ---
 

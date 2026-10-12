@@ -12,12 +12,12 @@ How blitz decides that work is done, what `check` runs, and what can flip a verd
 | Rule | Enforced by |
 |---|---|
 | Only `scripts/tasks.sh` writes `docs/plans/*/tasks.json` (`init\|add\|list\|set\|verify\|next`, atomic rename) | `hooks/scripts/tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on that path |
-| `tasks.sh verify <plan> <id>` runs every `verify[].cmd` under its `timeout`, writes `passes` and `last_verify {ts, ok, failed, tail}` (200-char evidence tail) | the only path to `passes: true` |
+| `tasks.sh verify <plan> <id>` runs every `verify[].cmd` under its `timeout`, writes `passes` and `last_verify {ts, ok, failed, tail, runs[]}` (200-char evidence tail; one `runs[]` entry per command that ran) | the only path to `passes: true` |
 | `status: done ⇒ passes ∧ last_verify.ok` | `tasks.sh set … status=done` refuses otherwise; `startup-validate.sh` flags a violating row |
 | `verify[]` non-empty; behavior tasks carry ≥1 non-test check | `plan` rejects the task; `tasks.sh add` refuses a task with no `--verify-cmd` and, without `--test-only-ok`, one whose only checks are test runs |
 | Dev agents never edit `tasks.json` or `progress.md` | never-edit list in [agents.md](/_shared/agents.md); `build` writes both at task boundaries on the main branch |
 | A plan reaches PASS only after `critic --mode reject` returns `LGTM` on the diff | `check` Phase 4.3; fresh context, no Write/Edit, `omitClaudeMd: true` |
-| Stop is gated on tsc + selected tests while `gate.json` is armed | `hooks/scripts/stop-gate.sh`, contract in [loop.md](/_shared/loop.md) |
+| Stop is gated on tsc + selected tests while `gate.json` is armed | `hooks/scripts/stop-gate.sh`, contract in [loop.reference.md](/_shared/loop.reference.md) §Stop gate |
 
 `attempts` increments per failed build attempt; `blocked` at 3 or on `ESCALATE:`. A blocked task is not done and `next --loop` escalates it (row 1) rather than retrying forever.
 

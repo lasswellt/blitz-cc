@@ -1,11 +1,11 @@
 ---
 name: migrate
-description: "Migrates frameworks, libraries and tooling one major version at a time: researches breaking changes, plans atomic steps, verifies type-check, tests and build after each, aborts on repeated failure. Use for 'migrate to', 'upgrade to Vue 3', 'Vuex to Pinia', 'Nuxt 2 to 3', 'replace X with Y'."
+description: "Migrates frameworks, libraries and tooling one major version at a time: researches breaking changes, plans atomic steps, verifies type-check, tests and build after each, aborts on repeated failure; --resume continues an interrupted run. Use for 'migrate to', 'upgrade to Vue 3', 'Vuex to Pinia', 'Nuxt 2 to 3', 'replace X with Y'."
 allowed-tools: Read, Glob, Grep, ToolSearch, Agent, WebFetch(domain:registry.npmjs.org), WebFetch(domain:github.com), WebFetch(domain:raw.githubusercontent.com), WebFetch(domain:api.osv.dev), WebFetch(domain:pypi.org), WebFetch(domain:nodejs.org), Bash(git status *), Bash(git diff *), Bash(git --no-pager diff *), Bash(git log *), Bash(git --no-pager log *), Edit(docs/migrations/**), Edit(.cc-sessions/**)
 model: opus
 effort: high
 compatibility: ">=2.1.296"
-argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'>"
+argument-hint: "<target: e.g. 'vue 3.5', 'vitest', 'eslint 9', 'pinia 3'> [--resume]"
 disable-model-invocation: true
 ---
 
@@ -38,19 +38,19 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 4. **ALWAYS verify (type-check + tests + build) after EACH step.** No batching verification across multiple steps.
 
-5. **ABORT after 3 consecutive verification failures.** Something is fundamentally wrong. Stop and report to the user.
+5. **ABORT when 3 consecutive steps end blocked (4.4).** Within one step, 3 failed attempts revert it and mark it blocked (4.1). Three blocked steps in a row means something is fundamentally wrong: stop and report to the user.
 
 6. **NEVER remove deprecation warnings by deleting the code.** Fix the underlying usage to use the new API.
 
 7. **NEVER combine multiple breaking changes into one step.** Each breaking change gets its own atomic step with its own verification.
 
-8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [Definition of Done](/_shared/quality.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Migrated code must remain fully implemented. See [quality.reference.md](/_shared/quality.reference.md) §Definition of Done. No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
 ## Phase 0: PARSE — Understand Migration Target
 
-1. Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9). Print verbose progress at every phase transition.
+1. Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7). Print verbose progress at every phase transition.
 2. Extract migration target from `$ARGUMENTS`. Ambiguous target → ask for clarification. Full examples: [references/main.md](references/main.md#target-interpretation-examples).
 3. Read `package.json` (all workspace files) for current target version, related peer packages, and lock file format:
    ```bash
@@ -297,7 +297,7 @@ Follow-up suggestions:
 | Large refactoring needed | `refactor` | Clean up migration artifacts |
 | Test coverage dropped | `test-gen` | Generate tests for new API usage |
 
-Session cleanup: update `.cc-sessions/${SESSION_ID}.json` status to `completed` or `failed`, release held locks, append `session_end` to the operation log.
+Session cleanup, per [sessions.md](/_shared/sessions.md) §2 final phase: `blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'` (or `blocked: <why>`), log `skill_end` with `{status, summary}`, remove `${SESSION_TMP_DIR}` unless an artifact there is still needed. Never set `status` or `state`; the hook closes the record.
 
 ---
 

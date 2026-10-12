@@ -8,7 +8,36 @@ Bump `.claude-plugin/plugin.json` (`version`, `description`) and `.claude-plugin
 
 ## [Unreleased]
 
-_Nothing yet._
+Full clarity, cleanliness and accuracy review of the plugin ([docs/reviews/2026-10-12_clarity-cleanliness-accuracy](docs/reviews/2026-10-12_clarity-cleanliness-accuracy/README.md)). Every file was read; the defect-class and mechanical findings are fixed here, the judgment calls are listed in the review as open items.
+
+### Fixed (hooks and scripts)
+- **`block-test-deletion.sh` never fired on a Write that stripped every assertion** (a `grep -c … || echo 0` produced `"0\n0"` and the arithmetic test errored out to allow), and ignored `tool_name: PowerShell` despite its matcher. Both fixed, with bats cases.
+- **`markdown-link-validate.sh` exited 1 in hook mode on a broken link** (`set -e` aborted before the hook-mode `exit 0`), and never checked anchors. It now resolves heading anchors (GitHub slugs, same-file `#anchor` links included) and exports `HOOK_MODE`.
+- `scripts/tasks.sh`: the test-only refusal now recognises `rspec`, `dotnet test`, `mix test`, `gradlew test`, `mvn test`, `deno test`, `swift test`, `phpunit`, `mocha`, `node --test` and `bun test` beside the JS/Python/Go/Rust runners; `--help` exits 0 and prints the whole usage block.
+- `scripts/gen-catalog.sh --check` no longer depends on the caller's locale (descriptions are cut by character through python3); an unknown argument is a usage error instead of a silent write.
+- `hooks/scripts/stop-gate.sh` runs checks unbounded instead of failing them all with 127 on hosts without GNU `timeout`; the `max_blocks` fallback is 4, matching the cap.
+- `hooks/scripts/critic-external.sh`: a single provider's critic.md-shaped reply (`findings[]`) is exposed as `issues[]` too, so `check` hands its claims to the in-Claude critic.
+- `scripts/check-section-refs.sh` scans `hooks/scripts/*.sh`, `.claude/rules/*.md`, `README.md`, `SECURITY.md` and the hook index, and exits 2 without python3 instead of passing vacuously.
+- `scripts/check-version-sync.sh` compares the marketplace's `blitz-guard` entry with the mod's manifest; `compat.json` `cited_in` is deduplicated and now covers `SECURITY.md`, `ci.yml`, the hook index, the mod README and the `.reference.md` protocols.
+- `scripts/detect-stack.sh` printed the pytest line twice; `scripts/toolchain.sh`'s header documents `lanes` and the optional `[stack]` argument instead of a `--refresh` flag that did nothing.
+
+### Changed (behaviour)
+- **`session-start.sh` runs `startup-validate.sh` on every `SessionStart`**, as TB-2, `SECURITY.md` and the hook index already claimed; findings print into the session context and the skill preamble performs the quarantine move.
+- `markdown-link-validate.sh` is no longer wired as its own `PreToolUse` hook: `pre-commit-validate.sh` already runs it on `git commit`, so it ran twice per commit and once per Bash call.
+- `build` and `next` arm the Stop gate with the `tests` check only when the selector returned something; an empty selection used to arm the whole suite under a 300 s timeout.
+- `ship` finds a plan that `next --loop` row 4 already archived (`docs/plans/archive/*-<slug>/`, `BLITZ_PLANS_DIR` for `tasks.sh`), and `--dry-run` is render-only: it no longer commits and then tries a `git checkout -- .` that `block-destructive-git.sh` denies.
+- `next`'s inbox triage keys on the `permission` kind the hooks write (`permission_denied` matched nothing, so every later tick deferred); `escalation` lines older than 24 h fold into one line.
+- The reject critic and `dev` reply with the JSON block only: the `VERDICT:` / `STATUS:` line that preceded it made `build`'s `jq` parse the reply as MALFORMED.
+- `test-writer` escalates budget exhaustion as `ESCALATE: hard_spec`; the old `spec-investigation-budget-exhausted` was not a `blocked_reason` `tasks.sh` accepts.
+
+### Fixed (prose and contracts)
+- README: the Install code fence closed on a prose line; "without bash the guards fail open" is inverted (blocking guards fail closed and refuse every call); the JVM toolchain row claimed `spotless` and `pom.xml` rows that do not exist; "every disable flag logs its use" (only `BLITZ_OVERRIDE_NO_VERIFY` does); the spawn invariant goes to `dev` and `test-writer`, not critics; the environment-flag list now names the safety opt-outs (`BLITZ_GUARD_FAIL_OPEN`, `BLITZ_CRITIC_NO_REDACT`, `BLITZ_CRITIC_EXTERNAL_VETO`) and separates hook-read flags from skill-followed ones; Contributing points at `scripts/ci-local.sh`.
+- Registry ids: `agents/critic.md`'s detector block cited det-13 for `--no-verify` (det-02), det-02 for `.skip` (det-13), det-06 for localhost (det-15) and det-11 for stubs (det-09/10, advisory); `check` ran `o2-anti-mock` and `o3-wiring`, which do not exist (`check:anti-mock`; dropped).
+- Section citations: "sessions.md §Session Registration (steps 1-9)" in eleven skills and the authoring rule (the preamble is §2, seven steps); `quality.md` cited for sections that live in `quality.reference.md`; `agents.md §3`/`§6` for `agents.reference.md`; `spawn-protocol §8` (a removed file) for the fan-out gate `agents.reference.md` §4.4; `security.md §4`/`§5` in the hook and skill rules; `security.md`'s absorbed-file table linked anchors that exist only in its reference.
+- Retired protocol remnants: HEARTBEAT/PARTIAL reply markers in `research`, `audit` and `doc-gen` prompts; "autonomy = full" in `next` and `research`; v2 session-cleanup blocks (`.cc-sessions/<sid>.json`, locks, `operations.log`) in `dep-health`, `doc-gen`, `migrate` and `perf-profile`; a `worktree-create` hook in `loop.md`; `developer-profile.json` in the output style; truncated OUTPUT STYLE fragments pasted into agent prompts; citations of research documents that are not in the tree.
+- Schemas: `last_verify` is `null` until the first verify (README, `loop.md`); `HANDOFF.json` documented with the fields the hook writes; the inbox `kind` enum matches the writers; the registry pillar list includes `shortcut`; the platform Stop-hook cap is 8, not 5.
+- `plan`'s verify-template rule told the model to write `\|` inside `grep -E` alternations (a literal pipe in ERE, which neutered every `grep_absent` check); `research` wrote the synthesized document under a `TIMESTAMP` name while every reader expected `YYYY-MM-DD_<slug>.md`; `doctor --verify-recipe` expanded `${TEST_CMD:+test}${TEST_CMD:-test}` into `npm run testvitest run`; `build`'s branch lookup tested `git log --grep`'s exit code, which is 0 on no match; wave branches are `build/<slug>/<ID>` so two same-role tasks never share one; `ui-audit` named a loop variable `PATH` and shipped an invariant evaluator that crashed on text labels; the report collector dropped every INTERACTIVE, EVENTS and ROLE finding; `ui-build`'s state template checked empty before error.
+- `docs/EPICS.md`, `docs/research/README.md`, `docs/guides/cloud-threads.md` and `docs/guides/tia.md` described removed files and open epics as current; the impeccable and containment specs carry historical banners; `evals/README.md` lists `polyglot-ratchet`.
 
 ## [3.15.1] — 2026-10-10 · remaining directory findings
 

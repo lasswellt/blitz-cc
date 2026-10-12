@@ -11,7 +11,7 @@ Files a cloned/opened repo controls: `.cc-sessions/*.json`, `activity-feed.jsonl
 
 #### TB-2 — Persistent state that drives later work is untrusted across sessions
 `.cc-sessions/` across time, and — higher blast radius — `docs/plans/*/tasks.json` and `docs/solutions/*.md`. `tasks.json` is the feature list `next --loop` reconciles on every tick and `build` executes; `docs/solutions/*.md` is read by `plan` as input to the next plan. Both are **memory that drives work**, so OWASP Agentic ASI06 (memory poisoning) applies: poison planted now can steer a build weeks later (MemoryGraft / Zombie Agents — temporally decoupled).
-- **Enforced by:** provenance — every task carries an `origin` field (`plan|audit|check|issue:<n>`) and every state change is ledgered in `progress.md`, so an entry with no origin or no ledger line is suspect; `startup-validate.sh` scans both `docs/plans/*/tasks.json` and `docs/solutions/*.md` on `SessionStart` (shape, ids, `BLITZ_INJECTION_RX`) and **quarantines** a file on injection markers rather than loading it; **only `scripts/tasks.sh` writes `tasks.json`** — `tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on `docs/plans/*/tasks.json`, so a model cannot be talked into rewriting the feature list; solutions are read with a cap (`plan` loads at most 5) and are **never executed** — parsed and echoed like any other TB-1 file.
+- **Enforced by:** provenance — every task carries an `origin` field (`plan|audit|check|learn|issue:<n>`) and every state change is ledgered in `progress.md`, so an entry with no origin or no ledger line is suspect; `startup-validate.sh` scans both `docs/plans/*/tasks.json` and `docs/solutions/*.md` on `SessionStart` (shape, ids, `BLITZ_INJECTION_RX`) and **quarantines** a file on injection markers rather than loading it; **only `scripts/tasks.sh` writes `tasks.json`** — `tasks-guard.sh` (PreToolUse) denies `Edit`/`Write` on `docs/plans/*/tasks.json`, so a model cannot be talked into rewriting the feature list; solutions are read with a cap (`plan` loads at most 5) and are **never executed** — parsed and echoed like any other TB-1 file.
 - **Guards against:** persistent poisoning, belief drift, task-list tampering.
 
 #### TB-3 — Sub-agent output is not higher-trust than the content it processed
@@ -54,7 +54,7 @@ Detail split out of [security.md](security.md) so the contract every skill loads
 | **Model** | **Probabilistic** — steers behavior; never a guarantee. | skill SAFETY-RULES prose, completion/DoD gates, critic 20-detector, reviewers, output-style. |
 | **External content** | The **attack-surface** layer; mitigated by least-privilege + live inspection. | content-inspection (research/research-critic), MCP tool-return/description inspection, research-critic liveness. |
 
-Authoritative cell-by-cell mapping: [`docs/security/containment/blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md).
+Cell-by-cell derivation (historical snapshot, 2026-05-31; the gaps it names have since closed): [`docs/security/containment/blitz-surface-map.md`](../../docs/security/containment/blitz-surface-map.md).
 
 ---
 
@@ -105,7 +105,7 @@ Blitz is itself a dependency with hooks that run on `SessionStart`. Treat it as 
 - Review `hooks/hooks.json` and `hooks/scripts/*.sh` before enabling a version — hooks execute with the user's permissions.
 - Run `claude plugin validate .` on the checkout you are about to enable; the plugin's own pre-commit runs the same validators.
 - npm-sourced plugins are fetched with `--ignore-scripts` and integrity-verified (≥2.1.275); Blitz has no npm dependencies of its own.
-- **Plugin4Shell (disclosed 2026-09-18):** git resolves a hash-shaped branch name as a ref, so a plugin pinned by commit SHA from a git source could be silently swapped by the repository owner. Fixed in Claude Code 2.1.179 (blitz's floor is 2.1.271); GitHub-hosted marketplaces are immune because GitHub rejects hash-like branch names, and blitz's marketplace is GitHub-hosted. Install from `lasswellt/blitz-cc` only, and pass `--accept-command <sha256>` (≥2.1.269) when a marketplace declares an install command.
+- **Plugin4Shell (disclosed 2026-09-18):** git resolves a hash-shaped branch name as a ref, so a plugin pinned by commit SHA from a git source could be silently swapped by the repository owner. Fixed in Claude Code 2.1.179 (blitz's floor is 2.1.296); GitHub-hosted marketplaces are immune because GitHub rejects hash-like branch names, and blitz's marketplace is GitHub-hosted. Install from `lasswellt/blitz-cc` only, and pass `--accept-command <sha256>` (≥2.1.269) when a marketplace declares an install command.
 - Repo-provided `.claude/settings.json` hooks and memory directories are untrusted until reviewed; `blockReadsOutsideWorkingDirectories` (2.1.277) stops repo-chosen memory dirs from loading. Critics run with `omitClaudeMd: true` so repo files cannot steer the evaluator.
 - Package adds inside a consumer project follow the [Package Install Policy](#package-install-policy) below — resolved from the registry, never from memory.
 
@@ -127,14 +127,14 @@ Blitz is itself a dependency with hooks that run on `SessionStart`. Treat it as 
 
 ## Hook Trust Boundary (TB-1)
 
-> Companion to [threat-model.md](#threat-model--blitz-containment-posture-canonical-owner). Defines how Blitz hooks must treat project-local files, and records the audited invariant that no hook executes project-controlled content before the platform trust prompt.
+> Companion to [security.md](security.md#threat-model--blitz-containment-posture-canonical-owner). Defines how Blitz hooks must treat project-local files, and records the audited invariant that no hook executes project-controlled content before the platform trust prompt.
 
 ### The rule
 
 Blitz hooks fire on Claude Code lifecycle events (`SessionStart`, `PreToolUse`, `PostToolUse`, …). Some run **before** the user has accepted "Do you trust this folder?". The article's pre-trust-config-execution incident (AP-1) was a cloned repo whose `.claude/settings.json` defined a hook that ran attacker code at startup, before that prompt.
 
 **Therefore:**
-1. **Treat project-local files as untrusted inbound data**, not trusted local config — `.cc-sessions/sessions/*.json`, `activity-feed.jsonl`, `inbox.jsonl`, `mailbox/*.jsonl`, CLAUDE.md, `docs/plans/*/tasks.json`, `docs/solutions/*.md`. This is [threat-model.md](#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1 (and TB-5 for the message files).
+1. **Treat project-local files as untrusted inbound data**, not trusted local config — `.cc-sessions/sessions/*.json`, `activity-feed.jsonl`, `inbox.jsonl`, `mailbox/*.jsonl`, CLAUDE.md, `docs/plans/*/tasks.json`, `docs/solutions/*.md`. This is [security.md](security.md#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1 (and TB-5 for the message files).
 2. **A hook MUST NOT eval, `source`, or otherwise execute** any project-controlled file's contents. Hooks may *parse* (jq) and *echo*, never execute.
 3. **Echoed free-text fields MUST be capped + injection-scanned** before reaching context. `session-start.sh` caps every echoed field at 200 chars (parity with the `[0:200]` cap rule in [sessions.md](sessions.md)) and replaces injection-marker hits with `[quarantined: …]`.
 4. **Execution-bearing parsing defers to the platform trust prompt.** Blitz relies on the Claude Code platform for the trust gate itself — it does not reimplement it (threat-model.md §6). Blitz's duty is to not parse-execute project config before it.
@@ -158,7 +158,7 @@ grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' hooks/scripts/*.sh \
 ```
 
 ### Related
-- [threat-model.md](#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1, §6 (scope: trust-prompt delegated to platform).
+- [security.md](security.md#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1, §6 (scope: trust-prompt delegated to platform).
 - `hooks/scripts/session-start.sh` — the SessionStart enforcement point.
 - `hooks/scripts/startup-validate.sh` — persistent-state validation (TB-2).
 

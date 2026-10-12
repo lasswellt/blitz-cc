@@ -11,7 +11,8 @@
 #   tasks.sh verify <plan> <id> [--dry]         runs verify[] in order; writes passes + last_verify
 #   tasks.sh verify <plan> --changed <paths>    re-verifies only the done tasks whose files[] the
 #                                               paths touch (post-merge selective re-verify)
-#   tasks.sh next   <plan>                      prints the first open task whose depends_on are all done
+#   tasks.sh next   <plan>                      prints the first in_progress task, else the first open task
+#                                               whose depends_on are all done
 #
 # Contract (loop.md §Structural rules):
 #   - verify[] is never empty; a task whose checks are all test runners needs --test-only-ok.
@@ -25,7 +26,9 @@ if [ -z "$PLANS_DIR" ]; then
   ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
   PLANS_DIR="$ROOT/docs/plans"
 fi
-TEST_RUNNER_RX='(vitest|jest|npm (run )?test|pnpm test|yarn test|pytest|go test|cargo test|bats )'
+# Commands that only run a test suite. A task whose every check matches needs
+# --test-only-ok (tests are never the only evidence, loop.md §Structural rules).
+TEST_RUNNER_RX='(vitest|jest|mocha|node --test|npm (run )?test|pnpm test|yarn test|bun test|pytest|go test|cargo test|rspec|dotnet test|mix test|gradlew? test|mvn test|deno test|swift test|phpunit|bats )'
 ISO() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
 # Epoch milliseconds. GNU date does %3N; BSD/macOS does not, so fall back to
@@ -37,7 +40,7 @@ NOW_MS() {
   printf '%s' "$ms"
 }
 die() { echo "tasks.sh: $*" >&2; exit 2; }
-usage() { sed -n '2,18p' "$0"; exit 2; }
+usage() { sed -n '2,21p' "$0"; exit 2; }
 
 plan_file() {
   local plan="$1"
@@ -167,7 +170,7 @@ cmd_verify() {
   local root; root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
   # Per-command evidence. Without it a reviewer has to re-run the suite to see
   # what a verdict rested on, and "cannot_verify" is not a defensible answer.
-  local runs="[]" t0 t1 dur head_out
+  local runs="[]" t0 t1 dur tail_out
   i=0
   while [ "$i" -lt "$n" ]; do
     cmd=$(printf '%s' "$task" | jq -r ".verify[$i].cmd")
@@ -182,9 +185,9 @@ cmd_verify() {
     t1=$(NOW_MS); dur=$((t1 - t0)); [ "$dur" -lt 0 ] && dur=0
     # 2 KB is the difference between "the critic reads the tail" and "the
     # critic re-runs the suite"; more than that is a log, not evidence.
-    head_out=$(tail -c "${BLITZ_VERIFY_EVIDENCE_CAP:-2000}" "$out" 2>/dev/null || true)
+    tail_out=$(tail -c "${BLITZ_VERIFY_EVIDENCE_CAP:-2000}" "$out" 2>/dev/null || true)
     runs=$(printf '%s' "$runs" | jq -c --arg cmd "$cmd" --argjson exit "$rc" \
-      --argjson ms "$dur" --arg tail "$head_out" --arg ts "$(ISO)" \
+      --argjson ms "$dur" --arg tail "$tail_out" --arg ts "$(ISO)" \
       '. + [{cmd:$cmd, exit:$exit, duration_ms:$ms, tail:$tail, recorded_at:$ts}]')
     if [ "$rc" -ne 0 ]; then
       failed="$cmd"; tail=$(tail -c 200 "$out" | tr '\n' ' ')
@@ -280,6 +283,6 @@ case "$cmd" in
     fi
     ;;
   next)   [ $# -ge 1 ] || usage; cmd_next "$@";;
-  -h|--help|help) usage;;
+  -h|--help|help) sed -n '2,21p' "$0"; exit 0;;
   *) die "unknown command '$cmd'";;
 esac

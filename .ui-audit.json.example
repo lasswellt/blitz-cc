@@ -1,5 +1,5 @@
 {
-  "_comment_top": "Example blitz:ui-audit configuration. Copy to .ui-audit.json and edit. See skills/ui-audit/SKILL.md + reference.md for the full schema.",
+  "_comment_top": "Example blitz:ui-audit configuration. Copy to .ui-audit.json and edit. See skills/ui-audit/SKILL.md and skills/ui-audit/references/main.md (Configuration) for the full schema, including login_flow for role runs.",
 
   "baseUrl": "http://localhost:3000",
 
@@ -62,12 +62,12 @@
     "tabular_column_threshold": 0.7
   },
 
-  "_comment_event_invariants": "Skeleton for E-011 CAP-015. Analytics event schemas that must fire consistently across pages. required_props: prop keys that must be present. forbidden_props: must NOT be present. scope: 'all_pages' | 'pages_with_cta' | explicit page list.",
+  "_comment_event_invariants": "EVENTS mode (references/main.md Phase E). Analytics event schemas that must fire consistently across pages. required_props: prop keys that must be present. forbidden_props: must NOT be present. scope: 'all_pages' | 'pages_with_cta' | explicit page list.",
   "event_invariants": [],
 
-  "_comment_role_invariants": "Skeleton for E-012 CAP-016. Per-role cross-page invariants. check: 'equal' (values match across roles), 'viewer_null' (non-admin roles see null / access-denied), 'gte' (admin count >= viewer count).",
+  "_comment_role_invariants": "ROLE mode (references/main.md Phase ROLE). Per-role cross-page invariants. check: 'equal' (values match across roles), 'viewer_null' (non-admin roles see null / access-denied), 'gte' (admin count >= viewer count).",
   "role_invariants": [],
 
-  "_comment_role_leak_patterns": "Skeleton for E-012 CAP-016. Regex patterns (as strings) that must NOT appear in rendered HTML when logged in as a non-admin role. Example: ['data-admin-only', 'admin\\\\.panel'].",
+  "_comment_role_leak_patterns": "ROLE mode. Regex patterns (as strings) that must NOT appear in rendered HTML when logged in as a non-admin role. Example: ['data-admin-only', 'admin\\\\.panel'].",
   "role_leak_patterns": []
 }

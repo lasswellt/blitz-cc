@@ -36,7 +36,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 7. **ABORT on regression.** If a step introduces test failures that you cannot resolve by reverting the step, stop and report the issue to the user.
 
-8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [Definition of Done](/_shared/quality.md). No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
+8. **NEVER leave placeholder code behind.** Refactored code must remain fully implemented. See [quality.reference.md](/_shared/quality.reference.md) §Definition of Done. No `TODO`, `FIXME`, `STUB`, or empty function bodies in the output.
 
 ---
 
@@ -44,7 +44,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Invocation
 
@@ -146,7 +146,7 @@ Read test files to understand: behaviors tested, mocking patterns, and assertion
 ### 2.5.1 Find Similar Files
 
 ```bash
-find . -path '*/$(dirname <target>)/*' -name '*.ts' -o -name '*.vue' | grep -v node_modules | head -15
+D=$(dirname <target>); find "$D" \( -name '*.ts' -o -name '*.vue' \) -not -path '*/node_modules/*' | head -15
 ```
 
 ### 2.5.2 Read Exemplar Files
@@ -223,12 +223,11 @@ For each step in the plan:
      Tests: PASS (<passed>/<total>, same as baseline)
      Files changed: <list>
    ```
-5. **Git checkpoint**:
+5. **Checkpoint** (a stash push followed by a pop leaves nothing behind, so keep a patch instead):
    ```bash
-   git add -A
-   git stash push -m "refactor-checkpoint-step-<N>"
-   git stash pop
+   git diff > "${SESSION_TMP_DIR}/step-<N>.patch"
    ```
+   Commit per step (`refactor(<scope>): <what>`) only when the user asked for commits (references §Commit Strategy).
 
 ### Regression Protocol
 

@@ -11,9 +11,8 @@ argument-hint: "<api|components|architecture|full>"
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
 
 ## Additional Resources
-- For documentation templates, Vue SFC parsing patterns, and Mermaid diagram examples, see:
-!cat skills/doc-gen/references/main.md
-- For subagent spawning (type selection, workload sizing, HEARTBEAT/PARTIAL, waves), see [agents.md](/_shared/agents.md)
+- For documentation templates, Vue SFC parsing patterns, and Mermaid diagram examples, see [references/main.md](references/main.md)
+- For subagent spawning (type selection, weight classes, the fan-out gate), see [agents.md](/_shared/agents.md) and [agents.reference.md](/_shared/agents.reference.md) §3–§4
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
@@ -22,7 +21,7 @@ argument-hint: "<api|components|architecture|full>"
 
 Analyze source code and produce comprehensive, accurate documentation. In `full` mode, spawn 3 parallel agents (api, components, architecture) for concurrent documentation generation. Changelog generation belongs to `/blitz:ship`. Execute every phase in order. Do NOT skip phases.
 
-All generated documentation must satisfy the [Definition of Done](/_shared/quality.md). No placeholder sections, no TODO stubs.
+All generated documentation must satisfy the Definition of Done ([quality.reference.md](/_shared/quality.reference.md) §Definition of Done). No placeholder sections, no TODO stubs.
 
 ---
 
@@ -30,7 +29,7 @@ All generated documentation must satisfy the [Definition of Done](/_shared/quali
 
 ### 0.0 Register Session
 
-Follow [sessions.md](/_shared/sessions.md) §Session Registration (steps 1-9) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
+Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
 ### 0.1 Parse Mode
 
@@ -165,7 +164,7 @@ mkdir -p docs/generated
 
 ### 3.2 Full Mode — Parallel Agents
 
-If mode is `full`, create a team and spawn agents for parallel documentation generation.
+If mode is `full`, spawn the three agents below in one message for parallel documentation generation (subagents, never an agent team; [agents.md](/_shared/agents.md) §1.5).
 
 Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", effort: "medium", run_in_background: true, description: "doc-gen <agent-name>", prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`).
 
@@ -177,10 +176,10 @@ Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", e
 | `doc-components` | components | `docs/generated/components.md` | Component documentation |
 | `doc-architecture` | architecture | `docs/generated/architecture.md` | Architecture overview |
 
-**Weight class**: Medium (per [agents.md](/_shared/agents.md)). Each agent prompt MUST declare:
-- Max 20 file reads (of source files to document)
+**Weight class**: Medium ([agents.reference.md](/_shared/agents.reference.md) §3.3). Each agent prompt MUST declare:
+- Max 15 file reads (of source files to document)
 - Max 25 tool calls
-- Max 400-line output
+- Max 250-line reply (the document itself is written to disk incrementally and is not the reply)
 - 5-minute wall-clock budget
 
 Each agent receives:
@@ -188,13 +187,10 @@ Each agent receives:
 2. The stack profile from Phase 0.
 3. The appropriate template from `references/main.md`.
 4. Its output file path.
-5. **Incremental-write instructions** (replaces the previously banned "write the full document" rule): Stub the output file at start with `# IN PROGRESS`, then append each section as you complete it. If you time out or hit a budget ceiling, at least a partial document with completed sections is on disk rather than nothing.
-6. **HEARTBEAT + PARTIAL protocol** (add verbatim to prompt):
+5. **Incremental-write instructions**: Stub the output file at start with `# IN PROGRESS`, then append each section as you complete it. If you time out or hit a budget ceiling, at least a partial document with completed sections is on disk rather than nothing.
+6. **File-level partial marker** (add verbatim to prompt; the reply itself uses the status enum of [agents.reference.md](/_shared/agents.reference.md) §4.1, `BLOCKED` with `circuit-breaker` on budget exhaustion):
    ```
-   HEARTBEAT: At the start of each section, append to your output file:
-     HEARTBEAT: <section-name> at <ISO-timestamp>
-
-   PARTIAL: If you have fewer than 3 tool calls remaining, STOP and append:
+   PARTIAL: If you have fewer than 3 tool calls remaining, STOP and append to your output file:
      ---
      PARTIAL: true
      COMPLETED: [list of sections written]
@@ -209,9 +205,9 @@ For single-mode runs, generate documentation directly using the templates from `
 
 Write to `docs/generated/<mode>.md`.
 
-### 3.4 Wait for Agents (Full Mode Only)
+### 3.4 Gate after completion (Full Mode Only)
 
-Poll for agent completion by checking output files:
+Wait on the three background agents' completion notifications (never poll output files in a loop; [agents.md](/_shared/agents.md) §1.5), then check the output files once:
 
 ```bash
 MISSING_COUNT=0
@@ -229,10 +225,10 @@ for f in docs/generated/api.md docs/generated/components.md docs/generated/archi
 done
 ```
 
-Timeout after 5 minutes per agent.
+An agent with no completion notification 5 min + 30 s after its spawn is MISSING.
 
 **Handling outcomes**:
-- **Missing files**: retry the failed agent(s) once with a narrowed scope (single section only). If still failed, write a placeholder `# TBD — agent failed` to the missing file so Phase 4 assembly doesn't crash.
+- **Missing files**: retry the failed agent(s) once with a narrowed scope (single section only). If still failed, leave the file absent and list it under "Not generated" in the Phase 4 index (never write a placeholder document).
 - **PARTIAL files**: keep the partial content. In Phase 4 TOC, mark the partial documents with a `(PARTIAL)` suffix so the reader knows coverage is incomplete. Read the `MISSING:` list from the PARTIAL block and log to the activity feed.
 - **All DONE**: proceed normally.
 
@@ -313,9 +309,7 @@ Adjust the summary to show only the modes that were run.
 
 ### 5.3 Session Cleanup
 
-1. Update `.cc-sessions/${SESSION_ID}.json`: set `status` to `completed`.
-2. Append `session_end` to the operation log.
-3. Optionally remove session temp directory if no artifacts need preservation.
+Final phase per [sessions.md](/_shared/sessions.md) §2: `blitz_session_update "$SESSION_ID" '.working_on="done: <summary>"'`, log `skill_end` with `{status, summary}`, and remove `${SESSION_TMP_DIR}` unless an artifact there is still needed. Never set `status` or `state`; the hook closes the record.
 
 ---
 

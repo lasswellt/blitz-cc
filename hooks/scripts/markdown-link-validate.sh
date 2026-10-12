@@ -20,6 +20,7 @@
 set -euo pipefail
 
 HOOK_MODE=0
+export HOOK_MODE
 if [[ ! -t 0 ]]; then
   INPUT="$(cat || true)"
   if [[ -n "$INPUT" ]] && echo "$INPUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
@@ -38,7 +39,8 @@ fi
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-python3 - <<'PY'
+PY_EXIT=0
+python3 - <<'PY' || PY_EXIT=$?
 import pathlib, re, sys
 broken = []
 checked = 0
@@ -47,17 +49,37 @@ RUNTIME = ("docs/generated/", "findings/", "tmp/")
 def is_runtime(link):
     return any(seg in link for seg in RUNTIME) or re.search(r"docs/plans/[^/]+/", link) is not None or link.startswith("docs/solutions/")
 files = list(pathlib.Path("skills").rglob("*.md")) + list(pathlib.Path("agents").rglob("*.md"))
+
+# Heading anchors, GitHub-style: lowercase, drop everything but word characters,
+# spaces and hyphens, spaces to hyphens. Code fences are stripped first so a
+# "# comment" inside a bash block is not a heading.
+_slugs = {}
+def slugs(path):
+    if path not in _slugs:
+        t = re.sub(r'```.*?```', '', path.read_text(errors="replace"), flags=re.S)
+        s = set()
+        for h in re.findall(r'^#{1,6}[ \t]+(.+?)[ \t]*#*$', t, flags=re.M):
+            h = re.sub(r'`', '', h.lower())
+            h = re.sub(r'[^\w\s-]', '', h)
+            s.add(re.sub(r'\s', '-', h))
+        _slugs[path] = s
+    return _slugs[path]
+
 for f in files:
     if ".original" in f.name or "_research" in str(f): continue
     text = f.read_text(errors="replace")
     text = re.sub(r'```.*?```', '', text, flags=re.S)
     text = re.sub(r'`[^`]+`', '', text)
-    for m in re.finditer(r'\[([^\]]+)\]\(((?!http|#|mailto)[^)#]+\.md)(#[^)]+)?\)', text):
-        link = m.group(2)
-        if is_runtime(link):
+    for m in re.finditer(r'\[([^\]]+)\]\(((?!http|mailto)[^)#]*\.md|)(#[^)\s]+)?\)', text):
+        link, anchor = m.group(2), m.group(3)
+        if not link and not anchor:
             continue
-        # Convention-aware resolution
-        if link.startswith("/_shared/"):
+        if link and is_runtime(link):
+            continue
+        # Convention-aware resolution; a bare #anchor points at this file.
+        if not link:
+            target = f.resolve()
+        elif link.startswith("/_shared/"):
             target = (pathlib.Path("skills") / link.lstrip("/")).resolve()
         elif link.startswith("/"):
             target = (pathlib.Path(".") / link.lstrip("/")).resolve()
@@ -65,7 +87,9 @@ for f in files:
             target = (f.parent / link).resolve()
         checked += 1
         if not target.exists():
-            broken.append((str(f), link))
+            broken.append((str(f), link + (anchor or "")))
+        elif anchor and anchor[1:].lower() not in slugs(target):
+            broken.append((str(f), (link or "") + anchor + "  (no such heading)"))
 
 if broken:
     print(f"markdown-link-validate: {len(broken)} broken link(s) across {checked} checked", file=sys.stderr)
@@ -79,7 +103,6 @@ if os.environ.get("HOOK_MODE") != "1":
     print(f"markdown-link-validate: OK ({checked} link(s) checked)")
 sys.exit(0)
 PY
-PY_EXIT=$?
 
 # --- Malformed section citations ---
 # ")§44.1" (should be ") §4.1") and ")§RatchetRatchet" (should be

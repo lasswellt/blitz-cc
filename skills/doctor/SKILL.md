@@ -2,7 +2,7 @@
 name: doctor
 description: "Checks the plugin install and the project's setup, fixes drift, and writes helper files: hooks, session state, CLAUDE.md conflicts, worktree.baseRef, loop.md, REVIEW.md, CI workflow, v2 migration. Use for 'is blitz healthy', 'set up blitz', 'migrate from v2', 'hooks misfiring'."
 argument-hint: "[--fix] [--migrate] [--loop-md] [--review-md] [--ci] [--verify-recipe]"
-allowed-tools: Read, Glob, Grep, Edit(.claude/settings.json), Edit(.gitignore), Edit(.worktreeinclude), Edit(.claude/loop.md), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-structure.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *)
+allowed-tools: Read, Glob, Grep, Edit(.claude/settings.json), Edit(.gitignore), Edit(.worktreeinclude), Edit(.claude/loop.md), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-structure.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/next-state.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/gen-catalog.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/gen-review-md.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/skill-frontmatter-validate.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/agent-frontmatter-validate.sh *), Bash(bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/markdown-link-validate.sh *)
 model: inherit
 compatibility: ">=2.1.296"
 ---
@@ -27,7 +27,7 @@ One skill for "is blitz installed correctly, is this project set up for it, and 
 
 Without flags `doctor` is read-only: it prints findings, a remediation per finding, and `Overall: HEALTHY|DEGRADED|UNHEALTHY`. Every remediation is a command or an exact JSON/YAML snippet, never "consider updating". The full check catalog with ids and detectors is in [references/main.md](references/main.md).
 
-**Boundaries.** Runtime detail per session (who is blocked, inbox rows, dashboard) is `/blitz:sessions`; doctor only counts and flags. Code quality is `/blitz:check`; doctor never reads source. Project bootstrap (first `CLAUDE.md`, ratchet baseline, first plan) is `/blitz:onboard`; doctor verifies what onboard wrote.
+**Boundaries.** Runtime detail per session (who is blocked, inbox rows, dashboard) is `/blitz:sessions`; doctor only counts and flags. Code quality is `/blitz:check`; doctor never reads source. Project bootstrap (first `CLAUDE.md`, first plan) is `/blitz:onboard`; the ratchet baseline is `/blitz:check --baseline`.
 
 ---
 
@@ -47,7 +47,7 @@ D-101…D-110: plugin files load, hooks are executable, no skill lists a gated T
 
 ## Phase 2: SESSION STATE
 
-D-201…D-203: session records parse and carry a known schema, no stale `active` record older than the timeout, no orphan `gate.json`. Scans and remediations: [references/main.md](references/main.md) §Phase 2 SESSION STATE.
+D-201…D-210: kill switch, stale records, orphan `gate.json`, inbox age, feed size, quarantine, `HANDOFF.json`, legacy records, mailboxes, agent view: [references/main.md](references/main.md) §Phase 2 SESSION STATE.
 
 ## Phase 3: PROJECT SETUP
 
@@ -77,13 +77,13 @@ Missing type-check with a `tsconfig.json` is `FAIL` (the Stop gate arms `npx tsc
 ### 3.5 Platform facts (D-307, D-308; D-318 in references)
 
 - **D-307 Task tools** — advisory `INFO` on current models: `TaskCreate/Get/Update/List` and `TodoWrite` are off unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`. v3 never uses them (`docs/plans/<slug>/tasks.json` is the task list). Mention the variable only as optional (platform checklist UI). A skill or agent in this checkout that lists a Task tool in `allowed-tools`/`tools` is `FAIL` (Phase 1 D-104/D-105 already catch it).
-- **D-308 bash** — `command -v bash` must succeed. Hooks are bash scripts; on native Windows without Git Bash or WSL every hook fails **open** (the anti-shortcut guards, `tasks-guard.sh`, `stop-gate.sh` and the kill switch silently do nothing). `FAIL` on Windows (`uname -s` matches `MINGW|MSYS|CYGWIN` is fine; PowerShell-only is not; a PowerShell tool needs hook matcher `Bash|PowerShell`). Remediation: install Git for Windows or run under WSL; there is no PowerShell port of the hooks.
+- **D-308 bash** — `command -v bash` must succeed. Hooks are bash scripts; without bash no hook starts, so the blocking guards fail **closed** (`onFailure: block`) and refuse every Write, Edit and Bash call, while advisory hooks do nothing. `FAIL` when `command -v bash` fails (PowerShell-only Windows); Git Bash, MSYS, Cygwin and WSL pass. Remediation: install Git for Windows or use WSL.
 
 ### 3.6 Repository layout (D-309…D-311)
 
 | Id | Check | Severity | Remediation |
 |---|---|---|---|
-| D-309 | `docs/sweeps/` is ignored (`git check-ignore -q docs/sweeps/ratchet.json`) | FAIL | `ratchet.json` is memory that compounds across plans and must be tracked. Remove the `docs/sweeps/` line from `.gitignore` (`fix:auto`), then `git add docs/sweeps/ratchet.json`. Missing `ratchet.json` is WARN → `/blitz:onboard` or the bootstrap snippet in [quality.reference.md](/_shared/quality.reference.md) §Ratchet. |
+| D-309 | `docs/sweeps/` is ignored (`git check-ignore -q docs/sweeps/ratchet.json`) | FAIL | `ratchet.json` is memory that compounds across plans and must be tracked. Remove the `docs/sweeps/` line from `.gitignore` (`fix:auto`), then `git add docs/sweeps/ratchet.json`. Missing `ratchet.json` is WARN → run the bootstrap snippet in [quality.reference.md](/_shared/quality.reference.md) §Bootstrap and override, then `/blitz:check --baseline <metric>`. |
 | D-310 | `docs/plans/` and `docs/solutions/` exist | WARN | `mkdir -p docs/plans docs/solutions` (`fix:auto`). `plan` creates them too; `next-state.sh` treats an absent `docs/plans/` as "nothing open". |
 | D-311 | `.gitignore` covers `.cc-sessions/` | FAIL | Runtime state and session records would be committed. Append `.cc-sessions/` (`fix:auto`). |
 
@@ -140,7 +140,7 @@ done
 
 ## Phase 4: WRITERS
 
-Each flag writes exactly one file, never overwrites without saying so, and prints the path: `--loop-md`, `--review-md`, `--ci`, `--verify-recipe`, `--worktreeinclude`. Sources and overwrite rules: [references/main.md](references/main.md) §Phase 4 WRITERS.
+Each flag writes exactly one file, never overwrites without saying so, and prints the path: `--loop-md`, `--review-md`, `--ci`, `--verify-recipe` (`.worktreeinclude` is written by `--fix`, D-315). Sources and overwrite rules: [references/main.md](references/main.md) §Phase 4 WRITERS.
 
 ## Phase 5: `--migrate` (v2 → v3)
 
@@ -181,5 +181,5 @@ Overall: HEALTHY | DEGRADED | UNHEALTHY
 - Check catalog (ids, detectors, `fix:auto` tags), migration field maps, verify-recipe seed, catalog schema: [references/main.md](references/main.md)
 - Loop runtimes and headless rules: [/_shared/loop.md](/_shared/loop.md)
 - Session records, inbox, mailbox, kill switch: [/_shared/sessions.md](/_shared/sessions.md)
-- Ratchet schema and REVIEW.md export: [/_shared/quality.md](/_shared/quality.md)
+- Ratchet schema and REVIEW.md export: [/_shared/quality.reference.md](/_shared/quality.reference.md) §Ratchet, §REVIEW.md export
 - Trust boundaries for everything doctor reads: [/_shared/security.md](/_shared/security.md)
