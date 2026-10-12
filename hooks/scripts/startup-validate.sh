@@ -102,9 +102,10 @@ if [ -d "$PLANS_DIR" ]; then
     [ "$unk" != "0" ] && report "PROVENANCE: $rel has $unk task(s) with an unknown origin"
     noverify=$(jq -r '[.tasks[] | select(((.verify // []) | length) == 0)] | length' "$tj" 2>/dev/null || echo 0)
     [ "$noverify" != "0" ] && report "CONTRACT: $rel has $noverify task(s) with an empty verify[] (no executable check)"
-    jq -c '.tasks[] | {id, title, notes}' "$tj" 2>/dev/null | while IFS= read -r line; do
+    # Process substitution (not a pipe) so report()'s FINDINGS increment survives.
+    while IFS= read -r line; do
       scan_obj "$line" "$rel:$(printf '%s' "$line" | jq -r .id)" || true
-    done
+    done < <(jq -c '.tasks[] | {id, title, notes}' "$tj" 2>/dev/null)
   done
 fi
 SOL_DIR="$ROOT/docs/solutions"
