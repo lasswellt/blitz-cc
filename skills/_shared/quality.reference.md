@@ -6,17 +6,18 @@ Detail split out of [quality.md](quality.md) so the contract every skill loads s
 
 ## Shared check registry
 
-[check-registry.json](/_shared/check-registry.json) (schema `blitz-check-registry/2.0`) is the single source of truth for every check that `check` and `audit` run. Consumers **select rows**; `agents/critic.md` and `agents/research-critic.md` **enforce rows**. No grep pattern lives in a skill or agent body; cite ids (`det-NN`, `sem-*`, `o2-*`, `o3-*`, `fw-*`, `design-*`, `sec-*`, `tia-*`) and run `detection.command`. `hooks/scripts/check-registry-validate.sh` asserts the schema and the derivation invariant below at commit time.
+[check-registry.json](/_shared/check-registry.json) (schema `blitz-check-registry/2.0`) is the single source of truth for every check that `check` and `audit` run. Consumers **select rows**; `agents/critic.md` and `agents/research-critic.md` **enforce rows**. No grep pattern lives in a skill or agent body; cite ids (`det-NN`, `sem-*`, `o2-*`, `o3-*`, `fw-*`, `design-*`, `sec-*`, `tia-*`) and run `detection.command`. `hooks/scripts/check-registry-validate.sh` asserts the schema, the axis enums in the table below, the `detector_count` metadata (every stored number is recomputed from the rows) and the derivation invariant below at commit time; it also requires the `source` tag on every vendored impeccable row (`docs/integrations/impeccable/ATTRIBUTION.md` §3).
 
 ### Axes
 
 | Axis | Values | Meaning |
 |---|---|---|
 | `lane` | `deterministic` \| `semantic` | detection mechanism (below) |
-| `pillar` | completeness, wiring, framework, design, security, architecture, perf, maintainability, robustness | grouping for `--only <pillar>` and audit fan-out |
+| `pillar` | completeness, wiring, framework, design, security, architecture, performance, maintainability, robustness, shortcut | grouping for `--only <pillar>` and audit fan-out; `shortcut` is the `det-NN` taxonomy |
 | `severity` | P0–P3 | triage and ratchet importance; **not** verdict authority |
 | `verdict_authority` | `reject` \| `advisory` | derived, never set per run |
 | `consolidated_target` | `check` \| `audit` \| `both` \| `orthogonal` | which entry point selects the row |
+| `stacks` | `["*"]` or ids from `scripts/toolchain.sh stacks` (`templates/toolchain.default.json`) | stack scoping (§Selection contract) |
 
 | Lane | Mechanism | FP rate | `base_confidence` | Verification |
 |---|---|---|---|---|
