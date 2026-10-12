@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# PreToolUse hook — validates staged files before git commit
+# pre-commit-validate.sh: PreToolUse guard (Bash|PowerShell) that validates the staged
+# files when the command is a `git commit`. BLOCKING, and fail-closed like every
+# other blocking guard: blitz_guard_input exits 2 when jq is missing or the payload
+# is not a JSON object, and hooks.json wires it with onFailure: "block".
+#
+# Blocks (exit 2): a staged secret, key or credential file; SKILL.md frontmatter
+# violations; version drift on a bump commit; check-registry schema violations; a
+# protocol head over its byte cap or without its .reference.md sibling; an
+# unresolved section citation. Banned code patterns and broken markdown links warn
+# only. Any other command passes without touching the index.
+# Containment: environment-layer guard (user-misuse). Canonical posture: /_shared/security.md.
 # Exit 0 = allow, Exit 2 = block
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
-# Read the hook input from stdin
 INPUT=$(cat)
-
-# Extract the command from the tool input
-COMMAND=$(echo "$INPUT" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(data.get('tool_input', {}).get('command', ''))
-" 2>/dev/null || true)
+blitz_guard_input pre-commit-validate
+COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
 
 # Only trigger if the command contains 'git commit'
 if [[ "$COMMAND" != *"git commit"* ]]; then

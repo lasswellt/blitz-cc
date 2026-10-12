@@ -16,11 +16,14 @@ fake_write_content() {
 }
 
 setup() {
+  command -v jq >/dev/null || skip "jq not installed"
+  setup_fake_repo          # the blocked-edit feed line lands in $FAKE_REPO/.cc-sessions
   SRC_DIR="$(mktemp -d)"   # /tmp/tmp.XXXX — no /test/ segment
 }
 
 teardown() {
   [ -n "${SRC_DIR:-}" ] && rm -rf "$SRC_DIR"
+  teardown_fake_repo
   return 0
 }
 
@@ -48,4 +51,13 @@ teardown() {
 @test "ignores non-TS files" {
   assert_allows "block-as-any-insertion.sh" \
     "$(fake_write_content "$SRC_DIR/readme.md" "const x = y as any")"
+}
+
+@test "block feed line survives a quote and a backslash in the path (jq-built)" {
+  local fp="$SRC_DIR/we\"ird\\path.ts"
+  assert_blocks "block-as-any-insertion.sh" \
+    "$(fake_write_content "$fp" "const x = y as any")"
+  jq -e . .cc-sessions/activity-feed.jsonl >/dev/null
+  [ "$(jq -r 'select(.event=="verification") | .detail.file' .cc-sessions/activity-feed.jsonl)" = "$fp" ]
+  [ "$(jq -r 'select(.event=="verification") | .detail.new' .cc-sessions/activity-feed.jsonl)" = "1" ]
 }

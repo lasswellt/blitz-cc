@@ -11,6 +11,9 @@
 
 load '_helpers'
 
+setup()    { command -v jq >/dev/null || skip "jq not installed"; setup_fake_repo; }
+teardown() { teardown_fake_repo; }
+
 # Build a Write payload for a test file: tool_name=Write, file_path + content.
 fake_write_content() {
   jq -n --arg fp "$1" --arg c "$2" \
@@ -51,4 +54,14 @@ PIN_MARKER='// blitz:skip-pinned: #1234'
     "$(fake_write_content "$src/app.ts" "promise${SKIP_TOK})")"
   rm -rf "$src"
   [ "$status" -eq 0 ]
+}
+
+@test "block feed line survives a quote and a backslash in the path (jq-built)" {
+  local fp="$FAKE_REPO/src/we\"ird\\path.test.ts"
+  assert_blocks "block-test-disabling.sh" \
+    "$(fake_write_content "$fp" "it${SKIP_TOK}'x', () => {})")"
+  jq -e . .cc-sessions/activity-feed.jsonl >/dev/null
+  [ "$(jq -r 'select(.event=="verification") | .detail.file' .cc-sessions/activity-feed.jsonl)" = "$fp" ]
+  [ "$(jq -r 'select(.event=="verification") | .detail.new' .cc-sessions/activity-feed.jsonl)" = "1" ]
+  [ "$(jq -r 'select(.event=="verification") | .session' .cc-sessions/activity-feed.jsonl)" = "test-session" ]
 }

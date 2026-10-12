@@ -9,7 +9,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows). Without it n
 | Script | Event | Blocks when |
 |---|---|---|
 | `kill-switch.sh` | `PreToolUse` (every tool) | `.cc-sessions/STOP` exists (remove the file to resume) |
-| `tasks-guard.sh` | `PreToolUse` `Write\|Edit\|NotebookEdit`, `Bash\|PowerShell` | a write targets `docs/plans/<slug>/tasks.json` other than through `scripts/tasks.sh` |
+| `tasks-guard.sh` | `PreToolUse` `Write\|Edit\|NotebookEdit`, `Bash\|PowerShell` | a write targets `docs/plans/<slug>/tasks.json` other than through `scripts/tasks.sh`; in subagent context (stdin `agent_type` set) also a write to `docs/plans/<slug>/progress.md`, the main thread's ledger, by file tool or shell |
 | `pre-edit-guard.sh` | `PreToolUse` `Write\|Edit` | the target is `.git/`, `node_modules/`, `.env*` (except `.development` and `.example`), a package lockfile, or a key/credential file |
 | `block-no-verify.sh` | `PreToolUse` `Bash\|PowerShell` | `git commit --no-verify` / `-n` (`BLITZ_OVERRIDE_NO_VERIFY=1` escape, logged) |
 | `block-destructive-git.sh` | `PreToolUse` `Bash\|PowerShell` | `reset --hard`, `clean -f`, `checkout .` / `restore .` on a dirty tree; force-push to a protected branch and `branch -D` of the current branch always |
@@ -17,7 +17,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows). Without it n
 | `block-test-deletion.sh` | `PreToolUse` `Bash\|PowerShell`, `Write\|Edit` | `rm`/`git rm` of test files, or a test file emptied |
 | `block-test-disabling.sh` | `PreToolUse` `Write\|Edit` | `.skip` / `.only` / `xit` insertions (`// blitz:skip-pinned:` escape; `BLITZ_DISABLE_TEST_DISABLING_BLOCK=1`) |
 | `block-as-any-insertion.sh` | `PreToolUse` `Write\|Edit` | `as any` / `@ts-ignore` insertions in TS (`// blitz:any-allowed:` escape; `BLITZ_DISABLE_AS_ANY_BLOCK=1`) |
-| `pre-commit-validate.sh` | `PreToolUse` `Bash\|PowerShell` on `git commit` | a staged secret file, staged SKILL.md frontmatter violations, version drift on a bump commit, registry schema violations, a protocol head over its byte cap, a missing `.reference.md` sibling, an unresolved section citation. Banned patterns and broken links warn only. Not a `blitz_guard_input` guard: unreadable input passes, by design |
+| `pre-commit-validate.sh` | `PreToolUse` `Bash\|PowerShell` on `git commit` | a staged secret file, staged SKILL.md frontmatter violations, version drift on a bump commit, registry schema violations, a protocol head over its byte cap, a missing `.reference.md` sibling, an unresolved section citation. Banned patterns and broken links warn only. Fail-closed like the other guards (`blitz_guard_input`, `onFailure: block`) |
 | `post-edit-typecheck-block.sh` | `PostToolUse` `Write\|Edit` | the edit adds type errors over the session baseline (`BLITZ_DISABLE_TYPECHECK_BLOCK=1`) |
 | `stop-gate.sh` | `Stop` | a `gate.json` is armed for the session and a check fails (stands down on `stop_hook_active`, terminal markers, or `max_blocks`) |
 
@@ -34,7 +34,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows). Without it n
 | `stop-turn.sh` | `Stop` | `state: idle`; drains `mailbox/<sid>.jsonl` to the messaging socket (auth line from `CLAUDE_CODE_MESSAGING_TOKEN`) |
 | `stop-failure.sh` | `StopFailure` | inbox `hook_failure` line when a turn dies on an API error |
 | `session-end.sh` | `SessionEnd` | closes the record, releases owned locks |
-| `pre-compact-snapshot.sh` | `PreCompact` | writes `HANDOFF.json` (plan, task, gate path, never-edit list, branch, uncommitted) |
+| `pre-compact-snapshot.sh` | `PreCompact` | writes `HANDOFF.json` with `jq -n` (plan, task, gate path, never-edit list, branch, uncommitted) |
 | `notification-log.sh` | `Notification` | routes `needs_input` / `permission` notifications to `inbox.jsonl` |
 | `permission-denied.sh` | `PermissionDenied` | inbox `permission` line and a `permission_denied` feed event; never emits `retry` |
 | `config-change.sh` | `ConfigChange` | re-runs `startup-validate.sh --strict --quiet` |
@@ -66,5 +66,5 @@ Hooks require bash on the host (Git Bash or WSL on native Windows). Without it n
 
 - Common stdin fields on every event: `session_id`, `prompt_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `permission_mode`, `effort.level`, `hook_event_name`; `agent_id` / `agent_type` in subagent context. `${CLAUDE_PROJECT_DIR}` stays at the launch root inside a worktree; read `cwd` for the worktree path.
 - State helpers in `_lib/common.sh`: `blitz_session_update`, `blitz_inbox_append`, `blitz_mailbox_send`, `blitz_log_event`, `blitz_atomic_write`, `blitz_agent_view`. Every stdin or file field is untrusted (`BLITZ_INJECTION_RX`, 200-char echo cap).
-- Tests: `bats hooks/tests/` (`_helpers.bash`: `setup_fake_repo`, `run_hook`, `feed_events`, `assert_blocks`, `assert_allows`).
+- Tests: `bats hooks/tests/` (`_helpers.bash`: `setup_fake_repo`, `run_hook`, `feed_events`, `assert_blocks`, `assert_allows`, `nojq_path`).
 - Environment overrides read by hooks and scripts. Guards: `BLITZ_OVERRIDE_NO_VERIFY` (logged), `BLITZ_DISABLE_TYPECHECK_BLOCK`, `BLITZ_DISABLE_AS_ANY_BLOCK`, `BLITZ_DISABLE_TEST_DISABLING_BLOCK`, `BLITZ_TASKS_GUARD_OFF`, `BLITZ_DISABLE_POST_EDIT_FORMAT`, `BLITZ_DISABLE_SPAWN_INVARIANT`, `BLITZ_TIA_DISABLE`, `BLITZ_SKIP_BRANCH_CLEANUP`, `BLITZ_GUARD_FAIL_OPEN` (launch environment only). Critic: `BLITZ_CRITIC_PROVIDER`, `BLITZ_CRITIC_PANEL`, `BLITZ_CRITIC_ARG_CAP`, `BLITZ_CRITIC_NO_REDACT`, `BLITZ_CRITIC_EXTERNAL_VETO`, `BLITZ_{GEMINI,AGY,COPILOT,CODEX}_{BIN,MODEL,FLAGS}`. Paths and caps: `BLITZ_PLANS_DIR`, `BLITZ_SESSIONS_DIR`, `BLITZ_ROOT`, `BLITZ_TOOLCHAIN_TABLE`, `BLITZ_OUTPUT_FORMAT`, `BLITZ_LINT_ECHO_CAP`, `BLITZ_SKILL_BODY_CAP`, `BLITZ_VERIFY_EVIDENCE_CAP`, `BLITZ_LOOP_NO_PROGRESS_MAX`, `BLITZ_LOOP_SAME_ERROR_MAX`, `BLITZ_COUNT_MODEL`, `BLITZ_IMPECCABLE_GLOBAL_ROOT`, `BLITZ_CTX_CHARS`. Followed by skill prose only (no script reads them): `BLITZ_DISPATCH`, `BLITZ_AUTONOMOUS`, `BLITZ_BASE`, `BLITZ_REVIEW_SEQUENTIAL`, `BLITZ_FIX_ROUNDS_MAX`, `BLITZ_DUAL_CRITIC`, `BLITZ_USE_GEMINI_CRITIC`, `BLITZ_ALLOW_WORKTREE_COLLISION`, `BLITZ_OUTPUT_INTENSITY`, `BLITZ_AUDIT_CONFIDENCE_THRESHOLD`, `BLITZ_RESEARCH_FORCE_INFRA`, `BLITZ_RESEARCH_NO_CRITIC`. Only `BLITZ_OVERRIDE_NO_VERIFY` logs its use.

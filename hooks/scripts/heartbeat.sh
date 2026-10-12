@@ -2,7 +2,8 @@
 # heartbeat.sh — PostToolBatch heartbeat (renamed from post-tool-batch.sh, E-040 S2)
 # Fires after a batch of parallel tools resolves, before the next model call.
 # Marks the session record state:"working" + last_activity (liveness signal for
-# stale-session detection, sessions.md §3) and logs the batch.
+# stale-session detection, sessions.md §3). It writes no feed line: the feed
+# carries loop and skill events only (sessions.reference.md §9).
 # Non-blocking: always exits 0. No-op on the record when none exists.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
@@ -16,7 +17,6 @@ SESSION_ID=$(blitz_extract session_id)
 [ -z "$SESSION_ID" ] && SESSION_ID=$(blitz_session_id)
 
 blitz_session_update "$SESSION_ID" '.state = "working" | .last_activity = $now'
-blitz_log_event "hook" "post_tool_batch" "Parallel tool batch resolved"
 
 # ---------------------------------------------------------------------------
 # E-043 S3 — test-impact run, once per batch.
@@ -40,10 +40,14 @@ PLUGIN_SCRIPTS="$(cd "$(dirname "$0")/../../scripts" 2>/dev/null && pwd)"
 SELECTOR="$PLUGIN_SCRIPTS/test-selector.sh"; LISTENER="$PLUGIN_SCRIPTS/test-listener.sh"
 [ -x "$SELECTOR" ] && [ -x "$LISTENER" ] || exit 0
 
-# Claim this batch's touched set atomically so a concurrent heartbeat cannot run it twice.
+# Claim this batch's touched set atomically (same-directory rename) so a concurrent
+# heartbeat cannot run it twice. One scratch dir holds the runner's report; the
+# EXIT trap removes it and the claimed batch file on every exit path.
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/blitz-tia.XXXXXX" 2>/dev/null) || exit 0
 BATCH="$TOUCHED.$$"
+trap 'rm -rf "$WORK" "$BATCH"' EXIT
 mv "$TOUCHED" "$BATCH" 2>/dev/null || exit 0
-CHANGED=$(sort -u "$BATCH" | grep -v '^$' || true); rm -f "$BATCH"
+CHANGED=$(sort -u "$BATCH" | grep -v '^$' || true)
 [ -n "$CHANGED" ] || exit 0
 
 RUN_ID=$( (od -An -N4 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n') || date +%s )
@@ -52,12 +56,12 @@ SELECTED=$(printf '%s\n' "$CHANGED" | "$SELECTOR" 2>/dev/null | cut -f1 | grep -
 [ -n "$SELECTED" ] || exit 0
 
 "$LISTENER" --start --run-id "$RUN_ID" --session "$SESSION_ID" 2>/dev/null || true
-REPORT=$(mktemp "${TMPDIR:-/tmp}/blitz-tia.XXXXXX" 2>/dev/null || echo "/tmp/blitz-tia.$$")
+REPORT="$WORK/report.json"; : > "$REPORT"
 CHANGED_CSV=$(printf '%s\n' "$CHANGED" | paste -sd, -)
 # The project's own runner from node_modules/.bin, never a launcher: npx would
 # download and run an unpinned package when the project has none installed.
 BIN="$PROJECT_ROOT/node_modules/.bin/$RUNNER"
-[ -x "$BIN" ] || { rm -f "$REPORT"; exit 0; }
+[ -x "$BIN" ] || exit 0
 # shellcheck disable=SC2086  # SELECTED is a newline list of paths; word-split intended
 if [ "$RUNNER" = vitest ]; then
   timeout 120s "$BIN" run --reporter=json --outputFile="$REPORT" $SELECTED >/dev/null 2>&1 || true
@@ -72,7 +76,6 @@ DIGEST=$(jq -r '
   [.testResults[]? | select(.status == "failed" or ([.assertionResults[]? | select(.status=="failed")] | length > 0))
    | "\(.name | sub("^.*/(?<t>[^/]+/[^/]+)$"; "\(.t)")): \([.assertionResults[]? | select(.status=="failed") | .fullName] | join(", "))"]
   | .[0:9][]' "$REPORT" 2>/dev/null || true)
-rm -f "$REPORT"
 if [ -n "$DIGEST" ]; then
   N=$(printf '%s\n' "$DIGEST" | wc -l | tr -d ' ')
   echo "blitz TIA: $N failing test file(s) after edits to $(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') file(s) [run $RUN_ID]"
