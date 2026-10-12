@@ -107,12 +107,11 @@ the rationale must survive scrutiny.
 
 Override the entire hook (not recommended): BLITZ_DISABLE_AS_ANY_BLOCK=1
 EOF
-  TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  if [[ -d .cc-sessions ]]; then
-    printf '{"ts":"%s","session":"%s","skill":"hook","event":"verification","message":"as-any insertion blocked","detail":{"file":"%s","old":%d,"new":%d}}\n' \
-      "$TS" "${CLAUDE_SESSION_ID:-unknown}" "$FILE_PATH" "$OLD_COUNT" "$NEW_COUNT" \
-      >> .cc-sessions/activity-feed.jsonl 2>/dev/null || true
-  fi
+  # jq-built feed line (blitz_log_event): a quote or a backslash in the path cannot corrupt it.
+  SESSION_ID=$(blitz_extract session_id)
+  [[ -n "$SESSION_ID" ]] || SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
+  blitz_log_event "hook" "verification" "as-any insertion blocked" \
+    "$(jq -nc --arg f "$FILE_PATH" --argjson o "$OLD_COUNT" --argjson n "$NEW_COUNT" '{file:$f,old:$o,new:$n}')"
   exit 2
 fi
 

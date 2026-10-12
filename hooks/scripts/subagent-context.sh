@@ -13,6 +13,10 @@
 # output into additionalContext. A byte that changes per spawn defeats the point.
 #
 # SubagentStart cannot block a spawn; this hook only adds context. Always exits 0.
+# No -e on purpose: every step below degrades to a silent exit 0 (no jq, an agent
+# type outside the matcher, a missing invariant file, a jq error). Under -e a failing
+# command substitution, such as the plugin-root cd when CLAUDE_PLUGIN_ROOT is unset,
+# would exit 1 and surface as a hook error on every spawn instead.
 set -uo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 

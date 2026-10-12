@@ -6,7 +6,7 @@ Moved out of [security.md](security.md), which keeps the one-line rule per bound
 
 #### TB-1 — Project-local state is untrusted inbound data
 Files a cloned/opened repo controls: `.cc-sessions/*.json`, `activity-feed.jsonl`, **CLAUDE.md**, `docs/plans/*/tasks.json`, `docs/plans/*/progress.md`, `docs/solutions/*.md`. Treat them like an inbound internet request, not trusted local config.
-- **Enforced by:** `session-start.sh` caps + scans before echo (Gap 5); [sessions.md](sessions.md) startup validates before load (Gap 1); `pre-edit-guard.sh` blocks edits to secret/key/lock files.
+- **Enforced by:** `session-start.sh` caps + scans before echo (Gap 5); [sessions.md](sessions.md) startup validates before load (Gap 1); `pre-edit-guard.sh` blocks edits to secret/key/lock files. Both `tasks.sh verify` and `stop-gate.sh` execute commands read from project-local JSON; each is a recorded exception with its own controls, see [Execution exceptions](#execution-exceptions).
 - **Guards against:** pre-trust parse, persistent poisoning.
 
 #### TB-2 — Persistent state that drives later work is untrusted across sessions
@@ -16,7 +16,7 @@ Files a cloned/opened repo controls: `.cc-sessions/*.json`, `activity-feed.jsonl
 
 #### TB-3 — Sub-agent output is not higher-trust than the content it processed
 A sub-agent that fetched a URL or read an untrusted file is a *conduit*. Its reply is not trusted because it "came from us." Blitz's architecture is structurally the **dual-LLM / information-flow-control** pattern: the main thread is the privileged planner and the only caller of `Agent()` ([agents.md](agents.md)); sub-agents are quarantined readers returning **structured JSON or the status enum only** (never a write to `tasks.json` / `progress.md`) = a schema-validated channel carrying structured extractions, not raw untrusted content.
-- **Enforced by:** spawn-protocol trust clause (Gap 2). Sub-agent output keeps the structured-JSON contract **and** any field interpolated into a downstream prompt/command is `[0:200]`-capped + injection-scanned like raw tool output. Agents processing untrusted input tag replies `source_trust: "untrusted"` (a CaMeL-style source-of-data capability label).
+- **Enforced by:** spawn-protocol trust clause (Gap 2). Sub-agent output keeps the structured-JSON contract **and** any field interpolated into a downstream prompt/command is `[0:200]`-capped + injection-scanned like raw tool output. Agents processing untrusted input tag replies `source_trust: "untrusted"` (a CaMeL-style source-of-data capability label). `tasks-guard.sh` denies a subagent's `Write`/`Edit`/`NotebookEdit` or shell write to `docs/plans/*/progress.md` (stdin `agent_type` set), so the ledger stays a main-thread artifact by hook, not by prose.
 - **Guards against:** multi-agent trust escalation.
 
 #### TB-4 — Fetched external content is untrusted before it enters reasoning context
@@ -139,15 +139,27 @@ Blitz hooks fire on Claude Code lifecycle events (`SessionStart`, `PreToolUse`, 
 3. **Echoed free-text fields MUST be capped + injection-scanned** before reaching context. `session-start.sh` caps every echoed field at 200 chars (parity with the `[0:200]` cap rule in [sessions.md](sessions.md)) and replaces injection-marker hits with `[quarantined: …]`.
 4. **Execution-bearing parsing defers to the platform trust prompt.** Blitz relies on the Claude Code platform for the trust gate itself — it does not reimplement it (threat-model.md §6). Blitz's duty is to not parse-execute project config before it.
 
+### Execution exceptions
+
+Rule 2 has the exceptions listed here, where a script runs a command string it read from a project-local JSON file. Neither runs before the trust prompt, and neither runs anything a hook read at `SessionStart`.
+
+| Script | Executes | Why it is acceptable, and what is not covered |
+|---|---|---|
+| `scripts/tasks.sh verify` | one task's `verify[].cmd` from `docs/plans/<slug>/tasks.json`, in the repo root, each under its `timeout` (default 120 s) | `tasks.json` is tracked, so a cloned checkout can carry a hostile command. It runs on the same footing as the project's own `package.json` scripts or Makefile: never from a hook, only when a skill or a human runs `tasks.sh verify`, `build` or `check` in a checkout they chose to work in. The file has one writer (`scripts/tasks.sh`; `tasks-guard.sh` denies every other `Write`, `Edit` and `NotebookEdit`, and the redirect, `sed -i`, `tee`, `mv`/`cp`/`rm` and `open(..., "w")` forms of a shell write), every task carries `origin`, and `startup-validate.sh` checks shape, `origin`, `done ⇒ passes` and a non-empty `verify[]` and injection-scans `id`, `title` and `notes` at `SessionStart`. Not covered: the commands themselves are not pattern-matched (a shell command is reviewed in the diff, like any script in the repo), and a shell write that none of the guard's patterns names is not denied. Every run is ledgered in `last_verify.runs[]`. |
+| `hooks/scripts/stop-gate.sh` (`Stop`) | `checks[].cmd` from `.cc-sessions/sessions/<session_id>/gate.json`, in the repo root, each under its `timeout` where GNU `timeout` exists | `gate.json` is runtime output under the gitignored `.cc-sessions/`, written in the same session by the arming skill (`build`, `check --fix`, `next --loop`) with `jq -n`, and keyed by the live session id, which a checkout cannot predict. `stop-gate.sh` requires `checks` to be an array (anything else logs `warning` and stands down), caps `max_blocks` at 4, and runs only at `Stop`, after the trust prompt. Not covered: no guard denies a `Write`/`Edit` to `gate.json` and `startup-validate.sh` does not scan it; a model that rewrites its own gate loosens only its own Stop gate, which `tasks.sh verify`, the critic and the kill switch do not depend on. |
+
+Elsewhere under `hooks/scripts/` no script passes file content to `bash -c`, `sh -c` or `eval`; the regression guard below checks the `eval` and `source` forms. Hooks that run the project's own tooling (`heartbeat.sh`: `node_modules/.bin/vitest` or `jest`; `post-edit-format.sh` and `post-edit-typecheck-block.sh`: the `toolchain.sh` lanes) execute binaries the project installed with an argv from the plugin-shipped table, not a string read from project state.
+
 ### Audited invariant (keep true)
 
 > **No Blitz hook executes project-controlled content pre-trust.**
 
-Verified 2026-05-31 across all `hooks/scripts/*.sh`:
+Verified 2026-05-31 across all `hooks/scripts/*.sh`, re-checked 2026-10-12:
 - The `block-*.sh` + `pre-edit-guard.sh` hooks read `tool_input` (the agent's *own* proposed action from the harness), not committed project files.
 - `session-start.sh` parses `.cc-sessions/` JSON with `jq` and echoes sanitized text — no eval or `source` of project content.
 - `startup-validate.sh` reads + scans (`.cc-sessions/`, `docs/plans/*/tasks.json`, `docs/solutions/*.md`); it does not execute entries.
 - `tasks-guard.sh` and `kill-switch.sh` read `tool_input` / the presence of `.cc-sessions/STOP` and return a decision; they execute nothing.
+- `stop-gate.sh` runs the checks of a `gate.json` that the same session armed, at `Stop`, long after the trust prompt; it is the one hook that executes anything, recorded under [Execution exceptions](#execution-exceptions).
 
 **Regression guard (audit `sec-containment` / pre-commit):**
 ```bash
@@ -161,6 +173,7 @@ grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' hooks/scripts/*.sh \
 - [security.md](security.md#threat-model--blitz-containment-posture-canonical-owner) §3 TB-1, §6 (scope: trust-prompt delegated to platform).
 - `hooks/scripts/session-start.sh` — the SessionStart enforcement point.
 - `hooks/scripts/startup-validate.sh` — persistent-state validation (TB-2).
+- `scripts/tasks.sh` (`verify`) and `hooks/scripts/stop-gate.sh`: the execution exceptions above, with their controls.
 
 
 

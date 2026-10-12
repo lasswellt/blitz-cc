@@ -51,14 +51,12 @@ while IFS= read -r SEG; do
 done <<< "$SEGMENTS"
 if [[ "${NO_VERIFY_LONG:-0}" -gt 0 || "${NO_VERIFY_SHORT:-0}" -gt 0 ]]; then
   if [[ "${BLITZ_OVERRIDE_NO_VERIFY:-0}" == "1" ]]; then
-    # Logged override: user explicitly set the env var.
-    TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
-    if [[ -d .cc-sessions ]]; then
-      printf '{"ts":"%s","session":"%s","skill":"hook","event":"override","message":"BLITZ_OVERRIDE_NO_VERIFY used","detail":{"command":%s}}\n' \
-        "$TS" "$SESSION_ID" "$(echo "$CMD" | jq -Rs .)" \
-        >> .cc-sessions/activity-feed.jsonl 2>/dev/null || true
-    fi
+    # Logged override: the user set the env var. blitz_log_event builds the feed
+    # line with jq, so a quote or a backslash in the command cannot corrupt it.
+    SESSION_ID=$(blitz_extract session_id)
+    [[ -n "$SESSION_ID" ]] || SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
+    blitz_log_event "hook" "override" "BLITZ_OVERRIDE_NO_VERIFY used" \
+      "$(jq -nc --arg c "$CMD" '{command:$c}')"
     exit 0
   fi
   cat >&2 <<'EOF'

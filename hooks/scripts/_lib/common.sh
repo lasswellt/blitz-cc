@@ -22,7 +22,11 @@
 # tool-invocation strings, and secret/exfil markers. Case-insensitivity is the
 # caller's responsibility (always pair with grep -i). Keep ERE-safe: `\|` is a
 # literal pipe, `\.` a literal dot — both escaped for grep -E.
-BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
+# `system:` carries the word-start guard `(^|[^a-z])` so `filesystem:` and
+# `ecosystem:` do not match; under -i the bracket excludes A-Z as well. The
+# consumers are grep -iE (hooks, scripts) and Python `re` with re.I
+# (scripts/sessions-dashboard.sh); both read this ERE subset unchanged.
+BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|(^|[^a-z])system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
 
 # blitz_find_root [start_dir]
 # Walk up from start_dir (or pwd) looking for .claude-plugin/.

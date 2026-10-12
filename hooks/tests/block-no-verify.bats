@@ -4,6 +4,9 @@
 
 load '_helpers'
 
+setup()    { command -v jq >/dev/null || skip "jq not installed"; setup_fake_repo; }
+teardown() { teardown_fake_repo; }
+
 # Note: block-no-verify.sh calls jq -r '.tool_input.command' on stdin.
 # It checks for --no-verify and -n (short form) in the command string.
 
@@ -54,4 +57,12 @@ load '_helpers'
 @test "allows -n on a non-commit command chained after a clean commit" {
   assert_allows "block-no-verify.sh" \
     "$(fake_tool_input "git commit -m wip && npm run lint -n")"
+}
+
+@test "override feed line survives a quote and a backslash in the command (jq-built)" {
+  local cmd='git commit --no-verify -m "fix" -- "we\"ird\\path.ts"'
+  BLITZ_OVERRIDE_NO_VERIFY=1 assert_allows "block-no-verify.sh" "$(fake_tool_input "$cmd")"
+  jq -e . .cc-sessions/activity-feed.jsonl >/dev/null
+  [ "$(jq -r 'select(.event=="override") | .detail.command' .cc-sessions/activity-feed.jsonl)" = "$cmd" ]
+  [ "$(jq -r 'select(.event=="override") | .session' .cc-sessions/activity-feed.jsonl)" = "test-session" ]
 }

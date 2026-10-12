@@ -95,3 +95,16 @@ run_hook() {
 feed_events() {
   jq -r '.event' "$FAKE_REPO/.cc-sessions/activity-feed.jsonl" 2>/dev/null || true
 }
+
+# nojq_path: print a directory holding the tools the guards use, minus jq, to put
+# on PATH when a suite shows that a guard fails closed without jq. The caller
+# removes the directory when done.
+nojq_path() {
+  local d; d="$(mktemp -d)"
+  local t
+  for t in bash sh cat dirname basename git grep sed awk tr head tail date mkdir env cut wc sort; do
+    local p; p="$(command -v "$t" 2>/dev/null)" || continue
+    ln -s "$p" "$d/$t"
+  done
+  printf '%s' "$d"
+}
