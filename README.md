@@ -253,7 +253,16 @@ Hook-enforced guards: `BLITZ_OVERRIDE_NO_VERIFY` (the one opt-out that logs its 
 
 Run `scripts/ci-local.sh` before you commit: it runs every gate of CI's `validate` job (frontmatter and registry validators, links and section citations, version sync, plugin structure, the catalog check, the supply-chain scan, the mod's validate and test, and the bats suite), and `hooks/tests/ci-local.bats` fails if the two drift. The pre-commit hook re-checks staged SKILL.md frontmatter, section citations and the registry, and blocks a version-bump commit whose references drifted.
 
-Authoring rules live in `.claude/rules/skills.md` and `.claude/rules/hooks.md`; they load automatically when you touch `skills/**`, `agents/**` or `hooks/**`. After adding, removing or renaming a component, run `scripts/gen-catalog.sh` and commit the catalog — prose never carries an inventory. After each model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
+Authoring rules live in `.claude/rules/skills.md` and `.claude/rules/hooks.md`; they load automatically when you touch `skills/**`, `agents/**` or `hooks/**`. After adding, removing or renaming a component, run `scripts/gen-catalog.sh` and commit the catalog: prose never carries an inventory. After each model release, run the eval suite with and without the plugin and retire any piece whose contribution has gone to zero.
+
+### Release process
+
+A version is released when its tag exists. A bumped `version` in `.claude-plugin/plugin.json` or a CHANGELOG headline on `main` is not a release, and the version badge above reads the latest GitHub release, so an untagged version never shows there.
+
+1. Bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (both entries; `scripts/check-version-sync.sh` fails on drift) and turn the CHANGELOG `[Unreleased]` entry into `## [X.Y.Z] · <date> · <headline>`.
+2. Open a pull request and merge it once CI is green.
+3. Tag the merge commit and publish the release from the tag: `git tag -a vX.Y.Z <merge-sha> -m "Release vX.Y.Z" && git push origin vX.Y.Z`, then `gh release create vX.Y.Z --title "vX.Y.Z: <headline>" --notes-file <notes>` with the CHANGELOG section as notes. The tag and release are a maintainer step: a Claude Code cloud session cannot push tags or create releases in this repository, so a session that merges the pull request hands this step back.
+4. Anything that listens for releases (the plugin directory's webhook, the badge, `/plugin` update checks against the marketplace) sees the version only after step 3.
 
 ## Acknowledgments
 
