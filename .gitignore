@@ -20,6 +20,9 @@ __pycache__/
 # Claude Code local settings
 .claude/settings.local.json
 
+# Claude Code agent worktrees (isolation: worktree); machine-local checkouts, never committed
+.claude/worktrees/
+
 # Scheduled-task runtime lock (machine-local, not committed)
 .claude/scheduled_tasks.lock
 
