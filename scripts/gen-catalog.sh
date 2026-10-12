@@ -99,7 +99,7 @@ rm -f "$tmp"
 
 # Dead /blitz:<name> references (skills, workflows only; prose under docs/reviews and CHANGELOG is history)
 known=$( { ls skills | grep -v '^_'; grep -ohE "name: *'[^']+'" workflows/*.js 2>/dev/null | sed "s/name: *'//; s/'//"; } | sort -u)
-refs=$(grep -rhoE '/blitz:[a-z][a-z0-9-]*' --include=*.md --include=*.sh --include=*.js --include=*.json --include=*.yml --include=*.yaml \
+refs=$(grep -rhoE --exclude-dir=worktrees '/blitz:[a-z][a-z0-9-]*' --include=*.md --include=*.sh --include=*.js --include=*.json --include=*.yml --include=*.yaml \
   skills agents hooks scripts workflows evals templates README.md .claude .claude-plugin 2>/dev/null | sed 's#/blitz:##' | sort -u || true)
 for r in $refs; do
   if ! printf '%s\n' "$known" | grep -qx "$r"; then
