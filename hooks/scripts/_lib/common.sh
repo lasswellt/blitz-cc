@@ -6,6 +6,7 @@
 #
 # Provides: blitz_find_root, blitz_extract, blitz_guard_input, blitz_session_id,
 #           blitz_log_event, blitz_live_worktree_paths, blitz_atomic_write,
+#           blitz_mktemp_in, blitz_timeout,
 #           blitz_session_record_path, blitz_session_record_find,
 #           blitz_session_update, blitz_inbox_append, blitz_inbox_post,
 #           blitz_iso_epoch, blitz_agent_view, blitz_session_stale,
@@ -280,6 +281,67 @@ blitz_atomic_write() {
   else
     printf '%s' "$content" > "$target"
   fi
+}
+
+# blitz_mktemp_in dir [prefix]
+# Create a temp file inside dir and print its path, so a following mv onto a
+# file in that directory is an atomic rename. Uses a full-path template, which
+# GNU and BSD mktemp both accept (`mktemp -p DIR` is GNU-only). Falls back to
+# the system temp dir (TMPDIR) when dir refuses the file; returns 1 when
+# neither location yields one.
+blitz_mktemp_in() {
+  local dir="${1:-.}" prefix="${2:-.blitz}"
+  mktemp "$dir/$prefix.XXXXXX" 2>/dev/null || mktemp 2>/dev/null
+}
+
+# blitz_timeout seconds command [args...]
+# Run command under `timeout` when the host has one (GNU coreutils), else under
+# a bash watchdog that sends TERM to the command once the deadline passes.
+# Either way the exit code is the command's own, or 124 when the deadline was
+# reached, so a caller never sees 127 for a missing `timeout` (stock macOS
+# ships none). As with GNU timeout, 0 seconds means no deadline; an empty or
+# non-numeric value means 120. Watchdog limit: it signals the command's
+# process only, so a compound command's grandchildren can outlive the deadline
+# where GNU timeout would have signalled the whole process group. Its scratch
+# files live in a private mktemp -d directory, never under a predictable name.
+blitz_timeout() {
+  local secs="${1:-120}"; shift
+  case "$secs" in ''|*[!0-9]*) secs=120;; esac
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$secs" "$@" || return $?
+    return 0
+  fi
+  local dir=""
+  if [ "$secs" -gt 0 ]; then
+    dir=$(mktemp -d "${TMPDIR:-/tmp}/.blitz-timeout.XXXXXX" 2>/dev/null) || dir=""
+  fi
+  if [ -z "$dir" ]; then
+    # Deadline 0, or no scratch dir for the watchdog: run unbounded rather than
+    # fail every command.
+    "$@" || return $?
+    return 0
+  fi
+  local pid wd rc=0 marker="$dir/expired" fifo="$dir/fifo"
+  "$@" & pid=$!
+  if mkfifo "$fifo" 2>/dev/null; then
+    # The timer is `read -t` on a fifo nothing writes to, so the watchdog has no
+    # child of its own to orphan when the command finishes first and it is
+    # ended early (a backgrounded `sleep` survives its parent's TERM).
+    (
+      exec 3<>"$fifo"
+      if read -r -t "$secs" <&3; then exit 0; fi
+      : > "$marker"
+      kill -TERM "$pid" 2>/dev/null
+    ) >/dev/null 2>&1 </dev/null & wd=$!
+  else
+    ( sleep "$secs"; : > "$marker"; kill -TERM "$pid" 2>/dev/null ) >/dev/null 2>&1 </dev/null & wd=$!
+  fi
+  wait "$pid" 2>/dev/null || rc=$?
+  kill "$wd" 2>/dev/null || true
+  wait "$wd" 2>/dev/null || true
+  if [ -e "$marker" ]; then rc=124; fi
+  rm -rf "$dir" 2>/dev/null || true
+  return "$rc"
 }
 
 # --- Session records + inbox (E-040 S2; record writer arrives with E-041 S1) ---

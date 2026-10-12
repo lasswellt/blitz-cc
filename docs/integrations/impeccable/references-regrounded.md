@@ -1,7 +1,7 @@
 # References, Re-grounded — normalized guidance + adapter notes
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0) — `skill/SKILL.src.md` (General rules), `skill/reference/*.md` (27 files), register refs `brand.md`/`product.md`; incorporates ehmo `typecraft-guide` (typography) per NOTICE chain. Original Blitz authorship. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** doc #5 of 8. Re-grounds design guidance against [`normalized-model.md`](normalized-model.md); per-adapter notes resolve to [`framework-profiles.md`](framework-profiles.md).
+> **Status:** guidance doc of the impeccable spec series. Re-grounds design guidance against [`normalized-model.md`](normalized-model.md); per-adapter notes resolve to [`framework-profiles.md`](framework-profiles.md).
 
 ---
 

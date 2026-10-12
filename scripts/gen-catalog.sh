@@ -22,14 +22,25 @@ fm() {  # fm <file> <key> — frontmatter scalar (single line), quotes stripped
 fm_desc() {  # description may be a block scalar (|) on agents: take first paragraph
   # Truncation counts characters, not bytes: `cut -c` and a bash substring under
   # a non-UTF-8 locale both slice a multibyte character in half and emit U+FFFD,
-  # which made `--check` depend on the caller's LC_ALL. python3 decodes first.
+  # which made `--check` depend on the caller's LC_ALL. python3 decodes first,
+  # cuts at the last word boundary within the limit, and appends an ellipsis
+  # only when something was cut. Output is written as UTF-8 bytes so the
+  # ellipsis survives a non-UTF-8 stdout encoding as well.
   local d
   d=$(awk 'NR==1 && $0 != "---" {exit} NR>1 && $0=="---" {exit}
        /^description: *\|/ {blk=1; next}
        blk && /^  / {sub(/^  /,""); if ($0=="") exit; printf "%s ", $0; next}
        blk && !/^  / {exit}
        /^description:/ {sub(/^description:[ ]*/,""); gsub(/^"|"$/,""); print; exit}' "$1" | sed 's/ *$//')
-  printf '%s' "$d" | python3 -c 'import sys; s=sys.stdin.buffer.read().decode("utf-8","replace"); print(s[:240])'
+  printf '%s' "$d" | python3 -c '
+import sys
+LIMIT = 240
+s = sys.stdin.buffer.read().decode("utf-8", "replace").strip()
+if len(s) > LIMIT:
+    head = s[:LIMIT + 1]
+    cut = head.rfind(" ")
+    s = (head[:cut] if cut > 0 else s[:LIMIT]).rstrip(" ,;:.") + "\u2026"
+sys.stdout.buffer.write((s + "\n").encode("utf-8"))'
 }
 
 render() {

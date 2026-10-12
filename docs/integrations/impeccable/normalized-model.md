@@ -1,7 +1,7 @@
 # Normalized Design Model — the framework-adaptive spine
 
 > **Source analysis:** `pbakaus/impeccable@2.3.2` (Apache-2.0) + Anthropic `frontend-design` (Apache-2.0) + ehmo `typecraft-guide`. This document is original Blitz authorship; the design principles it normalizes are re-grounded from impeccable. See [`ATTRIBUTION.md`](ATTRIBUTION.md).
-> **Status:** spine doc #1 of 8. Spec-only pass; no implementation. Pairs with [`adapter-detection.md`](adapter-detection.md).
+> **Status:** spine doc of the impeccable spec series. Spec-only pass; no implementation. Pairs with [`adapter-detection.md`](adapter-detection.md).
 > **Version note:** the originating prompt cited impeccable `v3.5.0` and "7 references"; the live tree is `2.3.2` with 23 verb-commands + 27 reference files. This spec is grounded in the live tree.
 
 ---

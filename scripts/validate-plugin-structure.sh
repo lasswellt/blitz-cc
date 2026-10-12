@@ -5,6 +5,8 @@ set -euo pipefail
 # Usage: validate-plugin-structure.sh
 # Exit 0 = pass, Exit 1 = fail
 # Honors CLAUDE_PLUGIN_ROOT env var, otherwise defaults to parent of script dir.
+# Portable to bash 3.2 and BSD userland (macOS): no GNU-only find, grep, sed or
+# head flags (no -printf, -P, \s, \+ or head -n -N).
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -56,6 +58,7 @@ echo "Checking skill directories..."
 SKILLS_DIR="$PLUGIN_ROOT/skills"
 if [[ -d "$SKILLS_DIR" ]]; then
   for skill_dir in skills/*/; do
+    skill_dir="${skill_dir%/}"
     skill_name=$(basename "$skill_dir")
     [[ "$skill_name" == "_shared" ]] && continue
 
@@ -66,14 +69,14 @@ if [[ -d "$SKILLS_DIR" ]]; then
     fi
 
     # Check frontmatter for name: and description:
-    frontmatter=$(sed -n '2,/^---$/p' "$skill_md" | head -n -1)
-    if echo "$frontmatter" | grep -qP '^name:' 2>/dev/null; then
+    frontmatter=$(awk 'NR==1 {next} /^---$/ {exit} {print}' "$skill_md")
+    if echo "$frontmatter" | grep -q '^name:' 2>/dev/null; then
       check_pass "skills/$skill_name/SKILL.md has name: field"
     else
       check_fail "skills/$skill_name/SKILL.md missing name: in frontmatter"
     fi
 
-    if echo "$frontmatter" | grep -qP '^description:' 2>/dev/null; then
+    if echo "$frontmatter" | grep -q '^description:' 2>/dev/null; then
       check_pass "skills/$skill_name/SKILL.md has description: field"
     else
       check_fail "skills/$skill_name/SKILL.md missing description: in frontmatter"
@@ -90,7 +93,7 @@ echo "Checking SKILL.md line limits..."
 if [[ -d "$SKILLS_DIR" ]]; then
   for skill_md in skills/*/SKILL.md; do
     [[ -f "$skill_md" ]] || continue
-    line_count=$(wc -l < "$skill_md")
+    line_count=$(wc -l < "$skill_md" | tr -d ' ')
     rel_path="${skill_md#"$PLUGIN_ROOT"/}"
     if [[ "$line_count" -gt 500 ]]; then
       check_warn "$rel_path exceeds 500 lines ($line_count lines)"
@@ -110,9 +113,9 @@ if [[ -d "$AGENTS_DIR" ]]; then
     [[ -f "$agent_file" ]] || continue
     agent_name=$(basename "$agent_file")
 
-    frontmatter=$(sed -n '2,/^---$/p' "$agent_file" | head -n -1)
+    frontmatter=$(awk 'NR==1 {next} /^---$/ {exit} {print}' "$agent_file")
     for field in name description model; do
-      if echo "$frontmatter" | grep -qP "^${field}:" 2>/dev/null; then
+      if echo "$frontmatter" | grep -q "^${field}:" 2>/dev/null; then
         check_pass "agents/$agent_name has $field: field"
       else
         check_fail "agents/$agent_name missing $field: in frontmatter"
@@ -202,7 +205,7 @@ for event_type in hooks:
 fi
 
 # ---------------------------------------------------------------
-# 7. Version consistency — marketplace.json vs plugin.json
+# 6. Version consistency: marketplace.json vs plugin.json
 # ---------------------------------------------------------------
 echo "Checking version consistency..."
 MARKETPLACE_JSON="$PLUGIN_ROOT/.claude-plugin/marketplace.json"
@@ -227,7 +230,7 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 8. Script shebangs — all .sh files have shebang and are executable
+# 7. Script shebangs: all .sh files have shebang and are executable
 # ---------------------------------------------------------------
 echo "Checking script shebangs and permissions..."
 while IFS= read -r -d '' sh_file; do
@@ -247,10 +250,10 @@ while IFS= read -r -d '' sh_file; do
   else
     check_fail "$rel_path is not executable"
   fi
-done < <(find "$PLUGIN_ROOT" -name "*.sh" -not -path "*/.git/*" -print0 2>/dev/null)
+done < <(find "$PLUGIN_ROOT" -name '*.sh' ! -path '*/.git/*' -print0 2>/dev/null)
 
 # ---------------------------------------------------------------
-# 9. Plugin workflows — workflows/*.js parse, meta literal first, no
+# 8. Plugin workflows: workflows/*.js parse, meta literal first, no
 #    resume-breaking calls (Date.now / Math.random / new Date() / import()).
 #    Contract: skills/_shared/agents.md §Plugin workflows (E-045).
 # ---------------------------------------------------------------
@@ -269,7 +272,7 @@ if [[ -d "$WORKFLOWS_DIR" ]]; then
       # wrapped form instead (reported line numbers shift by one).
       wf_dir=$(mktemp -d 2>/dev/null || mktemp -d -t blitz-wf)
       wf_tmp="$wf_dir/check.js"
-      { printf '(async()=>{\n'; sed 's/^export[[:space:]]\+//' "$wf"; printf '\n})()\n'; } > "$wf_tmp"
+      { printf '(async()=>{\n'; sed -E 's/^export[[:space:]]+//' "$wf"; printf '\n})()\n'; } > "$wf_tmp"
       if node --check "$wf_tmp" >/dev/null 2>&1; then
         check_pass "$rel_path parses (node --check)"
       else
@@ -280,7 +283,7 @@ if [[ -d "$WORKFLOWS_DIR" ]]; then
       check_warn "$rel_path: node not found, skipping syntax check"
     fi
     # First statement must be the meta export (comments/blank lines may precede it).
-    first_stmt=$(grep -vE '^\s*(//.*)?$' "$wf" | head -1)
+    first_stmt=$(grep -vE '^[[:space:]]*(//.*)?$' "$wf" | head -1)
     if [[ "$first_stmt" =~ ^export[[:space:]]+const[[:space:]]+meta[[:space:]]*= ]]; then
       check_pass "$rel_path starts with export const meta"
     else
@@ -298,13 +301,14 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 10. Eval suite — every evals/**/case.yaml parses (python3 yaml when
-#     available, else a shape check) and every prompt.md has a body.
-#     Layout: https://code.claude.com/docs/en/plugin-evals
+# 9. Eval suite: every evals/**/case.yaml parses (python3 yaml when
+#    available, else a shape check) and every prompt.md has a body.
+#    Layout: https://code.claude.com/docs/en/plugin-evals
 # ---------------------------------------------------------------
 echo "Checking eval suite..."
 EVALS_DIR="$PLUGIN_ROOT/evals"
 if [[ -d "$EVALS_DIR" ]]; then
+  TAB=$(printf '\t')
   HAVE_PYYAML=0
   python3 -c "import yaml" >/dev/null 2>&1 && HAVE_PYYAML=1
   while IFS= read -r -d '' cy; do
@@ -321,18 +325,18 @@ assert 'schema_version' in d and 'name' in d, 'missing schema_version or name'
         check_fail "$rel_path does not parse or lacks schema_version/name"
       fi
     else
-      if grep -qE '^schema_version:' "$cy" && grep -qE '^name:' "$cy" && ! grep -qP '\t' "$cy"; then
+      if grep -qE '^schema_version:' "$cy" && grep -qE '^name:' "$cy" && ! grep -q "$TAB" "$cy"; then
         check_pass "$rel_path shape ok (no PyYAML: schema_version + name, no tabs)"
       else
         check_fail "$rel_path shape check failed (needs schema_version: and name:, no tabs)"
       fi
     fi
-  done < <(find "$EVALS_DIR" -name case.yaml -not -path "*/results/*" -print0 2>/dev/null)
+  done < <(find "$EVALS_DIR" -name case.yaml ! -path '*/results/*' -print0 2>/dev/null)
 
   while IFS= read -r -d '' pm; do
     rel_path="${pm#"$PLUGIN_ROOT"/}"
     # body = everything after the closing frontmatter fence (or the whole file when none)
-    body=$(awk 'BEGIN{fm=0} NR==1 && /^---$/ {fm=1; next} fm==1 && /^---$/ {fm=2; next} fm!=1 {print}' "$pm" | grep -vE '^\s*$' || true)
+    body=$(awk 'BEGIN{fm=0} NR==1 && /^---$/ {fm=1; next} fm==1 && /^---$/ {fm=2; next} fm!=1 {print}' "$pm" | grep -vE '^[[:space:]]*$' || true)
     if [[ -n "$body" ]]; then
       check_pass "$rel_path has a prompt body"
     else
@@ -352,9 +356,11 @@ assert 'schema_version' in d and 'name' in d, 'missing schema_version or name'
         check_fail "$rel_path description contains ': ' and is unquoted (YAML parse error at run time)"
       fi
     fi
-  done < <(find "$EVALS_DIR" -name prompt.md -not -path "*/results/*" -print0 2>/dev/null)
+  done < <(find "$EVALS_DIR" -name prompt.md ! -path '*/results/*' -print0 2>/dev/null)
 
-  case_count=$(find "$EVALS_DIR" -mindepth 2 \( -name prompt.md -o -name case.yaml \) -not -path "*/results/*" -printf '%h\n' 2>/dev/null | sort -u | wc -l)
+  # One case per directory that holds a prompt.md or case.yaml (dirname via sed:
+  # find -printf is GNU-only).
+  case_count=$(find "$EVALS_DIR" -mindepth 2 \( -name prompt.md -o -name case.yaml \) ! -path '*/results/*' 2>/dev/null | sed 's|/[^/]*$||' | sort -u | wc -l | tr -d ' ')
   if [[ "$case_count" -gt 0 ]]; then
     check_pass "evals/ contains $case_count case(s)"
   else

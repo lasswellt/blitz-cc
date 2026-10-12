@@ -1,7 +1,6 @@
 {
-  "$comment": "AUTHORITATIVE Claude Code version floors. scripts/check-version-sync.sh asserts every '2.1.NNN' citation in the files listed under 'cited_in' is either cc_min or one of the feature floors. Individual /blitz:* slash skills declare their own 'compatibility:' and may stay at cc_min_slash.",
+  "$comment": "AUTHORITATIVE Claude Code version floors. scripts/check-version-sync.sh asserts every '2.1.NNN' citation in the files listed under 'cited_in' is either cc_min or one of the feature floors. Every SKILL.md 'compatibility:' pins cc_min as well.",
   "cc_min": "2.1.296",
-  "cc_min_slash": "2.1.71",
   "features": {
     "agent_view": "2.1.139",
     "agent_view_json": "2.1.141",
