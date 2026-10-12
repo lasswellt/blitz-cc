@@ -5,7 +5,7 @@ load '_helpers'
 
 # block-destructive-git.sh uses 'is_dirty()' for some checks, which calls
 # git status. The force-push guard to protected branches does NOT require
-# a dirty tree — it always blocks. We test those directly.
+# a dirty tree; it always blocks. We test those directly.
 
 @test "blocks git push --force to main" {
   assert_blocks "block-destructive-git.sh" \
@@ -46,7 +46,7 @@ load '_helpers'
 # ---------------------------------------------------------------------------
 # SEC-R2-01 regression cases (HTC-2). The reset/checkout/clean/restore guards
 # only fire on a DIRTY tree, and the branch-delete guard reads the current
-# branch — so these run inside an isolated, dirty git repo on `main`.
+# branch, so these run inside an isolated, dirty git repo on `main`.
 # ---------------------------------------------------------------------------
 
 # Stand up a throwaway repo with one committed file made dirty, on branch main.

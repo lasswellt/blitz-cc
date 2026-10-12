@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# design-pillar.bats — wiring tests for the framework-adaptive design pillar.
+# design-pillar.bats: wiring tests for the framework-adaptive design pillar.
 # Covers: adapter detection, layer gating, reconciliation suppression,
 # FP exclusions on token-definition surfaces, and the DESIGN_LANE_UNAVAILABLE
 # loud-failure contract.
@@ -84,7 +84,7 @@ scoped_hex() {  # $1 = root dir
   printf '$primary: #1976d2;\n' > quasar.variables.scss                                  # quasar
   printf 'export default createVuetify({theme:{themes:{light:{colors:{primary:"#3f51b5"}}}}})\n' > src/vuetify.js  # vuetify
   printf 'export default { theme:{ colors:{ brand:"#0ea5e9" }}}\n' > tailwind.config.js   # tailwind
-  # component usages (raw hex VIOLATION here) — one per line so counts are line-based:
+  # component usages (raw hex VIOLATION here), one per line so counts are line-based:
   printf '<style>\n.a{color:#111111}\n.b{background:#222222}\n</style>\n' > src/Card.vue
   before=$(grep -rnE '#[0-9a-fA-F]{3,8}' "$PWD" --include=*.vue --include=*.css --include=*.scss | wc -l)
   run scoped_hex "$PWD"
@@ -166,7 +166,7 @@ scoped_hex() {  # $1 = root dir
 @test "preflight reports DESIGN_LANE_UNAVAILABLE when impeccable absent" {
   PF="$REPO_ROOT/scripts/design/preflight.sh"
   [ -f "$PF" ] || skip "preflight.sh missing (expected at scripts/design/preflight.sh)"
-  # $PWD is the clean BATS_TEST TMPDIR — a target project with no impeccable.
+  # $PWD is the clean BATS_TEST TMPDIR, a target project with no impeccable.
   run bash "$PF" "$PWD"
   [ "$status" -eq 0 ]                                   # never blocks deterministic tier
   echo "$output" | grep -q 'DESIGN_LANE_STATUS deterministic=OK'
@@ -291,7 +291,7 @@ select_design() {  # $1 = primary
 
 @test "Layer-2 MD3 rows NOT selected on a tailwind-only stack" {
   run select_design tailwind
-  # md3 conformance rows are adapter:tailwind-md3 — excluded for primary=tailwind
+  # md3 conformance rows are adapter:tailwind-md3, excluded for primary=tailwind
   ! echo "$output" | grep -q 'design-md3-typescale-conformance'
   ! echo "$output" | grep -q 'design-md3-elevation-conformance'
   # but the tailwind Layer-2 rows ARE selected
@@ -315,7 +315,7 @@ select_design() {  # $1 = primary
 
 # --- impeccable exit contract ----------------------------------------------
 # impeccable exits 0 with `[]` when clean and 2 with the findings JSON when it
-# finds anything — the inverse of the generic command shape, where 2 means a
+# finds anything, the inverse of the generic command shape, where 2 means a
 # broken detector. Without a per-row contract every finding is scored `error`.
 
 @test "every row that runs impeccable declares exit 2 as the finding case" {

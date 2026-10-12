@@ -133,7 +133,7 @@ teardown() { teardown_fake_repo; }
   printf '%s' "$output" | grep -q "never mock src/"
 }
 
-version_shim() {  # version_shim <version> — claude --version prints it, everything else agent-view JSON
+version_shim() {  # version_shim <version>: claude --version prints it, everything else agent-view JSON
   cat > "$FAKE_REPO/bin/claude" <<SH
 #!/usr/bin/env bash
 [ "\$1" = "--version" ] && { echo "$1 (Claude Code)"; exit 0; }

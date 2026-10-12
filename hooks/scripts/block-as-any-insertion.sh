@@ -28,7 +28,7 @@ case "$FILE_PATH" in
   *) exit 0 ;;
 esac
 
-# Test files are exempt — `as any` in test fixtures and mocks is normal
+# Test files are exempt: `as any` in test fixtures and mocks is normal
 case "$FILE_PATH" in
   *.test.*|*.spec.*|*/__tests__/*|*/test/*|*/tests/*) exit 0 ;;
 esac
@@ -59,7 +59,7 @@ esac
 # excluding lines that carry the escape-hatch marker.
 count_escapes() {
   local text="$1"
-  # `|| true` on each grep — set -o pipefail otherwise propagates 'no match' (exit 1).
+  # `|| true` on each grep: set -o pipefail otherwise propagates 'no match' (exit 1).
   # `grep -c` always prints the count to stdout (even 0); only the exit code differs.
   echo "$text" \
     | { grep -vE '//\s*blitz:any-allowed:' || true; } \

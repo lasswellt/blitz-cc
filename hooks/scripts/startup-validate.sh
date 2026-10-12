@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# startup-validate.sh — Persistent-state validation (Gap 1 / TB-2).
+# startup-validate.sh: persistent-state validation (Gap 1 / TB-2).
 #
 # Containment: environment-layer startup classifier. Canonical posture:
 #   /_shared/security.md §3 TB-2 (persistent .cc-sessions/ state is untrusted across sessions).
@@ -14,7 +14,7 @@
 #
 # WHAT: for every persistent-state file, (1) confirm JSON/JSONL parses (schema floor),
 # (2) scan free-text field VALUES for injection markers, (3) report findings. Entries
-# that fail are surfaced for quarantine — they are NOT silently loaded into context.
+# that fail are surfaced for quarantine; they are NOT silently loaded into context.
 #
 # Non-blocking by default (exit 0 + surfaced findings) so a single bad entry never
 # bricks startup; --strict makes it exit 2 (for CI / audit gate). Quarantine is
@@ -41,7 +41,7 @@ QUARANTINE_DIR="$SESSIONS_DIR/quarantine"
 # Injection markers (case-insensitive). Instruction verbs / role directives / tag
 # smuggling / tool-invocation strings. URL handling is field-scoped (see below) to
 # avoid flagging legitimate incident URLs in activity-feed messages.
-# Canonical pattern lives in _lib/common.sh (BLITZ_INJECTION_RX) — single source of
+# Canonical pattern lives in _lib/common.sh (BLITZ_INJECTION_RX), the single source of
 # truth shared with session-start.sh's live echo path so the two never drift (SEC-R2-03).
 INJECTION_RX="$BLITZ_INJECTION_RX"
 
@@ -56,24 +56,24 @@ scan_obj() {
   # All string leaf values, one per line.
   vals=$(printf '%s' "$json" | jq -r '[.. | strings] | .[]' 2>/dev/null || true)
   if printf '%s' "$vals" | grep -qiE "$INJECTION_RX"; then
-    report "INJECTION MARKER in $label — quarantine candidate: $(printf '%s' "$vals" | grep -ioE "$INJECTION_RX" | head -1)"
+    report "INJECTION MARKER in $label; quarantine candidate: $(printf '%s' "$vals" | grep -ioE "$INJECTION_RX" | head -1)"
     return 1
   fi
   # Over-long free-text field: an uncapped injection SURFACE, not an attack itself.
   # The mitigation is echo-time [0:200] capping (Gap 5 / session-start.sh), so this
-  # is advisory — counted, never a hard finding or strict-blocker.
+  # is advisory: counted, never a hard finding or strict-blocker.
   if printf '%s' "$vals" | awk '{ if (length($0) > 400) exit 1 }'; then : ; else
     OVERLONG=$((OVERLONG+1))
   fi
   return 0
 }
 
-# 1. Session JSON files — schema floor + scan.
+# 1. Session JSON files: schema floor + scan.
 for f in "$SESSIONS_DIR"/*.json; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
   if ! jq empty "$f" 2>/dev/null; then
-    report "MALFORMED JSON (does not parse) — $base"; continue
+    report "MALFORMED JSON (does not parse): $base"; continue
   fi
   # Schema floor: a session file must carry session_id + status.
   case "$base" in
@@ -83,7 +83,7 @@ for f in "$SESSIONS_DIR"/*.json; do
   scan_obj "$(cat "$f")" "$base" || true
 done
 
-# 2. Plans and solutions — highest blast radius: tasks.json drives `next --loop` and
+# 2. Plans and solutions, the highest blast radius: tasks.json drives `next --loop` and
 #    docs/solutions/ is read by `plan` (OWASP ASI06 memory poisoning). Shape floor +
 #    injection scan on the free-text fields; a violating row is a finding, never loaded.
 PLANS_DIR="${BLITZ_PLANS_DIR:-$ROOT/docs/plans}"
@@ -113,28 +113,28 @@ if [ -d "$SOL_DIR" ]; then
   for sol in "$SOL_DIR"/*.md; do
     [ -f "$sol" ] || continue
     if head -c 20000 "$sol" | grep -qiE "$INJECTION_RX"; then
-      report "INJECTION MARKER in docs/solutions/$(basename "$sol") — quarantine before plan reads it"
+      report "INJECTION MARKER in docs/solutions/$(basename "$sol"); quarantine before plan reads it"
     fi
   done
 fi
 
-# 3. Activity feed — scan last 50 entries (bounded).
+# 3. Activity feed: scan last 50 entries (bounded).
 FEED="$SESSIONS_DIR/activity-feed.jsonl"
 if [ -f "$FEED" ]; then
   # Process substitution (not a pipe) so report()'s FINDINGS increment survives.
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     printf '%s' "$line" | jq empty 2>/dev/null || continue
-    # message is the skill-written free-text field — the injection surface (security.md TB-2).
+    # message is the skill-written free-text field, the injection surface (security.md TB-2).
     msg=$(printf '%s' "$line" | jq -r '.message // ""' 2>/dev/null || true)
     if printf '%s' "$msg" | grep -qiE "$INJECTION_RX"; then
-      report "INJECTION MARKER in activity-feed message — cap/quarantine before echo"
+      report "INJECTION MARKER in activity-feed message; cap/quarantine before echo"
     fi
   done < <(tail -50 "$FEED" 2>/dev/null)
 fi
 
 [ "$OVERLONG" -gt 0 ] && [ "$QUIET" != 1 ] && \
-  echo "[startup-validate] $OVERLONG field(s) >400 chars — capped at echo-time per Gap 5 (advisory)" >&2 || true
+  echo "[startup-validate] $OVERLONG field(s) >400 chars; capped at echo-time per Gap 5 (advisory)" >&2 || true
 
 if [ "$FINDINGS" -gt 0 ]; then
   [ "$QUIET" = 1 ] || echo "[startup-validate] $FINDINGS finding(s). Quarantine suspect entries (mv to $QUARANTINE_DIR/) before loading into context." >&2

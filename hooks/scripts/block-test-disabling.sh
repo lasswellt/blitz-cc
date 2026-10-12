@@ -57,7 +57,7 @@ esac
 # Count test-disabling tokens; exclude lines with the escape-hatch marker
 count_disablers() {
   local text="$1"
-  # `|| true` on each grep — set -o pipefail otherwise propagates 'no match' (exit 1).
+  # `|| true` on each grep: set -o pipefail otherwise propagates 'no match' (exit 1).
   # `grep -c` always prints the count to stdout (even 0); only the exit code differs.
   # The escape-hatch marker is accepted behind any of the common single-line
   # comment openers (// # -- ;) so a Python or Ruby test can pin a skip too.

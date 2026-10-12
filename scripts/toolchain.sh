@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# toolchain.sh — resolve a language toolchain lane to an argv, from data.
+# toolchain.sh: resolve a language toolchain lane to an argv, from data.
 #
 # The plugin ships templates/toolchain.default.json. Rows are data; this script
 # is the only executor. Adding a language means adding rows there, never adding
@@ -203,7 +203,7 @@ cmd_run() {
   return 0
 }
 
-# cmd_lanes — one line per (lane, stack) that actually resolves, in ONE
+# cmd_lanes: one line per (lane, stack) that actually resolves, in ONE
 # process. detect-stack.sh injects this into skill context, so spawning a
 # resolve per extension-lane pair would stall every skill that reads the
 # stack profile.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sessions-dashboard.sh — render .cc-sessions/dashboard.md (E-041 S5, /blitz:sessions dashboard)
+# sessions-dashboard.sh: render .cc-sessions/dashboard.md (E-041 S5, /blitz:sessions dashboard)
 #
 # Usage: scripts/sessions-dashboard.sh [--html] [--out <path>]
 #   --html        also write the HTML twin via hooks/scripts/_lib/html.sh emit_html
@@ -9,7 +9,7 @@
 #
 # Sections: Sessions table, Attention queue (prints HEARTBEAT_OK when empty), Locks,
 # Inbox (pending), Timeline (last 200 feed lines), Agent usage by task, Token estimate per session.
-# Inputs (all optional, all untrusted repo-local data — TB-1; bad JSON lines skipped):
+# Inputs (all optional; all untrusted repo-local data, TB-1; bad JSON lines skipped):
 #   .cc-sessions/sessions/*.json   hook-owned records (+ legacy .cc-sessions/<skill>-<hex>.json)
 #   .cc-sessions/activity-feed.jsonl, inbox.jsonl, agent-usage.jsonl (subagent-usage.sh),
 #   agent-usage.mod.jsonl (blitz-guard mod, optional), **/*.lock, context-char-count

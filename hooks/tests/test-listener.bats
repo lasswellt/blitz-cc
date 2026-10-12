@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/test-listener.sh (E-043 S1/S6 — journal writer)
+# Tests for scripts/test-listener.sh (E-043 S1/S6, journal writer)
 # Requires: bats-core, jq, python3
 
 load '_helpers'

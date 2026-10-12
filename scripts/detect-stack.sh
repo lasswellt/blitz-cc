@@ -66,7 +66,7 @@ if [ -f "package.json" ]; then
   fi
 fi
 
-# Adapter Stack (design pillar) — precedence-correct selector.
+# Adapter Stack (design pillar): precedence-correct selector.
 # Spec: docs/integrations/impeccable/adapter-detection.md. Unlike the UI Framework
 # block above, a component framework (Quasar/Vuetify) wins over Tailwind, and
 # Quasar+Tailwind is flagged as an incompatibility rather than mislabeled Tailwind.
@@ -101,7 +101,7 @@ if [ -f "package.json" ]; then
   fi
   echo "- **Adapter (primary)**: ${PRIMARY}${VARIANT:+ ($VARIANT)}"
   [ -n "$SECONDARY" ] && echo "- **Adapter (secondary)**: $SECONDARY"
-  [ -n "$INCOMPAT" ] && echo "- **Adapter conflict**: $INCOMPAT — class collisions + unlayered-CSS specificity war; do NOT recommend Tailwind theming on Quasar"
+  [ -n "$INCOMPAT" ] && echo "- **Adapter conflict**: $INCOMPAT (class collisions + unlayered-CSS specificity war); do NOT recommend Tailwind theming on Quasar"
   echo "- **Adapter confidence**: $CONF"
   # Normalized machine token (stable, single-line, parseable). variant codes
   # collapsed to vN/none; consumers (check --only design, audit --pillar design,

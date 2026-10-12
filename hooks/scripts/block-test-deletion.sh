@@ -44,7 +44,7 @@ case "$TOOL" in
     # output, not source tests. Exclude obvious non-source dirs and
     # compiled/sourcemap extensions before deciding to block.
     # Directory tokens match at a token boundary (operand start, whitespace, or
-    # after a `/`) so a top-level `rm -rf tests/` is caught — the original
+    # after a `/`) so a top-level `rm -rf tests/` is caught; the original
     # `/tests/` form required a leading slash and missed bare `tests/`. The
     # boundary class avoids false-matching substrings like `latest/`.
     if echo "$CMD" | grep -qE '(^|[[:space:];&|])rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*[^&|;]*(\.test\.|\.spec\.|_test\.(py|go|rs|exs)|_spec\.rb|Tests?\.(java|kt|cs|php)|([[:space:]/]|^)(test_[^[:space:]]*\.py|__tests__|tests?)(/|[[:space:]]|[;&|]|$))'; then
@@ -56,7 +56,7 @@ case "$TOOL" in
       #  - non-source dirs: node_modules/, dist/, build/, .cache/, coverage/, /tmp/
       #  - compiled/sourcemap extensions: .test.js.map, .spec.js.map, .test.d.ts (and .spec variants)
       if printf '%s' "$RM_TARGET" | grep -qE '(node_modules/|dist/|build/|\.cache/|coverage/|(^|[[:space:]])/tmp/|\.(test|spec)\.js\.map|\.(test|spec)\.d\.ts)'; then
-        : # allow — generated artifact, not a source test
+        : # allow: generated artifact, not a source test
       else
         block "Bash command: $CMD"
       fi

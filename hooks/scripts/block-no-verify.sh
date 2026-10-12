@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse hook on Bash. Blocks `--no-verify` in any git command.
 # Hooks are guard rails, not obstacles. Bypassing them silently lands broken commits.
-# Real incident: anthropics/claude-code#40117 — agent landed 6 commits with 63 failing
+# Real incident: anthropics/claude-code#40117, where an agent landed 6 commits with 63 failing
 # tests via --no-verify + git stash tricks despite explicit deny rules.
 #
 # Emergency override (user, not agent): BLITZ_OVERRIDE_NO_VERIFY=1 must be set in env.
@@ -19,7 +19,7 @@ CMD="$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
 
 # Match --no-verify OR the POSIX short alias -n as standalone git-commit args.
 # The short form `git commit -n` is equivalent per git-commit(1) and was missing
-# from the original pattern — closing the bypass documented in audit-20260517.
+# from the original pattern, closing the bypass documented in audit-20260517.
 #
 # To avoid false positives from -n inside commit message strings like
 # `git commit -m "use -n flag"`, strip quoted strings before pattern check.

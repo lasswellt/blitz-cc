@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/skill-scan.sh — supply-chain scan of shipped skills, agents and scripts.
+# Tests for scripts/skill-scan.sh: supply-chain scan of shipped skills, agents and scripts.
 
 load '_helpers'
 

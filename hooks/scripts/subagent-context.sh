@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# subagent-context.sh — SubagentStart. Injects the invariant half of the spawn
+# subagent-context.sh: SubagentStart. Injects the invariant half of the spawn
 # spec into blitz's file-producing agents.
 #
 # Why a hook and not the prompt: the never-edit list, reply contract, commit

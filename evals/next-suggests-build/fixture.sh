@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Scaffold: a tiny project with one active plan (docs/plans/demo) holding a single open
-# task with an unmet-free dependency list, no inbox, no kill switch — next row 2.
+# task with an unmet-free dependency list, no inbox, no kill switch: next row 2.
 # tasks.json is written through the plugin's scripts/tasks.sh (the only sanctioned writer)
 # when the plugin root is discoverable; otherwise the same schema is written verbatim.
 set -euo pipefail

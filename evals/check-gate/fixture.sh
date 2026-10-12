@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Scaffold: an active plan whose single task has a verify[] that cannot pass (the handler
 # file is missing) and status open. `check --scope plan demo` must run tasks.sh verify,
-# report the failed task as a finding, and end with a FAIL verdict — never mark it done.
+# report the failed task as a finding, and end with a FAIL verdict; never mark it done.
 set -euo pipefail
 git init -q .
 git config user.email eval@example.com

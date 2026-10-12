@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/tasks.sh — the only writer of docs/plans/<slug>/tasks.json
+# Tests for scripts/tasks.sh, the only writer of docs/plans/<slug>/tasks.json
 load '_helpers'
 
 setup()    { command -v jq >/dev/null || skip "jq not installed"; setup_fake_repo; export BLITZ_PLANS_DIR="$FAKE_REPO/docs/plans"; TASKS="$HOOKS_DIR/../../scripts/tasks.sh"; }

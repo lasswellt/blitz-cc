@@ -21,7 +21,7 @@ SH
 }
 teardown() { teardown_fake_repo; }
 
-# lib CMD... — run CMD in a shell that has common.sh sourced, inside $FAKE_REPO.
+# lib CMD...: run CMD in a shell that has common.sh sourced, inside $FAKE_REPO.
 lib() { run bash -c ". \"$HOOKS_DIR/_lib/common.sh\"; $*"; }
 
 @test "agent_view: normalizes rows, one JSON object per line keyed by sessionId" {

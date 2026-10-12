@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# stop-turn.sh — Non-blocking turn-end hook (Stop event, E-040 S2)
+# stop-turn.sh: non-blocking turn-end hook (Stop event, E-040 S2)
 #
 # Never blocks (no decision JSON, always exit 0). The blocking verification
 # gate is a separate script (stop-gate.sh, E-042) so this one stays a pure

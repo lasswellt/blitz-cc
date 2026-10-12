@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# post-edit-typecheck-block.sh — PostToolUse on Write|Edit. BLOCKING (exit 2).
+# post-edit-typecheck-block.sh: PostToolUse on Write|Edit. BLOCKING (exit 2).
 #
 # Runs the project's typecheck command for the edited file's language and
 # refuses the edit when the diagnostic count INCREASED against the pre-edit

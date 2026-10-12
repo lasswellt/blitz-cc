@@ -6,8 +6,8 @@
 # sync. Emits human-readable warnings to stderr for any drift found.
 #
 # Exit codes:
-#   0 — all references in sync (or no version references found at all)
-#   1 — drift detected (caller decides whether to block)
+#   0: all references in sync (or no version references found at all)
+#   1: drift detected (caller decides whether to block)
 #
 # Usage:
 #   scripts/check-version-sync.sh          # check from repo root
@@ -31,14 +31,14 @@ log() {
   echo "$@" >&2
 }
 
-# Find repo root — works whether called from root or a subdirectory
+# Find repo root; works whether called from root or a subdirectory
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT" || exit 0
 
 # --- 1. Read the authoritative version from plugin.json ---
 PLUGIN_JSON=".claude-plugin/plugin.json"
 if [[ ! -f "$PLUGIN_JSON" ]]; then
-  # Not a blitz plugin repo — nothing to check
+  # Not a blitz plugin repo: nothing to check
   exit 0
 fi
 
@@ -92,7 +92,7 @@ print(' '.join(sorted(v for v in vals if v)))" 2>/dev/null || true)
       [[ -z "$ver" ]] && continue
       case " $ALLOWED " in
         *" $ver "*) ;;
-        *) log "  drift: $f cites Claude Code $ver — not cc_min ($CC_MIN) nor a feature floor in $COMPAT_JSON"
+        *) log "  drift: $f cites Claude Code $ver, which is neither cc_min ($CC_MIN) nor a feature floor in $COMPAT_JSON"
            DRIFT=$((DRIFT + 1)) ;;
       esac
     done < <(grep -oE '2\.1\.[0-9]{2,3}' "$f" | sort -u)

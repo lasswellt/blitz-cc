@@ -30,7 +30,7 @@ check_fail()    { ERRORS=$((ERRORS + 1)); print_error "$*"; }
 check_warn()    { WARNINGS=$((WARNINGS + 1)); print_warning "$*"; }
 
 # ---------------------------------------------------------------
-# 1. plugin.json — exists, valid JSON, has required fields
+# 1. plugin.json: exists, valid JSON, has required fields
 # ---------------------------------------------------------------
 echo "Checking plugin.json..."
 PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
@@ -52,7 +52,7 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 2. Skill directories — SKILL.md with name: and description:
+# 2. Skill directories: SKILL.md with name: and description:
 # ---------------------------------------------------------------
 echo "Checking skill directories..."
 SKILLS_DIR="$PLUGIN_ROOT/skills"
@@ -87,7 +87,7 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 3. SKILL.md line limit — warn if > 500 lines
+# 3. SKILL.md line limit: warn if > 500 lines
 # ---------------------------------------------------------------
 echo "Checking SKILL.md line limits..."
 if [[ -d "$SKILLS_DIR" ]]; then
@@ -104,7 +104,7 @@ if [[ -d "$SKILLS_DIR" ]]; then
 fi
 
 # ---------------------------------------------------------------
-# 4. Agent files — frontmatter with name:, description:, model:
+# 4. Agent files: frontmatter with name:, description:, model:
 # ---------------------------------------------------------------
 echo "Checking agent files..."
 AGENTS_DIR="$PLUGIN_ROOT/agents"
@@ -127,7 +127,7 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 5. hooks.json — valid JSON, referenced scripts exist & executable
+# 5. hooks.json: valid JSON, referenced scripts exist & executable
 # ---------------------------------------------------------------
 echo "Checking hooks.json..."
 HOOKS_JSON="$PLUGIN_ROOT/hooks/hooks.json"
@@ -140,12 +140,12 @@ else
     check_pass "hooks.json is valid JSON"
 
     # Walk every hook entry. Emits one tab-separated line per finding:
-    #   CMD\t<command>            — script to resolve (shell form or exec form)
-    #   SKIP\t<event>\t<type>     — non-command entry (prompt/agent), not validated
-    #   BADIF\t<event>\t<value>   — `if` is not permission-rule shaped (Tool(pattern))
+    #   CMD\t<command>:             script to resolve (shell form or exec form)
+    #   SKIP\t<event>\t<type>:      non-command entry (prompt/agent), not validated
+    #   BADIF\t<event>\t<value>:    `if` is not permission-rule shaped (Tool(pattern))
     #   OKIF\t<event>\t<value>
     #   BADTIMEOUT\t<event>\t<value>
-    #   BADARGS\t<event>\t<value> — exec-form `args` must be an array of strings
+    #   BADARGS\t<event>\t<value>:  exec-form `args` must be an array of strings
     # Exec form (command = bare executable, args = literal list) must NOT wrap the
     # command in quotes; shell form ("${CLAUDE_PLUGIN_ROOT}"/... [flags]) may.
     hook_findings=$(python3 -c "
@@ -226,7 +226,7 @@ print(plugins[0].get('version','') if plugins else '')
     check_pass "Version consistent across plugin.json and marketplace.json ($plugin_version)"
   fi
 else
-  check_warn "Cannot check version consistency — missing plugin.json or marketplace.json"
+  check_warn "Cannot check version consistency: missing plugin.json or marketplace.json"
 fi
 
 # ---------------------------------------------------------------
@@ -243,7 +243,7 @@ while IFS= read -r -d '' sh_file; do
   fi
 
   if [[ "$rel_path" == */_lib/* ]]; then
-    # sourced libraries (never executed directly) — executable bit not required
+    # sourced libraries (never executed directly); executable bit not required
     check_pass "$rel_path is a sourced lib (exec bit not required)"
   elif [[ -x "$sh_file" ]]; then
     check_pass "$rel_path is executable"

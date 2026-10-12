@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# skill-scan.sh — supply-chain scan of blitz's own shipped prompt and script surface.
+# skill-scan.sh: supply-chain scan of blitz's own shipped prompt and script surface.
 #
 # Snyk's ToxicSkills scan found critical issues in 13.4% of ~4,000 public skills
 # (remote-fetch-and-run `!` lines, hidden Unicode, exfiltration). blitz ships skills,

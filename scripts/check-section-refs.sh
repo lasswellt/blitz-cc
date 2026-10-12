@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# check-section-refs.sh — assert every "§N" citation resolves in the file it names.
+# check-section-refs.sh: assert every "§N" citation resolves in the file it names.
 #
 # The head/reference split moved sections between files. Three separate rounds of
 # breakage survived `markdown-link-validate.sh`, because in every case the LINK
 # resolved and only the section citation beside it was wrong:
-#   1. ")§44.1" and ")§RatchetRatchet" — a retarget that repeated its capture group
+#   1. ")§44.1" and ")§RatchetRatchet", a retarget that repeated its capture group
 #   2. "agents.md §3" where §3 now lives in agents.reference.md
 #   3. markdown links injected into a fenced ASCII tree, where they do not render
 #
@@ -88,13 +88,13 @@ for fp in glob.glob("skills/*/references/main.md") + glob.glob("skills/_shared/*
 # 3c. A relative path inside references/ that still has SKILL.md's depth. A
 # moved section's "../../docs/x.md" and "references/y.md" were both correct one
 # directory up; neither is here. Link checking finds these, but only for paths
-# that happen to miss — this names the pattern.
+# that happen to miss; this names the pattern.
 for fp in glob.glob("skills/*/references/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):
         if re.search(r'\]\(references/', line):
-            bad.append(f"{fp}:{i}: 'references/...' inside references/ — a moved section kept SKILL.md's depth")
+            bad.append(f"{fp}:{i}: 'references/...' inside references/: a moved section kept SKILL.md's depth")
         if re.search(r'\]\(\.\./\.\./(docs|skills|agents|hooks|scripts)/', line):
-            bad.append(f"{fp}:{i}: '../../' inside references/ reaches skills/, not the repo root — use '../../../'")
+            bad.append(f"{fp}:{i}: '../../' inside references/ reaches skills/, not the repo root; use '../../../'")
 
 # 3d. A repeated "Moved from SKILL.md" heading. Each run of the section mover
 # appends its own, so a file that has had two rounds of moves grows duplicate
@@ -109,7 +109,7 @@ for fp in glob.glob("skills/*/references/*.md"):
 for fp in glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):
         if re.search(r'\)§', line):
-            bad.append(f"{fp}:{i}: ')§' — needs a space before the section")
+            bad.append(f"{fp}:{i}: ')§' needs a space before the section")
         if re.search(r'§(\d+)\1(?![0-9])', line):
             bad.append(f"{fp}:{i}: doubled section number")
 

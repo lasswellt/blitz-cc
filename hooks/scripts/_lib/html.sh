@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# _lib/html.sh — HTML side-output helpers (E-039 additive HTML twin, E-041 S6).
+# _lib/html.sh: HTML side-output helpers (E-039 additive HTML twin, E-041 S6).
 #
 # Sourceable library; never executed directly:
 #   . "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/_lib/html.sh"     # from a skill
@@ -35,7 +35,7 @@ sanitize_html() {
     $h =~ s{<(iframe|object|embed|svg|math)\b[^>]*/?>}{}gis;
     $h =~ s{\son\w+\s*=\s*("[^"]*"|\x27[^\x27]*\x27|[^\s>]+)}{}gis;
     # Neutralize href/src whose value resolves to a dangerous scheme after entity +
-    # whitespace + control-char normalization — any quote style (covers leading-ws and
+    # whitespace + control-char normalization, any quote style (covers leading-ws and
     # &#x6a;avascript: entity-encoded bypasses).
     $h =~ s{(href|src)\s*=\s*("[^"]*"|\x27[^\x27]*\x27|[^\s>]+)}{
       my ($attr, $raw) = ($1, $2);
@@ -69,7 +69,7 @@ emit_html() {
   #    drops raw inline HTML at the parser, marked is post-scrubbed by sanitize_html.
   local body
   if [ "$trust" = untrusted ]; then
-    # Escaped already — structurally inert. Skip sanitize_html (it would mutate the
+    # Escaped already, so structurally inert. Skip sanitize_html (it would mutate the
     # displayed literal text without adding safety).
     body="<pre>$(sed -e 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "$md")</pre>"
   else

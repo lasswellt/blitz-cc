@@ -18,7 +18,7 @@ fake_write_content() {
 setup() {
   command -v jq >/dev/null || skip "jq not installed"
   setup_fake_repo          # the blocked-edit feed line lands in $FAKE_REPO/.cc-sessions
-  SRC_DIR="$(mktemp -d)"   # /tmp/tmp.XXXX — no /test/ segment
+  SRC_DIR="$(mktemp -d)"   # /tmp/tmp.XXXX, no /test/ segment
 }
 
 teardown() {

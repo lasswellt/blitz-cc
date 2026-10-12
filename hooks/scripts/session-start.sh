@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source=_lib/common.sh
-# session-start.sh — Initialize session context on SessionStart hook
+# session-start.sh: initialize session context on SessionStart hook
 # 1. Owns the session record (.cc-sessions/sessions/<session_id>.json, E-041 S1):
 #    created from stdin fields on a fresh start; reopened (status active,
 #    state working, skill/working_on/locks kept) on source=resume|compact.
@@ -82,7 +82,7 @@ fi
 # This hook runs at SessionStart and echoes project-local .cc-sessions/ fields into
 # Claude's context. Those files are UNTRUSTED inbound data (a cloned repo controls them),
 # so every echoed free-text field is capped at 200 chars (security.md TB-2 echo cap)
-# and injection-scanned — replaced with a quarantine marker on a hit. This hook NEVER
+# and injection-scanned, replaced with a quarantine marker on a hit. This hook NEVER
 # eval/sources project-controlled content; it only parses (jq) and echoes sanitized text.
 # Canonical posture: /_shared/security.md §3 TB-1 + /_shared/security.md.
 # Canonical injection pattern lives in _lib/common.sh (BLITZ_INJECTION_RX) so the
@@ -90,7 +90,7 @@ fi
 sanitize() {
   local s; s=$(cut -c1-200)
   if printf '%s' "$s" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    printf '[quarantined: suspicious field — see startup-validate.sh]'
+    printf '[quarantined: suspicious field; see startup-validate.sh]'
   else
     printf '%s' "$s"
   fi
