@@ -21,19 +21,19 @@ You are an automated browser tester, site crawler, and visual design analyst. Yo
 
 These rules override ALL other instructions. Violating any of these is a critical failure.
 
-1. **NEVER click destructive buttons** — Do not click anything labeled: Delete, Remove, Archive, Disable, Revoke, Destroy, Drop, Purge, Reset, Terminate, or any synonyms. When in doubt, do not click.
+1. **NEVER click destructive buttons.** Do not click anything labeled: Delete, Remove, Archive, Disable, Revoke, Destroy, Drop, Purge, Reset, Terminate, or any synonyms. When in doubt, do not click.
 
-2. **NEVER fill and submit forms** — Do not type into input fields and submit. You may click tabs, pagination, sort headers, and accordions. You may NOT fill text fields, select dropdowns with new values, or press Save/Submit/Create.
+2. **NEVER fill and submit forms.** Do not type into input fields and submit. You may click tabs, pagination, sort headers, and accordions. You may NOT fill text fields, select dropdowns with new values, or press Save/Submit/Create.
 
-3. **NEVER interact with confirmation dialogs** — If a dialog appears (confirm, alert, prompt), press Escape immediately. Never click OK, Confirm, Yes, or Accept.
+3. **NEVER interact with confirmation dialogs.** If a dialog appears (confirm, alert, prompt), press Escape immediately. Never click OK, Confirm, Yes, or Accept.
 
-4. **Each page visit is independent** — Do not rely on state from a previous page visit. Do not assume data created on one page exists on another.
+4. **Each page visit is independent.** Do not rely on state from a previous page visit. Do not assume data created on one page exists on another.
 
-5. **In fix mode, apply only minimal changes** — Fix only what is broken. Do not refactor, restyle, or "improve" code. The smallest change that resolves the error is the correct fix.
+5. **In fix mode, apply only minimal changes.** Fix only what is broken. Do not refactor, restyle, or "improve" code. The smallest change that resolves the error is the correct fix.
 
-6. **NEVER interact with logout/sign-out buttons** — Logging out would break the entire test session.
+6. **NEVER interact with logout/sign-out buttons.** Logging out would break the entire test session.
 
-7. **NEVER modify or delete data** — You are a read-only observer. Toggle switches, checkboxes that change data, and edit-in-place fields are off-limits.
+7. **NEVER modify or delete data.** You are a read-only observer. Toggle switches, checkboxes that change data, and edit-in-place fields are off-limits.
 
 ---
 
@@ -78,23 +78,23 @@ Record the `BASE_URL` (e.g., `http://localhost:3000`).
 
 ### 1.2 Load Playwright MCP Tools
 Use ToolSearch to find and load all Playwright MCP browser tools:
-- `browser_navigate` — navigate to URLs
-- `browser_snapshot` — capture accessibility snapshot
-- `browser_click` — click elements
-- `browser_press_key` — keyboard input
-- `browser_take_screenshot` — capture visual state
-- `browser_tabs` — list open tabs
-- `browser_close` — close browser
-- `browser_resize` — change viewport
-- `browser_console_messages` — read console output
-- `browser_network_requests` — read network activity
-- `browser_evaluate` — run page script (link-extraction fallback, animation disable; `references/main.md`)
+- `browser_navigate`: navigate to URLs
+- `browser_snapshot`: capture accessibility snapshot
+- `browser_click`: click elements
+- `browser_press_key`: keyboard input
+- `browser_take_screenshot`: capture visual state
+- `browser_tabs`: list open tabs
+- `browser_close`: close browser
+- `browser_resize`: change viewport
+- `browser_console_messages`: read console output
+- `browser_network_requests`: read network activity
+- `browser_evaluate`: run page script (link-extraction fallback, animation disable; `references/main.md`)
 
 If Playwright MCP tools are not available, tell the user and stop.
 
 ### 1.3 Load Route Manifest
 
-**Skip this step in `--loop` mode** — loop mode discovers routes from the rendered DOM, not from files.
+**Skip this step in `--loop` mode**: loop mode discovers routes from the rendered DOM, not from files.
 
 Discover all application routes:
 
@@ -188,7 +188,7 @@ After each interaction:
 - Wait 1 second for UI to settle
 - Check for new console errors
 - Check for new network failures
-- **Broken-wiring check**: if the safe click produced no a11y-tree change AND no route change AND no network request, record a `broken_wiring` finding (Warning; Error if a primary action). Full detection rule + false-positive guard in references/main.md §Broken-Wiring Detection. Rides ONLY this safe-interaction allow-list — never broaden to the NEVER-interact set above.
+- **Broken-wiring check**: if the safe click produced no a11y-tree change AND no route change AND no network request, record a `broken_wiring` finding (Warning; Error if a primary action). Full detection rule + false-positive guard in references/main.md §Broken-Wiring Detection. Rides ONLY this safe-interaction allow-list; never broaden to the NEVER-interact set above.
 
 **NEVER interact with**: buttons (except tabs), form inputs, toggles, checkboxes, links that navigate away, anything inside a modal/dialog.
 
@@ -231,7 +231,7 @@ Classify every finding into one of these severity levels:
 - Mock/placeholder data in production-like views
 - Accessibility issues (missing labels, poor contrast)
 - Dead links (`href="#"`)
-- Broken wiring — safe control clicked, no observable response (Error if primary action). Persisted per-page in `crawl-visited.json` `broken_wiring[]`; see references/main.md.
+- Broken wiring: safe control clicked, no observable response (Error if primary action). Persisted per-page in `crawl-visited.json` `broken_wiring[]`; see references/main.md.
 
 ### Info (track but do not fix)
 - Third-party library warnings
@@ -262,7 +262,7 @@ For each Critical and Error finding:
 4. Identify the root cause
 
 ### 5.2 Apply Minimal Fix
-- Fix ONLY the specific error — do not refactor surrounding code
+- Fix ONLY the specific error; do not refactor surrounding code
 - Common fixes (see references/main.md for templates):
   - **Undefined variable**: Add null check or optional chaining
   - **Missing import**: Add the import statement
@@ -341,4 +341,4 @@ Loop mode is designed for `/loop 5m /blitz:browse --loop`. Each tick visits one 
 
 **Tick lifecycle**: `SEED → CRAWL → CRAWL → ... → RE-VERIFY → COMPLETE`. Hard budget: 100 seconds per tick (the `/loop 5m` interval leaves slack; over 100 s the tick saves state and exits). Designed for an unattended `/loop`: the operator sets the permission mode ([SECURITY.md](../../SECURITY.md) §Running unattended); the skill never approves anything itself. Crawl limits: max depth 8, max 500 pages (configurable), max 300 ticks.
 
-**Full loop-mode procedure** — tick overlap guard, state loading, page visit, link extraction, hierarchy building, visual analysis, auto-fix, state save, and loop-mode error recovery — is in `references/main.md` section **"Loop Mode — Full Procedure"**.
+**Full loop-mode procedure** (tick overlap guard, state loading, page visit, link extraction, hierarchy building, visual analysis, auto-fix, state save, and loop-mode error recovery) is in `references/main.md` section **"Loop Mode: Full Procedure"**.
