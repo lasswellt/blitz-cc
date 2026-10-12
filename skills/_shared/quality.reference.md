@@ -120,24 +120,24 @@ Before adding a quality skill, ask: distinct scope (change vs repo)? distinct te
 |---|---|---|---|---|
 | det-01 | Deleted failing tests | `git diff --diff-filter=D -- '*.test.*' '*.spec.*'` | `block-test-deletion.sh` | critic |
 | det-02 | `--no-verify` bypass | Bash command or reflog contains standalone `--no-verify` | `block-no-verify.sh` | critic |
-| det-03 | Mock count grows in `src/` | `vi.mock\|jest.mock\|sinon.stub` delta > 0 outside `__tests__` | — | ratchet `mocks_in_src` |
+| det-03 | Mock count grows in `src/` | `vi.mock\|jest.mock\|sinon.stub` delta > 0 outside `__tests__` | none | ratchet `mocks_in_src` |
 | det-04 | `as any` / `@ts-ignore` proliferation | added lines in non-test `src/` | `block-as-any-insertion.sh` (partial: insertions only) | ratchet `as_any_count`, critic |
-| det-05 | Swallow-and-continue catch | empty catch or log-only catch, no rethrow | — | `check --only completeness` |
-| det-06 | Env fallbacks hiding config errors | `\|\| '…'` / `?? '…'` near secret/key/token/host/port | — | `check --only completeness` |
+| det-05 | Swallow-and-continue catch | empty catch or log-only catch, no rethrow | none | `check --only completeness` |
+| det-06 | Env fallbacks hiding config errors | `\|\| '…'` / `?? '…'` near secret/key/token/host/port | none | `check --only completeness` |
 | det-07 | Hardcoded credentials | `password = '…'` + entropy | `pre-edit-guard.sh` (.env) | `check --only completeness` |
-| det-08 | Commented-out assertions | `^+\s*//.*expect\|assert\|should` in diff | — | `check` (advisory) |
-| det-09 | `throw new Error('Not implemented')` | grep | — | `check --only completeness` |
-| det-10 | `return {}` / `return []` stubs | grep in business logic | — | `check --only completeness` |
+| det-08 | Commented-out assertions | `^+\s*//.*expect\|assert\|should` in diff | none | `check` (advisory) |
+| det-09 | `throw new Error('Not implemented')` | grep | none | `check --only completeness` |
+| det-10 | `return {}` / `return []` stubs | grep in business logic | none | `check --only completeness` |
 | det-11 | Hallucinated APIs / symbols | `tsc --noEmit` + import resolution | `post-edit-typecheck-block.sh` | critic |
-| det-12 | Claiming done on a broken build | tsc error count rose after a write | `post-edit-typecheck-block.sh` (blocking) | — |
+| det-12 | Claiming done on a broken build | tsc error count rose after a write | `post-edit-typecheck-block.sh` (blocking) | none |
 | det-13 | `.skip` / `.only` / `xit` / `xdescribe` | grep on test files | `block-test-disabling.sh` (partial: insertions only) | critic |
-| det-14 | Test file renamed away | `git log --diff-filter=R` to a non-test path | — | critic |
-| det-15 | Hardcoded localhost / ports / URLs | grep in `src/` | — | `check --only completeness` |
-| det-16 | Orphaned files never imported | import-graph traversal | — | `check --only wiring` |
-| det-17 | Infinite correction loop | consecutive fix failures ≥ 2 | — | `build` circuit breaker (`attempts`) |
-| det-18 | Destructive SQL outside a migration | DROP/DELETE/TRUNCATE in a DB CLI command | `block-destructive-sql.sh` | — |
-| det-19 | `git reset --hard` on a dirty tree | git command + non-empty working tree | `block-destructive-git.sh` | — |
-| det-20 | Unverified pattern-match claim | finding cites a count with no sampled excerpt or no `Confidence:` | — | critic (advisory) |
+| det-14 | Test file renamed away | `git log --diff-filter=R` to a non-test path | none | critic |
+| det-15 | Hardcoded localhost / ports / URLs | grep in `src/` | none | `check --only completeness` |
+| det-16 | Orphaned files never imported | import-graph traversal | none | `check --only wiring` |
+| det-17 | Infinite correction loop | consecutive fix failures ≥ 2 | none | `build` circuit breaker (`attempts`) |
+| det-18 | Destructive SQL outside a migration | DROP/DELETE/TRUNCATE in a DB CLI command | `block-destructive-sql.sh` | none |
+| det-19 | `git reset --hard` on a dirty tree | git command + non-empty working tree | `block-destructive-git.sh` | none |
+| det-20 | Unverified pattern-match claim | finding cites a count with no sampled excerpt or no `Confidence:` | none | critic (advisory) |
 
 Hooks are PreToolUse unless noted (det-11/12 are PostToolUse); every hook `exit 2`s on a hit. Everything without a hook is a check-time grep or a critic checklist item.
 
@@ -176,9 +176,9 @@ Monotonic metrics so work compounds: quality only improves across plans. Stored 
 | `completeness_score` | ↑ | baseline | `/blitz:check --only completeness` |
 | `mocks_in_src` | ↓ | baseline | `grep -rEn '\b(vi\.mock\|jest\.mock\|sinon\.stub)\b' src/ --exclude-dir=__tests__ \| wc -l` |
 | `todo_count` | ↓ | baseline | `grep -rEn '\b(TODO\|FIXME)\b' src/ \| wc -l` |
-| `stale_worktree_branch_count` | ↓ | baseline | `git worktree list --porcelain \| awk '/^worktree .*\/.claude\/worktrees\//{w=1} /^branch /{if(w){print $2}; w=0}' \| wc -l` — branches of `.claude/worktrees/*` checkouts the platform sweep has not removed |
+| `stale_worktree_branch_count` | ↓ | baseline | `git worktree list --porcelain \| awk '/^worktree .*\/.claude\/worktrees\//{w=1} /^branch /{if(w){print $2}; w=0}' \| wc -l` (branches of `.claude/worktrees/*` checkouts the platform sweep has not removed) |
 
-`type_errors` has an absolute floor of 0 in addition to the ratchet: once a project is type-clean it cannot regress to 1, and there is no override. `stale_worktree_branch_count` counts `.claude/worktrees/*` left behind after the platform's periodic sweep; a live subagent worktree inflates it transiently, so never prune to drive the number down — let it settle, then `sessions worktrees` removes what the sweep missed. Existing projects baseline it once (`check --baseline stale_worktree_branch_count`).
+`type_errors` has an absolute floor of 0 in addition to the ratchet: once a project is type-clean it cannot regress to 1, and there is no override. `stale_worktree_branch_count` counts `.claude/worktrees/*` left behind after the platform's periodic sweep; a live subagent worktree inflates it transiently, so never prune to drive the number down; let it settle, then `sessions worktrees` removes what the sweep missed. Existing projects baseline it once (`check --baseline stale_worktree_branch_count`).
 
 Advisory (collected, not ratcheted): `tia_escaped_failures` (`jq '.escaped_failures_recent[-1] // 0' .cc-sessions/test-journal.meta.json`) and `tia_selection_ratio` (`scripts/test-selector.sh --json … \| jq .selection_ratio`); registry `tia-*`. A non-zero escape in any of the last 3 runs forces the selector to `--full` until the streak clears.
 

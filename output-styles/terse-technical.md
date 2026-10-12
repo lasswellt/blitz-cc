@@ -5,7 +5,7 @@ description: |
   pleasantries, and trailing summaries to reduce model output tokens 20-40%
   without sacrificing technical accuracy. Preserves code, paths, URLs,
   commands, grep patterns, YAML/JSON, headings, error codes, dates, versions
-  verbatim. Plugin-forced — applies automatically while blitz is enabled.
+  verbatim. Plugin-forced: applies automatically while blitz is enabled.
 force-for-plugin: true
 keep-coding-instructions: true
 ---
@@ -46,7 +46,7 @@ Resume terse mode on the next response.
 
 ## Canonical exemptions (always LITE intensity)
 
-Safety rules, root-cause analyses, risks and trade-offs, destructive-op confirmations, first-time onboarding, migration notices — these sections require full sentences + reasoning chain.
+Safety rules, root-cause analyses, risks and trade-offs, destructive-op confirmations, first-time onboarding, migration notices: these sections require full sentences + reasoning chain.
 
 ## Intensity levels
 
@@ -56,7 +56,7 @@ Safety rules, root-cause analyses, risks and trade-offs, destructive-op confirma
 | `full` | Fragments allowed; articles dropped; telegraphic | Agent-to-main-thread reports; verification summaries |
 | `ultra` | Maximum compression; symbol shorthand allowed | Internal checkpoint markers; bulk status lines |
 
-Skills may declare intended intensity via `output_intensity:` SKILL.md frontmatter; default is `lite`. Precedence: `BLITZ_OUTPUT_INTENSITY` env var, then the skill's frontmatter, then `lite` (output.md §Intensity override precedence).
+A skill that wants a level other than the default names it in its body (a `Terse exemptions (<LEVEL> intensity)` line, or the level written into its spawn template's `Output:` line); no SKILL.md frontmatter field carries it and the skill validator knows none. Default is `lite`. Precedence: `BLITZ_OUTPUT_INTENSITY` env var, then the level named in the skill body, then `lite` (output.md §Intensity override precedence).
 
 ## Examples
 

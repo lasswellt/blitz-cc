@@ -46,12 +46,12 @@
   },
   "field_contract": {
     "id": "stable kebab/numeric key; deterministic detectors keep their taxonomy number as `det-NN`",
-    "lane": "deterministic | semantic — the orthogonal-detection axis (Pillar A). deterministic = grep/AST/tsc/git/import-graph/npm-audit, zero-FP, no LLM. semantic = LLM agent reasoning about behavior/intent.",
+    "lane": "deterministic | semantic: the orthogonal-detection axis (Pillar A). deterministic = grep/AST/tsc/git/import-graph/npm-audit, zero-FP, no LLM. semantic = LLM agent reasoning about behavior/intent.",
     "pillar": "architecture | performance | security | maintainability | robustness | shortcut | wiring | completeness | framework | design",
     "base_confidence": "0.0-1.0 inverse-FP prior. deterministic ~0.6-1.0; single-pass semantic ~0.5; aggregated semantic (>=2 agreers) ~0.85.",
-    "severity": "P0 | P1 | P2 | P3 — enforcement layer / ratchet-tracking importance. NOTE: severity != verdict authority. A semantic P2 (sem-sec) is still advisory because semantic findings never flip a verdict.",
+    "severity": "P0 | P1 | P2 | P3: enforcement layer / ratchet-tracking importance. NOTE: severity != verdict authority. A semantic P2 (sem-sec) is still advisory because semantic findings never flip a verdict.",
     "verdict_authority": "reject | advisory. Derived: (lane==deterministic AND severity in {P0,P1,P2}) -> reject; else advisory. reject findings may flip a critic/gate verdict AND bypass the min-confidence gate (facts are not confidence-triaged). advisory findings only append to issues[] and are subject to min-confidence suppression.",
-    "detection": "{type, command}. type in {git, regex, tsc, ast, import-graph, counter, command, semantic}. command = executable detection (deterministic) OR checklist reference (semantic). THIS is the single source of executable detection logic; skills cite det-NN and run detection.command — no grep pattern lives in any skill/agent body.",
+    "detection": "{type, command}. type in {git, regex, tsc, ast, import-graph, counter, command, semantic}. command = executable detection (deterministic) OR checklist reference (semantic). THIS is the single source of executable detection logic; skills cite det-NN and run detection.command; no grep pattern lives in any skill/agent body.",
     "enforcement": "where the check runs today (hook / critic section / skill phase)",
     "owner": "the legacy skill that owns the canonical pattern (provenance)",
     "consolidated_target": "check | audit | both | orthogonal",
@@ -135,7 +135,7 @@
       "consolidated_target": "check",
       "escape_hatch": "env BLITZ_OVERRIDE_NO_VERIFY=1 (user-set)",
       "source": "claude-code#40117 (Mar 2026)",
-      "notes": "reflog grep — deterministic artifact. KEEP."
+      "notes": "reflog grep: deterministic artifact. KEEP."
     },
     {
       "id": "det-03",
@@ -193,7 +193,7 @@
       "consolidated_target": "both",
       "escape_hatch": "inline // blitz:any-allowed: <reason>",
       "source": "code-sweep Tier 1",
-      "notes": "KEEP — honesty-insensitive."
+      "notes": "KEEP: honesty-insensitive."
     },
     {
       "id": "det-05",
@@ -600,7 +600,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "semantic: trace orphan files by reading the import graph — list src/ modules never imported by any reachable entrypoint (no blitz-import-graph binary shipped)"
+        "command": "semantic: trace orphan files by reading the import graph; list src/ modules never imported by any reachable entrypoint (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "check"
@@ -742,7 +742,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Architecture checklist (coupling/cohesion/boundary reasoning) — agent-judged, no deterministic proxy"
+        "command": "references/main.md §Architecture checklist (coupling/cohesion/boundary reasoning); agent-judged, no deterministic proxy"
       },
       "enforcement": [
         "audit:pillar-agents",
@@ -767,7 +767,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Performance checklist (n+1, re-render, cold-start) — agent-judged"
+        "command": "references/main.md §Performance checklist (n+1, re-render, cold-start); agent-judged"
       },
       "enforcement": [
         "audit:pillar-agents"
@@ -791,7 +791,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Security checklist + check --security (critic --mode survey) — agent-judged"
+        "command": "references/main.md §Security checklist + check --security (critic --mode survey); agent-judged"
       },
       "enforcement": [
         "audit:pillar-agents",
@@ -816,7 +816,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Maintainability checklist (naming/complexity/duplication) — agent-judged"
+        "command": "references/main.md §Maintainability checklist (naming/complexity/duplication); agent-judged"
       },
       "enforcement": [
         "audit:pillar-agents"
@@ -840,7 +840,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "references/main.md §Robustness checklist (error boundaries, transactions, retries) — agent-judged"
+        "command": "references/main.md §Robustness checklist (error boundaries, transactions, retries); agent-judged"
       },
       "enforcement": [
         "audit:pillar-agents"
@@ -971,7 +971,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "semantic: trace export-to-import reachability by reading the import graph — flag new modules whose exports are never imported (no blitz-import-graph binary shipped)"
+        "command": "semantic: trace export-to-import reachability by reading the import graph; flag new modules whose exports are never imported (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "check",
@@ -996,7 +996,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "semantic: map route nav reachability + auth-guard coverage by reading the import graph — flag orphan routes and guards missing on protected routes (no blitz-import-graph binary shipped)"
+        "command": "semantic: map route nav reachability + auth-guard coverage by reading the import graph; flag orphan routes and guards missing on protected routes (no blitz-import-graph binary shipped)"
       },
       "enforcement": [
         "check"
@@ -1081,7 +1081,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#side-tab (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. Thick colored border on one side of a card — the most recognizable tell of AI-generated UI"
+      "notes": "Vendored Layer 0 slop rule. Thick colored border on one side of a card: the most recognizable tell of AI-generated UI"
     },
     {
       "id": "design-border-accent-on-rounded",
@@ -1121,7 +1121,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#border-accent-on-rounded (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. Thick accent border on a rounded card — the border clashes with the rounded corners. Remov"
+      "notes": "Vendored Layer 0 slop rule. Thick accent border on a rounded card: the border clashes with the rounded corners. Remov"
     },
     {
       "id": "design-overused-font",
@@ -1241,7 +1241,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#flat-type-hierarchy (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. Font sizes are too close together — no clear visual hierarchy. Use fewer sizes with more c"
+      "notes": "Vendored Layer 0 slop rule. Font sizes are too close together: no clear visual hierarchy. Use fewer sizes with more c"
     },
     {
       "id": "design-gradient-text",
@@ -1281,7 +1281,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. Gradient text is decorative rather than meaningful — a common AI tell, especially on headi"
+      "notes": "Vendored Layer 0 slop rule. Gradient text is decorative rather than meaningful, a common AI tell, especially on headi"
     },
     {
       "id": "design-ai-color-palette",
@@ -1401,7 +1401,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#nested-cards (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. Cards inside cards create visual noise and excessive depth. Flatten the hierarchy — use sp"
+      "notes": "Vendored Layer 0 slop rule. Cards inside cards create visual noise and excessive depth. Flatten the hierarchy; use sp"
     },
     {
       "id": "design-monotonous-spacing",
@@ -1441,7 +1441,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#monotonous-spacing (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. The same spacing value used everywhere — no rhythm, no variation. Use tight groupings for "
+      "notes": "Vendored Layer 0 slop rule. The same spacing value used everywhere: no rhythm, no variation. Use tight groupings for "
     },
     {
       "id": "design-bounce-easing",
@@ -1487,7 +1487,7 @@
         "cite": "M3 Expressive spring motion (emphasized-* overshoot curves); Quasar Animate.css bounceIn/Out vocabulary"
       },
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#bounce-easing (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 1 slop rule. Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly — use exp"
+      "notes": "Vendored Layer 1 slop rule. Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly; use exp"
     },
     {
       "id": "design-dark-glow",
@@ -1767,7 +1767,7 @@
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
       "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#em-dash-overuse (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
-      "notes": "Vendored Layer 0 slop rule. More than two em-dashes (— or --) in body copy is an AI cadence tell. Use commas, colons, "
+      "notes": "Vendored Layer 0 slop rule. More than two em-dashes (U+2014 or --) in body copy is an AI cadence tell. Use commas, colons, "
     },
     {
       "id": "design-marketing-buzzword",
@@ -3472,7 +3472,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "command",
-        "command": "hooks/scripts/startup-validate.sh — schema-conform every .cc-sessions/*.json entry and docs/plans/*/tasks.json; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded",
+        "command": "hooks/scripts/startup-validate.sh: schema-conform every .cc-sessions/*.json entry and docs/plans/*/tasks.json; non-conforming entry quarantined to .cc-sessions/quarantine/ not loaded",
         "exit": {
           "pass": [
             0
@@ -3544,7 +3544,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "semantic",
-        "command": "research-critic §2.1.5 — Haiku-class inspection of WebFetch/MCP returns + MCP tool descriptions BEFORE they enter reasoning context: flag embedded instructions, tool-invocation strings, credential/exfil patterns, suspicious URLs; wrap untrusted spans in [UNTRUSTED-CONTENT] data-marking delimiter. Deterministic regex pre-pass shares startup-validate.sh INJECTION_RX."
+        "command": "research-critic §2.1.5: Haiku-class inspection of WebFetch/MCP returns + MCP tool descriptions BEFORE they enter reasoning context: flag embedded instructions, tool-invocation strings, credential/exfil patterns, suspicious URLs; wrap untrusted spans in [UNTRUSTED-CONTENT] data-marking delimiter. Deterministic regex pre-pass shares startup-validate.sh INJECTION_RX."
       },
       "enforcement": [
         "agent:research-critic §2.1.5",
@@ -3555,7 +3555,7 @@
       "consolidated_target": "audit",
       "escape_hatch": "content from a first-party repo path already covered by pre-edit-guard",
       "source": "Anthropic containment 2026-05-25 (AP-5); OWASP MCP Tool Poisoning arXiv 2603.22489; Spotlighting arXiv 2403.14720",
-      "notes": "TB-4. Semantic→advisory (never flips a verdict); deterministic regex pre-pass is the env-first floor. Haiku per agent-orchestration.md — the classifier is not the reasoning model. Rug-pull: hash MCP tool descriptions on first approval."
+      "notes": "TB-4. Semantic→advisory (never flips a verdict); deterministic regex pre-pass is the env-first floor. Haiku per agent-orchestration.md: the classifier is not the reasoning model. Rug-pull: hash MCP tool descriptions on first approval."
     },
     {
       "id": "sec-capability-grant",
@@ -3686,9 +3686,9 @@
       "inaccessible_or_unverifiable": 0.5
     },
     "note_fp_cannot_raise": "fp_verification_factor max is 1.0, so FP-verification can only PRESERVE or DROP a finding's confidence, never raise it. Only AGGREGATION (base 0.5 -> 0.85 on >=2 agreers) raises a semantic finding's confidence.",
-    "reject_bypass": "verdict_authority:reject findings BYPASS the min-confidence gate entirely. A ground-truth fact (e.g. det-06 env-fallback, base 0.75) is not confidence-triaged — if its deterministic detector fires (and FP-verify, where base<1.0, reproduces), it surfaces and may flip the verdict regardless of band. The min-confidence gate applies ONLY to advisory findings (semantic single-pass + advisory deterministic).",
-    "review_default_min_confidence": "high (>=0.8) — applies to ADVISORY findings only; precision-biased; suppress low-confidence advisories to avoid crying wolf. reject findings always surface (reject_bypass).",
-    "audit_default_min_confidence": "low (>=0.0) — report everything (incl. advisories), ranked by effective_confidence. recall-biased.",
+    "reject_bypass": "verdict_authority:reject findings BYPASS the min-confidence gate entirely. A ground-truth fact (e.g. det-06 env-fallback, base 0.75) is not confidence-triaged: if its deterministic detector fires (and FP-verify, where base<1.0, reproduces), it surfaces and may flip the verdict regardless of band. The min-confidence gate applies ONLY to advisory findings (semantic single-pass + advisory deterministic).",
+    "review_default_min_confidence": "high (>=0.8): applies to ADVISORY findings only; precision-biased; suppress low-confidence advisories to avoid crying wolf. reject findings always surface (reject_bypass).",
+    "audit_default_min_confidence": "low (>=0.0): report everything (incl. advisories), ranked by effective_confidence. recall-biased.",
     "high_band": ">=0.8",
     "low_band": "<0.8",
     "downgrade_rule": "a finding with fp_verification_factor=0.0 is DROPPED (disproven, not low-confidence). A deterministic finding that cannot be FP-verified retains base_confidence (mechanism is the verification). A SEMANTIC finding is capped at 'advisory' and can NEVER be a 'blocker' regardless of confidence (it has no reject authority); high aggregated confidence only raises its RANK, never its authority."

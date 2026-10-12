@@ -1,4 +1,4 @@
-# Sessions — records, inbox, mailbox, conflicts, handoff
+# Sessions: records, inbox, mailbox, conflicts, handoff
 
 Shared protocol for every blitz skill and hook that touches `.cc-sessions/`. Siblings: [loop.md](/_shared/loop.md) (the `next --loop` tick that consumes the inbox), [agents.md](/_shared/agents.md) (subagent dispatch, worktrees, status enum), [security.md](/_shared/security.md) (TB-1…TB-5 trust boundaries).
 
@@ -55,8 +55,8 @@ Lifecycle:
 Skill preamble (run before any other work):
 
 ```
-1. SESSION_ID="${CLAUDE_SESSION_ID}"  — the native id substituted into the skill body.
-   Empty (SDK harness, pre-floor CLI) → print "WARN: no native session id — running
+1. SESSION_ID="${CLAUDE_SESSION_ID}"  (the native id substituted into the skill body).
+   Empty (SDK harness, pre-floor CLI) → print "WARN: no native session id; running
    unregistered", skip 2–3; the conflict matrix still applies read-only.
 2. The record already exists. Never create or overwrite it. If missing (hooks disabled):
    bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh" < /dev/null   # once
@@ -86,12 +86,12 @@ Run after §3 of [sessions.reference.md](sessions.reference.md) with the overlay
 
 | Session A | Session B | Resolution |
 |---|---|---|
-| `build` (plan P) | `build` (plan P) | **BLOCK** — one writer per plan |
-| `build` (plan P) | `check --fix` (plan P) | **BLOCK** — cannot fix while building |
-| `migrate` | `build` | **BLOCK** — both modify source |
-| `ship` | `ship` | **BLOCK** — one shipping workflow at a time |
-| `plan` (slug S) | `plan` (slug S) | **BLOCK** — one planner per slug |
-| `refactor` / `check --fix` | `build` (any plan) | WARN — overlapping files likely; proceed with caution |
+| `build` (plan P) | `build` (plan P) | **BLOCK**: one writer per plan |
+| `build` (plan P) | `check --fix` (plan P) | **BLOCK**: cannot fix while building |
+| `migrate` | `build` | **BLOCK**: both modify source |
+| `ship` | `ship` | **BLOCK**: one shipping workflow at a time |
+| `plan` (slug S) | `plan` (slug S) | **BLOCK**: one planner per slug |
+| `refactor` / `check --fix` | `build` (any plan) | WARN: overlapping files likely; proceed with caution |
 | `build` (plan P) | `build` (plan Q) | WARN if `files` overlap in `tasks.json`, else OK |
 | read-only skills (`research`, `audit`, `check` without `--fix`, `learn`, `doctor`, `sessions`) | anything | OK |
 
@@ -100,10 +100,10 @@ Resolution actions (messaging per §5 of [sessions.reference.md](sessions.refere
 | Resolution | Action |
 |---|---|
 | **BLOCK** | `ListAgents` → find the peer by `sessionId` (from its record) or `name` → `SendMessage(to: <peer>, message: "blitz: <skill> <args> blocked by your <skill> on <resource>; deferring", notify_when_idle: true)` → print `LOOP_DEFER` → exit. The idle notice (one-shot, main conversation only) is what lets a loop tick retry at the right moment instead of polling. |
-| **WARN** | `SendMessage(to: <peer>, message: "blitz: build checkout-v2 editing src/stores/*")` — one line, no `notify_when_idle` — then proceed with caution. |
+| **WARN** | `SendMessage(to: <peer>, message: "blitz: build checkout-v2 editing src/stores/*")`, one line with no `notify_when_idle`, then proceed with caution. |
 | **OK** | nothing |
 
-Degrade to **WARN-only text** (print the conflict line, no message, no `LOOP_DEFER` on WARN) when: `ListAgents` is unavailable (tool not in `allowed-tools`, `-p` worker without the main conversation), the peer is not listed (other container / host), or `SendMessage` reports the peer holds or refuses inbound (`crossSessionInbound: hold|refuse` — a held message is delivered when the peer next reads its inbox, so still print `LOOP_DEFER` on BLOCK). Say which degradation applied in the conflict line. `waitingFor ≠ null` on the peer means a human must act first — include it verbatim.
+Degrade to **WARN-only text** (print the conflict line, no message, no `LOOP_DEFER` on WARN) when: `ListAgents` is unavailable (tool not in `allowed-tools`, `-p` worker without the main conversation), the peer is not listed (other container / host), or `SendMessage` reports the peer holds or refuses inbound (`crossSessionInbound: hold|refuse`; a held message is delivered when the peer next reads its inbox, so still print `LOOP_DEFER` on BLOCK). Say which degradation applied in the conflict line. `waitingFor ≠ null` on the peer means a human must act first; include it verbatim.
 
 ---
 
