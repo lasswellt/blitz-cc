@@ -1,4 +1,4 @@
-# UI Build — Reference Material
+# UI Build: Reference Material
 
 ## UX Design Principles
 
@@ -8,7 +8,7 @@ Time to target = f(distance, size).
 
 ### Hick's Law
 Decision time grows logarithmically with choice count.
-- **Application**: Limit choices per screen. Progressive disclosure — 5-7 options, group related actions. Break long forms into steps.
+- **Application**: Limit choices per screen. Progressive disclosure: 5-7 options, group related actions. Break long forms into steps.
 
 ### Miller's Law
 Working memory ~7 (±2) items.
@@ -28,7 +28,7 @@ Pleasing designs perceived as more usable.
 
 ### Von Restorff Effect
 Standouts are memorable.
-- **Application**: Color/size/position highlight primary actions and critical info. Use sparingly — highlight everything, highlight nothing.
+- **Application**: Color/size/position highlight primary actions and critical info. Use sparingly: highlight everything and you highlight nothing.
 
 ### Law of Proximity
 Near objects read as related.
@@ -80,9 +80,9 @@ Shared boundary = group.
 - [ ] Dialogs/modals fit viewport
 
 #### Interaction Checks
-- [ ] Primary action — responds?
-- [ ] Tab through — focus visible?
-- [ ] Dropdowns/menus — stay in viewport?
+- [ ] Primary action: responds?
+- [ ] Tab through: focus visible?
+- [ ] Dropdowns/menus: stay in viewport?
 
 ---
 
@@ -92,7 +92,7 @@ Shared boundary = group.
 - [ ] **1.1.1 Non-text Content**: Images have `alt`. Decorative use `alt=""`
 - [ ] **1.3.1 Info and Relationships**: Proper `h1`-`h6` hierarchy. `ul`/`ol` for lists. `th` for tables
 - [ ] **1.3.2 Meaningful Sequence**: DOM order matches visual order
-- [ ] **1.4.1 Use of Color**: Not color alone — add icons or text
+- [ ] **1.4.1 Use of Color**: Not color alone; add icons or text
 - [ ] **1.4.3 Contrast**: 4.5:1 (3:1 large). Use pre-verified theme colors
 - [ ] **1.4.4 Resize Text**: Scales to 200% without loss
 - [ ] **1.4.10 Reflow**: Reflows at 320px width, no horizontal scroll
@@ -116,7 +116,7 @@ Shared boundary = group.
 - [ ] **3.3.3 Error Suggestion**: Suggest correction when known
 
 ### Robust
-- [ ] **4.1.2 Name, Role, Value**: Custom components — ARIA roles/properties
+- [ ] **4.1.2 Name, Role, Value**: ARIA roles/properties on custom components
 - [ ] **4.1.3 Status Messages**: Use `aria-live` regions
 
 ---
@@ -127,7 +127,7 @@ Shared boundary = group.
 ### Component: [PascalCaseName]
 
 **File**: `src/components/[path]/[PascalCaseName].vue`
-**Estimated lines**: [number — must be under 300]
+**Estimated lines**: [number; must be under 300]
 
 #### Purpose
 [One sentence describing what this component does]
@@ -145,7 +145,7 @@ Shared boundary = group.
 #### Slots
 | Slot | Props | Description |
 |------|-------|-------------|
-| default | — | [description] |
+| default | none | [description] |
 | ... | ... | ... |
 
 #### States
@@ -157,8 +157,8 @@ Shared boundary = group.
 | Populated | `data?.length > 0` | [normal content description] |
 
 #### Children
-- [ChildComponent1] — used for [purpose]
-- [ChildComponent2] — used for [purpose]
+- [ChildComponent1]: used for [purpose]
+- [ChildComponent2]: used for [purpose]
 
 #### Responsive Behavior
 | Viewport | Behavior |
@@ -215,7 +215,7 @@ RESPONSIVE:
 
 ### Wireframe Rules
 1. Show outermost layout wrapper
-2. Name every component — no anonymous boxes
+2. Name every component; no anonymous boxes
 3. Show ≥1 row of data content
 4. Include responsive notes below wireframe
 5. Mark primary actions distinctly (e.g., `[+ Create New]`)
@@ -223,9 +223,9 @@ RESPONSIVE:
 ## UI Framework Variants
 
 ### When UI Framework is Tailwind CSS:
-- Use utility classes exclusively — never write custom CSS unless unavoidable
+- Use utility classes exclusively; never write custom CSS unless unavoidable
 - Skeletons: `animate-pulse bg-slate-200 rounded` (adapt shade to project palette)
-- Colors: use Tailwind color tokens from `tailwind.config.*` — never raw hex
+- Colors: use Tailwind color tokens from `tailwind.config.*`, never raw hex
 - Spacing: use Tailwind spacing scale (`p-4`, `gap-6`, etc.)
 - Responsive: use Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`)
 - Dark mode: use `dark:` variant if project supports it
@@ -233,7 +233,7 @@ RESPONSIVE:
 - Typography: use Tailwind text utilities (`text-sm`, `font-medium`, etc.)
 
 ### When UI Framework is Quasar:
-- Use `<q-*>` components exclusively — never use raw HTML equivalents
+- Use `<q-*>` components exclusively; never use raw HTML equivalents
 - Skeletons: `<q-skeleton type="rect" />`, `<q-skeleton type="text" />`, `<q-skeleton type="circle" />`
 - Colors: use Quasar color system (`color="primary"`, `text-color="grey-8"`)
 - Spacing: use Quasar CSS helpers (`q-pa-md`, `q-mt-sm`, `q-gutter-md`)
@@ -241,11 +241,11 @@ RESPONSIVE:
 - Tables: use `<q-table>` with column definitions, not raw `<table>`
 - Forms: use `<q-form>`, `<q-input>`, `<q-select>` with validation rules
 - Dialogs: use `<q-dialog>` or `$q.dialog()` plugin
-- Notifications: use `$q.notify()` — never build custom toast components
+- Notifications: use `$q.notify()`; never build custom toast components
 - Icons: use the project's configured icon set (Material Icons, etc.)
 
 ### When UI Framework is Vuetify:
-- Use `<v-*>` components exclusively — never use raw HTML equivalents
+- Use `<v-*>` components exclusively; never use raw HTML equivalents
 - Skeletons: `<VSkeletonLoader type="card" />`, `<VSkeletonLoader type="table-row" />`
 - Colors: use Vuetify theme colors (`color="primary"`, `class="text-error"`)
 - Spacing: use Vuetify spacing helpers (`pa-4`, `mt-2`, `ga-4`)
@@ -253,7 +253,7 @@ RESPONSIVE:
 - Tables: use `<VDataTable>` with headers array
 - Forms: use `<VForm>`, `<VTextField>`, `<VSelect>` with rules
 - Dialogs: use `<VDialog>` with `v-model`
-- Snackbars: use `<VSnackbar>` — never build custom toast components
+- Snackbars: use `<VSnackbar>`; never build custom toast components
 
 ---
 
@@ -273,9 +273,9 @@ Navigate to new page/component. Screenshot at 375 / 768 / 1440 widths. Verify: n
 
 **Capability-relative trigger (E4).** The task's `notes` field in `docs/plans/<slug>/tasks.json` (`design_quality: skip|standard|high`; default `standard` when absent or when running without a plan) is the coarse tier, but the evaluator is worth its cost only when the page sits beyond what the model does reliably solo. Trigger:
 
-- `skip` (internal admin pages) — never evaluate.
-- `high` (marketing, landing, customer-facing) — **always** evaluate. Run the bounded refine-vs-pivot loop below.
-- `standard` (most user-facing UI) — evaluate **only if** an edge-of-solo-capability signal fires: (a) **novel aesthetic** — committed tone absent from DESIGN.md/run history; (b) **interaction complexity** — forms, multi-step flows, stateful widgets; (c) **low generator self-confidence** — generator self-reports uncertainty after Phase 4; (d) **deterministic-lane hits** — `npx impeccable detect` returned findings. If none fire, ship solo.
+- `skip` (internal admin pages): never evaluate.
+- `high` (marketing, landing, customer-facing): **always** evaluate. Run the bounded refine-vs-pivot loop below.
+- `standard` (most user-facing UI): evaluate **only if** an edge-of-solo-capability signal fires: (a) **novel aesthetic** (committed tone absent from DESIGN.md/run history); (b) **interaction complexity** (forms, multi-step flows, stateful widgets); (c) **low generator self-confidence** (generator self-reports uncertainty after Phase 4); (d) **deterministic-lane hits** (`npx impeccable detect` returned findings). If none fire, ship solo.
 
 When triggered, spawn `agents/design-critic.md`:
 
@@ -283,11 +283,11 @@ When triggered, spawn `agents/design-critic.md`:
 Agent({
   subagent_type: "blitz:design-critic",
   description: "ui-build design-critic",
-  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
+  prompt: "Navigate the live page at <dev-server URL> (fallback: screenshots /tmp/ui-build-screenshots/*.png). Exercise primary actions, interactive states, and responsive breakpoints before scoring. Grade against /_shared/design-criteria.md + DESIGN.md. Score 5 dimensions 0–10: Prompt Adherence, Aesthetic Fit, Visual Polish, UX, Creative Distinction. Pass ≥7 on all five. If static fallback, note coverage_boundary; never silently pass interaction dims. Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON: no prose, no preamble."
 })
 ```
 
-**Bounded refine-vs-pivot loop (E2/E3, task notes `design_quality: high`).** After each evaluation, decide strategically — refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
+**Bounded refine-vs-pivot loop (E2/E3, task notes `design_quality: high`).** After each evaluation, decide strategically: refine if scores trend up, **pivot** to a different tone if stuck. Pivot space is the 13-tone menu (§3.0.1).
 
 ```
 ceiling = min(MAX_DESIGN_ITERS_HIGH, budget_remaining_iters)   # MAX_DESIGN_ITERS_HIGH default 10
@@ -327,17 +327,17 @@ Commit to:
 - **MOTION PRINCIPLE** (pick one): `one orchestrated reveal (staggered animation-delay)`, `scattered micro-interactions`, or `none/static`.
 - **COMPOSITION** (pick one): `generous whitespace` or `controlled density`. Asymmetry, overlap, diagonal flow encouraged when serving the tone.
 
-#### 3.0.1.1 Generation rubric — steer with the criteria the evaluator will grade (E1)
+#### 3.0.1.1 Generation rubric: steer with the criteria the evaluator will grade (E1)
 
 Carry the **same 5 dimensions `agents/design-critic.md` §2 scores against** as forward steering. Canonical single source: [`/_shared/design-criteria.md`](/_shared/design-criteria.md). Internalize before wireframing:
 
 > The best designs are museum quality. Build to that bar from the first pass.
 > Prompt Adherence · Aesthetic Fit · Visual Polish · UX · **Creative Distinction** (the hardest
-> bar — if it could come from any AI tool circa 2025, it fails). Grade-hardest emphasis:
+> bar; if it could come from any AI tool circa 2025, it fails). Grade-hardest emphasis:
 > Creative Distinction + Aesthetic Fit.
 
 #### 3.0.2 Document choices to DESIGN.md
 
-Write/update `DESIGN.md` (Google Labs Apache-2.0 spec — template in [references/design-extract.md](design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../../docs/integrations/impeccable/references-regrounded.md)); the Implementation Gate (SKILL.md Phase 4) enforces them through `/blitz:check --only design`, with no inline aesthetic greps.
+Write/update `DESIGN.md` (Google Labs Apache-2.0 spec; template in [references/design-extract.md](design-extract.md) §Step 4) with tone, typography, palette, motion. The aesthetic NEVER-list + 13-tone palette are the **design pillar** ([references-regrounded.md §8.1](../../../docs/integrations/impeccable/references-regrounded.md)); the Implementation Gate (SKILL.md Phase 4) enforces them through `/blitz:check --only design`, with no inline aesthetic greps.
 
 Brownfield without `DESIGN.md` never reaches this step: Phase 1 already ran the extraction.

@@ -28,7 +28,7 @@ Build production-grade Vue 3 UI native to the project. Follow the 5-phase workfl
 
 ---
 
-## Phase 0: SESSION — Register and Check for Conflicts
+## Phase 0: SESSION (Register and Check for Conflicts)
 
 Follow [sessions.md](/_shared/sessions.md) §2 (claim the hook-created record, run the conflict matrix) and [output.md](/_shared/output.md). Print progress at every phase transition, decision point, and agent dispatch.
 
@@ -40,11 +40,11 @@ Follow [sessions.md](/_shared/sessions.md) §2 (claim the hook-created record, r
 
 **Rule: when no `DESIGN.md` exists at the repo root, run the extraction in [references/design-extract.md](references/design-extract.md) first** (also when the user asks to "extract design system"). It emits `DESIGN.md` from the project's tokens, fonts, and palette; steps 1–5 below then read it instead of re-discovering. With an existing `DESIGN.md`, read it and only note drift.
 
-1. **Design Tokens** — Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
-2. **Component Inventory** — Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
-3. **Page Anatomy** — Read 2-3 representative pages. Document: layout wrapper, section structure, spacing, data flow.
-4. **Data Patterns** — Find Pinia stores, composables, API clients. Document: TypeScript interfaces, loading/error conventions.
-5. **Output** — Write discovery summary: token map, reusable components + signatures, layout wrapper(s), data layer conventions, naming conventions (files, components, CSS).
+1. **Design Tokens.** Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
+2. **Component Inventory.** Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
+3. **Page Anatomy.** Read 2-3 representative pages. Document: layout wrapper, section structure, spacing, data flow.
+4. **Data Patterns.** Find Pinia stores, composables, API clients. Document: TypeScript interfaces, loading/error conventions.
+5. **Output.** Write discovery summary: token map, reusable components + signatures, layout wrapper(s), data layer conventions, naming conventions (files, components, CSS).
 
 ---
 
@@ -117,13 +117,13 @@ Document: owning store/composable, fetch trigger (route guard / onMounted / watc
 **Goal**: Build bottom-up, smallest pieces first.
 
 Build order (strict):
-1. TypeScript types — interfaces, enums, type guards
-2. Composable / Store — data fetching, state, actions
-3. Atom components — badges, chips, status indicators
-4. Composite components — cards, list items, form sections
-5. Page component — orchestrates composites, handles layout
-6. Router entry — add route definition
-7. Navigation entry — add menu/nav item
+1. TypeScript types: interfaces, enums, type guards
+2. Composable / Store: data fetching, state, actions
+3. Atom components: badges, chips, status indicators
+4. Composite components: cards, list items, form sections
+5. Page component: orchestrates composites, handles layout
+6. Router entry: add route definition
+7. Navigation entry: add menu/nav item
 
 ### Implementation Gate
 
@@ -184,9 +184,9 @@ Every data-displaying component MUST handle four states, checked in this order (
 ```
 
 Code quality gates:
-- No component over 300 lines — extract sub-components
-- No `any` types — use proper interfaces
-- No hardcoded colors — use design tokens only
+- No component over 300 lines; extract sub-components
+- No `any` types; use proper interfaces
+- No hardcoded colors; use design tokens only
 - No new layout wrappers if project has existing ones
 - No `!important` overrides
 - All user-facing strings extractable (no buried literals in template logic)
@@ -244,14 +244,14 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 ## Critical Anti-Patterns (NEVER DO THESE)
 
-1. **Never hardcode hex/rgb colors** — use design tokens (CSS vars, Tailwind classes, framework theme).
-2. **Never ship fewer than three states on data views** — loading skeleton, empty, error, populated. No exceptions.
-3. **Never use `any` type** — use proper interfaces; `unknown` + type guards; `Record<string, unknown>` for truly dynamic objects.
-4. **Never invent new layout wrappers** — use `<AppLayout>`, `<PageContainer>`, `<q-page>`, or whatever the project provides.
-5. **Never ship a component over 300 lines** — extract sub-components.
-6. **Never fight the UI framework** — no `!important`, no CSS counteracting framework defaults. Use the correct prop, slot, or theme config.
-7. **Never skip the discovery phase** — building without understanding existing patterns guarantees inconsistency.
-8. **Never assume desktop-only** — every layout decision must account for mobile from the start.
+1. **Never hardcode hex/rgb colors**: use design tokens (CSS vars, Tailwind classes, framework theme).
+2. **Never ship fewer than three states on data views**: loading skeleton, empty, error, populated. No exceptions.
+3. **Never use `any` type**: use proper interfaces; `unknown` + type guards; `Record<string, unknown>` for truly dynamic objects.
+4. **Never invent new layout wrappers**: use `<AppLayout>`, `<PageContainer>`, `<q-page>`, or whatever the project provides.
+5. **Never ship a component over 300 lines**: extract sub-components.
+6. **Never fight the UI framework**: no `!important`, no CSS counteracting framework defaults. Use the correct prop, slot, or theme config.
+7. **Never skip the discovery phase**: building without understanding existing patterns guarantees inconsistency.
+8. **Never assume desktop-only**: every layout decision must account for mobile from the start.
 
 ---
 
@@ -259,7 +259,7 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 Every component and function must be fully implemented. See [Definition of Done](/_shared/quality.md).
 
-**BANNED PATTERNS** — if any appear, the work is not done:
+**BANNED PATTERNS** (if any appear, the work is not done):
 
 - `return {}` / `return []` / `return null` as placeholder returns
 - `throw new Error('Not implemented')` / `throw new Error('TODO')`

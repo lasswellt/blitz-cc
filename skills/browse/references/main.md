@@ -1,4 +1,4 @@
-# Browse — Reference Material
+# Browse: Reference Material
 
 ## Error Classification Taxonomy
 
@@ -55,7 +55,7 @@
 1. Detect: Browser tool calls fail or timeout
 2. Action: Close browser (browser_close)
 3. Wait: 2 seconds
-4. Action: Record finding — Critical: "Browser crash on [route]"
+4. Action: Record finding (Critical): "Browser crash on [route]"
 5. Action: Open new browser (browser_navigate to BASE_URL)
 6. Verify: Page loads successfully
 7. Continue: Resume crawl from next route
@@ -66,7 +66,7 @@
 ```
 1. Detect: Page not ready after 15 seconds
 2. Action: Take screenshot of current state
-3. Action: Record finding — Warning: "Navigation timeout on [route]"
+3. Action: Record finding (Warning): "Navigation timeout on [route]"
 4. Action: Check console for errors (may reveal cause)
 5. Continue: Navigate to next route
 6. Note: Timeout routes often indicate infinite loops or missing data
@@ -75,7 +75,7 @@
 ### Authentication Loss Recovery
 ```
 1. Detect: Page redirects to login, or 401 responses appear
-2. Action: Record finding — Critical: "Authentication lost at [route]"
+2. Action: Record finding (Critical): "Authentication lost at [route]"
 3. Action: Stop crawl
 4. Report: Output partial report
 5. Instruct user: "Session expired. Please re-authenticate and re-run."
@@ -238,8 +238,8 @@ const Component = defineAsyncComponent({
 |----------|-------|------------|
 | Critical | X     | X          |
 | Error    | X     | X          |
-| Warning  | X     | —          |
-| Info     | X     | —          |
+| Warning  | X     | n/a        |
+| Info     | X     | n/a        |
 
 **Overall health**: [PASS | WARN | FAIL]
 - PASS: 0 Critical, 0 Error
@@ -251,7 +251,7 @@ const Component = defineAsyncComponent({
 ## Critical Issues
 
 ### [Short description]
-- **Route(s)**: `/path` (also seen on: `/other`, `/another` — N total)
+- **Route(s)**: `/path` (also seen on: `/other`, `/another`; N total)
 - **Category**: [Console Error | Network Failure | Render Issue | Security]
 - **Details**: [Full error message]
 - **Stack trace** (if available):
@@ -259,7 +259,7 @@ const Component = defineAsyncComponent({
   [stack trace, truncated to relevant frames]
   ```
 - **Source file**: `src/path/to/file.ts:123` (if identifiable)
-- **Auto-fix**: [Applied — description | Not attempted | Failed — reason]
+- **Auto-fix**: [Applied: description | Not attempted | Failed: reason]
 
 ---
 
@@ -311,7 +311,7 @@ Safe interactive controls that rendered but produced no observable response when
 |---|------|--------|---------------|----------|
 | 1 | `src/path/file.ts` | Added optional chaining for user.name | 1 | PASS |
 | 2 | `src/path/other.vue` | Added error state template | 5 | PASS |
-| 3 | `src/path/api.ts` | Fixed endpoint URL | 1 | FAIL — new 403 |
+| 3 | `src/path/api.ts` | Fixed endpoint URL | 1 | FAIL (new 403) |
 
 ### Fixes Not Attempted
 | Issue | Reason |
@@ -376,7 +376,7 @@ Safe interactive controls that rendered but produced no observable response when
 
 ---
 
-## Loop Mode — Crawl State Schemas
+## Loop Mode: Crawl State Schemas
 
 ### `docs/crawls/crawl-queue.json`
 
@@ -452,21 +452,21 @@ Tracks pages already crawled and their status.
 ```
 
 **Status values:**
-- `clean` — No issues found
-- `has_issues` — Issues found, some may be unfixed
-- `fixed` — Had issues, all were auto-fixed
-- `needs_re_verify` — A shared file was modified by a fix; this page imports that file and needs re-checking
-- `unreachable` — Navigation failed 3+ times
-- `re-verified` — Re-checked after fixes, now clean
+- `clean`: No issues found
+- `has_issues`: Issues found, some may be unfixed
+- `fixed`: Had issues, all were auto-fixed
+- `needs_re_verify`: A shared file was modified by a fix; this page imports that file and needs re-checking
+- `unreachable`: Navigation failed 3+ times
+- `re-verified`: Re-checked after fixes, now clean
 
-**Per-page interaction fields (additive — pre-existing readers unaffected):**
-- `interaction_coverage` — `{ safe_clicks: int (count of allow-listed clicks exercised), broken_wiring_checked: bool, responsive_checked: bool }`. Records what Phase 4.6 exercised on the page.
-- `broken_wiring` — array of `{ element, selector, route }` from Phase 4.6 broken-wiring detection; empty array when none found.
-- `responsive_checked` defaults `false`; reserved for the opt-in `--interaction-depth=full` responsive pass (not enabled by default — forward-compat placeholder).
+**Per-page interaction fields (additive; pre-existing readers unaffected):**
+- `interaction_coverage`: `{ safe_clicks: int (count of allow-listed clicks exercised), broken_wiring_checked: bool, responsive_checked: bool }`. Records what Phase 4.6 exercised on the page.
+- `broken_wiring`: array of `{ element, selector, route }` from Phase 4.6 broken-wiring detection; empty array when none found.
+- `responsive_checked` defaults `false`; reserved for the opt-in `--interaction-depth=full` responsive pass (not enabled by default; forward-compat placeholder).
 
 ### `docs/crawls/hierarchy.json`
 
-Navigational graph as adjacency list. Each node = one page. Web is directed graph, not tree — `/settings` may be linked from global nav and `/dashboard/preferences`. `discovered_from` determines display tree position; `also_linked_from` preserves full link graph.
+Navigational graph as adjacency list. Each node = one page. Web is directed graph, not tree: `/settings` may be linked from global nav and `/dashboard/preferences`. `discovered_from` determines display tree position; `also_linked_from` preserves full link graph.
 
 ```json
 {
@@ -556,17 +556,17 @@ Snapshot of the most recent tick for quick status checks.
 ```
 
 **Status values:**
-- `crawling` — Normal operation, queue has entries
-- `re-verifying` — Queue empty, re-checking pages with issues
-- `complete` — All pages visited and clean
-- `auth_lost` — Authentication expired, needs user intervention
-- `server_down` — Dev server unreachable
+- `crawling`: Normal operation, queue has entries
+- `re-verifying`: Queue empty, re-checking pages with issues
+- `complete`: All pages visited and clean
+- `auth_lost`: Authentication expired, needs user intervention
+- `server_down`: Dev server unreachable
 
-**Field `page_data_registry`:** path string to `docs/crawls/page-data-registry.jsonl` if `blitz:ui-audit` has run in this project, else `null`. Browse does not read or write this field — `blitz:ui-audit` owns it. Present here so overlap detection (ui-audit × browse-loop) can observe prior extraction state in one read.
+**Field `page_data_registry`:** path string to `docs/crawls/page-data-registry.jsonl` if `blitz:ui-audit` has run in this project, else `null`. Browse does not read or write this field; `blitz:ui-audit` owns it. Present here so overlap detection (ui-audit × browse-loop) can observe prior extraction state in one read.
 
 ---
 
-## Loop Mode — URL Normalization Rules
+## Loop Mode: URL Normalization Rules
 
 ### Dynamic Segment Patterns
 
@@ -620,7 +620,7 @@ When new URL found, normalize to pattern for dedup:
 
 ---
 
-## Loop Mode — Navigation Context Classification
+## Loop Mode: Navigation Context Classification
 
 When extracting links, classify each by DOM context to prioritize navigation-critical pages.
 
@@ -650,7 +650,7 @@ Where `depth` = current page's depth + 1 (new link is one level deeper).
 
 ---
 
-## Loop Mode — Tick Budget Breakdown
+## Loop Mode: Tick Budget Breakdown
 
 Target: < 2 minutes per tick.
 
@@ -669,7 +669,7 @@ Target: < 2 minutes per tick.
 
 ---
 
-## Loop Mode — Completion Criteria
+## Loop Mode: Completion Criteria
 
 Crawl is **complete** when ALL true:
 
@@ -686,7 +686,7 @@ After completion:
 
 ---
 
-## Loop Mode — Visual Analysis
+## Loop Mode: Visual Analysis
 
 ### Structural Metadata Schema
 
@@ -738,20 +738,20 @@ Visual findings use `type: "visual"` in the crawl ledger. Subcategories:
 |-------------|----------|-------------|-------------|
 | `visual_data_missing` | Warning | Page appears to have incomplete or missing data (empty table, chart with no data, sparse content) | No |
 | `visual_loading_stuck` | Error | Loading state that didn't resolve (stuck spinner, unresolving skeleton) | No |
-| `visual_layout_broken` | Error | Layout/overflow/overlap issue visible in screenshot | Sometimes — check for missing CSS class or container overflow |
+| `visual_layout_broken` | Error | Layout/overflow/overlap issue visible in screenshot | Sometimes (check for missing CSS class or container overflow) |
 | `visual_design_inconsistency` | Warning | Page is inconsistent with established patterns across the site | No |
-| `visual_empty_state` | Warning | Content area is blank with no empty-state message for the user | Sometimes — can add a basic empty-state template |
+| `visual_empty_state` | Warning | Content area is blank with no empty-state message for the user | Sometimes (can add a basic empty-state template) |
 
 ### Screenshot Safety Rules
 
 Screenshots are powerful but expensive. Follow strictly:
 
-1. **Resize browser to 1280×720** before every screenshot — prevents oversized images that crash session
-2. **Viewport-only screenshots** — NEVER full-page. Long pages can exceed 8000px height, causing unrecoverable API errors
-3. **One screenshot per tick maximum** — each costs ~1,600 tokens; multiple fill context rapidly
-4. **Lossless screenshots preferred** — lossless, sharper text for analysis
-5. **Conditional triggers only** — do NOT screenshot every page. Only when structural analysis flags anomaly or every 10th tick.
-6. **Disable animations before capture** — inject CSS `* { animation: none !important; transition: none !important; }` via `browser_evaluate` before screenshot to avoid partial animation frames
+1. **Resize browser to 1280×720** before every screenshot; prevents oversized images that crash session
+2. **Viewport-only screenshots**: NEVER full-page. Long pages can exceed 8000px height, causing unrecoverable API errors
+3. **One screenshot per tick maximum**: each costs ~1,600 tokens; multiple fill context rapidly
+4. **Lossless screenshots preferred**: lossless, sharper text for analysis
+5. **Conditional triggers only**: do NOT screenshot every page. Only when structural analysis flags anomaly or every 10th tick.
+6. **Disable animations before capture**: inject CSS `* { animation: none !important; transition: none !important; }` via `browser_evaluate` before screenshot to avoid partial animation frames
 
 ### Cross-Page Comparison: Anomaly Detection
 
@@ -767,7 +767,7 @@ For each boolean field (has_breadcrumbs, has_pagination, has_sidebar, has_search
 
 For each page missing a global element:
   finding: visual_design_inconsistency
-  message: "[element] missing — present on [count]/[total] other pages"
+  message: "[element] missing (present on [count]/[total] other pages)"
 ```
 
 **Sibling comparison** (compare pages at same hierarchy depth or sharing a parent):
@@ -777,11 +777,11 @@ For pages sharing the same parent (e.g., all children of /dashboard):
 
   For each page in the group:
     if table_row_count == 0 AND median > 5:
-      finding: visual_data_missing — "Table has 0 rows (siblings median: [N])"
+      finding: visual_data_missing, message: "Table has 0 rows (siblings median: [N])"
     if content_density == "low" AND median_density in ["medium", "high"]:
-      finding: visual_data_missing — "Low content density (siblings: [density])"
+      finding: visual_data_missing, message: "Low content density (siblings: [density])"
     if card_count == 0 AND median_card_count > 0:
-      finding: visual_design_inconsistency — "No cards found (siblings have [N] cards)"
+      finding: visual_design_inconsistency, message: "No cards found (siblings have [N] cards)"
 ```
 
 **Heading hierarchy check** (global consistency):
@@ -790,9 +790,9 @@ Compute most common heading pattern: e.g., most pages use [h1, h2, h3]
 
 For each page:
   if page uses h3 as top-level heading but most pages use h1:
-    finding: visual_design_inconsistency — "Top heading is h3 (expected h1)"
+    finding: visual_design_inconsistency, message: "Top heading is h3 (expected h1)"
   if page skips heading levels (h1 → h3, no h2):
-    finding: visual_design_inconsistency — "Heading levels skip h2"
+    finding: visual_design_inconsistency, message: "Heading levels skip h2"
 ```
 
 ### Cross-Page Visual Audit Prompt Template (COMPLETE phase)
@@ -836,7 +836,7 @@ For each issue found, return:
 
 ---
 
-## Loop Mode — Full Procedure (extracted from SKILL.md in v1.4.1)
+## Loop Mode: Full Procedure (extracted from SKILL.md in v1.4.1)
 
 ---
 
@@ -857,7 +857,7 @@ Loop mode designed for `/loop 5m /blitz:browse --loop`. Each tick visits one pag
 - **Max pages**: 500 total. Override with `docs/crawls/.crawl-config.json` → `{ "max_pages": 1000 }`.
 - **Max ticks**: 300 (25 hours at 5-min intervals). After, complete regardless of queue.
 
-**Browser lifecycle**: Playwright MCP browser may or may not persist between ticks — each tick must NOT assume browser state from previous tick. Always start with `browser_navigate` to target page. Auth state (cookies, localStorage) managed by MCP server; if auth lost, recovery procedure handles it.
+**Browser lifecycle**: Playwright MCP browser may or may not persist between ticks; each tick must NOT assume browser state from previous tick. Always start with `browser_navigate` to target page. Auth state (cookies, localStorage) managed by MCP server; if auth lost, recovery procedure handles it.
 
 ---
 
@@ -894,10 +894,10 @@ Before loading state, check for concurrent ticks:
    - Increment `tick_count`
    - Check crawl limits: if `tick_count > max_ticks` or visited pages > `max_pages`, set tick type to COMPLETE.
 4. **Determine tick type**:
-   - `SEED` — first tick, queue just initialized
-   - `CRAWL` — queue has entries
-   - `RE-VERIFY` — queue empty, but `crawl-visited.json` has pages with `status: "has_issues"` not yet re-verified
-   - `COMPLETE` — queue empty AND all pages clean or re-verified. Print final site map and exit.
+   - `SEED`: first tick, queue just initialized
+   - `CRAWL`: queue has entries
+   - `RE-VERIFY`: queue empty, but `crawl-visited.json` has pages with `status: "has_issues"` not yet re-verified
+   - `COMPLETE`: queue empty AND all pages clean or re-verified. Print final site map and exit.
 
 See references/main.md for full state file schemas.
 
@@ -912,7 +912,7 @@ See references/main.md for full state file schemas.
 
 #### 4.2 Navigate
 - Navigate to `BASE_URL + page.url`
-- **Wait for full page load** — critical, page must be fully rendered:
+- **Wait for full page load** (critical; page must be fully rendered):
   1. Wait for network idle (no pending requests for 2 seconds)
   2. Wait for content landmarks (heading, main content area, or data table visible)
   3. Wait for loading indicators to disappear (spinners, skeletons, progress bars, `[aria-busy="true"]`)
@@ -945,7 +945,7 @@ See references/main.md for full state file schemas.
   - `nav_item_count` (items in primary nav)
   - `loading_indicators_present` (spinners, skeletons, `[aria-busy="true"]` still visible)
   - `empty_containers` (sections with no content and no empty-state message)
-  - `content_density` — rough estimate: `low` (mostly whitespace), `medium`, `high`
+  - `content_density` (rough estimate): `low` (mostly whitespace), `medium`, `high`
 
   Store metadata in `crawl-visited.json` under page entry as `"structure": {...}`. Enables cross-page comparison after enough pages visited (see Phase 5.6).
 
@@ -959,17 +959,17 @@ Same rules as Phase 3.5 in non-loop mode. Interact ONLY with:
 After each interaction:
 - Wait 1 second for UI to settle
 - Check for new console errors and network failures
-- **Re-snapshot** — interactions (especially tabs) often reveal new content with new links. Collect links from each post-interaction snapshot for Phase 5-LOOP.
-- **Broken-wiring check** (below) — record a `broken_wiring` finding if the click produced no observable response.
+- **Re-snapshot**: interactions (especially tabs) often reveal new content with new links. Collect links from each post-interaction snapshot for Phase 5-LOOP.
+- **Broken-wiring check** (below): record a `broken_wiring` finding if the click produced no observable response.
 
 **NEVER interact with**: buttons (except tabs), form inputs, toggles, checkboxes, links that navigate away, anything inside modal/dialog.
 
 ##### Broken-Wiring Detection
 
-A safe-allow-listed control that renders but produces **no observable response** when clicked is a functional bug (the "broken-wiring" class — a control wired to nothing, or to a dead handler). Detect by diffing page state across the click already performed above, reusing the snapshot + network reads already taken. **No new tools; rides ONLY the safe-interaction allow-list — never broaden to buttons / forms / destructive controls (the 7 SAFETY RULES in SKILL.md remain authoritative).**
+A safe-allow-listed control that renders but produces **no observable response** when clicked is a functional bug (the "broken-wiring" class: a control wired to nothing, or to a dead handler). Detect by diffing page state across the click already performed above, reusing the snapshot + network reads already taken. **No new tools; rides ONLY the safe-interaction allow-list, never broadening to buttons / forms / destructive controls (the 7 SAFETY RULES in SKILL.md remain authoritative).**
 
 ```
-# wraps the EXISTING safe click — adds before/after capture, no new navigation
+# wraps the EXISTING safe click: adds before/after capture, no new navigation
 snap_before = browser_snapshot();   net_before = browser_network_requests().length
 browser_click(target);  wait 1s     # existing settle
 snap_after  = browser_snapshot();   net_after  = browser_network_requests().length
@@ -984,7 +984,7 @@ if a11y_tree(snap_after) == a11y_tree(snap_before)   # no DOM/content change
      }
 ```
 
-**Couple the snapshot-diff WITH the network check** — separates two distinct defects:
+**Couple the snapshot-diff WITH the network check.** It separates two distinct defects:
 - *renders-but-inert* (no a11y change AND no request) → `broken_wiring` here.
 - *handler fires, backend fails* (a request DID fire, returned ≥400) → already a network-failure finding via Phase 4.4 / Phase 3.3; NOT broken-wiring.
 
@@ -998,16 +998,16 @@ if a11y_tree(snap_after) == a11y_tree(snap_before)   # no DOM/content change
 
 **This step is NOT taken on every tick.** Take screenshot and perform visual analysis ONLY when one or more triggers met:
 
-1. **Empty container detected** — content area blank with no empty-state message
-2. **Loading indicators still present** — spinners, skeletons, or `[aria-busy]` visible after full wait
-3. **Structural anomaly** — page missing pattern that 80%+ of visited pages have (e.g., no breadcrumbs when most pages have them). Requires 10+ pages visited.
-4. **Content density outlier** — page has significantly less content than sibling pages at same hierarchy depth
-5. **Every 10th tick** — periodic visual check regardless of triggers
+1. **Empty container detected**: content area blank with no empty-state message
+2. **Loading indicators still present**: spinners, skeletons, or `[aria-busy]` visible after full wait
+3. **Structural anomaly**: page missing pattern that 80%+ of visited pages have (e.g., no breadcrumbs when most pages have them). Requires 10+ pages visited.
+4. **Content density outlier**: page has significantly less content than sibling pages at same hierarchy depth
+5. **Every 10th tick**: periodic visual check regardless of triggers
 
 **When triggered:**
 
 1. **Resize browser** to 1280×720 (prevents oversized screenshot issues)
-2. Take **viewport-only screenshot** (never full-page — long pages can exceed 8000px and crash session)
+2. Take **viewport-only screenshot** (never full-page; long pages can exceed 8000px and crash session)
 3. Analyze screenshot for:
 
    **Data completeness:**
@@ -1029,18 +1029,18 @@ if a11y_tree(snap_after) == a11y_tree(snap_before)   # no DOM/content change
    - Inconsistent spacing compared to other pages
    - Z-index issues (elements hidden behind others)
 
-   **Design consistency** (requires 10+ pages visited — compare against accumulated structural metadata):
+   **Design consistency** (requires 10+ pages visited; compare against accumulated structural metadata):
    - Typography inconsistencies (different heading sizes for same-level content)
    - Color usage not matching established palette
    - Component variants used inconsistently (e.g., primary buttons where siblings use secondary)
    - Missing UI patterns present on sibling pages (pagination, search, filters)
 
 4. Record visual findings in ledger with `type: "visual"` and subcategory:
-   - `visual_data_missing` — page appears to have incomplete or missing data
-   - `visual_loading_stuck` — loading state that didn't resolve
-   - `visual_layout_broken` — layout/overflow/overlap issue
-   - `visual_design_inconsistency` — inconsistent with established page patterns
-   - `visual_empty_state` — empty area with no user-facing message
+   - `visual_data_missing`: page appears to have incomplete or missing data
+   - `visual_loading_stuck`: loading state that didn't resolve
+   - `visual_layout_broken`: layout/overflow/overlap issue
+   - `visual_design_inconsistency`: inconsistent with established page patterns
+   - `visual_empty_state`: empty area with no user-facing message
 
 5. **Token budget**: One screenshot costs ~1,600 tokens. Keep visual analysis under 30 seconds.
 
@@ -1049,7 +1049,7 @@ if a11y_tree(snap_after) == a11y_tree(snap_before)   # no DOM/content change
 ### Phase 5-LOOP: Extract Links & Build Hierarchy
 
 #### 5.1 Extract Links
-Combine links from ALL snapshots taken during Phase 4 — initial page snapshot AND every post-interaction snapshot (tabs, pagination, accordions may reveal new links). Deduplicate by href.
+Combine links from ALL snapshots taken during Phase 4: initial page snapshot AND every post-interaction snapshot (tabs, pagination, accordions may reveal new links). Deduplicate by href.
 
 Use `browser_snapshot` to find all link elements. Accessibility tree returns refs for clickable elements including links with text and href.
 
@@ -1163,7 +1163,7 @@ Add/update the current page in `crawl-visited.json`:
 
 4. **Print anomalies** in tick summary when found:
    ```
-   [browse] Tick #22 — /projects
+   [browse] Tick #22: /projects
      ├─ ...
      ├─ Visual: Missing breadcrumbs (present on 18/20 other pages)
      └─ Visual: Table has 0 rows (siblings avg 12 rows)
@@ -1184,25 +1184,25 @@ For each Critical and Error finding on current page (max 2 fixes per tick):
 **Tracing by finding type:**
 - **Console errors with stack trace**: Follow stack trace directly to source file and line
 - **Network 404**: Grep codebase for failing endpoint URL (e.g., search for `/api/users`). Check both API definition and calling component.
-- **Network 401/403**: Likely auth config — check middleware, route guards, or API client headers. Often not auto-fixable.
+- **Network 401/403**: Likely auth config; check middleware, route guards, or API client headers. Often not auto-fixable.
 - **Content quality (placeholder text)**: Grep for exact text ("Lorem ipsum", "TODO") in source files under page's component tree
 - **Broken images**: Grep for image filename or `src` attribute in templates
 - **Dead links (`href="#"`)**: Grep for `href="#"` in page's component and children
 
 #### 6.2 Apply Minimal Fix
-- Fix ONLY specific error — do not refactor surrounding code
-- Use same fix templates as Phase 5 (non-loop mode) — see references/main.md
+- Fix ONLY specific error; do not refactor surrounding code
+- Use same fix templates as Phase 5 (non-loop mode); see references/main.md
 - Common fixes: optional chaining, missing imports, wrong API endpoints, missing error states
 
 #### 6.3 Verify
 1. Run verify command (typecheck + lint, auto-detected)
 2. **If pass**: commit with message `browse-fix(<page_path>): <description>`
-3. **Wait 3 seconds** after commit — dev server needs time to process file change and complete HMR. Navigating too early hits partially-rebuilt state.
+3. **Wait 3 seconds** after commit; dev server needs time to process file change and complete HMR. Navigating too early hits partially-rebuilt state.
 4. **If fail**: revert ALL changes, mark finding as `needs-human` in ledger. If revert also fails (file not writable), log error and exit tick immediately.
 
 #### 6.4 Fix Limits & Circuit Breaker
-- **Max 2 fixes per tick** — keeps within time budget
-- **Max 1 fix per file per tick** — prevents cascading failures from multiple edits to same file
+- **Max 2 fixes per tick**: keeps within time budget
+- **Max 1 fix per file per tick**: prevents cascading failures from multiple edits to same file
 - **Circuit breaker state** (tracked in `latest-tick.json`):
   - `consecutive_fix_failures`: incremented on each failed fix, reset to 0 on any successful fix
   - `circuit_breaker_cooldown`: when `consecutive_fix_failures >= 3`, set to `current_tick + 3`
@@ -1220,14 +1220,14 @@ Same rules as Phase 5.5 (non-loop mode):
 
 #### 7.1 Save State (Atomic Writes)
 
-State files have interdependencies — crash mid-write can leave inconsistent state. Use this write order (JSONL appends first, then JSON overwrites):
+State files have interdependencies; a crash mid-write can leave inconsistent state. Use this write order (JSONL appends first, then JSON overwrites):
 
-1. **Append** to `crawl-ledger.jsonl` — new findings (append-only, crash-safe)
-2. **Append** to `fix-log.jsonl` — fix attempts (append-only, crash-safe)
-3. **Write** `latest-tick.json` — tick snapshot (write last so overlap guard works)
-4. **Write** `crawl-queue.json` — updated queue
-5. **Write** `crawl-visited.json` — updated visited map (include this page's `interaction_coverage` + `broken_wiring[]` from Phase 4.6)
-6. **Write** `hierarchy.json` — updated hierarchy
+1. **Append** to `crawl-ledger.jsonl`: new findings (append-only, crash-safe)
+2. **Append** to `fix-log.jsonl`: fix attempts (append-only, crash-safe)
+3. **Write** `latest-tick.json`: tick snapshot (write last so overlap guard works)
+4. **Write** `crawl-queue.json`: updated queue
+5. **Write** `crawl-visited.json`: updated visited map (include this page's `interaction_coverage` + `broken_wiring[]` from Phase 4.6)
+6. **Write** `hierarchy.json`: updated hierarchy
 
 For JSON files (steps 3-6): write to `.tmp` file first, then rename to final path. Ensures each file is either fully old or fully new, never partially written.
 
@@ -1251,7 +1251,7 @@ For JSON files (steps 3-6): write to `.tmp` file first, then rename to final pat
 
 #### 7.2 Print Tick Summary
 ```
-[browse] Tick #14 — /settings/profile
+[browse] Tick #14: /settings/profile
   ├─ Links: 8 found, 5 new (3 already visited/queued)
   ├─ Findings: 1 error (fixed ✓), 2 warnings
   ├─ Visual: 1 design inconsistency (missing breadcrumbs)
@@ -1281,7 +1281,7 @@ Legend: `✓` = visited clean, `⚠` = has issues, `✗` = has unfixed issues, `
 
 When crawl transitions to `COMPLETE` status, run final design consistency audit before final report:
 
-1. **Group pages by section** — pages sharing same first path segment (e.g., all `/dashboard/*`, all `/settings/*`)
+1. **Group pages by section**: pages sharing same first path segment (e.g., all `/dashboard/*`, all `/settings/*`)
 2. **For each group of 3+ pages**, take viewport screenshots of up to 5 pages and pass to model simultaneously:
 
    > "These [N] screenshots are from the [section] section of a [framework] application. Analyze them together for:
@@ -1300,7 +1300,7 @@ When crawl transitions to `COMPLETE` status, run final design consistency audit 
 
 5. **Write visual audit summary** to `docs/crawls/visual-audit.md`:
    ```markdown
-   # Visual Audit — [date]
+   # Visual Audit: [date]
 
    ## Global Patterns
    - Breadcrumbs: present on 42/47 pages (missing on: /projects, /reports, ...)
@@ -1374,7 +1374,7 @@ Print full site map tree. Skill will no-op on subsequent ticks (check `latest-ti
 1. If fix fails verification AND revert also fails
 2. Log both errors to `fix-log.jsonl`
 3. Mark finding as `needs-human`
-4. Exit tick immediately — do not attempt further fixes or state writes
+4. Exit tick immediately; do not attempt further fixes or state writes
 5. Next tick will detect dirty state via `git status` and warn
 
 **Tick timeout exceeded:**
