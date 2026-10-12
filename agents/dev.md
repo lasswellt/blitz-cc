@@ -127,8 +127,8 @@ Before replying `DONE`:
 ### Completeness gate
 Scan every file you created or modified for the banned patterns above (`grep -nE 'TODO|FIXME|PLACEHOLDER|STUB|Not implemented|return \{\}\s*;?$' <files>`). Fix any hit before replying.
 
-### JSDoc requirement
-Every exported function has a JSDoc comment with `@param` for each parameter, `@returns`, and `@throws` for each error type it can raise.
+### Doc comments (when the role conventions or the project require them)
+Where the inlined role conventions or the project's existing exports carry doc comments (JSDoc, docstrings, rustdoc), every export you add or change gets one in the same style: a `@param` per parameter, `@returns`, and a `@throws` per error type it can raise. Where neither asks for them, add none: a comment that restates the signature is not minimum code.
 
 ```typescript
 /**
@@ -140,13 +140,15 @@ Every exported function has a JSDoc comment with `@param` for each parameter, `@
  */
 ```
 
-### Structured error handling
-Every function that can fail:
+### Structured error handling (when the role conventions or the project require it)
+Where the inlined role conventions or the project's existing call sites wrap fallible operations (a typed-error class, a logger, a response envelope), a function you write that can fail follows the same shape:
 
 1. Wraps business logic in try/catch.
 2. Catches specific error types first, generic last.
 3. Re-throws as the project's typed error with a user-safe message.
 4. Logs the original error for debugging, without PII.
+
+Where the project has no such boundary, let the error propagate to the one that exists and note any gap in `concerns[]`; the minimum-code rule above wins over a wrapper the task did not ask for.
 
 ```typescript
 try {

@@ -1,7 +1,7 @@
 ---
 name: browse
 description: "Tests and crawls a running app through Playwright MCP: visits pages, captures console errors, failed requests and screenshots, classifies Critical/Error/Warning, optionally fixes sources; loop-safe, one page per tick. Use for 'test pages', 'smoke test', 'crawl site', 'click through the app'."
-allowed-tools: Read, Glob, Grep, ToolSearch
+allowed-tools: Read, Glob, Grep, ToolSearch, Bash(git status *), Bash(git --no-pager log *), Edit(docs/crawls/**)
 model: inherit
 compatibility: ">=2.1.296"
 argument-hint: "[full|smoke|page <path>|fix|--loop] [target]"
@@ -54,6 +54,8 @@ Parse the invocation arguments to determine mode and target.
 | **Loop** | `--loop` | One page per tick, auto-fix, auto-commit, build site hierarchy. Use with `/loop 5m`. |
 
 Store the parsed mode for use in subsequent phases.
+
+**Permissions.** Pre-approved while this skill runs: the read tools, `git status`, `git --no-pager log`, and writes under `docs/crawls/` (the crawl state and the visual-audit summary). Everything else the skill does follows the user's permission mode and rules ([SECURITY.md](../../SECURITY.md) §Running unattended): the `curl` reachability probes in §1.1, every Playwright MCP call, source edits in `fix` mode, and the commits and pushes of `--loop` mode. The skill never approves anything itself; an unattended `/loop` needs auto mode or allow rules.
 
 ---
 
@@ -298,44 +300,7 @@ Write a structured report to stdout.
 
 ### Report Format
 
-```markdown
-# Browse Test Report
-**Date**: [ISO date]
-**Mode**: [full | smoke | page | fix]
-**Base URL**: [URL]
-**Routes tested**: [N] / [total]
-**Duration**: [time]
-
-## Summary
-| Severity | Count |
-|----------|-------|
-| Critical | [n]   |
-| Error    | [n]   |
-| Warning  | [n]   |
-| Info     | [n]   |
-
-## Critical Issues
-### [Issue title]
-- **Route**: [path]
-- **Type**: [console error | network failure | render issue]
-- **Message**: [error message]
-- **Source**: [file:line if known]
-- **Fix applied**: [Yes/No — only in fix mode]
-
-## Error Issues
-[same format]
-
-## Warning Issues
-[same format]
-
-## Routes with No Issues
-[list of clean routes — collapsed if many]
-
-## Auto-Fix Summary (fix mode only)
-| File | Change | Verified |
-|------|--------|----------|
-| [path] | [description] | [pass/fail] |
-```
+Use the template in [references/main.md](references/main.md) §Report Template Structure: header fields (date, mode, base URL, routes tested, duration), the severity count table, one block per Critical/Error/Warning issue (route, type, message, source `file:line`, fix applied in fix mode), broken wiring, clean routes, and the auto-fix summary table (fix mode only).
 
 ### Report Rules
 - Group findings by route, then by severity

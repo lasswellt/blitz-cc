@@ -1,11 +1,11 @@
 export const meta = {
   name: 'audit-sweep',
-  description: '5-pillar audit: 2 independent same-scope agents per pillar, one parallel() barrier (audit §1.1-W)',
+  description: '5-pillar audit: 2 independent same-scope agents per pillar, one parallel() barrier (audit §1.2)',
   whenToUse: 'Only from /blitz:audit when §1.0 selected the Workflow path. Inventory, findings aggregation, ratchet.json and the report stay in the skill (main thread).',
   phases: [{ title: 'Audit', detail: '10 pillar agents, model sonnet, schema-validated findings', model: 'sonnet' }],
 }
 
-// Extracted from skills/audit/SKILL.md §1.1-W (E-045 S3). Plugin workflow: runs as
+// Extracted from skills/audit/SKILL.md §1.2 (E-045 S3). Plugin workflow: runs as
 // /blitz:audit-sweep. No filesystem, no clock — dispatch + schema validation only.
 //
 // args shape (required):

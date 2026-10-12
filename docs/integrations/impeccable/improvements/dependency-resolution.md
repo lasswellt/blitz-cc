@@ -100,7 +100,7 @@ Non-negotiable rules:
 | `scripts/design/preflight.sh` (new) | the gate above; resolves impeccable **from the target project** (`paths:[TARGET]`), not the plugin. **No** plugin `package.json` dependency is added. |
 | `scripts/maint/design/gen-design-rows.mjs:24` | drop the `/tmp/impeccable-src` default; require an explicit maintainer-supplied source path arg (this is a maintenance-only regen script, not a review-time path) |
 | `skills/review/SKILL.md` (`--only design`) | call preflight with the target repo first; render lane-status banner; gate per §3 |
-| `skills/audit/references/main.md` (Phase 1.D2) | same; `--strict` honors `semantic=ABSENT` as fail |
+| `skills/audit/references/main.md` (§Design pillar) | same; `--strict` honors `semantic=ABSENT` as fail |
 | `skills/bootstrap` + `skills/setup` | recommend `npm i -D impeccable@2.3.2` to the **target project** when the design pillar is in use (project opts in; plugin never installs it) |
 | `skills/_shared/check-registry.json` | the 42 vendored rows re-laned to `semantic` (lane-reclassification.md) so the preflight's `semantic` tier maps to them |
 

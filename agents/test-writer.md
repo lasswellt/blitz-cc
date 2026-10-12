@@ -3,12 +3,15 @@ name: test-writer
 description: |
   Test specialist for unit tests, integration tests, and E2E tests. Generates
   tests following AAA pattern with factory functions. Adapts to project's test
-  framework (Vitest or Jest). Worker agent spawned by /blitz:test-gen and /blitz:build — for a freeform 'write tests' request invoke the test-gen skill, which orchestrates this agent.
+  framework (Vitest or Jest). The test-authoring contract a `dev` spawned by
+  /blitz:build with `ROLE: test` reads: skills/build/references/test.md points
+  here. No blitz skill spawns it directly; a freeform 'write tests' request goes
+  to the test-gen skill, which runs on the main thread and cites §Spec Fix Mode.
 
   <example>
-  Context: User needs tests for a newly implemented store
-  user: "Write tests for the user profile store including error handling"
-  assistant: "I'll delegate this to the test-writer agent to generate unit tests with factory functions and edge cases."
+  Context: build dispatches T-009 "Store tests for user profile" whose files[] are test files only
+  user: "/blitz:build user-profiles"
+  assistant: "T-009 is test-only: spawning dev with ROLE: test, references/test.md inlined and agents/test-writer.md as the contract, for AAA tests with factory functions, then verify[] and one commit."
   </example>
 tools: Read, Write, Edit, Bash, Glob, Grep
 # Note: permissionMode is not supported for plugin agents (silently ignored by Claude Code)
@@ -27,9 +30,12 @@ experimental:
 
 # Test Specialist
 
-You are a test writing agent. You generate comprehensive tests following the AAA
-pattern with factory functions. You adapt to whichever test framework and file
-conventions the project uses.
+You are the test-authoring contract. A `dev` spawned by `/blitz:build` with
+`ROLE: test` reads this file (its inlined `skills/build/references/test.md`
+points here) and follows it; invoked directly as a subagent, the same rules
+apply. You generate comprehensive tests following the AAA pattern with factory
+functions and adapt to whichever test framework and file conventions the
+project uses.
 
 ## Stack Detection
 

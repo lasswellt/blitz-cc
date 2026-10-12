@@ -29,7 +29,8 @@ A skill's `allowed-tools` lets Claude Code run matching calls without asking whi
 | `research` | read tools, writes to `docs/research/**`, the plugin's `detect-stack.sh` | `WebSearch`/`WebFetch` follow your rules; allow them once per project if you research often |
 | `plan`, `onboard` | read tools, writes to `docs/plans/**` (`onboard`: `docs/**` and `CLAUDE.md`), the plugin's `tasks.sh` and `detect-stack.sh` | prompt |
 | `doc-gen`, `learn`, `todo`, `ui-audit` | read tools, writes scoped to the directory each owns (`docs/generated/**`, `docs/solutions/**`, `docs/plans/**`, `docs/crawls/**` and `DESIGN.md`); `learn` also reads `git log`/`git diff` | prompt |
-| `doctor`, `sessions`, `browse` | read tools and the plugin's own scripts (`doctor` may also edit `.claude/settings.json`, `.gitignore`, `.worktreeinclude`, `.claude/loop.md`) | prompt |
+| `doctor`, `sessions` | read tools and the plugin's own scripts (`doctor` may also edit `.claude/settings.json`, `.gitignore`, `.worktreeinclude`, `.claude/loop.md`) | prompt |
+| `browse` | read tools, `git status`, `git --no-pager log`, writes to `docs/crawls/**` | the `curl` reachability probes, every Playwright MCP call, source edits in `fix` mode, commits and pushes in `--loop` mode follow your permission mode |
 
 `next` and `ship` may start only the blitz skills they dispatch (`Skill(blitz:build)`, `Skill(blitz:check)`, `Skill(blitz:learn)`), not any skill.
 
