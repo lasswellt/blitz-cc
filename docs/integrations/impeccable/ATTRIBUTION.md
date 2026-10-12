@@ -47,37 +47,46 @@ The re-grounding is a **substantial modification**, not a verbatim copy. Modifie
 - A **deterministic adapter selector** (`adapter-detection.md`) is added (extends impeccable's `context-signals.mjs`).
 - References are re-expressed as **normalized core + per-adapter notes** (`references-regrounded.md`).
 
-**`source:` tag convention** — every vendored registry row / reference file carries:
+**`source:` tag convention.** Every vendored registry row carries:
 ```
-source: impeccable@2.3.2 <relative-path>#<rule-id> (re-grounded, framework-adaptive)
+source: impeccable@2.3.2 <relative-path>#<rule-id> (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)
 ```
-e.g. `source: impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive)`. The 39 Layer 0 rows are vendored-with-modification (re-tagged, re-fielded); the Layer 1/2 rows are new Blitz authorship inspired by impeccable's `conformanceRules` discipline.
+e.g. `source: impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)`. A vendored row is one with `owner: impeccable`, whose detection runs `impeccable detect`. `hooks/scripts/check-registry-validate.sh` requires this tag shape on every such row, requires the version in the tag to match the registry's `attribution.notice`, and recomputes `detector_count.design.vendored` from the rows, so a vendored row cannot land untagged and the count cannot drift. The Layer 0 rows, plus the Layer 1 rows that keep an impeccable rule id (`design-bounce-easing`, `design-gpt-thin-border-wide-shadow`), are vendored-with-modification (re-tagged, re-fielded); the remaining Layer 1/2 rows are new Blitz authorship inspired by impeccable's `conformanceRules` discipline.
+
+**Where the header notice lives.** The registry is the only vendored-and-modified file in the tree (the documents in this directory are Blitz authorship describing the re-grounding), and JSON cannot carry a blockquote, so `skills/_shared/check-registry.json` carries the notice above as one line in its top-level `attribution.notice` field, next to `attribution.license` (the path of the vendored Apache text) and `attribution.upstream` (the pinned tag). The validator fails when the block is missing or the notice stops naming the upstream, the version or the license.
 
 ---
 
 ## 4. NOTICE reproduction (impeccable `NOTICE.md`, verbatim)
 
+Copied byte for byte from `NOTICE.md` at tag `cli-v2.3.2` (`https://raw.githubusercontent.com/pbakaus/impeccable/cli-v2.3.2/NOTICE.md`, checked 2026-10-12). Re-fetch and re-copy whenever the pinned version changes; never edit the text inside the fence.
+
 ```
+# Notice
+
 Impeccable
 Copyright 2025-2026 Paul Bakaus
 
 ## Anthropic frontend-design Skill
+
 The `impeccable` skill in this project builds on Anthropic's original frontend-design skill.
-Original work: https://github.com/anthropics/skills/tree/main/skills/frontend-design
-Original license: Apache License 2.0
-Copyright: 2025 Anthropic, PBC
+
+**Original work:** https://github.com/anthropics/skills/tree/main/skills/frontend-design
+**Original license:** Apache License 2.0
+**Copyright:** 2025 Anthropic, PBC
+
 This project extends the original with:
 - 7 domain-specific reference files (typography, color-and-contrast, spatial-design, motion-design, interaction-design, responsive-design, ux-writing)
 - 23 commands
 - Expanded patterns and anti-patterns
 
 ## Typecraft Guide Skill
-The `typography.md` reference incorporates tactical additions merged in from ehmo's `typecraft-guide-skill`
-at the author's request: dark-mode weight/tracking compensation, font-display optional vs swap,
-preload-critical-weight-only, variable fonts for 3+ weights, clamp() ratio bound, responsive measure,
-text-wrap balance/pretty, font-optical-sizing auto, ALL-CAPS tracking, paragraph-rhythm rule.
-Original work: https://github.com/ehmo/typecraft-guide-skill
-Author: ehmo
+
+The `typography.md` reference in this project incorporates a set of tactical additions merged in from ehmo's `typecraft-guide-skill` at the author's request: dark-mode weight/tracking compensation, `font-display: optional` vs `swap`, preload-critical-weight-only guidance, variable fonts for 3+ weights, `clamp()` max-to-min ratio bound, responsive measure/container coupling, `text-wrap: balance` / `pretty`, `font-optical-sizing: auto`, ALL-CAPS tracking quantification, and the paragraph-rhythm rule (space OR indent, never both).
+
+**Original work:** https://github.com/ehmo/typecraft-guide-skill
+**Original license:** see upstream repo
+**Author:** ehmo
 ```
 
 > Note: impeccable's own NOTICE describes its prior "7 domain reference" structure. The live `2.3.2` tree has refactored these into verb-command references (see [`references-regrounded.md`](references-regrounded.md) §0); the NOTICE is reproduced as-is per §4(d) (retain notices verbatim) — the structural drift is documented separately, not by editing the upstream NOTICE.
@@ -88,14 +97,14 @@ Author: ehmo
 
 A vendoring PR merges only when **all** are true:
 
-- [ ] `docs/integrations/impeccable/LICENSE-APACHE-2.0.txt` present (verbatim Apache-2.0).
-- [ ] This `ATTRIBUTION.md` present + §1 chain complete (all 3 upstreams).
-- [ ] Every vendored-and-modified file carries the §3 header notice.
-- [ ] Every vendored registry row carries a `source:` tag (§3).
-- [ ] §4 NOTICE reproduced verbatim.
-- [ ] Blitz MIT `LICENSE` unchanged; no upstream copyright stripped.
+- [x] `docs/integrations/impeccable/LICENSE-APACHE-2.0.txt` present (verbatim Apache-2.0): byte-identical to impeccable's `LICENSE` at `cli-v2.3.2` (checked 2026-10-12); CI fails when the file is absent.
+- [x] This `ATTRIBUTION.md` present + §1 chain complete (all 3 upstreams).
+- [x] Every vendored-and-modified file carries the §3 header notice: the registry carries it in `attribution.notice` (§3, "Where the header notice lives"); the validator fails without it.
+- [x] Every vendored registry row carries a `source:` tag (§3): required by `check-registry-validate.sh` on every `owner: impeccable` row; CI fails when the tag count drops to zero.
+- [x] §4 NOTICE reproduced verbatim: copied byte for byte from the pinned tag (§4).
+- [x] Blitz MIT `LICENSE` unchanged; no upstream copyright stripped: `LICENSE` has not changed since the commit that added this file, and §1 keeps every upstream copyright line.
 
-Wire this as a CI check (`grep`-based: source-tag presence on `design-*` rows; `LICENSE-APACHE-2.0.txt` existence) in the implementation sprint.
+Wired as CI checks: the `impeccable attribution` step in `.github/workflows/ci.yml` requires `LICENSE-APACHE-2.0.txt` and a non-zero count of `"source": "impeccable@` tags in the registry; `scripts/ci-local.sh` mirrors the step and `hooks/tests/ci-local.bats` fails when the two drift; `hooks/scripts/check-registry-validate.sh` (its own CI step) checks the tag shape, the version pin and the `attribution` block, with `hooks/tests/check-registry-validate.bats` covering each failure mode.
 
 ---
 

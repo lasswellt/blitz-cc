@@ -30,6 +30,13 @@ jobs:
       - name: Check-registry schema
         run: bash hooks/scripts/check-registry-validate.sh
 
+      - name: impeccable attribution (Apache-2.0 text + source tags on vendored rows)
+        # Merge gate from docs/integrations/impeccable/ATTRIBUTION.md §5. The validator
+        # above checks the shape of each vendored row's tag; this guards the count and
+        # the vendored license text so neither can silently drop to nothing.
+        run: |
+          test -f docs/integrations/impeccable/LICENSE-APACHE-2.0.txt && test "$(grep -c '"source": "impeccable@' skills/_shared/check-registry.json)" -gt 0
+
       - name: Markdown links + anchors
         run: bash hooks/scripts/markdown-link-validate.sh
 

@@ -1,13 +1,19 @@
 {
   "$schema": "blitz-check-registry/2.0",
   "generated": "2026-05-29",
-  "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check) + design pillar (47 rows: impeccable@2.3.2 + new L1/L2)",
+  "revalidated": "2026-05-29 (3 independent reviewers + deterministic derivation check) + design pillar (impeccable@2.3.2 vendored rows + new L1/L2; counts in detector_count.design)",
   "supersedes": [
     "skills/_shared/quality.md §1 (prose table)",
     "skills/_shared/quality.md §3 (grep patterns)",
     "scattered grep patterns across 7 quality skills"
   ],
   "doc": "registry-design.md",
+  "attribution": {
+    "notice": "Modified by the Blitz project from pbakaus/impeccable@2.3.2 (Apache-2.0). Re-grounded from a single hand-rolled-CSS aesthetic to a framework-adaptive model (normalized spine + Tailwind/MD3/Vuetify/Quasar adapters). See docs/integrations/impeccable/ATTRIBUTION.md.",
+    "upstream": "https://github.com/pbakaus/impeccable (tag cli-v2.3.2)",
+    "license": "docs/integrations/impeccable/LICENSE-APACHE-2.0.txt",
+    "rows": "every checks[] row with owner == impeccable; each carries a source tag that starts with impeccable@2.3.2 and names the Apache-2.0 license and docs/integrations/impeccable/ATTRIBUTION.md"
+  },
   "detector_count": {
     "catalogued": 20,
     "note": "det-01..20; det-20 appended 2026-05-16 as the audit-FP check. NOT '19 blocking + 1 advisory'.",
@@ -23,10 +29,20 @@
       "det-20"
     ],
     "whole_registry": {
-      "rows": 96,
-      "reject": 16,
+      "rows": 97,
+      "reject": 17,
       "advisory": 80
-    }
+    },
+    "design": {
+      "rows": 60,
+      "vendored": 41,
+      "by_layer": {
+        "0": 45,
+        "1": 7,
+        "2": 8
+      }
+    },
+    "validation": "every number in detector_count is recomputed from checks[] by hooks/scripts/check-registry-validate.sh; a stored value that disagrees fails the gate"
   },
   "field_contract": {
     "id": "stable kebab/numeric key; deterministic detectors keep their taxonomy number as `det-NN`",
@@ -40,7 +56,7 @@
     "owner": "the legacy skill that owns the canonical pattern (provenance)",
     "consolidated_target": "check | audit | both | orthogonal",
     "escape_hatch": "documented FP override (null if none)",
-    "source": "primary-source citation for the failure class",
+    "source": "primary-source citation for the failure class (required, non-empty). Vendored rows (owner impeccable, detection runs `impeccable detect`) use `impeccable@<version> <upstream-path>#<rule-id> (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)`; the validator requires that shape on them.",
     "notes": "design notes incl. Opus-4.8-honesty sensitivity and aggregation requirement",
     "layer": "design pillar only: 0 universal-slop (framework-independent, always on) | 1 token-discipline (normalized, adapter-resolved) | 2 adapter-conformance (fires only for the detected stack). See docs/integrations/impeccable/detector-rebuild.md.",
     "adapter": "design pillar only: universal | tailwind | tailwind-md3 | vuetify | quasar. Selected by the stack signal from scripts/detect-stack.sh. universal = Layer 0 (all stacks); others gate Layer 1/2.",
@@ -1064,7 +1080,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#side-tab (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#side-tab (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Thick colored border on one side of a card — the most recognizable tell of AI-generated UI"
     },
     {
@@ -1104,7 +1120,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#border-accent-on-rounded (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#border-accent-on-rounded (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Thick accent border on a rounded card — the border clashes with the rounded corners. Remov"
     },
     {
@@ -1144,7 +1160,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#overused-font (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#overused-font (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many s"
     },
     {
@@ -1184,7 +1200,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#single-font (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#single-font (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Only one font family is used for the entire page. Pair a distinctive display font with a r"
     },
     {
@@ -1224,7 +1240,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#flat-type-hierarchy (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#flat-type-hierarchy (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Font sizes are too close together — no clear visual hierarchy. Use fewer sizes with more c"
     },
     {
@@ -1264,7 +1280,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gradient-text (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Gradient text is decorative rather than meaningful — a common AI tell, especially on headi"
     },
     {
@@ -1304,7 +1320,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#ai-color-palette (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#ai-color-palette (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Purple/violet gradients and cyan-on-dark are the most recognizable tells of AI-generated U"
     },
     {
@@ -1344,7 +1360,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cream-palette (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cream-palette (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. A warm cream or beige page background has become the default \"tasteful\" AI surface, reache"
     },
     {
@@ -1384,7 +1400,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#nested-cards (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#nested-cards (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Cards inside cards create visual noise and excessive depth. Flatten the hierarchy — use sp"
     },
     {
@@ -1424,7 +1440,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#monotonous-spacing (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#monotonous-spacing (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. The same spacing value used everywhere — no rhythm, no variation. Use tight groupings for "
     },
     {
@@ -1470,7 +1486,7 @@
         ],
         "cite": "M3 Expressive spring motion (emphasized-* overshoot curves); Quasar Animate.css bounceIn/Out vocabulary"
       },
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#bounce-easing (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#bounce-easing (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 1 slop rule. Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly — use exp"
     },
     {
@@ -1510,7 +1526,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#dark-glow (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#dark-glow (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Dark backgrounds with colored box-shadow glows are the default \"cool\" look of AI-generated"
     },
     {
@@ -1550,7 +1566,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#icon-tile-stack (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#icon-tile-stack (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. A small rounded-square icon container above a heading is the universal AI feature-card tem"
     },
     {
@@ -1590,7 +1606,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#italic-serif-display (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#italic-serif-display (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Oversized italic serif (Fraunces, Recoleta, Playfair, Newsreader-italic) as the primary he"
     },
     {
@@ -1630,7 +1646,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#hero-eyebrow-chip (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#hero-eyebrow-chip (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. A tiny uppercase letter-spaced label sitting immediately above an oversized hero headline "
     },
     {
@@ -1670,7 +1686,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeated-section-kickers (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeated-section-kickers (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Repeating tiny uppercase tracked labels above section headings turns a brand page into AI "
     },
     {
@@ -1710,7 +1726,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#numbered-section-markers (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#numbered-section-markers (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Numbered display markers as section labels (01, 02, 03) are the AI editorial scaffold one "
     },
     {
@@ -1750,7 +1766,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#em-dash-overuse (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#em-dash-overuse (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. More than two em-dashes (— or --) in body copy is an AI cadence tell. Use commas, colons, "
     },
     {
@@ -1790,7 +1806,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#marketing-buzzword (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#marketing-buzzword (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Generic SaaS phrases (streamline / empower / supercharge / world-class / enterprise-grade "
     },
     {
@@ -1830,7 +1846,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#aphoristic-cadence (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#aphoristic-cadence (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Three or more sections landing on a short rebuttal sentence (\"X. No Y.\" / \"X. Just Y.\") or"
     },
     {
@@ -1870,7 +1886,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#oversized-h1 (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#oversized-h1 (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. A full-sentence headline set at display size ends up dominating the viewport, leaving no r"
     },
     {
@@ -1910,7 +1926,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#extreme-negative-tracking (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#extreme-negative-tracking (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Letter-spacing pulled tighter than the point where characters keep their own shapes costs "
     },
     {
@@ -1950,7 +1966,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#broken-image (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#broken-image (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. <img> tags with empty src, missing src, or placeholder values ship as broken-image boxes. "
     },
     {
@@ -1990,7 +2006,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gray-on-color (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gray-on-color (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Gray text looks washed out on colored backgrounds. Use a darker shade of the background co"
     },
     {
@@ -2030,7 +2046,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#low-contrast (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#low-contrast (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Inc"
     },
     {
@@ -2070,7 +2086,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#layout-transition (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#layout-transition (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Animating width, height, padding, or margin causes layout thrash and janky performance. Us"
     },
     {
@@ -2110,7 +2126,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#line-length (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#line-length (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Text lines wider than ~80 characters are hard to read. The eye loses its place tracking ba"
     },
     {
@@ -2150,7 +2166,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cramped-padding (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#cramped-padding (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Text is too close to the edge of its container. Two shapes: (1) an element with its own te"
     },
     {
@@ -2190,7 +2206,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#body-text-viewport-edge (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#body-text-viewport-edge (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Body paragraphs render flush against the left or right viewport edge with no container pro"
     },
     {
@@ -2230,7 +2246,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tight-leading (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tight-leading (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Line height below 1.3x the font size makes multi-line text hard to read. Use 1.5 to 1.7 fo"
     },
     {
@@ -2270,7 +2286,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#skipped-heading (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#skipped-heading (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Heading levels should not skip (e.g. h1 then h3 with no h2). Screen readers use heading hi"
     },
     {
@@ -2310,7 +2326,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#justified-text (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#justified-text (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Justified text without hyphenation creates uneven word spacing (\"rivers of white\"). Use te"
     },
     {
@@ -2350,7 +2366,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tiny-text (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#tiny-text (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Body text below 12px is hard to read, especially on high-DPI screens. Use at least 14px fo"
     },
     {
@@ -2390,7 +2406,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#all-caps-body (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#all-caps-body (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Long passages in uppercase are hard to read. We recognize words by shape (ascenders and de"
     },
     {
@@ -2430,7 +2446,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#wide-tracking (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#wide-tracking (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Letter spacing above 0.05em on body text disrupts natural character groupings and slows re"
     },
     {
@@ -2470,7 +2486,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#text-overflow (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#text-overflow (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. Content renders wider than its container, spilling out or forcing a horizontal scrollbar. "
     },
     {
@@ -2510,7 +2526,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#clipped-overflow-container (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#clipped-overflow-container (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 quality rule. A clipping container (overflow hidden or clip) wrapping an absolutely-positioned child cut"
     },
     {
@@ -2558,7 +2574,7 @@
         ],
         "cite": "stack elevation systems: TW shadow-*, MD3 levels 0-5 + tonal surface-container-*, Vuetify elevation prop, Quasar shadow-1..24"
       },
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gpt-thin-border-wide-shadow (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#gpt-thin-border-wide-shadow (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 1 slop rule. A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature"
     },
     {
@@ -2598,7 +2614,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeating-stripes-gradient (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#repeating-stripes-gradient (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Repeating-gradient stripes used as surface decoration are a recurring generated-UI signatu"
     },
     {
@@ -2638,7 +2654,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#theater-slop-phrase (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#theater-slop-phrase (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Dismissing something as \"theater\" is a recurring generated-copy tic. Say plainly what the "
     },
     {
@@ -2678,7 +2694,7 @@
       "consolidated_target": "both",
       "escape_hatch": "documented intentional brand system in DESIGN.md",
       "reconciliation": null,
-      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#image-hover-transform (re-grounded, framework-adaptive)",
+      "source": "impeccable@2.3.2 cli/engine/registry/antipatterns.mjs#image-hover-transform (re-grounded, framework-adaptive; Apache-2.0, see docs/integrations/impeccable/ATTRIBUTION.md)",
       "notes": "Vendored Layer 0 slop rule. Scaling or rotating an image on hover is a recurring generated-UI signature. Let imagery s"
     },
     {
