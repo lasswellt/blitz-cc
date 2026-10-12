@@ -1,4 +1,4 @@
-# Refactor — Reference Material
+# Refactor: Reference Material
 
 Safe refactoring patterns, verification strategies, incremental migration patterns.
 
@@ -15,7 +15,7 @@ Safe refactoring patterns, verification strategies, incremental migration patter
 4. Verify: type-check, run related tests
 5. Commit
 
-**Risk:** Low — purely structural change.
+**Risk:** Low (purely structural change).
 
 ### Extract Component (Vue)
 **When:** Vue component exceeds 300 lines or has reusable section.
@@ -27,7 +27,7 @@ Safe refactoring patterns, verification strategies, incremental migration patter
 5. Verify: type-check, mount test, visual inspection
 6. Commit
 
-**Risk:** Low-Medium — may break slot or event chains.
+**Risk:** Low-Medium (may break slot or event chains).
 
 ### Rename/Move
 **When:** File, function, or variable has misleading name or wrong location.
@@ -39,7 +39,7 @@ Safe refactoring patterns, verification strategies, incremental migration patter
 5. Verify: type-check (catches missed references), run full test suite
 6. Commit
 
-**Risk:** Medium — missed references cause runtime errors.
+**Risk:** Medium (missed references cause runtime errors).
 
 ### Extract Type/Interface
 **When:** Inline type definitions repeated across files.
@@ -51,19 +51,19 @@ Safe refactoring patterns, verification strategies, incremental migration patter
 5. Verify: type-check
 6. Commit
 
-**Risk:** Low — types compile-time only.
+**Risk:** Low (types compile-time only).
 
 ### Inline / Remove Dead Code
 **When:** Function, variable, or file unused.
 **Steps:**
 1. Verify no references exist (grep for imports, usages)
-2. Check git history — recently added? (may be in-progress work)
+2. Check git history: recently added? (may be in-progress work)
 3. Remove code
 4. Remove now-empty barrel exports
 5. Verify: type-check, build
 6. Commit
 
-**Risk:** Medium — may remove code dynamically referenced.
+**Risk:** Medium (may remove code dynamically referenced).
 
 ### Replace Conditional with Strategy/Map
 **When:** Long if/else or switch statement maps inputs to behaviors.
@@ -74,7 +74,7 @@ Safe refactoring patterns, verification strategies, incremental migration patter
 4. Verify: all branches still covered by tests
 5. Commit
 
-**Risk:** Low — equivalent transformation.
+**Risk:** Low (equivalent transformation).
 
 ---
 

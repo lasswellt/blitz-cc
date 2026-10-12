@@ -1,4 +1,4 @@
-# Test Generation — Reference Material
+# Test Generation: Reference Material
 
 Test patterns per framework/scenario.
 
