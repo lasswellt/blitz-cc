@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 ## Additional Resources
 - For codemod registry, risk assessment matrix, and rollback procedures, see [references/main.md](references/main.md)
-- For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified — that's the case-2 exception; secondary deps installed during the migration follow the latest-resolution rule.
+- For package install policy (always resolve to registry latest unless the user pinned a specific version), see [/_shared/security.md](/_shared/security.md). Migration target version is user-specified (the case-2 exception); secondary deps installed during the migration follow the latest-resolution rule.
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
@@ -48,7 +48,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ---
 
-## Phase 0: PARSE — Understand Migration Target
+## Phase 0: PARSE (Understand Migration Target)
 
 1. Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7). Print verbose progress at every phase transition.
 2. Extract migration target from `$ARGUMENTS`. Ambiguous target → ask for clarification. Full examples: [references/main.md](references/main.md#target-interpretation-examples).
@@ -68,7 +68,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ---
 
-## Phase 1: RESEARCH — Gather Migration Intelligence
+## Phase 1: RESEARCH (Gather Migration Intelligence)
 
 If WebSearch is available, search for the official migration guide, breaking changes, codemods, and known gotchas:
 ```
@@ -95,13 +95,13 @@ Common codemods: Vue → `npx vue-codemod`; ESLint → `npx @eslint/migrate-conf
 
 ---
 
-## Phase 2: IMPACT — Assess Scope
+## Phase 2: IMPACT (Assess Scope)
 
 Count affected files per breaking change:
 ```bash
 for pattern in "<pattern1>" "<pattern2>" "<pattern3>"; do
   count=$(grep -r "$pattern" --include="*.ts" --include="*.tsx" --include="*.vue" --include="*.js" -l . | grep -v node_modules | wc -l)
-  echo "Pattern: $pattern — Files: $count"
+  echo "Pattern: $pattern (files: $count)"
 done
 ```
 
@@ -130,7 +130,7 @@ Migration Assessment: <target>
 
 ---
 
-## Phase 3: PLAN — Build Migration Steps
+## Phase 3: PLAN (Build Migration Steps)
 
 Create atomic steps ordered by dependency and risk:
 
@@ -166,11 +166,11 @@ Step 1: <description>
 
 ---
 
-## Phase 4: EXECUTE — Incremental Migration
+## Phase 4: EXECUTE (Incremental Migration)
 
 ### 4.1 Execute Loop
 
-For each step: make the change (edit files, run codemods, update configs — least change principle), then verify:
+For each step: make the change (edit files, run codemods, update configs; least change principle), then verify:
 ```bash
 <TYPE_CHECK_CMD> 2>&1 | tail -30
 <TEST_CMD> 2>&1 | tail -50
@@ -180,7 +180,7 @@ For each step: make the change (edit files, run codemods, update configs — lea
 **If verification passes:** commit and proceed:
 ```bash
 git add <changed-files>
-git commit -m "migrate(<target>): step <N> — <description>"
+git commit -m "migrate(<target>): step <N>: <description>"
 ```
 
 **If verification fails:** analyze, fix, re-verify (max 3 attempts). If still failing after 3 attempts, revert and note as blocked:
@@ -191,20 +191,20 @@ git checkout -- <changed-files>
 Display progress after each step:
 ```
 Migration Progress: <current> → <target>
-  [x] Step 1: Update package version — PASS
-  [x] Step 2: Update config files — PASS
-  [x] Step 3: Run codemod — PASS
-  [ ] Step 4: Fix breaking API changes — IN PROGRESS (attempt 2/3)
-  [ ] Step 5: Update test imports — PENDING
-  [ ] Step 6: Clean up deprecations — PENDING
+  [x] Step 1: Update package version (PASS)
+  [x] Step 2: Update config files (PASS)
+  [x] Step 3: Run codemod (PASS)
+  [ ] Step 4: Fix breaking API changes (IN PROGRESS, attempt 2/3)
+  [ ] Step 5: Update test imports (PENDING)
+  [ ] Step 6: Clean up deprecations (PENDING)
 ```
 
 ### 4.2 Output Artifacts
 
 Write durable artifacts under `docs/migrations/<from>-<to>/` (slug e.g. `vue2-vue3`):
-- `plan.md` — incremental step plan + per-step verification commands.
-- `progress.md` — checkpoint (steps completed/failed); enables `--resume`.
-- `report.md` — applied-change summary + type-check/test gate result per step.
+- `plan.md`: incremental step plan + per-step verification commands.
+- `progress.md`: checkpoint (steps completed/failed); enables `--resume`.
+- `report.md`: applied-change summary + type-check/test gate result per step.
 
 After each step (pass or fail), update `progress.md`:
 ```json
@@ -217,8 +217,8 @@ After each step (pass or fail), update `progress.md`:
 ### 4.3 Resume Contract (`--resume`)
 
 At Phase 0, if `docs/migrations/<from>-<to>/progress.md` exists:
-- **without `--resume`** — refuse to clobber: print `BLOCK: migration progress.md exists; pass --resume to continue, or move progress.md aside to restart.` and exit 1.
-- **with `--resume`** — read progress.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
+- **without `--resume`**: refuse to clobber; print `BLOCK: migration progress.md exists; pass --resume to continue, or move progress.md aside to restart.` and exit 1.
+- **with `--resume`**: read progress.md, verify each completed commit still exists in git history, skip `done` steps, retry the first non-`done` step. Rerun after full completion is a no-op (`migration already complete`, exit 0).
 
 ### 4.4 Consecutive Failure Check
 
@@ -241,7 +241,7 @@ Rollback: git checkout <rollback-branch>
 
 ---
 
-## Phase 5: VERIFY — Full Suite
+## Phase 5: VERIFY (Full Suite)
 
 Run full verification and compare against pre-migration baseline:
 ```bash

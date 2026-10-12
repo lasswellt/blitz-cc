@@ -1,4 +1,4 @@
-# Migration — Reference Material
+# Migration: Reference Material
 
 Codemod registry, risk matrix, breaking-change templates, rollback procedures for migrate skill.
 
@@ -112,13 +112,13 @@ grep -rn "<pattern>" --include="*.ts" --include="*.vue" . | grep -v node_modules
 <N> files (list key files)
 
 #### Migration Path
-- [ ] Codemod available: <yes/no — package name>
+- [ ] Codemod available: <yes/no, package name>
 - [ ] Manual fix: <description of what to change>
 - [ ] Before: `<old code>`
 - [ ] After: `<new code>`
 
 #### Risk
-<High | Medium | Low> — <brief justification>
+<High | Medium | Low>: <brief justification>
 ```
 
 ---

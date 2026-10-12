@@ -31,7 +31,7 @@ Profile bundle sizes, runtime performance, and Core Web Vitals for Vue/Nuxt apps
 
 These rules override ALL other instructions. Violating any of these is a critical failure.
 
-1. **This skill is READ-ONLY** — never modify source files, test files, or configuration files.
+1. **This skill is READ-ONLY**: never modify source files, test files, or configuration files.
 
 2. **Never install global npm packages.** Only use `npx` for locally-available tools or tools that support `--no-install` mode.
 
@@ -45,7 +45,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ---
 
-## Phase 0: PARSE — Determine Mode
+## Phase 0: PARSE (Determine Mode)
 
 ### 0.0 Register Session
 
@@ -89,7 +89,7 @@ Store the detected build tool for use in mode-specific commands.
 
 ---
 
-## Phase 1: BUNDLE — Size Analysis
+## Phase 1: BUNDLE (Size Analysis)
 
 Skip this phase if mode is `runtime` or `lighthouse`.
 
@@ -192,7 +192,7 @@ Write findings to `${SESSION_TMP_DIR}/bundle-analysis.md`:
 
 ---
 
-## Phase 2: RUNTIME — Code Pattern Analysis
+## Phase 2: RUNTIME (Code Pattern Analysis)
 
 Skip this phase if mode is `bundle` or `lighthouse`.
 
@@ -211,7 +211,7 @@ Write findings to `${SESSION_TMP_DIR}/runtime-analysis.md`:
 
 ---
 
-## Phase 3: LIGHTHOUSE — Core Web Vitals
+## Phase 3: LIGHTHOUSE (Core Web Vitals)
 
 Skip this phase if mode is `bundle` or `runtime`.
 
@@ -300,7 +300,7 @@ Write findings to `${SESSION_TMP_DIR}/lighthouse-report.md`:
 
 ---
 
-## Phase 4: REPORT — Generate Consolidated Findings
+## Phase 4: REPORT (Generate Consolidated Findings)
 
 ### 4.1 Compile All Findings
 
@@ -351,11 +351,11 @@ Write `${SESSION_TMP_DIR}/perf-profile.md`:
 
 ## Lighthouse Results
 - Performance score: N/100
-- LCP: Ns (target: < 2.5s) — PASS/FAIL
-- INP: Nms (target: < 200ms) — PASS/FAIL
-- CLS: N (target: < 0.1) — PASS/FAIL
-- FCP: Ns (target: < 1.8s) — PASS/FAIL
-- TTFB: Ns (target: < 0.8s) — PASS/FAIL
+- LCP: Ns (target: < 2.5s), PASS/FAIL
+- INP: Nms (target: < 200ms), PASS/FAIL
+- CLS: N (target: < 0.1), PASS/FAIL
+- FCP: Ns (target: < 1.8s), PASS/FAIL
+- TTFB: Ns (target: < 0.8s), PASS/FAIL
 
 ## Summary
 Findings: N critical, N high, N medium, N low
@@ -368,10 +368,10 @@ Print a concise summary to the user:
 ```
 Performance Profile: <stack>
 ============================
-  Bundle: NKB gzipped (target: <250KB) — PASS/WARN/FAIL
-  LCP: Ns (target: <2.5s) — PASS/FAIL/SKIPPED
-  INP: Nms (target: <200ms) — PASS/FAIL/SKIPPED
-  CLS: N (target: <0.1) — PASS/FAIL/SKIPPED
+  Bundle: NKB gzipped (target: <250KB), PASS/WARN/FAIL
+  LCP: Ns (target: <2.5s), PASS/FAIL/SKIPPED
+  INP: Nms (target: <200ms), PASS/FAIL/SKIPPED
+  CLS: N (target: <0.1), PASS/FAIL/SKIPPED
 
   Findings: N critical, N high, N medium, N low
 
@@ -402,8 +402,8 @@ Performance Profile: <stack>
 
 ## Error Recovery
 
-- **Build fails**: Skip bundle analysis. Focus on runtime patterns. Note in report: "Bundle analysis skipped — build failed. Fix build errors first."
-- **No dev server can be started**: Skip Lighthouse. Note in report: "Lighthouse skipped — dev server could not be started."
+- **Build fails**: Skip bundle analysis. Focus on runtime patterns. Note in report: "Bundle analysis skipped: build failed. Fix build errors first."
+- **No dev server can be started**: Skip Lighthouse. Note in report: "Lighthouse skipped: dev server could not be started."
 - **Chrome/Playwright not available for Lighthouse**: Try CLI `npx lighthouse` as fallback. If that also fails, skip Lighthouse and note in report.
 - **Bundle analysis tools not available**: Use fallback size estimation from `node_modules` directory sizes and build output parsing.
 - **Lighthouse times out**: Report partial results if available. Note timeout in report.
