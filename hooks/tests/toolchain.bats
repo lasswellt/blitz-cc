@@ -413,14 +413,14 @@ EOF
 @test "every SKILL.md body is under the compaction re-attach cap" {
   # Claude Code re-attaches an invoked skill after compaction keeping only the
   # FIRST 5,000 TOKENS. Markdown puts terminal phases last, so an over-cap body
-  # loses its verdict, gate, report and recovery — exactly what a long session
+  # loses its verdict, gate, report and recovery: exactly what a long session
   # needs, and a long session is when compaction fires.
   #
   # 15,000 B = 5,000 tokens at 3.0 bytes/token, the pessimistic ratio for
   # table- and code-dense markdown. The cap is in bytes because only
   # `messages.count_tokens` counts Claude tokens accurately and that needs a
   # credential; scripts/count-tokens.sh does it where one exists. tiktoken is
-  # not a substitute — it is OpenAI's and undercounts Claude.
+  # not a substitute; it is OpenAI's and undercounts Claude.
   local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
   local over=0 f b
   for f in "$root"/skills/*/SKILL.md; do
@@ -472,7 +472,7 @@ EOF
 }
 
 @test "terminal phases sit inside the 5,000-token cut point" {
-  # Not just "under the cap" — the closing sections specifically must survive.
+  # Not just "under the cap": the closing sections specifically must survive.
   local root; root="$(cd "$HOOKS_DIR/../.." && pwd)"
   local bad=0 f body off
   for f in "$root"/skills/*/SKILL.md; do

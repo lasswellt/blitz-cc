@@ -80,7 +80,7 @@ teardown() {
 }
 
 @test "allows when no typecheck row resolves (no TS project markers)" {
-  # Run from a clean temp dir with no tsconfig — hook exits 0 before any tsc work.
+  # Run from a clean temp dir with no tsconfig; the hook exits 0 before any tsc work.
   local d; d="$(mktemp -d)"
   local status=0
   ( cd "$d" && CI="" printf '%s' "$(fake_ts_edit "$d/x.ts")" \

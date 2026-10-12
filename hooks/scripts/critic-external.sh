@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# critic-external.sh — Cross-Model Critic (CMC), provider-pluggable.
+# critic-external.sh: Cross-Model Critic (CMC), provider-pluggable.
 #
 # Invokes a non-Claude CLI agent as an alternative or paired adversarial
 # reviewer for check (critic pre-pass), research-critic, or design-critic.
@@ -14,38 +14,38 @@
 #   echo "<prompt>" | critic-external.sh --mode pre-pass --provider agy --stdin
 #
 # Providers:
-#   gemini   — Google Gemini CLI       (prompt on stdin)
-#   agy      — Antigravity CLI         (prompt in argv; --add-dir fallback when large)
-#   copilot  — GitHub Copilot CLI      (prompt in argv; no tools granted)
-#   codex    — OpenAI Codex CLI        (prompt on stdin; read-only sandbox)
+#   gemini:    Google Gemini CLI       (prompt on stdin)
+#   agy:       Antigravity CLI         (prompt in argv; --add-dir fallback when large)
+#   copilot:   GitHub Copilot CLI      (prompt in argv; no tools granted)
+#   codex:     OpenAI Codex CLI        (prompt on stdin; read-only sandbox)
 #
 # Modes:
-#   pre-pass — check critic pre-pass (replaces or pairs with agents/critic.md).
+#   pre-pass:  check critic pre-pass (replaces or pairs with agents/critic.md).
 #              With no --stdin/--prompt-file the prompt is built here: the
 #              MODE: reject / PLAN / TASKS / BASE header critic.md requires,
 #              the agent body, and `git diff BASE` of the working tree.
 #              --plan and --tasks default to none; --base defaults to the
 #              merge-base with origin/HEAD, else HEAD~1.
-#   research — research-skill Phase 3.2.5 (pairs with agents/research-critic.md)
-#   design   — ui-build Phase 5.4.2 (vision; requires a multimodal provider)
+#   research:  research-skill Phase 3.2.5 (pairs with agents/research-critic.md)
+#   design:    ui-build Phase 5.4.2 (vision; requires a multimodal provider)
 #
 # Env:
-#   BLITZ_CRITIC_PROVIDER — default provider when --provider is absent (default: gemini)
-#   BLITZ_CRITIC_PANEL    — comma-separated providers; runs each and merges verdicts
-#   BLITZ_<P>_BIN         — override a provider binary (P = GEMINI | AGY | COPILOT | CODEX)
-#   BLITZ_<P>_MODEL       — model id for that provider (codex: unset uses the
+#   BLITZ_CRITIC_PROVIDER:  default provider when --provider is absent (default: gemini)
+#   BLITZ_CRITIC_PANEL:     comma-separated providers; runs each and merges verdicts
+#   BLITZ_<P>_BIN:          override a provider binary (P = GEMINI | AGY | COPILOT | CODEX)
+#   BLITZ_<P>_MODEL:        model id for that provider (codex: unset uses the
 #                           model in ~/.codex/config.toml)
-#   BLITZ_<P>_FLAGS       — extra flags, one per line (never space-split: a single
+#   BLITZ_<P>_FLAGS:        extra flags, one per line (never space-split: a single
 #                           value must not be able to inject a second flag such as
 #                           --system-prompt and force an unconditional LGTM)
-#   BLITZ_CRITIC_ARG_CAP  — bytes above which the prompt is handed over as a file
+#   BLITZ_CRITIC_ARG_CAP:   bytes above which the prompt is handed over as a file
 #                           instead of argv (default 100000; Linux caps one argv
 #                           string at 128 KiB and the CLI dies with E2BIG)
 #
 # Output:
-#   One provider  — that provider's canonical JSON, exactly as the in-Claude
+#   One provider:   that provider's canonical JSON, exactly as the in-Claude
 #                   critic agent would emit it (verdict + issues + summary).
-#   Panel         — {verdict, rule, providers[], issues[], errors[], summary, redacted}.
+#   Panel:          {verdict, rule, providers[], issues[], errors[], summary, redacted}.
 #                   A provider that fails to answer is recorded in errors[] and
 #                   does not decide the verdict on its own.
 #   pre-pass REJECTs are claims, not vetoes: cross-model reviewers run at ~30%
@@ -59,11 +59,11 @@
 # the reply's `redacted` field counts them. BLITZ_CRITIC_NO_REDACT=1 skips it.
 #
 # Exit:
-#   0   — verdict LGTM | PASS (panel: at least one verdict, none rejecting)
-#   2   — verdict CITATIONS_MISSING | UNVERIFIED | REWORK | ITERATE (research,
+#   0:    verdict LGTM | PASS (panel: at least one verdict, none rejecting)
+#   2:    verdict CITATIONS_MISSING | UNVERIFIED | REWORK | ITERATE (research,
 #         design), or REJECT under BLITZ_CRITIC_EXTERNAL_VETO=1
-#   3   — pre-pass REJECT awaiting confirmation by the in-Claude critic
-#   1   — invocation failure (binary missing, malformed reply, parse error;
+#   3:    pre-pass REJECT awaiting confirmation by the in-Claude critic
+#   1:    invocation failure (binary missing, malformed reply, parse error;
 #         panel: no provider produced a valid verdict; also a NEEDS_CONTEXT or
 #         BLOCKED reply that carries no verdict)
 #
@@ -112,7 +112,7 @@ case "$MODE" in pre-pass|research|design) ;; *) echo "[$SCRIPT_NAME] invalid mod
 
 # Provider list. An explicit flag always beats ambient env: --panel, then
 # --provider, then BLITZ_CRITIC_PANEL, then BLITZ_CRITIC_PROVIDER, then the
-# gemini default. The order matters — with a panel set globally in settings.json,
+# gemini default. The order matters: with a panel set globally in settings.json,
 # env-first resolution would silently turn critic-gemini.sh (which passes
 # --provider gemini) or any one-off --provider run into the full panel.
 PROVIDERS=()
@@ -161,7 +161,7 @@ else
     fi
     [ -z "$BASE" ] && { echo "[$SCRIPT_NAME] --base required: no origin/HEAD merge-base or HEAD~1 here" >&2; exit 1; }
     PATCH="$(git --no-pager diff "$BASE" 2>/dev/null)" || {
-      echo "[$SCRIPT_NAME] git diff $BASE failed — run from the repo under review" >&2; exit 1; }
+      echo "[$SCRIPT_NAME] git diff $BASE failed; run from the repo under review" >&2; exit 1; }
     PROMPT_BODY="MODE: reject
 PLAN: ${PLAN:-none}
 TASKS: ${TASKS:-none}
@@ -222,7 +222,7 @@ Branch / plan root: $TARGET_PATH
   esac
 fi
 
-# Hard JSON-only directive — every one of these CLIs will otherwise wrap the
+# Hard JSON-only directive: every one of these CLIs will otherwise wrap the
 # reply in a markdown fence or a sentence of preamble.
 JSON_DIRECTIVE='
 
@@ -265,10 +265,10 @@ REJECT_EXIT=2
 
 # ------------------------------------------------------------------ providers
 # Read a provider's extra flags as a newline-delimited list (one flag per line).
-# Space-splitting would let a single env value inject a second flag — e.g. a
+# Space-splitting would let a single env value inject a second flag, e.g. a
 # system-prompt override that returns LGTM unconditionally. while+read keeps
 # bash 3.2 (macOS) compatibility; mapfile would not.
-read_flags() {  # read_flags <ENVVAR-NAME> — echoes nothing, fills PROVIDER_FLAGS
+read_flags() {  # read_flags <ENVVAR-NAME>: echoes nothing, fills PROVIDER_FLAGS
   PROVIDER_FLAGS=()
   local _raw _flag
   _raw="${!1:-}"
@@ -290,7 +290,7 @@ prompt_or_pointer() {  # sets ARG_PROMPT and PROVIDER_EXTRA for an argv-only CLI
   fi
 }
 
-invoke_provider() {  # invoke_provider <provider> — raw reply on stdout, diagnostics on stderr
+invoke_provider() {  # invoke_provider <provider>: raw reply on stdout, diagnostics on stderr
   local provider="$1" bin model
   case "$provider" in
     gemini)
@@ -313,13 +313,13 @@ invoke_provider() {  # invoke_provider <provider> — raw reply on stdout, diagn
       # Headless agy cannot ask for approval: one command outside the user's
       # permissions.allow list is auto-denied and the whole run ends with no
       # reply. Its --sandbox blocks neither writes nor network, so the answer
-      # is a narrow allow-list, not --dangerously-skip-permissions — and a
+      # is a narrow allow-list, not --dangerously-skip-permissions, and a
       # critic that knows the limit, instead of one that writes a script and
       # dies. Local to this subshell; other providers keep the plain prompt.
       FULL_PROMPT="AGY TOOL LIMITS: your command tool runs only single read-only
 commands the user allow-listed (git diff/log/show/status/blame/rev-parse/
-merge-base/ls-files, cat, head, tail, grep, rg, jq, ls, wc). Anything else — a
-script, a heredoc, a pipe, &&, tasks.sh, a verify[] command — is auto-denied and
+merge-base/ls-files, cat, head, tail, grep, rg, jq, ls, wc). Anything else (a
+script, a heredoc, a pipe, &&, tasks.sh, a verify[] command) is auto-denied and
 ends your run with no verdict. Do not run task verify[] checks or registry
 scripts; judge them from the inlined diff and the files you can read, and say
 so in your summary.
@@ -375,7 +375,7 @@ clean_reply() {
 }
 
 # --------------------------------------------------------------------- run
-run_one() {  # run_one <provider> — writes cleaned JSON to $WORK/<provider>.json
+run_one() {  # run_one <provider>: writes cleaned JSON to $WORK/<provider>.json
   local provider="$1"
   local err="$WORK/$provider.err" raw clean
   # stderr is captured separately, never merged: every one of these CLIs prints
@@ -413,7 +413,7 @@ if [ "${#PROVIDERS[@]}" -eq 1 ]; then
     CITATIONS_MISSING|UNVERIFIED|REWORK|ITERATE)
       exit 2 ;;
     *)
-      echo "[$SCRIPT_NAME] unrecognized verdict: '$VERDICT' — treating as failure" >&2
+      echo "[$SCRIPT_NAME] unrecognized verdict: '$VERDICT'; treating as failure" >&2
       exit 1 ;;
   esac
 fi
@@ -422,7 +422,7 @@ fi
 # its issues[] (research, design) plus findings[] (critic.md pre-pass), so a
 # pre-pass REJECT does not reach the merged reply with no reason attached.
 # A provider that cannot
-# answer is recorded and ignored — one broken CLI must not turn the gate green
+# answer is recorded and ignored: one broken CLI must not turn the gate green
 # on its own, nor block a release on its own.
 PANEL_JSON="$WORK/panel.json"
 echo '{"providers":[],"errors":[]}' > "$PANEL_JSON"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# agent-frontmatter-validate.sh — Plugin agent frontmatter lint.
+# agent-frontmatter-validate.sh: plugin agent frontmatter lint.
 #
 # Sibling of skill-frontmatter-validate.sh. Validates agents/*.md against the
 # plugin-agent contract. The forbidden-field check enforces a constraint
@@ -13,8 +13,8 @@
 #   agent-frontmatter-validate.sh --all   # scan agents/*.md
 #
 # Exit:
-#   0 — all agents conform
-#   1 — one or more files violate the contract
+#   0: all agents conform
+#   1: one or more files violate the contract
 #
 # Checks:
 #   1. YAML frontmatter parses (delimited by ---)
@@ -30,7 +30,7 @@
 #        memory: user|project|local|none
 #        effort: low|medium|high|xhigh|max
 #        autoCompactWindow: positive integer (tokens)
-#   9. Body length ≤500 lines (excluding frontmatter) — same cap as SKILL.md
+#   9. Body length ≤500 lines (excluding frontmatter), the same cap as SKILL.md
 #  10. tools never lists Task/Todo tools (off on Claude 5 models) or tools the platform strips
 
 set -euo pipefail
@@ -122,7 +122,7 @@ validate_one() {
   local forbidden
   for forbidden in hooks mcpServers permissionMode; do
     if printf '%s\n' "$fm" | grep -qE "^${forbidden}:"; then
-      fail "$rel" "forbidden field '${forbidden}:' — silently stripped by Claude Code in plugin agents (see skills/_shared/agents.md §1). Move to ~/.claude/agents/ if needed."
+      fail "$rel" "forbidden field '${forbidden}:' is silently stripped by Claude Code in plugin agents (see skills/_shared/agents.md §1). Move to ~/.claude/agents/ if needed."
     fi
   done
 

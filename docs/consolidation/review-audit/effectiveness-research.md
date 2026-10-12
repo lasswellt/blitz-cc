@@ -2,7 +2,7 @@
 title: Effectiveness Research — verified primary sources + corrections
 status: spec input (every claim verified live 2026-05-29)
 method: each cited source fetched and confirmed; claim-match graded YES | PARTIAL | HALLUCINATED
-maps_to: critic-redesign.md, research-critic-redesign.md, review-spec.md, audit-spec.md, flaw-finding-proof.md
+maps_to: audit-spec.md (in this directory); agents/critic.md (was critic-redesign.md); agents/research-critic.md (was research-critic-redesign.md); skills/check/SKILL.md (was review-spec.md; /blitz:review became /blitz:check in 3.0.0); skills/_shared/quality.reference.md (was flaw-finding-proof.md; holds the two-lane, aggregation and FP-verification rules). The four removed specs were archived in 7d44bb4; their names in the body below are historical.
 ---
 
 # Effectiveness Research (v2, corrected)

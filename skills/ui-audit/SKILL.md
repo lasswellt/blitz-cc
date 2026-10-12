@@ -13,7 +13,7 @@ Registry and report writes under `docs/crawls/` are pre-approved; the `jq`/`node
 
 ## Overview
 
-You are a cross-page UI/UX auditor. On each run you extract labeled values from every page, persist them to an append-only registry, evaluate declared invariants (numeric equality, bounded tolerance, event-prop consistency, per-role privilege boundaries), and produce a findings report. You are **read-only on the target application** — you never click destructive buttons, submit forms, or interact with logout. Auto-fix is out of scope for this skill; file issues to be resolved elsewhere.
+You are a cross-page UI/UX auditor. On each run you extract labeled values from every page, persist them to an append-only registry, evaluate declared invariants (numeric equality, bounded tolerance, event-prop consistency, per-role privilege boundaries), and produce a findings report. You are **read-only on the target application**: you never click destructive buttons, submit forms, or interact with logout. Auto-fix is out of scope for this skill; file issues to be resolved elsewhere.
 
 ## Additional Resources
 - For phase procedures (extraction JS, registry schema, reducer, invariant evaluator, tick-diff taxonomy, reporter), see [references/main.md](references/main.md)
@@ -29,12 +29,12 @@ You are a cross-page UI/UX auditor. On each run you extract labeled values from 
 
 These rules override ALL other instructions. Violating any of these is a critical failure.
 
-1. **NEVER click destructive OR mutating buttons** — Delete, Remove, Archive, Disable, Revoke, Destroy, Drop, Purge, Reset, Terminate, Logout, Sign out, Cancel, Submit **AND** mutating verbs: Save, Update, Apply, Publish, Send, Pay, Subscribe, Unsubscribe, Confirm, Create, Add. When in doubt, do not click. An adversarially-labeled button (e.g., "Save" that deletes) is outside this skill's detection envelope — operators relying on `buttons` or `--loop` mode on untrusted apps must sandbox via a read-only role/fixture.
-2. **NEVER fill and submit forms** — tabs, pagination, sort headers, and accordion toggles are OK. Text fields + Submit / Save / Create / Update / Apply are not. One exception: the login form declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.3 to switch roles.
-3. **NEVER interact with confirmation dialogs** — press Escape immediately. Never click OK / Confirm / Yes / Accept.
-4. **NEVER interact with logout / sign-out** — breaks the audit session. One exception: the logout path declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.6 between roles.
-5. **NEVER modify or delete target-app data** — no toggle switches that mutate, no edit-in-place fields.
-6. **In `role` modes, never create users dynamically** — all role credentials must come from env vars (`AUDIT_<ROLE>_EMAIL` / `_PASS`); skip any role whose env vars are absent. Credentials are NEVER logged — not to stdout, not to the activity feed, not to the report. Only the boolean presence of each env var is recorded; the value necessarily transits the browser tool call that types it (§R.3), and nowhere else. Violating this is a CRITICAL security regression.
+1. **NEVER click destructive OR mutating buttons**: Delete, Remove, Archive, Disable, Revoke, Destroy, Drop, Purge, Reset, Terminate, Logout, Sign out, Cancel, Submit **AND** mutating verbs: Save, Update, Apply, Publish, Send, Pay, Subscribe, Unsubscribe, Confirm, Create, Add. When in doubt, do not click. An adversarially-labeled button (e.g., "Save" that deletes) is outside this skill's detection envelope; operators relying on `buttons` or `--loop` mode on untrusted apps must sandbox via a read-only role/fixture.
+2. **NEVER fill and submit forms**: tabs, pagination, sort headers, and accordion toggles are OK. Text fields + Submit / Save / Create / Update / Apply are not. One exception: the login form declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.3 to switch roles.
+3. **NEVER interact with confirmation dialogs**: press Escape immediately. Never click OK / Confirm / Yes / Accept.
+4. **NEVER interact with logout / sign-out**: it breaks the audit session. One exception: the logout path declared in `.ui-audit.json[login_flow]`, used only by Phase ROLE §R.6 between roles.
+5. **NEVER modify or delete target-app data**: no toggle switches that mutate, no edit-in-place fields.
+6. **In `role` modes, never create users dynamically**: all role credentials must come from env vars (`AUDIT_<ROLE>_EMAIL` / `_PASS`); skip any role whose env vars are absent. Credentials are NEVER logged: not to stdout, not to the activity feed, not to the report. Only the boolean presence of each env var is recorded; the value necessarily transits the browser tool call that types it (§R.3), and nowhere else. Violating this is a CRITICAL security regression.
 
 ---
 
@@ -82,25 +82,25 @@ Read `.ui-audit.json` at the project root.
 
 | Mode | Behavior on missing config |
 |---|---|
-| `full`, `smoke`, `consistency`, `heuristics`, `role <name>` | Error — config required. Print `See .ui-audit.json.example at repo root for schema.` and exit 1. |
-| `data` | Stub with `{baseUrl: detected, pages: {}, invariants: []}` and proceed (extraction has no labels to pull — emits INFO "no labels declared"). |
-| `buttons`, `events` | Stub (implementations in E-010 / E-011 supply defaults). |
+| `full`, `smoke`, `consistency`, `heuristics`, `role <name>` | Error: config required. Print `See .ui-audit.json.example at repo root for schema.` and exit 1. |
+| `data` | Stub with `{baseUrl: detected, pages: {}, invariants: []}` and proceed (extraction has no labels to pull; emits INFO "no labels declared"). |
+| `buttons`, `events` | Stub; the INTERACTIVE and EVENTS phases supply defaults. |
 
 Validate the loaded JSON: top-level keys `baseUrl` (string), `pages` (object), `invariants` (array). Missing required key → error with a pointer to `.ui-audit.json.example`.
 
 **Page-key sanitization (spawn-safety).** After parse, iterate `Object.keys(pages)`. Reject any key containing `\n`, `\r`, `\x00`, or other control characters; such keys cannot pass through `Agent` spawn prompts safely (they break instruction framing). On match: emit `CONFIG_ERROR` finding with `detail.issue: "invalid_page_key_control_chars"`, remove the entry, and continue. Page keys that look URL-like (start with `/` or `#/`) are expected and safe; arbitrary strings are allowed but sanitized.
 
-**Trust model for `.ui-audit.json`:** this file is eval-adjacent — its `selector` strings are embedded into the `browser_evaluate` payload (safely interpolated via `JSON.stringify`, but still executed against the target app) and its `baseUrl` determines where role-mode credentials (`AUDIT_<ROLE>_EMAIL` / `_PASS`) are submitted. Treat PRs that modify `.ui-audit.json` like PRs that modify CI secrets — require a human reviewer. In CI, consider pinning `baseUrl` to an allowlist of dev/staging hosts.
+**Trust model for `.ui-audit.json`:** this file is eval-adjacent: its `selector` strings are embedded into the `browser_evaluate` payload (safely interpolated via `JSON.stringify`, but still executed against the target app) and its `baseUrl` determines where role-mode credentials (`AUDIT_<ROLE>_EMAIL` / `_PASS`) are submitted. Treat PRs that modify `.ui-audit.json` like PRs that modify CI secrets: require a human reviewer. In CI, consider pinning `baseUrl` to an allowlist of dev/staging hosts.
 
 ### 0.3 Browse-State Overlap Check
 
-Read `docs/crawls/latest-tick.json` (if exists). If `status == "crawling"`, emit WARN: `[ui-audit] WARN: blitz:browse --loop active — reading state that may still be changing. Continuing.` Do not abort — this is per conflict matrix `WARN` outcome.
+Read `docs/crawls/latest-tick.json` (if exists). If `status == "crawling"`, emit WARN: `[ui-audit] WARN: blitz:browse --loop active; reading state that may still be changing. Continuing.` Do not abort; this is per conflict matrix `WARN` outcome.
 
 ---
 
 ## Phase 1: LOAD STATE
 
-See `references/main.md` § **"Phase 1 — LOAD STATE"** for the full procedure. In brief:
+See `references/main.md` § **"Phase 1: LOAD STATE"** for the full procedure. In brief:
 1. Attempt to read `docs/crawls/crawl-visited.json` + `docs/crawls/hierarchy.json`. On success, derive the page list from those.
 2. On absence, fall back to `.ui-audit.json[pages]` keys as the page list and load the Playwright MCP tools via `ToolSearch`; no navigation yet (Phase 2 owns the visit loop), no fix, no screenshots, no interactions.
 3. On Playwright MCP unavailable → exit with error.
@@ -109,7 +109,7 @@ See `references/main.md` § **"Phase 1 — LOAD STATE"** for the full procedure.
 
 ## Phase 2: DATA EXTRACTION
 
-See `references/main.md` § **"Phase 2 — DATA EXTRACTION"** for full procedure (per-page `browser_navigate` → settle → `browser_evaluate(label-map)` → type-coerce + hash + quality-flags → append JSONL line to `docs/crawls/page-data-registry.jsonl`).
+See `references/main.md` § **"Phase 2: DATA EXTRACTION"** for full procedure (per-page `browser_navigate` → settle → `browser_evaluate(label-map)` → type-coerce + hash + quality-flags → append JSONL line to `docs/crawls/page-data-registry.jsonl`).
 
 Skipped in `consistency` and `heuristics` modes.
 
@@ -117,23 +117,23 @@ Skipped in `consistency` and `heuristics` modes.
 
 ## Phase 3: CONSISTENCY + INVARIANTS
 
-See `references/main.md` §§ **"Phase 3 — CONSISTENCY"**, **"Phase 3 — INVARIANTS"**, and **"Phase 3 — FLAPPING/STALE"**. In brief:
+See `references/main.md` §§ **"Phase 3: CONSISTENCY"**, **"Phase 3: INVARIANTS"**, and **"Phase 3: FLAPPING/STALE"**. In brief:
 - Reduce the append-only registry to latest-per-(role,page,label) state via `jq group_by`.
 - Detect cross-page value divergence; suppress divergences covered by declared invariants.
 - Evaluate `equal` / `gte` / `lte` invariants with tolerance. Emit `invariant_fail` + `invariant_pass` events to the activity feed.
-- Run tick-over-tick hash diff to classify STABLE / CHANGED / STALE / FLAPPING / NULL_TRANSITION per (role, page, label).
+- Run tick-over-tick hash diff over the four most recent observations to classify STABLE / CHANGED / STALE / FLAPPING / NULL_TRANSITION per (role, page, label).
 
 ---
 
 ## Phase 4: QUALITY CHECKS
 
-Aggregates the flag catalog from [references/checks.md](references/checks.md). Detectors implemented: NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL (Phase 4 reducer chain, see references/main.md §"Phase 4 — QUALITY CHECKS" for the full reducer schema). Inputs from Phase 2 raw observations; outputs `quality_flag` registry lines and a `quality_pass_complete` activity-feed event.
+Aggregates the flag catalog from [references/checks.md](references/checks.md). Detectors implemented: NULL_VALUE, PLACEHOLDER, NEGATIVE_COUNT, FORMAT_MISMATCH, STALE_ZERO, BROKEN_TOTAL (Phase 4 reducer chain, see references/main.md §"Phase 4: QUALITY CHECKS" for the full reducer schema). Inputs from Phase 2 raw observations; outputs `quality_flag` registry lines and a `quality_pass_complete` activity-feed event.
 
 ---
 
 ## Phase 5: HEURISTICS
 
-Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md). Categories that run today: `nav_state` (Cat 9, `STATE_NOT_IN_URL`) and `content_copy` (Cat 16a/16b: tabular-nums on numeric columns, copy heuristics), plus `NO_FOCUS_STATE` from the INTERACTIVE pass; contrast, touch-target sizing and `prefers-reduced-motion` are planned categories (references/main.md § 5.5). Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5 — HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic` registry lines and a `heuristic_pass_complete` event.
+Applies the UI/UX heuristic catalog in [references/patterns.md](references/patterns.md). Categories that run today: `nav_state` (Cat 9, `STATE_NOT_IN_URL`) and `content_copy` (Cat 16a/16b: tabular-nums on numeric columns, copy heuristics), plus `NO_FOCUS_STATE` from the INTERACTIVE pass; contrast, touch-target sizing and `prefers-reduced-motion` are planned categories (references/main.md § 5.5). Severity tiers: CRITICAL (gate) | HIGH (gate) | MED (warn) | LOW (info). See references/main.md §"Phase 5: HEURISTICS" for the reducer chain that consumes raw observations and emits `heuristic` registry lines and a `heuristic_pass_complete` event.
 
 The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `design` pillar rows (`design-low-contrast`, `design-*`) as the canonical detection: ui-audit runs them at **runtime** (rendered, cross-role), while `/blitz:check --only design` runs them **statically** at author-time. Dedupe the pattern, not the tempo (the rule lives once in the registry; the two skills are two enforcement sites).
 
@@ -141,7 +141,7 @@ The a11y heuristics (contrast, `prefers-reduced-motion`) share the registry `des
 
 ## Phase 6: REPORT
 
-See `references/main.md` § **"Phase 6 — REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_end` event to the activity feed with a detail block containing finding counts.
+See `references/main.md` § **"Phase 6: REPORT"** for full procedure. Writes `docs/crawls/ui-audit-report.md`, prints a stdout severity summary + top 3 invariant failures, appends `skill_end` event to the activity feed with a detail block containing finding counts.
 
 ---
 
@@ -155,7 +155,7 @@ LOAD_AUTH[current_role] → NAVIGATE[current_page] → EXTRACT → QUALITY
   → ADVANCE CURSOR → NEXT
 ```
 
-The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds registry, pass 2 detects drift via § Phase 3 FLAPPING/STALE). After pass 2, the loop enters `matrix_idle` — subsequent ticks are no-ops until the app changes.
+The reporter emits a rolling report each tick but does not call `skill_end` with `mode: "loop-matrix-complete"` until the full matrix has run twice (pass 1 seeds the registry; pass 2 adds the second observation that CHANGED, STABLE and NULL_TRANSITION need; STALE and FLAPPING need three and four observations and surface on later runs, references/main.md § 3F.3). After pass 2, the loop enters `matrix_idle`; subsequent ticks are no-ops until the app changes.
 
 The tick cursor persists in `docs/crawls/latest-tick.json` under a `ui_audit_matrix` block (references/main.md § Phase 7.1 + § Phase ROLE); scratch files go under `${SESSION_TMP_DIR}`.
 
@@ -167,7 +167,7 @@ Budget: tick <2 minutes. Full matrix runtime varies by `|roles| × |pages|`. ETA
 
 ## Error Recovery
 
-- **Playwright MCP unavailable** — exit 1 with `[ui-audit] Playwright MCP not loaded. Install the playwright plugin or run blitz:browse first to confirm availability.`
-- **`.ui-audit.json` invalid JSON** — exit 1 citing the line number from `jq . < .ui-audit.json 2>&1`.
-- **Registry file corruption** — on Phase 1 load, run `jq -c '.' < docs/crawls/page-data-registry.jsonl >/dev/null 2>&1 || { mv docs/crawls/page-data-registry.jsonl docs/crawls/page-data-registry.jsonl.corrupt.$(date +%s); echo '[ui-audit] WARN: corrupt registry preserved; starting fresh.'; }`
-- **Role env-var absent in `role <name>` mode** — exit 1 with the expected env-var names.
+- **Playwright MCP unavailable**: exit 1 with `[ui-audit] Playwright MCP not loaded. Install the playwright plugin or run blitz:browse first to confirm availability.`
+- **`.ui-audit.json` invalid JSON**: exit 1 citing the line number from `jq . < .ui-audit.json 2>&1`.
+- **Registry file corruption**: on Phase 1 load, run `jq -c '.' < docs/crawls/page-data-registry.jsonl >/dev/null 2>&1 || { mv docs/crawls/page-data-registry.jsonl docs/crawls/page-data-registry.jsonl.corrupt.$(date +%s); echo '[ui-audit] WARN: corrupt registry preserved; starting fresh.'; }`
+- **Role env-var absent in `role <name>` mode**: exit 1 with the expected env-var names.

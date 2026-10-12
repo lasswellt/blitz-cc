@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gen-review-md.sh — render a REVIEW.md for hosted Code Review from the check registry.
+# gen-review-md.sh: render a REVIEW.md for hosted Code Review from the check registry.
 # Rows with severity P0/P1 (and P2 with --include-p2) become "Always check" items;
 # CI-enforced checks are listed under "Do not report". Output to stdout, or --write <path>;
 # --registry <path> reads another registry file (tests).

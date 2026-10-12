@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# PreToolUse hook — validates staged files before git commit
+# pre-commit-validate.sh: PreToolUse guard (Bash|PowerShell) that validates the staged
+# files when the command is a `git commit`. BLOCKING, and fail-closed like every
+# other blocking guard: blitz_guard_input exits 2 when jq is missing or the payload
+# is not a JSON object, and hooks.json wires it with onFailure: "block".
+#
+# Blocks (exit 2): a staged secret, key or credential file; SKILL.md frontmatter
+# violations; version drift on a bump commit; check-registry schema violations; a
+# protocol head over its byte cap or without its .reference.md sibling; an
+# unresolved section citation. Banned code patterns and broken markdown links warn
+# only. Any other command passes without touching the index.
+# Containment: environment-layer guard (user-misuse). Canonical posture: /_shared/security.md.
 # Exit 0 = allow, Exit 2 = block
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
-# Read the hook input from stdin
 INPUT=$(cat)
-
-# Extract the command from the tool input
-COMMAND=$(echo "$INPUT" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(data.get('tool_input', {}).get('command', ''))
-" 2>/dev/null || true)
+blitz_guard_input pre-commit-validate
+COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
 
 # Only trigger if the command contains 'git commit'
 if [[ "$COMMAND" != *"git commit"* ]]; then
@@ -119,7 +123,7 @@ while IFS= read -r file; do
     if [[ -n "$matches" ]]; then
       while IFS= read -r match; do
         lineno="${match%%:*}"
-        echo "WARNING: ${BANNED_LABELS[$i]} — $file:$lineno" >&2
+        echo "WARNING: ${BANNED_LABELS[$i]} ($file:$lineno)" >&2
         WARNED=$((WARNED + 1))
       done <<< "$matches"
     fi
@@ -139,10 +143,10 @@ VERSION_SYNC_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/de
 # Earlier silent `-x` guard let the version-drift gate no-op for an unknown
 # duration when the script vanished. Surface the gap so it gets fixed.
 if [[ ! -f "$VERSION_SYNC_SCRIPT" ]]; then
-  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not found — version-drift gate disabled." >&2
+  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not found; version-drift gate disabled." >&2
   echo "[pre-commit]       Restore the script or remove this check from pre-commit-validate.sh." >&2
 elif [[ ! -x "$VERSION_SYNC_SCRIPT" ]]; then
-  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not executable — fix with chmod +x." >&2
+  echo "[pre-commit] WARN: $VERSION_SYNC_SCRIPT not executable; fix with chmod +x." >&2
 fi
 if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
   SYNC_EXIT=0
@@ -152,7 +156,7 @@ if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
     echo "" >&2
     echo "$SYNC_OUTPUT" >&2
 
-    # Is plugin.json in this commit? If yes, this is a bump commit — block.
+    # Is plugin.json in this commit? If yes, this is a bump commit: block.
     if echo "$STAGED_FILES" | grep -qF ".claude-plugin/plugin.json"; then
       echo "" >&2
       echo "BLOCKED: version-bump commit has drifted version references." >&2
@@ -163,7 +167,7 @@ if [[ -x "$VERSION_SYNC_SCRIPT" ]]; then
     fi
 
     # Non-bump commit: warn only. The drift will be fixed in a future commit.
-    echo "  (This is a warning — commit allowed. Drift will be re-flagged on every commit until fixed.)" >&2
+    echo "  (This is a warning; commit allowed. Drift will be re-flagged on every commit until fixed.)" >&2
   fi
 fi
 
@@ -208,7 +212,7 @@ if [[ -x "$LINK_SCRIPT" ]]; then
   if [[ "$LINK_EXIT" -ne 0 ]]; then
     echo "" >&2
     echo "$LINK_OUTPUT" >&2
-    echo "  (Warning — commit allowed. Fix broken links and re-stage.)" >&2
+    echo "  (Warning; commit allowed. Fix broken links and re-stage.)" >&2
   fi
 fi
 
@@ -234,7 +238,8 @@ proto_cap() {
 }
 PROTO_FAIL=0
 proto_cap loop     9500  || PROTO_FAIL=1
-proto_cap agents   8000  || PROTO_FAIL=1
+# agents.md grew past 8,000 B in 3.14.0 (model and effort tables); 15000 is the SKILL.md body cap, and a trim back toward 8,000 is still owed.
+proto_cap agents   15000 || PROTO_FAIL=1
 proto_cap quality  7500  || PROTO_FAIL=1
 proto_cap sessions 10000 || PROTO_FAIL=1
 proto_cap security 12000 || PROTO_FAIL=1
@@ -268,5 +273,5 @@ if [[ -x "$REFS_SCRIPT" ]]; then
   }
 fi
 
-# No secrets found — allow the commit
+# No secrets found: allow the commit
 exit 0

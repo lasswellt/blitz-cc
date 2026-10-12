@@ -1,4 +1,4 @@
-# Dependency Health — Reference Material
+# Dependency Health: Reference Material
 
 Package manager command variants, license classification, health score formula, report templates for dep-health skill.
 
@@ -103,8 +103,8 @@ Parse per detected package manager.
 
 | License | SPDX ID | Action |
 |---------|---------|--------|
-| No license detected | `UNKNOWN` | Flag — may be proprietary. Check repo for LICENSE file. |
-| `UNLICENSED` | `UNLICENSED` | Flag — explicitly proprietary. Do not use without separate agreement. |
+| No license detected | `UNKNOWN` | Flag: may be proprietary. Check repo for LICENSE file. |
+| `UNLICENSED` | `UNLICENSED` | Flag: explicitly proprietary. Do not use without separate agreement. |
 | Dual license | `(MIT OR GPL-3.0)` | Use more permissive option (MIT here). |
 | Custom license | N/A | Flag for manual review. Read license text in package. |
 
@@ -131,11 +131,11 @@ score = clamp(score, 0, 100)
 
 | Score Range | Grade | Interpretation |
 |-------------|-------|---------------|
-| 90-100 | A | Excellent — deps well-maintained, secure |
-| 80-89 | B | Good — minor issues; address next maintenance window |
-| 70-79 | C | Fair — notable issues; address soon |
-| 60-69 | D | Poor — significant security/compliance risks |
-| 0-59 | F | Critical — immediate action required |
+| 90-100 | A | Excellent: deps well-maintained, secure |
+| 80-89 | B | Good: minor issues; address next maintenance window |
+| 70-79 | C | Fair: notable issues; address soon |
+| 60-69 | D | Poor: significant security/compliance risks |
+| 0-59 | F | Critical: immediate action required |
 
 ### Worked Examples
 
@@ -291,9 +291,9 @@ Template for full dependency health report written to `${SESSION_TMP_DIR}/dep-he
 
 Prioritized actions to improve dependency health:
 
-1. **[CRITICAL]** <action> — <rationale>
-2. **[HIGH]** <action> — <rationale>
-3. **[MEDIUM]** <action> — <rationale>
+1. **[CRITICAL]** <action>: <rationale>
+2. **[HIGH]** <action>: <rationale>
+3. **[MEDIUM]** <action>: <rationale>
 4. ...
 
 ---

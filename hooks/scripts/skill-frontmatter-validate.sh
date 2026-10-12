@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# skill-frontmatter-validate.sh — Anthropic-canonical SKILL.md lint.
+# skill-frontmatter-validate.sh: Anthropic-canonical SKILL.md lint.
 #
 # Usage:
 #   skill-frontmatter-validate.sh [skill-path...]
 #   skill-frontmatter-validate.sh --all   # scan skills/*/SKILL.md
 #
 # Exit:
-#   0 — all SKILL.md files conform
-#   1 — one or more files violate the canonical contract
+#   0: all SKILL.md files conform
+#   1: one or more files violate the canonical contract
 #
 # Checks (each skill must satisfy):
 #   1. YAML frontmatter parses
 #   2. name: present, ≤64 chars, lowercase + digits + hyphens, no "anthropic"/"claude"
 #   3. description: present, non-empty, ≤1024 chars
-#   4. model: present (opus|sonnet|haiku) — required when disable-model-invocation is false or absent
+#   4. model: present (opus|sonnet|haiku); required when disable-model-invocation is false or absent
 #   5. effort: optional; only on slash-only skills (low|medium|high|xhigh|max)
 #   6. allowed-tools: present unless disable-model-invocation: true
 #   7. argument-hint: present if SKILL.md body references "$1"/"$@"/positional args
-#   8. Body size ≤ 15,000 B — under the 5,000-token compaction re-attach cap at 3.0 B/tok
+#   8. Body size ≤ 15,000 B, under the 5,000-token compaction re-attach cap at 3.0 B/tok
 #   9. allowed-tools never lists the Task/Todo tools (off on Claude 5 models; tasks.json is the tracker)
 #  10. compatibility: present, ">=" semver pin
 #  11. a pinned model: discloses its cache cost in the body
@@ -63,7 +63,7 @@ EOF
 
 # Resolve target list.
 # FULL_SCAN is set when the whole tree is scanned (--all or no-arg). The
-# cumulative-description budget guard runs ONLY in this mode — pre-commit and
+# cumulative-description budget guard runs ONLY in this mode; pre-commit and
 # PostToolUse invocations pass a subset of skill paths and must not be measured
 # against the global budget.
 TARGETS=()
@@ -119,19 +119,19 @@ validate_one() {
   # 6. allowed-tools (unless disable-model-invocation: true)
   if [ "$dmi" != "true" ]; then
     [ -z "$allowed" ] && fail "$rel" "missing 'allowed-tools:' (required when disable-model-invocation is not true)"
-    # 4. model — required when invokable
+    # 4. model: required when invokable
     [ -z "$model" ] && fail "$rel" "frontmatter missing 'model:' (required when disable-model-invocation is not true)"
     case "$model" in inherit|opus|sonnet|haiku|"") ;; *) fail "$rel" "model '$model' must be inherit|opus|sonnet|haiku";; esac
     # Model-invokable skills MUST inherit the session model: pinning forces a model switch on
     # every invocation from a non-matching session, which resets the prompt cache (E-044).
-    [ -n "$model" ] && [ "$model" != "inherit" ] && fail "$rel" "model '$model' pins a model on an invokable skill — use 'inherit' (slash-only skills with disable-model-invocation: true may pin)"
+    [ -n "$model" ] && [ "$model" != "inherit" ] && fail "$rel" "model '$model' pins a model on an invokable skill; use 'inherit' (slash-only skills with disable-model-invocation: true may pin)"
   fi
 
-  # 5. effort — optional. Pinning effort switches it mid-session (cache reset), so it is only
+  # 5. effort: optional. Pinning effort switches it mid-session (cache reset), so it is only
   # accepted on slash-only skills (disable-model-invocation: true). Others state a recommendation in the body.
   if [ -n "$effort" ]; then
     case "$effort" in low|medium|high|xhigh|max) ;; *) fail "$rel" "effort '$effort' must be low|medium|high|xhigh|max";; esac
-    [ "$dmi" != "true" ] && fail "$rel" "effort pinned on an invokable skill — remove 'effort:' and state the recommendation in the body (see E-044)"
+    [ "$dmi" != "true" ] && fail "$rel" "effort pinned on an invokable skill; remove 'effort:' and state the recommendation in the body (see E-044)"
   fi
 
   # 11. A pinned model must disclose its cost. A skill whose frontmatter names a
@@ -141,7 +141,7 @@ validate_one() {
   # not an accident, so the body has to say so.
   if [ -n "$model" ] && [ "$model" != "inherit" ]; then
     if ! printf '%s' "$body" | grep -qiE 'cache reset|cache miss|uncached|full re-read'; then
-      fail "$rel" "pins 'model: $model' without disclosing the cost — a pinned model makes the turn a model switch with zero cache hits; say so in the body (see skills/ship/SKILL.md)"
+      fail "$rel" "pins 'model: $model' without disclosing the cost: a pinned model makes the turn a model switch with zero cache hits; say so in the body (see skills/ship/SKILL.md)"
     fi
   fi
 
@@ -149,7 +149,7 @@ validate_one() {
   [ -z "$compat" ] && fail "$rel" "frontmatter missing 'compatibility:'"
   echo "$compat" | grep -qE '^>=[0-9]+\.[0-9]+\.[0-9]+$' || fail "$rel" "compatibility '$compat' must be '>=X.Y.Z'"
 
-  # 8. body size — a TOKEN budget, not a line count.
+  # 8. body size: a TOKEN budget, not a line count.
   #
   # The line cap was the wrong guard: `check` passed it at 295 lines while
   # being 40% over the limit that actually bites. After auto-compaction Claude
@@ -157,7 +157,7 @@ validate_one() {
   # FIRST 5,000 TOKENS of each, sharing a 25,000-token budget across them. A
   # body past 5,000 tokens is silently truncated, and because markdown puts
   # terminal phases last, what gets cut is the verdict, the gate, the report
-  # and the recovery — exactly what a long session needs, and a long session is
+  # and the recovery: exactly what a long session needs, and a long session is
   # when compaction fires.
   #
   # THE CAP IS IN BYTES BECAUSE THE REAL COUNT NEEDS A NETWORK CALL.
@@ -165,7 +165,7 @@ validate_one() {
   # Only `POST /v1/messages/count_tokens` counts Claude tokens accurately, and
   # it is model-specific. There is no offline Claude tokenizer to install, and
   # tiktoken/gpt-tokenizer must NOT be substituted: they are OpenAI's, and
-  # undercount Claude by ~15-20% on prose and more on code — precisely the
+  # undercount Claude by ~15-20% on prose and more on code, precisely the
   # content here. `scripts/count-tokens.sh` does it properly where a credential
   # exists; this hook runs on every edit, so it uses a byte proxy calibrated
   # against the worst plausible ratio.
@@ -191,7 +191,7 @@ validate_one() {
   local gated_tool
   for gated_tool in TaskCreate TaskUpdate TaskList TaskGet TodoWrite; do
     if printf '%s\n' "$allowed" | grep -qE "(^|[, ])${gated_tool}([, ]|$)"; then
-      fail "$rel" "allowed-tools lists '${gated_tool}' — Task/Todo tools are off on current models; track work in docs/plans/<slug>/tasks.json"
+      fail "$rel" "allowed-tools lists '${gated_tool}': Task/Todo tools are off on current models; track work in docs/plans/<slug>/tasks.json"
     fi
   done
 
@@ -213,11 +213,11 @@ validate_one() {
 
 for f in "${TARGETS[@]}"; do validate_one "$f"; done
 
-# Cumulative-description budget guard — full-scan only. A subset invocation
+# Cumulative-description budget guard: full-scan only. A subset invocation
 # (pre-commit / PostToolUse) cannot meaningfully measure the global total.
 if [ "$FULL_SCAN" -eq 1 ]; then
   if [ "$CUMULATIVE_DESC_CHARS" -gt "$CUMULATIVE_DESC_BUDGET" ]; then
-    echo "[$SCRIPT_NAME] FAIL: cumulative skill descriptions = $CUMULATIVE_DESC_CHARS chars > $CUMULATIVE_DESC_BUDGET budget guard (15000 hard platform cap) — trim a description before adding more" >&2
+    echo "[$SCRIPT_NAME] FAIL: cumulative skill descriptions = $CUMULATIVE_DESC_CHARS chars > $CUMULATIVE_DESC_BUDGET budget guard (15000 hard platform cap); trim a description before adding more" >&2
     RC=1
   else
     echo "[$SCRIPT_NAME] cumulative skill descriptions = $CUMULATIVE_DESC_CHARS chars (<= $CUMULATIVE_DESC_BUDGET budget guard)"

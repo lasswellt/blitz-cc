@@ -26,7 +26,7 @@ Generate tests for a target file by analyzing its exports, parameters, side effe
 
 ---
 
-## Phase 0: PARSE TARGET — Identify What to Test
+## Phase 0: PARSE TARGET (Identify What to Test)
 
 Follow [sessions.md](/_shared/sessions.md) §2 (skill preamble, steps 1-7) and [output.md](/_shared/output.md). Print verbose progress at every phase transition, decision point, and skill-specific dispatch.
 
@@ -50,7 +50,7 @@ Classify target type:
 
 ---
 
-## Phase 1: DISCOVER — Analyze Target and Project Conventions
+## Phase 1: DISCOVER (Analyze Target and Project Conventions)
 
 ### 1.1 Analyze Target File
 
@@ -64,11 +64,11 @@ find . -name "*.test.*" -o -name "*.spec.*" | grep -v node_modules | head -40
 
 Read from **3 categories** (minimum 6 files total):
 
-**Category A — Same type as target** (2-3 files): Tests for similar files in the same directory pattern. Show how code like yours is typically tested.
+**Category A: Same type as target** (2-3 files): Tests for similar files in the same directory pattern. Show how code like yours is typically tested.
 
-**Category B — Well-established tests** (2 files): Largest/most comprehensive test files. Reveal full testing vocabulary (custom matchers, setup patterns, assertion depth).
+**Category B: Well-established tests** (2 files): Largest/most comprehensive test files. Reveal full testing vocabulary (custom matchers, setup patterns, assertion depth).
 
-**Category C — Test utilities/factories** (all found):
+**Category C: Test utilities/factories** (all found):
 ```bash
 find . -path "*/test*" -name "*.ts" -o -path "*/test*" -name "*.js" | grep -E "(helper|util|setup|factory|fixture|mock)" | grep -v node_modules | head -10
 ```
@@ -107,7 +107,7 @@ If factories or fixtures exist, use them instead of inline test data.
 
 ---
 
-## Phase 2: PLAN — Design Test Cases
+## Phase 2: PLAN (Design Test Cases)
 
 ### 2.1 Generate Test Cases
 
@@ -150,7 +150,7 @@ Mock strategy per dependency type, within the [Mocking policy](#mocking-policy):
 
 ---
 
-## Phase 3: IMPLEMENT — Write Tests
+## Phase 3: IMPLEMENT (Write Tests)
 
 ### 3.1 Determine Test File Path
 
@@ -169,9 +169,9 @@ src/utils/format.ts      -> tests/unit/utils/format.test.ts
 
 Use the AAA pattern for every test:
 ```typescript
-// ARRANGE — Set up test data and mocks
-// ACT — Call the function or trigger the behavior
-// ASSERT — Verify the result
+// ARRANGE: Set up test data and mocks
+// ACT: Call the function or trigger the behavior
+// ASSERT: Verify the result
 ```
 
 Structure: imports → mock setup → describe block per export → nested describes per category → `it` blocks with BDD naming ("should return X when Y").
@@ -179,10 +179,10 @@ Structure: imports → mock setup → describe block per export → nested descr
 ### 3.3 Implementation Rules
 
 - One assertion focus per test (multiple `expect` calls OK if verifying the same behavior).
-- No test interdependence — use `beforeEach` to reset state.
+- No test interdependence: use `beforeEach` to reset state.
 - Descriptive names: `it('should return empty array when input is null')`.
-- Real types, mock data — satisfy the type system.
-- No network calls — all external calls must be mocked.
+- Real types, mock data: satisfy the type system.
+- No network calls: all external calls must be mocked.
 - Clean up side effects in `afterEach`.
 - Follow existing patterns (factories if project uses them, inline if not).
 
@@ -194,7 +194,7 @@ Every generated test must verify real behavior. See [Definition of Done](/_share
 - `expect(true).toBe(true)` or equivalent no-op assertions
 - Tests that only assert `.toBeDefined()` when the shape matters
 - Tests that pass regardless of implementation changes
-- `it.skip` or `describe.skip` — no skipped tests in delivered work
+- `it.skip` or `describe.skip`: no skipped tests in delivered work
 
 ---
 
@@ -260,7 +260,7 @@ See references/main.md for the Firestore rules testing pattern using `@firebase/
 
 ---
 
-## Phase 4: VERIFY — Run and Validate Tests
+## Phase 4: VERIFY (Run and Validate Tests)
 
 ### 4.1 Run Generated Tests
 
@@ -304,7 +304,7 @@ Report Statements/Branches/Functions/Lines % if coverage tool configured; otherw
 
 ---
 
-## Phase 5: REPORT — Summarize Results
+## Phase 5: REPORT (Summarize Results)
 
 ```
 Tests Generated: <target-file>
@@ -351,6 +351,6 @@ Follow-up suggestions:
 | 5 | **Async test hangs** | Test times out without resolving | Add explicit `vi.useFakeTimers()` for timer-dependent code. Ensure all promises are awaited. Add `await vi.runAllTimersAsync()` after triggering async operations. Set explicit timeout: `it('...', async () => {...}, 10000)`. |
 | 6 | **Import resolution fails** | Module not found errors | Check for path aliases (`@/`, `~/`, `#imports`). Verify tsconfig paths are configured for the test runner. Add `resolve.alias` to vitest/jest config if needed. |
 | 7 | **Type errors in test file** | TypeScript compilation errors | Ensure test data satisfies the full interface (not partial). Use `as` casting only as last resort. Check if `@types/*` packages are installed for test utilities. |
-| 8 | **Snapshot mismatch** | Snapshot tests fail on first run | Do not use snapshot tests in generated code — prefer explicit assertions. If project uses snapshots extensively, generate with `--updateSnapshot` flag on first run only. |
+| 8 | **Snapshot mismatch** | Snapshot tests fail on first run | Do not use snapshot tests in generated code; prefer explicit assertions. If project uses snapshots extensively, generate with `--updateSnapshot` flag on first run only. |
 | 9 | **Environment mismatch** | `document`, `window`, or DOM APIs unavailable | Check vitest/jest environment config. Set `environment: 'jsdom'` or `environment: 'happy-dom'` in test config or per-file with `@vitest-environment jsdom` comment. |
-| 10 | **Max retry exceeded** | 5 fix iterations completed, tests still failing | Stop attempting fixes. Present the remaining failures to the user with: (a) which tests pass, (b) which tests fail and why, (c) suggested manual fixes. Do not delete failing tests — they may reveal real bugs. |
+| 10 | **Max retry exceeded** | 5 fix iterations completed, tests still failing | Stop attempting fixes. Present the remaining failures to the user with: (a) which tests pass, (b) which tests fail and why, (c) suggested manual fixes. Do not delete failing tests; they may reveal real bugs. |

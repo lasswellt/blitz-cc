@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for hooks/scripts/critic-gemini.sh — regression coverage for #17
+# Tests for hooks/scripts/critic-gemini.sh: regression coverage for #17
 # (gemini CLI stderr noise merged into stdout via 2>&1 broke jq JSON parsing).
 # Requires: bats-core (https://github.com/bats-core/bats-core)
 

@@ -6,18 +6,8 @@
 load '_helpers'
 
 GUARDS=(tasks-guard pre-edit-guard block-test-deletion block-as-any-insertion
-        block-test-disabling block-no-verify block-destructive-git block-destructive-sql)
-
-# A PATH with the tools the guards use, minus jq.
-nojq_path() {
-  local d; d="$(mktemp -d)"
-  local t
-  for t in bash sh cat dirname basename git grep sed awk tr head tail date mkdir env cut wc sort; do
-    local p; p="$(command -v "$t" 2>/dev/null)" || continue
-    ln -s "$p" "$d/$t"
-  done
-  printf '%s' "$d"
-}
+        block-test-disabling block-no-verify block-destructive-git block-destructive-sql
+        pre-commit-validate)
 
 @test "every blocking PreToolUse guard is wired with onFailure: block" {
   local root="$HOOKS_DIR/../.."
@@ -58,7 +48,7 @@ nojq_path() {
 }
 
 @test "a well-formed harmless call still passes every guard" {
-  for g in block-no-verify block-destructive-git block-destructive-sql block-test-deletion; do
+  for g in block-no-verify block-destructive-git block-destructive-sql block-test-deletion pre-commit-validate; do
     assert_allows "$g.sh" "$(fake_tool_input 'ls -la')" || { echo "guard: $g"; return 1; }
   done
 }

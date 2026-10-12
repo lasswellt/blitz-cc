@@ -6,7 +6,7 @@ Detail split out of [sessions.md](sessions.md) so the contract every skill loads
 
 ## 3. Stale detection and agent-view overlay
 
-**Stale sweep — hook-owned.** `session-start.sh` runs `blitz_session_stale <record> [<view>]` over every `status: active` record at `SessionStart`. Rules: `last_activity` > 30 min AND overlay `state ∉ {working, blocked}`, OR `started` > 4 h with no overlay row. Hits become `status: failed`, `failed_reason: stale_session_cleanup`, `state: ended`, and a feed `warning {session, record, reason: "stale_session_cleanup"}`. Unparsable timestamps never count as stale. Skills do not repeat the sweep.
+**Stale sweep (hook-owned).** `session-start.sh` runs `blitz_session_stale <record> [<view>]` over every `status: active` record at `SessionStart`. Rules: `last_activity` > 30 min AND overlay `state ∉ {working, blocked}`, OR `started` > 4 h with no overlay row. Hits become `status: failed`, `failed_reason: stale_session_cleanup`, `state: ended`, and a feed `warning {session, record, reason: "stale_session_cleanup"}`. Unparsable timestamps never count as stale. Skills do not repeat the sweep.
 
 **Overlay.** A session started via `claude --bg`, `claude agents`, `/bg` or `/fork` may run a blitz skill in another worktree. `claude agents --json --all` is read through one helper:
 
@@ -19,12 +19,12 @@ blitz_session_stale ".cc-sessions/sessions/<sid>.json" "$VIEW" && echo stale
 | Field | Values | Use |
 |---|---|---|
 | `sessionId` | native id = record file stem = feed `session` | **join key** |
-| `state` | `working` \| `blocked` \| `done` \| `failed` \| `stopped` | **liveness** — conflicts key on this |
+| `state` | `working` \| `blocked` \| `done` \| `failed` \| `stopped` | **liveness**; conflicts key on this |
 | `status` | `busy` \| `waiting` \| `idle` | display; mapped to `state` on builds that lack it (busy→working, waiting→blocked, idle→idle) |
 | `waitingFor` | `permission prompt` \| `input needed` \| `sandbox request` \| `dialog open` \| null | attention queue; a live peer that cannot answer until a human acts |
 | `name`, `cwd`, `kind`, `pid` | dispatch name, worktree, `bg\|fork\|…`, process id | skill inference for rows with no record; live-worktree guard |
 
-`blitz_agent_view` is the **single parsing point**: the jq mapping lives only in `common.sh`, and it prints nothing when the CLI, `--json` or `--all` is unavailable (older CC, Bedrock/Vertex, `disableAgentView`) — callers degrade to records-only. A record is *live* iff its overlay `state ∈ {working, blocked}`, or, with no overlay row, iff not stale. `state ∈ {done, failed, stopped}` never conflicts. A row with no record is inferred from `name` and is at most WARN.
+`blitz_agent_view` is the **single parsing point**: the jq mapping lives only in `common.sh`, and it prints nothing when the CLI, `--json` or `--all` is unavailable (older CC, Bedrock/Vertex, `disableAgentView`); callers degrade to records-only. A record is *live* iff its overlay `state ∈ {working, blocked}`, or, with no overlay row, iff not stale. `state ∈ {done, failed, stopped}` never conflicts. A row with no record is inferred from `name` and is at most WARN.
 
 ---
 
@@ -48,7 +48,7 @@ Triage: `next` Phase 0.5 reads every `pending` line, rewrites `status` in place 
 
 ## 5. Mailbox and cross-session messaging
 
-**Skills use `SendMessage`; hooks and scripts use the mailbox.** Two tools, one command: `ListAgents` (rows as §3, for the sessions this one can reach) and `SendMessage(to, message, notify_when_idle?)` — `to` is a `sessionId` or `name`; `notify_when_idle: true` requests **one** notice when the target next goes idle (same machine, main conversation only, not from a subagent). Add both to `allowed-tools` in any skill that runs the conflict matrix.
+**Skills use `SendMessage`; hooks and scripts use the mailbox.** Two tools, one command: `ListAgents` (rows as §3, for the sessions this one can reach) and `SendMessage(to, message, notify_when_idle?)`: `to` is a `sessionId` or `name`; `notify_when_idle: true` requests **one** notice when the target next goes idle (same machine, main conversation only, not from a subagent). Add both to `allowed-tools` in any skill that runs the conflict matrix.
 
 **Reach.** Sessions register on disk and message each other only **inside the same container**; host ↔ container and machine ↔ machine never connect (records and the overlay still work across that boundary). Receiving-side settings: `crossSessionInbound: accept | hold | refuse` (`hold` queues up to 100 messages until the session next reads its inbox; a held message in a `-p` session expires with `dialogExpiry`, 5 min default), `isolatePeerMachines: true` whenever Remote Control is connected. `doctor` checks `crossSessionInbound` for `-p` workers.
 
@@ -104,10 +104,10 @@ Compaction must not drop: the `gate` path (the Stop gate is still armed), the `n
 - **Subagents for verbose work.** Test runs, greps over large trees, log reads and research go to a subagent that returns a ≤10-line digest; the main thread keeps decisions, not output ([agents.md](/_shared/agents.md)).
 - **One task per session.** `build` runs one `dev` per task with fresh context; `next --loop` should fire from a fresh session or `claude --bg`, since a `/loop` turn carries the whole conversation.
 - **`/clear` between plans, `/compact` before a break.** Set model and effort once (`claude --model opus --effort high`, or `--model sonnet` for a cost-bound `next --loop`: Sonnet 5.5 is half the price of Opus 5.5); every skill is `model: inherit`, and a mid-session switch resets the prompt cache. `/rewind` to discard, `/compact` to keep, `/btw` for side questions, `/rename` before `/clear` if you will `--resume`.
-- **Target 40–60 % utilization.** Above that, compact or split; below, nothing to do. `/usage` and `/insights` report cost per skill and friction — blitz does not duplicate them.
+- **Target 40–60 % utilization.** Above that, compact or split; below, nothing to do. `/usage` and `/insights` report cost per skill and friction; blitz does not duplicate them.
 - **Quiet flags.** `npx vitest run <file> --reporter=dot`, `git --no-pager`, `npm run lint --silent`; outputs over ~30 k chars are auto-saved with a preview.
 - **Compaction instructions in `CLAUDE.md`** (≤200 lines, no procedural text): preserve the plan slug and task id, `${CLAUDE_SESSION_ID}`, the `gate.json` path in force, the never-edit list, undelivered mailbox lines, modified files and the exact test/lint commands.
-- **Self-contained summaries.** Reference files by path, not "the file I created earlier"; re-read a file rather than recall it; summarize verification as one line (`Type-check: FAIL — 1 error in src/x.ts:42`) unless reporting a blocker.
+- **Self-contained summaries.** Reference files by path, not "the file I created earlier"; re-read a file rather than recall it; summarize verification as one line (`Type-check: FAIL (1 error in src/x.ts:42)`) unless reporting a blocker.
 
 ### 8.1 Watching background work
 
@@ -128,7 +128,7 @@ Name a long-running blitz session after its job (`/rename blitz next <slug>`) so
 
 ## 9. Activity feed and line schemas
 
-`.cc-sessions/activity-feed.jsonl` — append-only, one JSON object per line. `session` is the native id (`${CLAUDE_SESSION_ID}` in a skill body, stdin `session_id` in a hook); hooks write with `blitz_log_event <skill> <event> <message> [detail_json]` (`skill: "hook"`).
+`.cc-sessions/activity-feed.jsonl` is append-only, one JSON object per line. `session` is the native id (`${CLAUDE_SESSION_ID}` in a skill body, stdin `session_id` in a hook); hooks write with `blitz_log_event <skill> <event> <message> [detail_json]` (`skill: "hook"`).
 
 ```json
 {"ts":"<ISO-8601>","session":"<session_id>","skill":"<skill>|freeform|hook","event":"<type>","message":"<≤200 chars>","detail":{}}
@@ -169,6 +169,6 @@ Reading: at preamble step 7, print the last 30 min of feed lines as a summary (o
 
 **Kill switch.** `touch .cc-sessions/STOP` makes `kill-switch.sh` (PreToolUse `*`) deny every tool call in every session under this root until the file is removed. It is the operator's hard stop; a `halt` mailbox line is the soft one. `next --loop` checks for it before dispatch and prints `LOOP_DEFER` (row 0) with the reason.
 
-**Cleanup — hook-owned.** `session-end.sh` closes the record (§2) and logs `session_end`; a skill that dies of context exhaustion still gets a correct close. `/blitz:sessions prune` removes records closed > 7 d, mailboxes whose target record is closed > 7 d, `HANDOFF.json` older than 24 h and stale `quarantine/` entries after review. Mailbox files are truncated by their own `Stop` hook on delivery. `.cc-sessions/` is gitignored runtime output.
+**Cleanup (hook-owned).** `session-end.sh` closes the record (§2) and logs `session_end`; a skill that dies of context exhaustion still gets a correct close. `/blitz:sessions prune` removes records closed > 7 d, mailboxes whose target record is closed > 7 d, `HANDOFF.json` older than 24 h and stale `quarantine/` entries after review. Mailbox files are truncated by their own `Stop` hook on delivery. `.cc-sessions/` is gitignored runtime output.
 
 ---

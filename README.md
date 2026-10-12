@@ -23,7 +23,7 @@ research → plan → build → check → ship · structural "done" · anti-shor
 
 ## The problem this solves
 
-An agent left to work unattended will report success it did not earn. It writes the test that passes, stubs the function the test calls, marks the task complete, and tells you it is done. Nothing in the transcript is false exactly — it just isn't evidence.
+An agent left to work unattended will report success it did not earn. It writes the test that passes, stubs the function the test calls, marks the task complete, and tells you it is done. Nothing in the transcript is exactly false. It is simply not evidence.
 
 Blitz replaces self-report with structure. Four invariants hold while Claude works, and every skill, hook and script in this plugin exists to keep them true:
 
@@ -57,7 +57,7 @@ Optional: the `blitz-guard` mod (Claude Code ≥2.1.287) adds checks a shell hoo
 
 For local development: `claude --plugin-dir ./blitz-cc`, then `/reload-plugins`.
 
-**Requires** Claude Code ≥ 2.1.296 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL — without one every blocking guard fails closed and refuses every Write, Edit and Bash call (advisory hooks fail open). Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane — per project with `npm i -D`, or once for every project with `npm i -g`. Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
+**Requires** Claude Code ≥ 2.1.296 (floors are authoritative in `.claude-plugin/compat.json`), bash, Node.js ≥ 18, python3 and jq. Hooks execute through bash, so native Windows needs Git Bash or WSL; without one every blocking guard fails closed and refuses every Write, Edit and Bash call (advisory hooks fail open). Optional: Playwright MCP for the browser skills, a second-family CLI for the cross-model critic (Gemini CLI, Antigravity `agy`, GitHub Copilot CLI, or OpenAI Codex CLI), the `claude-security` plugin for verified security findings, and `impeccable@2.3.2` for the semantic design lane (per project with `npm i -D`, or once for every project with `npm i -g`). Playwright MCP launches Google Chrome by default and fails every browser action without it; to use another Chromium, set `PLAYWRIGHT_MCP_BROWSER=chromium` and `PLAYWRIGHT_MCP_EXECUTABLE_PATH` in your Claude Code `env`.
 
 ```bash
 /blitz:doctor                       # plugin, session state, project setup → Overall: HEALTHY
@@ -95,7 +95,7 @@ flowchart LR
 | `ship` | slash-only, pinned model: gates, version, changelog, tag, archive, then `learn` | release commit, `docs/plans/archive/` |
 | `learn` | mines rulings, check reports and `Task:` commits into reusable solutions | `docs/solutions/<slug>.md` |
 
-Everything else — `audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-health`, `perf-profile`, `browse`, `ui-build`, `ui-audit`, `onboard`, `sessions`, `todo`, `doctor` — is generated from frontmatter into [`docs/CATALOG.md`](docs/CATALOG.md), which is the only inventory that cannot drift.
+Everything else (`audit`, `refactor`, `migrate`, `test-gen`, `doc-gen`, `dep-health`, `perf-profile`, `browse`, `ui-build`, `ui-audit`, `onboard`, `sessions`, `todo`, `doctor`) is generated from frontmatter into [`docs/CATALOG.md`](docs/CATALOG.md), which is the only inventory that cannot drift.
 
 ### Unattended ticks
 
@@ -117,7 +117,7 @@ Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled f
 ## Structural "done"
 
 ```jsonc
-// docs/plans/<slug>/tasks.json — written only by scripts/tasks.sh
+// docs/plans/<slug>/tasks.json, written only by scripts/tasks.sh
 { "id": "T-003", "title": "GET /health handler", "role": "backend",
   "files": ["src/server/health.ts"], "depends_on": ["T-001"],
   "verify": [
@@ -129,7 +129,7 @@ Row 4 stops at the ready line on purpose: `ship` is slash-only, so a scheduled f
   "origin": "plan", "notes": "" }
 ```
 
-The second verify command is the point. Every frontier model saturates the tests it can see while failing held-out ones, so each task carries at least one non-test check — a grep, a shell assertion, an e2e run — beside its test command. `tasks.sh verify` runs them under `timeout`, records a truncated evidence tail, and is the only path to `status: done`.
+The second verify command is the point. Every frontier model saturates the tests it can see while failing held-out ones, so each task carries at least one non-test check (a grep, a shell assertion, an e2e run) beside its test command. `tasks.sh verify` runs them under `timeout`, records a truncated evidence tail, and is the only path to `status: done`.
 
 Persistent state is treated as memory, because it is: `tasks.json` and `docs/solutions/` steer later work, so every task carries an `origin`, both are schema-checked and injection-scanned at session start, and a malformed or poisoned task file is quarantined before anything reads it.
 
@@ -145,7 +145,7 @@ Hooks fire at the tool boundary, where a block beats an argument. Each guard bel
 | `PostToolUse` / `PostToolBatch` | format · impacted tests · skill and agent frontmatter · the diagnostic ratchet · heartbeat and test selection |
 | `Stop` | the gate: an armed build turn cannot end while its typecheck or selected tests fail (up to four blocks, then it stands down and logs it) |
 | `SessionStart` / `SessionEnd` | session records, activity feed, startup validation and quarantine |
-| `PreCompact` | `HANDOFF.json` — plan, task, gate path, never-edit list |
+| `PreCompact` | `HANDOFF.json`: plan, task, gate path, never-edit list |
 | `SubagentStart` / `SubagentStop` | the spawn invariant, byte-identical for every dev and test-writer agent · the per-subagent cost ledger |
 | `UserPromptExpansion` | feed tail, peers and inbox count injected into every `/blitz:*` prompt |
 | `Notification` / `PermissionDenied` / `StopFailure` / `ConfigChange` / `WorktreeRemove` | inbox lines and cleanup |
@@ -154,9 +154,9 @@ The index grouped by event is [`hooks/scripts/README.md`](hooks/scripts/README.m
 
 ### Critics
 
-`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no Write or Edit (Bash held to a read subset by its prompt, and by `blitz-guard` when installed), reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first — spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright.
+`critic --mode reject` is the gate: opus, fresh context, `omitClaudeMd`, no Write or Edit (Bash held to a read subset by its prompt, and by `blitz-guard` when installed), reading the final diff for one reason to reject. `critic --mode survey` is the lens `check` fans out first: spec compliance before code quality. `research-critic` verifies citations; `design-critic` judges UI through Playwright.
 
-A critic from a different model family catches blindspots the home model has on its own work, so the gate can be routed outside Claude entirely. `hooks/scripts/critic-external.sh` lifts the critic agent's body verbatim and hands it to a non-Claude CLI — `gemini` (Gemini CLI), `agy` (Antigravity), `copilot` (GitHub Copilot CLI), or `codex` (OpenAI Codex CLI) — holding it to the same JSON reply contract and the same exit codes.
+A critic from a different model family catches blindspots the home model has on its own work, so the gate can be routed outside Claude entirely. `hooks/scripts/critic-external.sh` lifts the critic agent's body verbatim and hands it to a non-Claude CLI (`gemini` for Gemini CLI, `agy` for Antigravity, `copilot` for GitHub Copilot CLI, or `codex` for OpenAI Codex CLI), holding it to the same JSON reply contract and the same exit codes.
 
 | Setting | Effect |
 |---|---|
@@ -165,7 +165,7 @@ A critic from a different model family catches blindspots the home model has on 
 | `BLITZ_CRITIC_PANEL=agy,copilot` | both run; a REJECT blocks once the in-Claude critic reproduces it |
 | `BLITZ_DUAL_CRITIC=1` | in-Claude plus the external one; external REJECTs are confirmed before they block |
 
-Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line — never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate. External REJECTs are claims, not vetoes: cross-model reviewers measure around 30% precision, so `critic-external.sh` exits 3 and the in-Claude critic must reproduce a claim before it blocks (`BLITZ_CRITIC_EXTERNAL_VETO=1` restores the old veto). Secret-shaped lines and secret-file hunks are redacted from the diff before it leaves the machine.
+Per provider, `BLITZ_<P>_BIN` and `BLITZ_<P>_MODEL` override the binary and model, and `BLITZ_<P>_FLAGS` appends flags one per line, never space-split, so one env value cannot inject a second flag and force an unconditional LGTM. A provider that fails to answer is recorded and ignored; if none answers, the run fails closed rather than reporting a clean gate. External REJECTs are claims, not vetoes: cross-model reviewers measure around 30% precision, so `critic-external.sh` exits 3 and the in-Claude critic must reproduce a claim before it blocks (`BLITZ_CRITIC_EXTERNAL_VETO=1` restores the old veto). Secret-shaped lines and secret-file hunks are redacted from the diff before it leaves the machine.
 
 ### Models, effort and watching the agents
 
@@ -188,7 +188,7 @@ Fan-outs run as labelled background agents (`research web-researcher`, `build T-
 
 ## Polyglot by data, not by code
 
-The loop is language-neutral: a plan is JSON, a verify command is a shell command, and "done" is an exit code. Only the tooling varies, and that lives in a table — `templates/toolchain.default.json`. Adding a language means adding rows, never editing a script.
+The loop is language-neutral: a plan is JSON, a verify command is a shell command, and "done" is an exit code. Only the tooling varies, and that lives in a table, `templates/toolchain.default.json`. Adding a language means adding rows, never editing a script.
 
 | Stack | Detected by | Format | Lint | Typecheck (ratchet) |
 |---|---|---|---|---|
@@ -196,9 +196,9 @@ The loop is language-neutral: a plan is JSON, a verify command is a shell comman
 | Python | `pyproject.toml`, `setup.cfg`, `requirements.txt` | ruff, black | ruff, flake8 | mypy, pyright |
 | Rust | `Cargo.toml` | rustfmt | clippy | `cargo check` |
 | Go | `go.mod` | gofmt | `go vet` | `go build` |
-| JVM | `gradlew` (Gradle wrapper; Maven has no rows yet) | — | — | `./gradlew` |
-| Ruby | `Gemfile` | rubocop | rubocop | — |
-| .NET | `*.csproj`, `*.sln` | `dotnet format` | — | `dotnet build` |
+| JVM | `gradlew` (Gradle wrapper; Maven has no rows yet) | none | none | `./gradlew` |
+| Ruby | `Gemfile` | rubocop | rubocop | none |
+| .NET | `*.csproj`, `*.sln` | `dotnet format` | none | `dotnet build` |
 | Deno, PHP, Elixir, Swift | `deno.json`, `composer.json`, `mix.exs`, `Package.swift` | see the table | | |
 
 A row fires only when its marker is present, its config exists and its tool answers a probe, so a missing tool is a silent skip rather than a red build. `scripts/toolchain.sh explain` prints what resolves here; `/blitz:doctor` flags a stack with no typecheck row, because that stack has no ratchet.
@@ -211,7 +211,7 @@ Override at your repo root with `.blitz-toolchain.json`:
 
 `disable` drops rows by id, `prefer` reorders a lane. Neither can supply a `cmd`: a checkout is untrusted inbound data ([security.md](skills/_shared/security.md), TB-1), and an argv read from repo content would be arbitrary execution on every edit.
 
-**Framework depth.** Beyond the language lanes, blitz ships deeper support for Vue 3 / Nuxt 3 / Firebase — adapter detection for Tailwind, Quasar and Vuetify, Firestore rules and Cloud Functions conventions, and the design-quality lanes behind `ui-build` and `ui-audit`. Those registry rows are tagged `stacks: ["node"]`, so a Go or Python repo never runs them.
+**Framework depth.** Beyond the language lanes, blitz ships deeper support for Vue 3 / Nuxt 3 / Firebase: adapter detection for Tailwind, Quasar and Vuetify, Firestore rules and Cloud Functions conventions, and the design-quality lanes behind `ui-build` and `ui-audit`. Those registry rows are tagged `stacks: ["node"]`, so a Go or Python repo never runs them.
 
 **Code intelligence.** `.lsp.json` wires language servers for TypeScript, Python, Rust and Go, giving Claude `goToDefinition`, `findReferences` and workspace symbol search instead of grep-and-read-the-whole-file. You install the binaries; each path is a `/config` option you can repoint or clear. Two caveats: plugin language servers do not start in cloud sessions, and when two enabled plugins claim the same extension, the first registered wins.
 
@@ -222,7 +222,7 @@ Override at your repo root with `.blitz-toolchain.json`:
 ```
 blitz-cc/
 ├── .claude-plugin/        plugin.json · marketplace.json · compat.json (version floors)
-├── skills/<name>/         SKILL.md (+ references/, assets/) — auto-discovered as /blitz:<name>
+├── skills/<name>/         SKILL.md (+ references/, assets/); auto-discovered as /blitz:<name>
 ├── skills/_shared/        loop · sessions · agents · quality · security · output protocols
 │                          check-registry.json · design-criteria.md
 ├── agents/                dev · critic · test-writer · research-critic · design-critic
@@ -235,7 +235,7 @@ blitz-cc/
 └── output-styles/         terse-technical.md (forced while the plugin is enabled)
 ```
 
-A project using blitz keeps `docs/plans/<slug>/`, `docs/solutions/` and `docs/plans/BACKLOG.md` in git, and `.cc-sessions/` out of it — session records, inbox, activity feed, `HANDOFF.json`, the ratchet baseline, the test journal, and `STOP`.
+A project using blitz keeps `docs/plans/<slug>/`, `docs/solutions/` and `docs/plans/BACKLOG.md` in git, and `.cc-sessions/` out of it: session records, inbox, activity feed, `HANDOFF.json`, the ratchet baseline, the test journal, and `STOP`.
 
 Each shared protocol is one file per concern: `loop.md` (artifacts, task schema, structural rules; the decision rows and gates sit in its reference), `sessions.md` (records, inbox, mailbox, conflict matrix), `agents.md` (roster, spawn spec, fix rounds, parallelism, worktrees), `quality.md` (definition of done, registry, ratchet, verification stack), `security.md` (trust boundaries TB-1…TB-5, memory poisoning, kill switch, supply chain), `output.md` (terse output, feed and inbox line schemas). Each has a `.reference.md` sibling holding the long tail, so a skill loads the contract without the appendix.
 
@@ -247,7 +247,7 @@ Hook-enforced guards: `BLITZ_OVERRIDE_NO_VERIFY` (the one opt-out that logs its 
 
 ## CI and hosted review
 
-`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed, running `/blitz:check --scope diff --comment` on each pull request and posting findings as inline comments. This repo's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and — when an API key is present — the advisory `claude plugin eval .` cases in [`evals/`](evals/README.md).
+`doctor --ci` writes `.github/workflows/blitz-check.yml`: `claude-code-action` with the plugin installed, running `/blitz:check --scope diff --comment` on each pull request and posting findings as inline comments. This repo's own CI runs the validators, the bats suite, `gen-catalog.sh --check`, and, when an API key is present, the advisory `claude plugin eval .` cases in [`evals/`](evals/README.md).
 
 ## Contributing
 
@@ -270,4 +270,4 @@ The clarification-gate principles are adapted from [multica-ai/andrej-karpathy-s
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT; see [LICENSE](LICENSE).

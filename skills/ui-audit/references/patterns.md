@@ -1,4 +1,4 @@
-# ui-audit — UI/UX Heuristic Patterns
+# ui-audit: UI/UX Heuristic Patterns
 
 Catalog for Phase 5 (HEURISTICS): severity tiers, the categories that run, and the upstream rule sources. The reducer chain that applies them is in `references/main.md` § Phase 5.
 
@@ -10,7 +10,7 @@ Findings produced by this module surface as `file:line` (when the rule applies t
 
 | Tier | Examples | Gate? |
 |---|---|---|
-| **CRITICAL** | WCAG 2.1 AA contrast failures; missing aria-label on interactive; touch target <44×44pt | Yes — fails heuristics pass |
+| **CRITICAL** | WCAG 2.1 AA contrast failures; missing aria-label on interactive; touch target <44×44pt | Yes (fails heuristics pass) |
 | **HIGH** | Missing focus-visible on interactives; cumulative layout shift triggers | Yes |
 | **MED** | Non-tabular-nums numeric columns; missing `prefers-reduced-motion` gates | Warn |
 | **LOW** | Copy issues (non-Title-Case headings, missing curly quotes, non-numerals in counts) | Info |
@@ -26,19 +26,19 @@ Mirror (for runtime fetch): https://github.com/vercel-labs/web-interface-guideli
 
 17 categories. This skeleton notes the two highest-priority ones for cross-page data consistency:
 
-### Category 9 — Navigation & State
+### Category 9: Navigation & State
 
 URL must reflect stateful UI (filters, tabs, pagination). Stateful views must be deep-linkable. Back/forward navigation must restore state.
 
 **Detection:** Phase 5 § 5.3 (`nav_state` category). Consumes click records from Phase INTERACTIVE § I.5 which capture `url_before` + `url_after` on every safe-click. Finding `STATE_NOT_IN_URL` severity HIGH when URL unchanged after click on tab / sort / pagination. Exempt-types configurable. See `references/main.md § Phase 5 § 5.3`.
 
-### Category 16 — Content & Copy
+### Category 16: Content & Copy
 
 Active voice. Title Case in headings. **Numerals for counts** (`"3 items"` not `"three items"`). **Tabular-nums for number columns** (`font-variant-numeric: tabular-nums` on numeric table cells).
 
 **Detection:** Phase 5 § 5.4 (`content_copy` category). Two sub-checks:
-- **16a NUMERIC_COLUMN_NOT_TABULAR** severity MED — `browser_evaluate` scans `<table>` columns where ≥70% of cells match `/^-?\d/`; flags if computed `fontVariantNumeric` lacks `tabular-nums`. Threshold configurable via `heuristics.tabular_column_threshold`.
-- **16b WRITTEN_OUT_COUNT** severity LOW — regex scan for `/\b(one..nine)\s+(item|items|user|users|...)\b/i` in headings, paragraphs, list items. High false-positive tolerance — informational only.
+- **16a NUMERIC_COLUMN_NOT_TABULAR** severity MED: `browser_evaluate` scans `<table>` columns where ≥70% of cells match `/^-?\d/`; flags if computed `fontVariantNumeric` lacks `tabular-nums`. Threshold configurable via `heuristics.tabular_column_threshold`.
+- **16b WRITTEN_OUT_COUNT** severity LOW: regex scan for `/\b(one..nine)\s+(item|items|user|users|...)\b/i` in headings, paragraphs, list items. High false-positive tolerance; informational only.
 
 See `references/main.md § Phase 5 § 5.4`.
 
@@ -56,11 +56,11 @@ Not yet borrowed (planned categories): the 10-tier severity ladder and the pre-d
 
 Upstream: https://github.com/bencium/bencium-claude-code-design-skill
 
-Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3B82F6` SaaS blue, decorative shadows/gradients, glassmorphism clichés. Opinionated — gate behind `.ui-audit.json[enable_bencium_opinions]: true` so the default heuristics pass does not fire on teams using these typefaces intentionally (not yet implemented).
+Anti-patterns worth auto-flagging: Inter / Roboto / Space Grotesk typefaces, `#3B82F6` SaaS blue, decorative shadows/gradients, glassmorphism clichés. Opinionated: gate behind `.ui-audit.json[enable_bencium_opinions]: true` so the default heuristics pass does not fire on teams using these typefaces intentionally (not yet implemented).
 
 ---
 
-## Role-leak patterns (CAP-016 / E-012)
+## Role-leak patterns
 
 Regex patterns that trigger a `ROLE_LEAK` finding (always CRITICAL) when they match rendered HTML while logged in as a non-admin role. Full procedure in `skills/ui-audit/references/main.md` § Phase ROLE § R.8.
 
@@ -70,7 +70,7 @@ Regex patterns that trigger a `ROLE_LEAK` finding (always CRITICAL) when they ma
 |---|---|
 | `/data-admin-only/i` | Elements tagged with admin-only attribute the app forgot to strip server-side |
 | `/admin.?panel/i` | String references to admin-panel class/component names in the rendered DOM |
-| `/<script[^>]*>[\s\S]*?admin[\s\S]*?<\/script>/i` | Inline scripts mentioning admin — often leaked feature-flag bootstraps |
+| `/<script[^>]*>[\s\S]*?admin[\s\S]*?<\/script>/i` | Inline scripts mentioning admin, often leaked feature-flag bootstraps |
 
 ### Extension contract
 
@@ -88,7 +88,7 @@ Each entry is compiled with `new RegExp(str, 'i')`. Malformed regex → `CONFIG_
 
 **Scope:** scan runs per-page for every authenticated non-admin role. Anonymous is excluded (no authenticated baseline to compare against; use `role_invariants` instead).
 
-**False positives:** expected and tolerable. The scan is intentionally coarse. Operators tune the extension list iteratively — each false positive is a one-line config change.
+**False positives:** expected and tolerable. The scan is intentionally coarse. Operators tune the extension list iteratively; each false positive is a one-line config change.
 
 ---
 

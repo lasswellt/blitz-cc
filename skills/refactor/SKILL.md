@@ -40,7 +40,7 @@ These rules override ALL other instructions. Violating any of these is a critica
 
 ---
 
-## Phase 0: PARSE ARGUMENTS — Understand the Target
+## Phase 0: PARSE ARGUMENTS (Understand the Target)
 
 ### 0.0 Register Session
 
@@ -72,7 +72,7 @@ Read the target file. If it does not exist, inform the user and stop.
 
 ---
 
-## Phase 1: SNAPSHOT — Capture Baseline State
+## Phase 1: SNAPSHOT (Capture Baseline State)
 
 ### 1.1 Detect Verification Commands
 
@@ -111,7 +111,7 @@ Read the target file and record: line count, export count, cyclomatic complexity
 
 ---
 
-## Phase 2: ANALYZE — Map Dependencies
+## Phase 2: ANALYZE (Map Dependencies)
 
 ### 2.1 Find All Dependents
 
@@ -141,7 +141,7 @@ Read test files to understand: behaviors tested, mocking patterns, and assertion
 
 ---
 
-## Phase 2.5: RESEARCH PATTERNS — Study Similar Code
+## Phase 2.5: RESEARCH PATTERNS (Study Similar Code)
 
 ### 2.5.1 Find Similar Files
 
@@ -166,7 +166,7 @@ TARGET PATTERN:
 
 ---
 
-## Phase 3: PLAN — Design Incremental Steps
+## Phase 3: PLAN (Design Incremental Steps)
 
 ### 3.1 Break Down the Refactoring
 
@@ -201,11 +201,11 @@ Present the plan to the user before changes begin.
 
 ---
 
-## Phase 4: EXECUTE — Incremental Refactoring with Verification
+## Phase 4: EXECUTE (Incremental Refactoring with Verification)
 
 For each step in the plan:
 
-1. **Execute the step** — minimal change only.
+1. **Execute the step**: minimal change only.
 2. **Type-check**:
    ```bash
    <TYPE_CHECK_CMD> 2>&1 | tail -30
@@ -241,7 +241,7 @@ If a step introduces test failures:
 
 ---
 
-## Phase 5: VERIFY — Full Verification Pass
+## Phase 5: VERIFY (Full Verification Pass)
 
 ### 5.1 Final Type-Check
 
@@ -276,12 +276,12 @@ Refactoring Metrics:
   Export count:     <N>       <N>      <+/-N>
   Complexity:       <N>       <N>      <+/-N>
   Import count:     <N>       <N>      <+/-N>
-  Files affected:   —         <N>      —
+  Files affected:   n/a       <N>      n/a
 ```
 
 ---
 
-## Phase 6: REPORT — Summarize Results
+## Phase 6: REPORT (Summarize Results)
 
 ### 6.1 Output Summary
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# _lib/common.sh — Shared helper library for blitz hook scripts.
+# _lib/common.sh: shared helper library for blitz hook scripts.
 #
 # Source this file near the top of each hook script:
 #   . "$(dirname "$0")/_lib/common.sh"
 #
 # Provides: blitz_find_root, blitz_extract, blitz_guard_input, blitz_session_id,
 #           blitz_log_event, blitz_live_worktree_paths, blitz_atomic_write,
+#           blitz_mktemp_in, blitz_timeout,
 #           blitz_session_record_path, blitz_session_record_find,
 #           blitz_session_update, blitz_inbox_append, blitz_inbox_post,
 #           blitz_iso_epoch, blitz_agent_view, blitz_session_stale,
@@ -14,15 +15,19 @@
 # Designed for set -euo pipefail callers. Every function handles its own
 # error paths. Global fallback vars: SESSION_ID, SESSIONS_DIR, INPUT.
 
-# BLITZ_INJECTION_RX — canonical prompt-injection marker pattern (POSIX ERE, for grep -iE).
+# BLITZ_INJECTION_RX: canonical prompt-injection marker pattern (POSIX ERE, for grep -iE).
 # Single source of truth for BOTH the live echo path (session-start.sh) and the
 # persistent-state classifier (startup-validate.sh) so the two never drift (SEC-R2-03).
 # UNION of the historical patterns from both scripts: instruction verbs, role
 # directives, tag/role smuggling (HTML-style AND ChatML <|im_start|>/<|im_end|>),
 # tool-invocation strings, and secret/exfil markers. Case-insensitivity is the
 # caller's responsibility (always pair with grep -i). Keep ERE-safe: `\|` is a
-# literal pipe, `\.` a literal dot — both escaped for grep -E.
-BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
+# literal pipe, `\.` a literal dot; both are escaped for grep -E.
+# `system:` carries the word-start guard `(^|[^a-z])` so `filesystem:` and
+# `ecosystem:` do not match; under -i the bracket excludes A-Z as well. The
+# consumers are grep -iE (hooks, scripts) and Python `re` with re.I
+# (scripts/sessions-dashboard.sh); both read this ERE subset unchanged.
+BLITZ_INJECTION_RX='(ignore (the )?(previous|above)|you are now|disregard (all|previous|the)|new instructions:|(^|[^a-z])system:|</?(system|tool|assistant|im_start|im_end)>|tool_call|<\|.*\|>|exfiltrat|\.aws/credentials|BEGIN (RSA|OPENSSH|PRIVATE))'
 
 # blitz_find_root [start_dir]
 # Walk up from start_dir (or pwd) looking for .claude-plugin/.
@@ -111,7 +116,7 @@ blitz_session_id() {
 # Uses global SESSIONS_DIR if set; derives from blitz_find_root() otherwise.
 blitz_log_event() {
   local skill="${1:-hook}" event="${2:-event}" message="${3:-}" detail="${4:-}"
-  # NOTE: `${4:-{}}` is NOT safe here — bash closes the expansion at the first `}`,
+  # NOTE: `${4:-{}}` is NOT safe here: bash closes the expansion at the first `}`,
   # leaving a stray `}` appended to any caller-supplied detail (invalid JSON, event lost).
   [ -n "$detail" ] || detail='{}'
   local ts session_id sessions_dir
@@ -140,14 +145,14 @@ blitz_log_event() {
 # §Interop), so the same `.claude/worktrees/` dir now holds BOTH blitz
 # `Agent({isolation:"worktree"})` worktrees AND native background-session
 # worktrees. Callers (worktree-prune, cleanup) MUST skip any worktree whose
-# path appears here, regardless of merge-status / age / --force — removing it
+# path appears here, regardless of merge-status / age / --force, since removing it
 # would destroy a live session's uncommitted changes.
 #
 # Prints nothing and returns 0 when the `claude` CLI or `--json` is unavailable
 # (older CC, Bedrock/Vertex, or agent view disabled). Never blocks the caller.
 #
 # E-041 S1 (C2): only rows whose overlay `state` is working|blocked count as
-# live — a done/failed/stopped row's worktree is fair game for the pruner.
+# live; a done/failed/stopped row's worktree is fair game for the pruner.
 blitz_live_worktree_paths() {
   blitz_agent_view | jq -r 'select(.state=="working" or .state=="blocked") | .cwd // empty' 2>/dev/null || true
   return 0
@@ -243,7 +248,7 @@ blitz_session_stale() {
 # Append one line to .cc-sessions/mailbox/<target_sid>.jsonl (drained to the
 # target's messaging socket by stop-turn.sh):
 #   {ts,from:$SESSION_ID|"unknown",to,kind:note|unblock|halt,text}
-# text is capped at 500 chars and injection-scanned (BLITZ_INJECTION_RX) — a
+# text is capped at 500 chars and injection-scanned (BLITZ_INJECTION_RX); a
 # hit stores the quarantine marker instead. Returns 1 on an unsafe target id
 # or unknown kind; never throws under set -e.
 blitz_mailbox_send() {
@@ -257,7 +262,7 @@ blitz_mailbox_send() {
   from="${SESSION_ID:-unknown}"
   text=$(printf '%s' "$text" | tr -d '\r' | tr '\n' ' ' | cut -c1-500)
   if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    text='[quarantined: suspicious field — see startup-validate.sh]'
+    text='[quarantined: suspicious field; see startup-validate.sh]'
   fi
   jq -nc --arg ts "$ts" --arg from "$from" --arg to "$target" --arg kind "$kind" --arg text "$text" \
     '{ts:$ts,from:$from,to:$to,kind:$kind,text:$text}' >> "$dir/$target.jsonl" 2>/dev/null || return 1
@@ -265,17 +270,79 @@ blitz_mailbox_send() {
 }
 
 # blitz_atomic_write target content
-# Write content to target via mktemp+mv (atomic).
-# Falls back to direct write if mktemp fails.
+# Write content to target via a temp file + mv (atomic). The temp file comes
+# from blitz_mktemp_in, in the target's directory when it allows one.
+# Falls back to a direct write when no temp file can be created.
 blitz_atomic_write() {
   local target="$1" content="$2"
   local dir tmp
   dir=$(dirname "$target")
-  if tmp=$(mktemp -p "$dir" .blitz-atomic.XXXXXX 2>/dev/null || mktemp 2>/dev/null); then
+  if tmp=$(blitz_mktemp_in "$dir" .blitz-atomic); then
     printf '%s' "$content" > "$tmp" && mv "$tmp" "$target" || { rm -f "$tmp" 2>/dev/null; return 1; }
   else
     printf '%s' "$content" > "$target"
   fi
+}
+
+# blitz_mktemp_in dir [prefix]
+# Create a temp file inside dir and print its path, so a following mv onto a
+# file in that directory is an atomic rename. Uses a full-path template, which
+# GNU and BSD mktemp both accept (`mktemp -p DIR` is GNU-only). Falls back to
+# the system temp dir (TMPDIR) when dir refuses the file; returns 1 when
+# neither location yields one.
+blitz_mktemp_in() {
+  local dir="${1:-.}" prefix="${2:-.blitz}"
+  mktemp "$dir/$prefix.XXXXXX" 2>/dev/null || mktemp 2>/dev/null
+}
+
+# blitz_timeout seconds command [args...]
+# Run command under `timeout` when the host has one (GNU coreutils), else under
+# a bash watchdog that sends TERM to the command once the deadline passes.
+# Either way the exit code is the command's own, or 124 when the deadline was
+# reached, so a caller never sees 127 for a missing `timeout` (stock macOS
+# ships none). As with GNU timeout, 0 seconds means no deadline; an empty or
+# non-numeric value means 120. Watchdog limit: it signals the command's
+# process only, so a compound command's grandchildren can outlive the deadline
+# where GNU timeout would have signalled the whole process group. Its scratch
+# files live in a private mktemp -d directory, never under a predictable name.
+blitz_timeout() {
+  local secs="${1:-120}"; shift
+  case "$secs" in ''|*[!0-9]*) secs=120;; esac
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$secs" "$@" || return $?
+    return 0
+  fi
+  local dir=""
+  if [ "$secs" -gt 0 ]; then
+    dir=$(mktemp -d "${TMPDIR:-/tmp}/.blitz-timeout.XXXXXX" 2>/dev/null) || dir=""
+  fi
+  if [ -z "$dir" ]; then
+    # Deadline 0, or no scratch dir for the watchdog: run unbounded rather than
+    # fail every command.
+    "$@" || return $?
+    return 0
+  fi
+  local pid wd rc=0 marker="$dir/expired" fifo="$dir/fifo"
+  "$@" & pid=$!
+  if mkfifo "$fifo" 2>/dev/null; then
+    # The timer is `read -t` on a fifo nothing writes to, so the watchdog has no
+    # child of its own to orphan when the command finishes first and it is
+    # ended early (a backgrounded `sleep` survives its parent's TERM).
+    (
+      exec 3<>"$fifo"
+      if read -r -t "$secs" <&3; then exit 0; fi
+      : > "$marker"
+      kill -TERM "$pid" 2>/dev/null
+    ) >/dev/null 2>&1 </dev/null & wd=$!
+  else
+    ( sleep "$secs"; : > "$marker"; kill -TERM "$pid" 2>/dev/null ) >/dev/null 2>&1 </dev/null & wd=$!
+  fi
+  wait "$pid" 2>/dev/null || rc=$?
+  kill "$wd" 2>/dev/null || true
+  wait "$wd" 2>/dev/null || true
+  if [ -e "$marker" ]; then rc=124; fi
+  rm -rf "$dir" 2>/dev/null || true
+  return "$rc"
 }
 
 # --- Session records + inbox (E-040 S2; record writer arrives with E-041 S1) ---
@@ -341,7 +408,7 @@ blitz_session_update() {
 # blitz_inbox_append kind text [session]
 # Append one pending item to .cc-sessions/inbox.jsonl:
 #   {ts,id:"inb-<8hex>",source:"hook",kind,session,text,status:"pending"}
-# text is capped at 200 chars and injection-scanned (BLITZ_INJECTION_RX) —
+# text is capped at 200 chars and injection-scanned (BLITZ_INJECTION_RX);
 # a hit stores a quarantine marker instead (same discipline as session-start.sh).
 blitz_inbox_append() {
   local kind="${1:-notification}" text="${2:-}" session="${3:-${SESSION_ID:-}}"
@@ -353,7 +420,7 @@ blitz_inbox_append() {
   [ -n "$id" ] || id=$(printf '%s%s' "$ts" "$$" | md5sum 2>/dev/null | cut -c1-8) || id="00000000"
   text=$(printf '%s' "$text" | tr -d '\r' | tr '\n' ' ' | cut -c1-200)
   if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    text='[quarantined: suspicious field — see startup-validate.sh]'
+    text='[quarantined: suspicious field; see startup-validate.sh]'
   fi
   jq -nc --arg ts "$ts" --arg id "inb-$id" --arg kind "$kind" \
     --arg session "$session" --arg text "$text" \

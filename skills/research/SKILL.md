@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, ToolSearch, Agent, AskUserQuestion, Edit(docs/r
 model: inherit
 compatibility: ">=2.1.296"
 ---
-> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`) — switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
+> **Session:** this skill inherits the session model. Recommended: opus, effort high. Set once (`claude --model opus --effort high` or `/model`, `/effort`); switching mid-session resets the prompt cache. Current effort: `${CLAUDE_EFFORT}`.
 
 ## Project Context
 !`${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh`
@@ -35,7 +35,7 @@ Two modes:
 
 Read-only: answers "how does this repo do X" with `path:line` cites, no agents, no document written. Procedure and the LSP-first locate ladder: [references/main.md](references/main.md) §Codebase mode.
 
-## Phase 0: PARSE TOPIC — Understand What to Research
+## Phase 0: PARSE TOPIC (Understand What to Research)
 
 ### 0.0 Register Session
 
@@ -63,7 +63,7 @@ Read root `package.json`; note detected stack profile; identify existing code re
 
 ---
 
-## Phase 1: SPAWN RESEARCH AGENTS — Parallel Investigation
+## Phase 1: SPAWN RESEARCH AGENTS (Parallel Investigation)
 
 ### 1.1 Create Working Directory
 
@@ -89,7 +89,7 @@ Model routing follows [agents.md](/_shared/agents.md): retrieval (library-docs, 
 
 ### 1.2.5 Spawn-N Gate (skip unneeded agents)
 
-`infra-analyst` is conditional — spawn only when stack has cloud/infra concerns:
+`infra-analyst` is conditional; spawn only when stack has cloud/infra concerns:
 
 ```bash
 SPAWN_INFRA=false
@@ -154,13 +154,13 @@ Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-pe
 
 ### 1.6 Agent Prompt Templates
 
-The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates — paste from there into each Agent() spawn, byte-identical every time, so the subagent prompt cache hits ([agents.md](/_shared/agents.md) §1.3).
+The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates; paste from there into each Agent() spawn, byte-identical every time, so the subagent prompt cache hits ([agents.md](/_shared/agents.md) §1.3).
 
 **Templates by role** (all consume the canonical preamble):
-- `library-docs` — model: haiku. Official docs, API surface, version compat.
-- `web-researcher` — model: haiku. **Contrarian role** (counter-evidence focus to mitigate agent-agreement bias per arxiv 2604.02923).
-- `codebase-analyst` — model: sonnet. Semantic codebase reasoning, no web search. file:LINE cites.
-- `infra-analyst` — model: haiku. **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.
+- `library-docs` (model: haiku). Official docs, API surface, version compat.
+- `web-researcher` (model: haiku). **Contrarian role** (counter-evidence focus to mitigate agent-agreement bias per arxiv 2604.02923).
+- `codebase-analyst` (model: sonnet). Semantic codebase reasoning, no web search. file:LINE cites.
+- `infra-analyst` (model: haiku). **Conditional** (§1.2.5 spawn-N gate). Cloud + deployment.
 
 ### 1.7 Wait for Completion
 
@@ -176,13 +176,13 @@ done
 
 ---
 
-## Phase 2: COLLECT AND VALIDATE — Gather All Findings
+## Phase 2: COLLECT AND VALIDATE (Gather All Findings)
 
 ### 2.1 Classify Outputs (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4)
 
 Every agent reply is classified before it enters synthesis; an unclassified reply is dropped, not trusted ([agents.reference.md](/_shared/agents.reference.md) §4.4). Gate table: [references/main.md](references/main.md) §2.1 Classify Outputs.
 
-### 2.2 Summarize Each Agent File (Haiku — token saving)
+### 2.2 Summarize Each Agent File (Haiku, token saving)
 
 Compress via Haiku summarization-on-read before synthesis (saves roughly $0.26 per run on ~100K tokens):
 
@@ -208,20 +208,20 @@ for f in "${EXPECTED_OUTPUTS[@]}"; do
 done
 ```
 
-If a Haiku summarizer fails or times out, fall back to the raw file — never skip the agent's findings entirely.
+If a Haiku summarizer fails or times out, fall back to the raw file; never skip the agent's findings entirely.
 
 ### 2.3 Cross-Reference Findings
 
 Read `SYNTHESIS_INPUT_FILES` and surface:
-- **Contradictions** — Document explicitly in `## Dissent / Contradictory Evidence`; never silently collapse to consensus (mitigates agent-agreement bias per arxiv 2604.02923).
-- **Gaps** — Unanswered questions → §2.4.
-- **Convergence** — Require ≥3 distinct source domains before treating consensus as established; single-domain consensus is rejected.
+- **Contradictions**: Document explicitly in `## Dissent / Contradictory Evidence`; never silently collapse to consensus (mitigates agent-agreement bias per arxiv 2604.02923).
+- **Gaps**: Unanswered questions → §2.4.
+- **Convergence**: Require ≥3 distinct source domains before treating consensus as established; single-domain consensus is rejected.
 
 ### 2.4 Gap Detection (1 Haiku call → optional second wave)
 
 One haiku call names the gaps; a second wave runs only if it finds any. Prompt and the spawn-N gate: [references/main.md](references/main.md) §2.4 Gap Detection.
 
-## Phase 3: SYNTHESIZE — Produce Research Document
+## Phase 3: SYNTHESIZE (Produce Research Document)
 
 ### 3.1 Generate Research Document
 
@@ -234,14 +234,14 @@ Before finalizing:
 - Recommendation is specific and actionable (not "it depends").
 - Implementation sketch references real project paths and patterns.
 - No agent's findings are silently dropped.
-- Quantified claims ("migrate 130 files") cite how the number was obtained (a grep, a count, a doc) — never a bare figure.
+- Quantified claims ("migrate 130 files") cite how the number was obtained (a grep, a count, a doc), never a bare figure.
 - `## Recommendation` has a `### Decision` and a `### Rationale`; `plan --from-research` reads those two headings as its contract.
 
 ### 3.2.5 Citation Validation (research-critic agent)
 
 Every cited URL is probed and classified LIVE / DEAD / LIKELY_HALLUCINATED / UNKNOWN; `CITATIONS_MISSING` or `UNVERIFIED` blocks cleanup so dead URLs can be inspected. Contract: [references/main.md](references/main.md) §3.2.5 Citation Validation.
 
-### 3.3 Clean Up (CONDITIONAL — preserve findings on failure)
+### 3.3 Clean Up (CONDITIONAL: preserve findings on failure)
 
 ```bash
 DOC_PATH="docs/research/${TODAY}_${TOPIC_SLUG}.md"   # the documented name; TIMESTAMP is for scratch files only
@@ -261,7 +261,7 @@ fi
 
 ---
 
-## Phase 4: REPORT — Present to User
+## Phase 4: REPORT (Present to User)
 
 ### 4.1 Output Summary
 
@@ -287,13 +287,13 @@ Suggest next steps. Full research-outcome → skill table: [references/main.md](
 
 - **No web search available**: Skip `library-docs` and `web-researcher` web searches; rely on `codebase-analyst`; inform user research is limited.
 - **Topic too broad**: Ask user to narrow scope; suggest specific sub-topics.
-- **No relevant codebase code found**: Greenfield investigation — skip codebase compatibility analysis; focus on stack-level compatibility.
+- **No relevant codebase code found**: Greenfield investigation, so skip codebase compatibility analysis; focus on stack-level compatibility.
 - **Contradictory findings**: Present both sides with evidence; let recommendation acknowledge the trade-off.
 - **Agent timeout**: Proceed with available findings; note which agent timed out and coverage lost.
 
 ## Gotchas
 
 - Agent-output classify gate: MISSING/EMPTY/MALFORMED ≥ threshold → ABORT (§2.1); never pass blanks through as SUCCESS.
-- Citation-validity critic returning CITATIONS_MISSING blocks Phase 3.3 cleanup — the findings dir is preserved for inspection, not deleted.
-- `--codebase` still runs preamble steps 1-3 (PATCH on the hook's record, `working_on: codebase <question>`) but writes no document and no scratch files. A cite you did not open this turn is a guess — mark it "Not verified".
-- `infra-analyst` is conditional (§1.2.5 spawn-N gate) — don't assume all 4 agents run.
+- Citation-validity critic returning CITATIONS_MISSING blocks Phase 3.3 cleanup; the findings dir is preserved for inspection, not deleted.
+- `--codebase` still runs preamble steps 1-3 (PATCH on the hook's record, `working_on: codebase <question>`) but writes no document and no scratch files. A cite you did not open this turn is a guess; mark it "Not verified".
+- `infra-analyst` is conditional (§1.2.5 spawn-N gate); don't assume all 4 agents run.

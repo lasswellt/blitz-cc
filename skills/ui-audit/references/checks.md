@@ -1,4 +1,4 @@
-# ui-audit — Data-Quality Flag Catalog
+# ui-audit: Data-Quality Flag Catalog
 
 Catalog for Phase 4 (QUALITY): the flag names and one-line definitions. The procedures that produce them are in `references/main.md` § Phase 4.
 
@@ -8,13 +8,13 @@ Findings produced by this module surface as `page:label:FLAG` in `docs/crawls/ui
 
 ## NULL_VALUE
 
-The extracted `parsed` value is `null` — the selector matched nothing, or matched an element with empty `.textContent`. Fires once per (role, page, label). Severity: HIGH when the label is declared in `.ui-audit.json` and the page is declared; MED otherwise.
+The extracted `parsed` value is `null`: the selector matched nothing, or matched an element with empty `.textContent`. Fires once per (role, page, label). Severity: HIGH when the label is declared in `.ui-audit.json` and the page is declared; MED otherwise.
 
-**Detection:** inline in Phase 2 § 2.4 extraction JS — emits when `raw === null || raw === ''` for a declared label. Implemented in the 2.x ui-audit pass. See `skills/ui-audit/references/main.md § Phase 2 § 2.4`.
+**Detection:** inline in Phase 2 § 2.4 extraction JS; emits when `raw === null || raw === ''` for a declared label. Implemented in the 2.x ui-audit pass. See `skills/ui-audit/references/main.md § Phase 2 § 2.4`.
 
 ## PLACEHOLDER
 
-Raw text matches a placeholder regex. Default pattern: `/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`. Configurable via `.ui-audit.json[placeholder_patterns]` (array of regex strings — compiled at config-load with try/catch; malformed regex emits CONFIG_ERROR, not crash). Severity: HIGH (production placeholder leakage).
+Raw text matches a placeholder regex. Default pattern: `/lorem|TODO|FIXME|N\/A|--|\?\?\?|xxx|placeholder|fpo|coming soon/i`. Configurable via `.ui-audit.json[placeholder_patterns]` (array of regex strings, compiled at config-load with try/catch; malformed regex emits CONFIG_ERROR, not crash). Severity: HIGH (production placeholder leakage).
 
 **Detection:** inline in Phase 2 § 2.4 extraction JS against the compiled union of built-in + user patterns. See `references/main.md § Phase 2 § 2.4` + `§ Phase 4 § 4.1` (aggregation).
 
@@ -22,7 +22,7 @@ Raw text matches a placeholder regex. Default pattern: `/lorem|TODO|FIXME|N\/A|-
 
 The raw string's format (currency symbol, decimal separator, thousands separator, negative style) differs from the mode of prior observations of the same `(role, page, label)`. Fires after ≥2 observations. Severity: MED.
 
-**Detection:** reducer in Phase 4 § 4.2 — jq over registry history + bash format-tuple extraction (`extract_fmt`). See `references/main.md § Phase 4 § 4.2`.
+**Detection:** reducer in Phase 4 § 4.2; jq over registry history + bash format-tuple extraction (`extract_fmt`). See `references/main.md § Phase 4 § 4.2`.
 
 ## STALE_ZERO
 
@@ -34,19 +34,19 @@ The raw string's format (currency symbol, decimal separator, thousands separator
 
 Configured parent/child relationship: sum of declared child `parsed` values != parent `parsed` within `tolerance` (default 0.01). Requires author to declare a `totals[]` entry in `.ui-audit.json` with `{id, parent:{page,key}, children:[{page,key}], tolerance}`. Severity: HIGH.
 
-**Detection:** evaluator in Phase 4 § 4.4 — jq over reduced registry snapshot. `children[].key` may resolve to multiple observations per page (one per row); all matches are summed. See `references/main.md § Phase 4 § 4.4`.
+**Detection:** evaluator in Phase 4 § 4.4; jq over reduced registry snapshot. `children[].key` may resolve to multiple observations per page (one per row); all matches are summed. See `references/main.md § Phase 4 § 4.4`.
 
 ## NEGATIVE_COUNT
 
 `parsed < 0` on a label whose type is `count`. Counts should not be negative in a healthy UI. Severity: HIGH.
 
-**Detection:** inline in Phase 2 § 2.4 extraction JS — emitted when `LABEL_TYPE == 'count' && Number.isFinite(parsed) && parsed < 0`. Implemented in the 2.x ui-audit pass.
+**Detection:** inline in Phase 2 § 2.4 extraction JS; emitted when `LABEL_TYPE == 'count' && Number.isFinite(parsed) && parsed < 0`. Implemented in the 2.x ui-audit pass.
 
 ---
 
-## Interactive-element checks (CAP-014 / E-010)
+## Interactive-element checks
 
-These are orthogonal to data-quality flags — they target interactive elements, not labeled values. Findings surface as `button_finding` registry lines. Full detection procedures in `skills/ui-audit/references/main.md` § Phase INTERACTIVE § I.3.
+These are orthogonal to data-quality flags: they target interactive elements, not labeled values. Findings surface as `button_finding` registry lines. Full detection procedures in `skills/ui-audit/references/main.md` § Phase INTERACTIVE § I.3.
 
 | Check | Severity | Section |
 |---|---|---|

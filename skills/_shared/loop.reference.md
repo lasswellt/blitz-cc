@@ -4,6 +4,39 @@ Detail split out of [loop.md](loop.md) so the contract every skill loads stays s
 
 ---
 
+## Schemas (detail)
+
+### `notes` tokens
+
+The `notes` field of a task is one free-text string of `key: value` (or `key:value`) tokens, separated by newlines or `; `; a reader matches its own key and ignores the rest. Tokens in use:
+
+| Token | Set by | Notes |
+|---|---|---|
+| `design_quality: skip`, `standard` or `high` | the planner or an operator, through `tasks.sh add --notes` or `tasks.sh set … notes=`; nothing sets it automatically | read by `ui-build` references §5.4.2; absent means `standard` |
+| `issue:#<n>` | `plan --issues` | |
+| `scope+<path>` | `build`, on a `scope-expansion-needed` re-dispatch | |
+| `test-only: <why>` | `plan`, beside `--test-only-ok` | |
+
+Because `build` passes the field verbatim into the `dev` prompt, `startup-validate.sh` injection-scans it together with `title` at every session start.
+
+### `last_verify.runs[]`
+
+One entry per command that actually ran, in order, each with `cmd`, `exit`, `duration_ms`, `tail` (≤2 KB, `BLITZ_VERIFY_EVIDENCE_CAP`) and `recorded_at`. This is what lets the critic adjudicate from the record instead of re-running the suite, and what makes `cannot_verify` a defensible reviewer answer. The run stops at the first failure, so a command after the failing one has no entry.
+
+### progress.md example
+
+```
+## 2026-09-19T14:02:11Z build T-003 start (attempt 2)
+## 2026-09-19T14:19:40Z verify T-003 ok=false failed="npx vitest run src/x.test.ts" tail="…"
+## 2026-09-19T14:20:02Z build T-003 blocked
+Ruling: blocked circuit-breaker; three attempts failed on the same assertion and a human oracle is needed
+## 2026-09-19T15:00:00Z check PASS check-report.md
+```
+
+`## <ISO-8601> <event>` opens every entry; `Ruling: <decision>; <why>` lines record non-trivial choices and are what `learn` mines.
+
+---
+
 ## Scripts
 
 ### `scripts/tasks.sh`
@@ -15,11 +48,11 @@ Atomic (write to temp, `mv`). Exit 0 ok, 1 verify failed, 2 usage or contract er
 | `tasks.sh init <plan>` | creates an empty `tasks.json` (`blitz-tasks/1.0`) for the slug |
 | `tasks.sh list <plan> [--status s] [--json]` | prints tasks (id, status, pass/fail, attempts, title), filtered by status when given; `--json` prints the array |
 | `tasks.sh add <plan> --id T-004 --title "…" --files a.ts,b.ts --verify-cmd "<cmd>[::<seconds>]" [--verify-cmd …] [--depends T-001,T-002] [--role r] [--origin o] [--notes …] [--test-only-ok]` | appends a task; refuses an empty `verify[]`, a duplicate id, a bad role or origin, and a test-only `verify[]` without `--test-only-ok` |
-| `tasks.sh set <plan> <id> key=value …` | updates `status`, `blocked_reason`, `notes`, `title`, `role`, `attempts=N` or `attempts=+1`; refuses `status=done` unless `passes ∧ last_verify.ok`; refuses `passes` and `last_verify`; bumps `updated` |
+| `tasks.sh set <plan> <id> key=value …` | updates `status`, `blocked_reason`, `notes`, `title`, `role`, `attempts=N` or `attempts=+1`; refuses `status=done` unless `passes ∧ last_verify.ok`; refuses `passes` and `last_verify`; bumps `updated`. The unblock recipe after a circuit-breaker is `set … status=open attempts=0` |
 | `tasks.sh verify <plan> <id> [--dry]` | runs `verify[]` in order under each timeout; writes `passes` and `last_verify {ts, ok, failed, tail}`; flips `status` to `done` on pass and back to `in_progress` when a previously done task fails; exit 0 when all pass, 1 otherwise |
 | `tasks.sh next <plan>` | prints the first `in_progress` task, else the first `open` task whose `depends_on` are all `done`, as one JSON object; empty when none |
 
-`<plan>` is the slug (`docs/plans/<slug>/tasks.json`). Everything else — skills, `critic`, `check`, humans — goes through this script.
+`<plan>` is the slug (`docs/plans/<slug>/tasks.json`). Everything else (skills, `critic`, `check`, humans) goes through this script.
 
 #### `tasks.sh verify <plan> --changed <paths>`
 
@@ -83,9 +116,9 @@ Armed, every check runs in order; the first failure blocks the turn from ending 
 | Skill | Arms | `until` | Disarm |
 |---|---|---|---|
 | `build` (autonomous or under `next --loop`) | `tsc` + selected tests from `scripts/test-selector.sh` (skip `tests` when the selector returns nothing) | `build <slug> T-nnn` | after `tasks.sh verify`, before the status enum reply and on every early exit |
-| `check --fix` | `tsc` + lint | `check <slug> fix` | before writing `check-report.md` |
+| `check --fix` | the typecheck rows for the detected stack plus the lint row from the toolchain table (`templates/toolchain.default.json`), as `build` does | `check <slug> fix` | before writing `check-report.md` |
 | `next --loop` | per dispatched skill (the row's skill arms its own gate) | that skill's label | `rm -f` before every marker |
-| `research`, `plan`, `audit`, `learn`, `ship` | never (`rm -f` any leftover) | — | — |
+| `research`, `plan`, `audit`, `learn`, `ship` | never (`rm -f` any leftover) | n/a | n/a |
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
@@ -134,7 +167,7 @@ The tick's last line is one of these; outer wrappers key on it and `stop-gate.sh
 
 Row 1 notifies through the first available channel, then prints `LOOP_ESCALATE`:
 
-1. A channel `reply` tool (Telegram/Discord/iMessage channel attached to the session) — reply with plan, task id, `blocked_reason`, and `last_verify.tail`.
+1. A channel `reply` tool (Telegram/Discord/iMessage channel attached to the session): reply with plan, task id, `blocked_reason`, and `last_verify.tail`.
 2. `PushNotification`.
 3. An `inbox.jsonl` line, `kind: escalation`, `source: skill`.
 

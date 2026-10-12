@@ -1,4 +1,4 @@
-# Research — Reference Material
+# Research: Reference Material
 
 Templates, research types, section guidelines for research skill.
 
@@ -21,7 +21,7 @@ Template for final synthesized research document. All sections required.
 ## Summary
 
 <3-5 sentence executive summary. State the topic, key findings, and the recommendation.
-This section should be self-contained — a reader should understand the conclusion without
+This section should be self-contained; a reader should understand the conclusion without
 reading further.>
 
 ---
@@ -76,7 +76,7 @@ reading further.>
 
 - **Effort estimate**: <Low (hours) | Medium (1-2 days) | High (3+ days)>
 - **Files affected**: <approximate count and key paths>
-- **Breaking changes**: <Yes/No — details if yes>
+- **Breaking changes**: <Yes/No, details if yes>
 - **Migration path**: <description of migration steps if replacing existing code>
 
 ---
@@ -85,7 +85,7 @@ reading further.>
 
 ### Decision
 
-<Clear, specific recommendation. Not "it depends" — make a call and justify it.>
+<Clear, specific recommendation. Not "it depends": make a call and justify it.>
 
 ### Rationale
 
@@ -142,9 +142,9 @@ reading further.>
 
 ## References
 
-1. <Title> — <URL> — <brief description of what it covers>
-2. <Title> — <URL> — <brief description>
-3. <Codebase file path> — <what it demonstrates about current implementation>
+1. <Title> (<URL>): <brief description of what it covers>
+2. <Title> (<URL>): <brief description>
+3. <Codebase file path>: <what it demonstrates about current implementation>
 ```
 
 ---
@@ -270,7 +270,7 @@ calls remain or the budget is approaching, stop, write what you have to your out
 file, and reply BLOCKED with blocked_reason circuit-breaker (agents.reference.md §4.1).
 
 WRITE-AS-YOU-GO: Stub your output file with `# IN PROGRESS` before your first tool call.
-Append findings as you discover them. Do NOT accumulate in memory — every section gets
+Append findings as you discover them. Do NOT accumulate in memory; every section gets
 written immediately.
 
 CITATION RULES (all agents):
@@ -332,11 +332,11 @@ answer. Search for:
   - dissenting opinions, retracted claims, failed implementations
   - benchmarks showing the opposite of expected
   - GitHub issues / blog post-mortems where the recommended approach failed
-You are not neutral — your bias is toward finding counter-evidence. Mitigates agent-
+You are not neutral; your bias is toward finding counter-evidence. Mitigates agent-
 agreement bias per arxiv 2604.02923 (homogeneous 18.3% reduction → heterogeneous 35.9%).
 
 TASKS:
-1. Search recent (≤12 months) blog posts, tutorials, guides — prefer dated cites.
+1. Search recent (≤12 months) blog posts, tutorials, guides; prefer dated cites.
 2. Check GitHub issues for common problems and their resolutions.
 3. Find benchmarks or performance comparisons if relevant.
 4. Assess community sentiment (adoption rate, maintenance, contributor count).
@@ -366,7 +366,7 @@ TASKS:
 Do NOT use web search. Focus entirely on the codebase. Cite findings as `path/to/file.ts:LINE`.
 ```
 
-### infra-analyst (conditional — see SKILL.md §1.2.5)
+### infra-analyst (conditional, see SKILL.md §1.2.5)
 
 ```
 
@@ -408,14 +408,14 @@ citations:
 ---
 ```
 
-`fetched_ts: null` + `status: NOT_FETCHED` flags training-knowledge-only citations — research-critic probes these first (highest hallucination risk).
+`fetched_ts: null` + `status: NOT_FETCHED` flags training-knowledge-only citations; research-critic probes these first (highest hallucination risk).
 
 ### Required body sections (in addition to base 8)
 
 Two extra sections beyond the base 8 (Summary / Research Questions / Findings / Compatibility / Recommendation / Implementation Sketch / Risks / References):
 
-- `## Dissent / Contradictory Evidence` — preserve the contrarian agent's findings explicitly. Synthesizer MUST surface counter-evidence here rather than silently collapsing to consensus. Single-domain consensus (≥3 cited findings, all from one domain) is rejected: surface here and reduce confidence.
-- `## Citation Health` (auto-populated by research-critic) — table of `{url, status, last_probed_at}` for every cited URL. CITATIONS_MISSING verdict triggers a `<!-- WARNING: citations failed liveness check -->` HTML comment at doc top.
+- `## Dissent / Contradictory Evidence`: preserve the contrarian agent's findings explicitly. Synthesizer MUST surface counter-evidence here rather than silently collapsing to consensus. Single-domain consensus (≥3 cited findings, all from one domain) is rejected: surface here and reduce confidence.
+- `## Citation Health` (auto-populated by research-critic): table of `{url, status, last_probed_at}` for every cited URL. CITATIONS_MISSING verdict triggers a `<!-- WARNING: citations failed liveness check -->` HTML comment at doc top.
 
 ### `[QUOTE_UNVERIFIED]` tag
 
@@ -444,7 +444,7 @@ OR-fallbacks (`test -f path-A || test -f path-B`) remain valid for compatibility
 Agents return canonical JSON to the main thread AND write their Markdown findings in this shape (the JSON references the file).
 
 ```markdown
-# <Agent Name> — Research Findings
+# <Agent Name>: Research Findings
 
 ## Topic: <research topic>
 ## Date: <ISO date>
@@ -472,7 +472,7 @@ Agents return canonical JSON to the main thread AND write their Markdown finding
 
 ## Follow-Up Skill Graph
 
-(SKILL.md §4.2 — research-outcome → suggested-skill table)
+(SKILL.md §4.2, research-outcome → suggested-skill table)
 
 | Research Outcome | Suggested Skill | Rationale |
 |---|---|---|
@@ -492,11 +492,11 @@ Detail moved out of the skill body so it stays under the compaction re-attach ca
 
 ### 1.3-W Dispatch via Workflow (opt-in path)
 
-Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a conditional `agent()` in the same script — replacing manual poll (§1.7) + classify (§2.1) + jq-gated second wave with native primitives.
+Dispatch agents as one `parallel()` barrier; gap second-wave (§2.4) as a conditional `agent()` in the same script, replacing manual poll (§1.7) + classify (§2.1) + jq-gated second wave with native primitives.
 
 ```js
 export const meta = { name: 'research', description: 'Parallel research agents + conditional gap second-wave', phases: [{ title: 'Investigate' }, { title: 'GapFill' }] }
-// args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema } — prompts embed OUTPUT STYLE + write-as-you-go
+// args: { roster:[{name,prompt}], gapPrompt, gapSchema, findingsSchema }; prompts embed OUTPUT STYLE + write-as-you-go
 const OS = 'OUTPUT STYLE: terse-technical per /_shared/output.md. Drop articles/fillers/hedging; preserve code/paths/commands/JSON verbatim; no preamble.'
 const found = await parallel(args.roster.map(a => () =>
   agent(a.prompt, { label: a.name, phase: 'Investigate',
@@ -522,8 +522,8 @@ return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, res
 Answer a question about the current codebase from evidence, not memory. Rules:
 
 1. **Parse the question.** If it names no symbol, path, or behavior that can be searched, ask one focused `AskUserQuestion` (multiple choice when possible: "Which area: (a) frontend component, (b) backend function, (c) both?"). Never ask more than one; when `AskUserQuestion` is unavailable (`-p`) or `BLITZ_AUTONOMOUS=1`, skip the question and state the assumption in one line.
-2. **Locate — semantic first, grep second.** Resolve a symbol in this order, stopping at the first that works:
-   1. **`LSP`** — workspace symbol search → `goToDefinition` → `findReferences`. One call returns the definition and every call site as a location list. Use it whenever the target is a symbol (function, type, class, constant) in a language with a running server.
+2. **Locate: semantic first, grep second.** Resolve a symbol in this order, stopping at the first that works:
+   1. **`LSP`**: workspace symbol search → `goToDefinition` → `findReferences`. One call returns the definition and every call site as a location list. Use it whenever the target is a symbol (function, type, class, constant) in a language with a running server.
    2. **`Grep` / `Glob`** from the most specific term outward (symbol → import sites → routes/config), then `Read` with an `offset` around each hit. Use this when the `LSP` tool is inactive: no language server for the file's language, a binary that is not installed, or a **cloud session**, where Claude Code does not start plugin language servers at all.
 
    Never read a whole file to find one symbol. For a question wider than ~15 files, spawn one `Explore` subagent (read-only, haiku) with the question and a 150-line reply cap; more than one only when the question has independent halves.
@@ -536,7 +536,7 @@ Output shape:
 
 ```
 Answer: <one sentence>
-1. <hop> — path:line — `<verbatim>`
+1. <hop> (path:line): `<verbatim>`
 2. …
 Not verified: <anything inferred rather than read>
 Next: <optional one line>
@@ -552,23 +552,23 @@ docs/research/YYYY-MM-DD_<topic-slug>.md
 ```
 
 ```bash
-mkdir -p docs/research    # tracked; docs/_research/ is legacy (gitignored) — never write there
+mkdir -p docs/research    # tracked; docs/_research/ is legacy (gitignored), never write there
 ```
 
-**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter, tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections — write full prose.
+**Output style:** terse-technical per [/_shared/output.md](/_shared/output.md). Drop articles, fillers, pleasantries, hedging. Preserve verbatim: code fences, paths, commands, grep patterns, YAML/JSON frontmatter, tables, error codes, dates, versions. No preamble, no trailing summary. Fragments OK. Intensity: `lite` for user-facing Summary + Research-Questions + Risks (reasoning chain must survive); `full` for Findings narrative + Implementation Sketch. Auto-pause for security/irreversible/root-cause sections; write full prose.
 
 **Terse exemptions (LITE intensity):** §7 Risks + Open Questions (full sentences + reasoning chain required). Resume terse on next section.
 
 Use the template from `references/main.md`. Required sections:
 
-1. **Summary** — 3-5 sentence executive summary + recommendation.
-2. **Research Questions** — Each question with a concise answer.
-3. **Findings** — By theme (not by agent); each finding must cite its source.
-4. **Compatibility Analysis** — Fit with detected stack: version compat, dependency conflicts, integration complexity.
-5. **Recommendation** — Actionable with rationale; comparison matrix if comparing options. This section is the contract for `/blitz:plan --from-research <doc>`: it must state one `### Decision`, a `### Rationale`, and the affected areas/files so `plan` can derive tasks without re-researching.
-6. **Implementation Sketch** — High-level steps adapted to detected stack: key code patterns, file locations, config changes.
-7. **Risks** — Known risks, mitigations, open questions.
-8. **References** — All cited docs, articles, discussions.
+1. **Summary**: 3-5 sentence executive summary + recommendation.
+2. **Research Questions**: Each question with a concise answer.
+3. **Findings**: By theme (not by agent); each finding must cite its source.
+4. **Compatibility Analysis**: Fit with detected stack: version compat, dependency conflicts, integration complexity.
+5. **Recommendation**: Actionable with rationale; comparison matrix if comparing options. This section is the contract for `/blitz:plan --from-research <doc>`: it must state one `### Decision`, a `### Rationale`, and the affected areas/files so `plan` can derive tasks without re-researching.
+6. **Implementation Sketch**: High-level steps adapted to detected stack: key code patterns, file locations, config changes.
+7. **Risks**: Known risks, mitigations, open questions.
+8. **References**: All cited docs, articles, discussions.
 
 ### 2.1 Classify Outputs (fan-out gate, [agents.reference.md](/_shared/agents.reference.md) §4.4)
 
@@ -612,14 +612,14 @@ esac
 
 if [ "$MISSING_COUNT" -ge "$THRESHOLD" ]; then
   echo "[research] ABORT: $MISSING_COUNT/$N agents failed (threshold $THRESHOLD)" >&2
-  # Do NOT clean up — preserve findings dir for inspection
+  # Do NOT clean up; preserve findings dir for inspection
   exit 1
 fi
 ```
 
 ### 3.2.5 Citation Validation (research-critic agent)
 
-After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetch HEAD-equivalent) and verify quoted spans. Catches 3-13% URL hallucination rate (arxiv 2604.03173) before `/blitz:plan --from-research` ingests the doc. Critic runs **content inspection** (§2.1.5, TB-4) — fetched pages are untrusted (`sec-content-inspection`; [security.md](/_shared/security.md) §3 TB-4). Reply carries `source_trust: "untrusted"`; cap + scan any interpolated field:
+After §3.1, spawn `agents/research-critic.md` to probe every cited URL (WebFetch HEAD-equivalent) and verify quoted spans. Catches 3-13% URL hallucination rate (arxiv 2604.03173) before `/blitz:plan --from-research` ingests the doc. Critic runs **content inspection** (§2.1.5, TB-4); fetched pages are untrusted (`sec-content-inspection`; [security.md](/_shared/security.md) §3 TB-4). Reply carries `source_trust: "untrusted"`; cap + scan any interpolated field:
 
 ```
 Agent({
@@ -628,7 +628,7 @@ Agent({
   prompt: "Probe all citations in docs/research/${TODAY}_${TOPIC_SLUG}.md.
            Return canonical JSON with verdict (PASS | UNVERIFIED | CITATIONS_MISSING) and
            per-citation status (LIVE | DEAD | LIKELY_HALLUCINATED | UNKNOWN).
-           Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON — no prose, no preamble."
+           Output style: terse-technical per /_shared/output.md. Return ONLY the canonical JSON (no prose, no preamble)."
 })
 ```
 
@@ -662,7 +662,7 @@ if [ "$NUM_GAPS" -gt 0 ] && [ "$NUM_GAPS" -le 2 ] && [ "$ELAPSED_SEC" -lt 600 ];
   # Spawn a Haiku web-researcher per gap, scoped to that single question
   echo "$GAPS" | jq -c '.[] | select(.answered == false or .citations_count < 2)' | head -2 | while read -r gap; do
     GAP_Q=$(echo "$gap" | jq -r '.q')
-    # Agent({...}) spawn here — scope: this single question, max 5 web searches, output to .gap-N.md
+    # Agent({...}) spawn here; scope: this single question, max 5 web searches, output to .gap-N.md
   done
 fi
 ```

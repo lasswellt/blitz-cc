@@ -6,7 +6,7 @@ export const meta = {
 }
 
 // Extracted from skills/build/references/main.md §Wave mechanics (build --parallel). Plugin workflow: runs as
-// /blitz:build-wave. The script owns dispatch + schema validation ONLY — no filesystem, no
+// /blitz:build-wave. The script owns dispatch + schema validation ONLY: no filesystem, no
 // clock (timestamp and randomness calls throw here; the skill stamps timestamps after return).
 //
 // args shape (required):
@@ -20,7 +20,7 @@ export const meta = {
 // Prompts are passed in whole by the skill (ROLE: line included); the script does not build them.
 // The runtime concurrency cap is CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS; the skill caps a
 // wave at 4 tasks before calling.
-// Returns { wave, tasks: [{ id, role, ok, result }] } — result is null when the agent died,
+// Returns { wave, tasks: [{ id, role, ok, result }] }; result is null when the agent died,
 // was skipped, or hit a terminal API error (build treats it as BLOCKED circuit-breaker).
 
 if (!args || !Array.isArray(args.tasks) || args.tasks.length === 0) {
@@ -36,7 +36,7 @@ const wave = args.wave ?? 0
 const plan = args.plan ?? ''
 
 phase('Wave')
-log(`build-wave: ${plan} wave ${wave} — ${args.tasks.length} task(s), worktree isolation, schema-validated`)
+log(`build-wave: ${plan} wave ${wave}, ${args.tasks.length} task(s), worktree isolation, schema-validated`)
 
 const results = await parallel(args.tasks.map(t => () =>
   agent(t.prompt, {
@@ -51,6 +51,6 @@ const results = await parallel(args.tasks.map(t => () =>
 
 const tasks = results.map((r, i) => ({ id: args.tasks[i].id, role: args.tasks[i].role ?? null, ok: r !== null, result: r }))
 const failed = tasks.filter(t => !t.ok).map(t => t.id)
-if (failed.length) log(`build-wave: wave ${wave} — ${failed.length} task(s) returned null: ${failed.join(', ')}`)
+if (failed.length) log(`build-wave: wave ${wave}, ${failed.length} task(s) returned null: ${failed.join(', ')}`)
 
 return { wave, tasks }

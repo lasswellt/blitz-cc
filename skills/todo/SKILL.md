@@ -7,13 +7,13 @@ compatibility: ">=2.1.296"
 argument-hint: "<add <text> [#tag] | list [#tag] | check | resolve <n|substring>>"
 ---
 
-# Todo — the backlog
+# Todo: the backlog
 
 Track development ideas, follow-up items, and technical debt discovered during work so they are not lost or left as stale TODO comments in code. Lightweight: no session preamble, no verbose progress; log `skill_start`/`skill_end` feed lines only ([output.md](/_shared/output.md) §Console Output).
 
 ## Storage
 
-`docs/plans/BACKLOG.md` — tracked in git, one checklist line per item ([loop.md](/_shared/loop.md) §Artifacts). `/blitz:plan` reads the open lines when it brainstorms a plan; a line that became a plan task is checked off with the plan slug.
+`docs/plans/BACKLOG.md` is tracked in git, one checklist line per item ([loop.md](/_shared/loop.md) §Artifacts). `/blitz:plan` reads the open lines when it brainstorms a plan; a line that became a plan task is checked off with the plan slug.
 
 ```markdown
 # Backlog
@@ -23,7 +23,7 @@ Track development ideas, follow-up items, and technical debt discovered during w
 - [x] 2026-09-12 Fix login redirect #backend → plan auth-redirect
 ```
 
-Line shape: `- [ ] <ISO date> <text> #tag` — one `#tag` from `#backend #frontend #testing #infra #docs #general`, optional `(file:line)` context inside the text, and a trailing ` → <resolution>` once checked. Create the file with the `# Backlog` heading when it is absent. Never rewrite lines you are not resolving; append new items at the end.
+Line shape: `- [ ] <ISO date> <text> #tag`, with one `#tag` from `#backend #frontend #testing #infra #docs #general`, optional `(file:line)` context inside the text, and a trailing ` → <resolution>` once checked. Create the file with the `# Backlog` heading when it is absent. Never rewrite lines you are not resolving; append new items at the end.
 
 ## Mode routing
 
@@ -56,7 +56,7 @@ grep -rnE "\b(TODO|FIXME|HACK|XXX)\b" --include='*.ts' --include='*.tsx' --inclu
   | grep -vE "node_modules|\.cc-sessions|docs/plans/BACKLOG\.md"
 ```
 
-Match each hit against open lines by keyword overlap or a matching `(file:line)`. Report `Code TODOs: N — tracked M, untracked K`, list the untracked ones as `path:line — comment`, and list open backlog lines with no code counterpart (ideas / follow-ups). Offer to `add` the untracked ones (one line each, `(file:line)` context filled in); never edit the source comments.
+Match each hit against open lines by keyword overlap or a matching `(file:line)`. Report `Code TODOs: N (tracked M, untracked K)`, list the untracked ones as `path:line: comment`, and list open backlog lines with no code counterpart (ideas / follow-ups). Offer to `add` the untracked ones (one line each, `(file:line)` context filled in); never edit the source comments.
 
 ### resolve `<n|substring>`
 
@@ -68,4 +68,4 @@ Match each hit against open lines by keyword overlap or a matching `(file:line)`
 
 - The file is the source of truth; no ids, no JSON, no sidecar state. Position numbers are recomputed on every `list`.
 - Checked lines stay in the file; prune them by hand or in `/blitz:learn` when a plan is archived. Git history is the audit trail.
-- Never turn a backlog line into a plan task here — that is `/blitz:plan`'s job; `todo` only records and resolves.
+- Never turn a backlog line into a plan task here: that is `/blitz:plan`'s job; `todo` only records and resolves.

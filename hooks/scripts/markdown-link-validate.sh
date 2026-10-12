@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# markdown-link-validate.sh — warn on broken relative .md links.
+# markdown-link-validate.sh: warn on broken relative .md links.
 #
 # Dual-mode:
 #   - With hook JSON on stdin (PreToolUse/Bash): only fires on `git commit`,
@@ -44,7 +44,7 @@ python3 - <<'PY' || PY_EXIT=$?
 import pathlib, re, sys
 broken = []
 checked = 0
-# Runtime-output path prefixes a skill WRITES at runtime — not refs to existing files.
+# Runtime-output path prefixes a skill WRITES at runtime, not refs to existing files.
 RUNTIME = ("docs/generated/", "findings/", "tmp/")
 def is_runtime(link):
     return any(seg in link for seg in RUNTIME) or re.search(r"docs/plans/[^/]+/", link) is not None or link.startswith("docs/solutions/")
@@ -115,12 +115,12 @@ CITE_BAD=$(grep -rnE '\)§|§([0-9]+)\1([^0-9.]|$)|§([A-Z][a-zA-Z.]*( [a-z]+)*)
 if [[ -n "$CITE_BAD" ]]; then
   echo "markdown-link-validate: malformed section citation(s):" >&2
   printf '%s\n' "$CITE_BAD" | head -20 >&2
-  echo "  Expected '<link>) §N' — one space before the section, section named once." >&2
+  echo "  Expected '<link>) §N': one space before the section, section named once." >&2
   [[ "$HOOK_MODE" -eq 1 ]] || PY_EXIT=1
 fi
 
 if [[ "$HOOK_MODE" -eq 1 ]]; then
-  # Warn-only in hook mode — never block a commit on link rot
+  # Warn-only in hook mode: never block a commit on link rot
   exit 0
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/test-selector.sh (E-043 S2 — impacted-test selection)
+# Tests for scripts/test-selector.sh (E-043 S2, impacted-test selection)
 # Requires: bats-core, jq, python3, git
 
 load '_helpers'
@@ -7,6 +7,7 @@ load '_helpers'
 SELECTOR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/test-selector.sh"
 LISTENER="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/test-listener.sh"
 FIXTURE="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/fixtures/tia"
+TAB=$'\t'   # a literal tab for grep -E (grep -P is GNU-only)
 
 setup() {
   command -v jq >/dev/null || skip "jq not installed"
@@ -18,11 +19,11 @@ setup() {
 }
 teardown() { teardown_fake_repo; }
 
-# sel — selector with stderr dropped (`run` merges stderr into $output; the
+# sel: selector with stderr dropped (`run` merges stderr into $output; the
 # cold-start / graph notes there are not part of the contract under test).
 sel() { bash "$SELECTOR" "$@" 2>/dev/null; }
 
-# seed_journal — one recorded run where tests/b.test.ts failed after src/b.ts changed
+# seed_journal: one recorded run where tests/b.test.ts failed after src/b.ts changed
 seed_journal() {
   bash "$LISTENER" --start --run-id r1
   bash "$LISTENER" --trigger post-edit --changed src/b.ts --selected-by selector --run-id r1 < vitest-report.json
@@ -31,8 +32,8 @@ seed_journal() {
 @test "cold start: graph reaches the transitive test (b.ts -> a.ts -> a.test.ts)" {
   run sel src/b.ts
   [ "$status" -eq 0 ]
-  echo "$output" | grep -qP '^tests/b\.test\.ts\tgraph$'
-  echo "$output" | grep -qP '^tests/a\.test\.ts\tgraph$'
+  echo "$output" | grep -qE "^tests/b\.test\.ts${TAB}graph$"
+  echo "$output" | grep -qE "^tests/a\.test\.ts${TAB}graph$"
   [ "$(echo "$output" | wc -l | tr -d ' ')" = "2" ]
 }
 
@@ -46,13 +47,13 @@ seed_journal() {
   printf 'import { c } from "./c"\n' > src/c.test.ts
   mkdir -p src/__tests__ && printf 'export {}\n' > src/__tests__/c.ts
   run sel src/c.ts
-  echo "$output" | grep -qP '^src/c\.test\.ts\tsibling,graph$'
-  echo "$output" | grep -qP '^src/__tests__/c\.ts\tsibling$'
+  echo "$output" | grep -qE "^src/c\.test\.ts${TAB}sibling,graph$"
+  echo "$output" | grep -qE "^src/__tests__/c\.ts${TAB}sibling$"
 }
 
 @test "changed test file selects itself" {
   run sel tests/a.test.ts
-  echo "$output" | grep -qP '^tests/a\.test\.ts\tsibling$'
+  echo "$output" | grep -qE "^tests/a\.test\.ts${TAB}sibling$"
 }
 
 @test "files on stdin, one per line" {
@@ -63,9 +64,9 @@ seed_journal() {
 @test "journal recent-fail + co-change tags" {
   seed_journal
   run sel src/b.ts
-  echo "$output" | grep -qP '^tests/b\.test\.ts\tgraph,recent-fail,co-change$'
+  echo "$output" | grep -qE "^tests/b\.test\.ts${TAB}graph,recent-fail,co-change$"
   run sel src/a.ts
-  echo "$output" | grep -qP '^tests/b\.test\.ts\trecent-fail$'
+  echo "$output" | grep -qE "^tests/b\.test\.ts${TAB}recent-fail$"
   run sel README.md
   [ "$output" = "$(printf 'tests/b.test.ts\trecent-fail')" ]
 }
@@ -88,20 +89,20 @@ seed_journal() {
 @test "auto-full on config / lockfile / setup changes" {
   for f in package.json pnpm-lock.yaml vitest.config.ts tsconfig.json tests/setup.ts; do
     run sel "$f"
-    echo "$output" | grep -qP '^tests/a\.test\.ts\tfull$' || { echo "no auto-full for $f"; false; }
+    echo "$output" | grep -qE "^tests/a\.test\.ts${TAB}full$" || { echo "no auto-full for $f"; false; }
   done
 }
 
 @test "auto-full when more than 40 files changed" {
   files=$(for i in $(seq 1 41); do printf 'src/f%s.ts ' "$i"; done)
   run sel $files
-  echo "$output" | grep -qP '^tests/b\.test\.ts\tfull$'
+  echo "$output" | grep -qE "^tests/b\.test\.ts${TAB}full$"
 }
 
 @test "auto-full when escaped_failures_recent has a non-zero entry in the last 3" {
   printf '{"runs_started":0,"runs_recorded":0,"escaped_failures_recent":[3,0,1,0]}\n' > .cc-sessions/test-journal.meta.json
   run sel src/a.ts
-  echo "$output" | grep -qP '^tests/b\.test\.ts\tfull$'
+  echo "$output" | grep -qE "^tests/b\.test\.ts${TAB}full$"
   printf '{"runs_started":0,"runs_recorded":0,"escaped_failures_recent":[3,0,0,0]}\n' > .cc-sessions/test-journal.meta.json
   run sel src/a.ts
   [ "$output" = "$(printf 'tests/a.test.ts\tgraph')" ]

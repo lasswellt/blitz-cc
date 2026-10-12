@@ -1,4 +1,4 @@
-# blitz-check.yml — run /blitz:check on every pull request with claude-code-action.
+# blitz-check.yml: run /blitz:check on every pull request with claude-code-action.
 # Installed by `/blitz:doctor --ci` at .github/workflows/blitz-check.yml.
 #
 # Auth: `anthropic_api_key` reads the ANTHROPIC_API_KEY repository secret, which

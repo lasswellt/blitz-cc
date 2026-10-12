@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for scripts/tasks.sh — the only writer of docs/plans/<slug>/tasks.json
+# Tests for scripts/tasks.sh, the only writer of docs/plans/<slug>/tasks.json
 load '_helpers'
 
 setup()    { command -v jq >/dev/null || skip "jq not installed"; setup_fake_repo; export BLITZ_PLANS_DIR="$FAKE_REPO/docs/plans"; TASKS="$HOOKS_DIR/../../scripts/tasks.sh"; }
@@ -250,4 +250,74 @@ teardown() { teardown_fake_repo; }
   run bash "$TASKS" verify demo --changed
   [ "$status" -eq 2 ]
   [[ "$output" == *"needs at least one path"* ]]
+}
+
+# --- portability and input validation (review 2026-10-12, item 21) ------------
+
+# path_without <tool>: a PATH that resolves every tool tasks.sh needs except
+# <tool>, to simulate a host that lacks it (stock macOS ships no `timeout`).
+path_without() {
+  local bin="$FAKE_REPO/bin-without-$1" t p
+  mkdir -p "$bin"
+  for t in bash sh jq git date mktemp mv rm cat tail head tr sed grep sleep column dirname basename mkdir wc cut sort od; do
+    [ "$t" = "$1" ] && continue
+    if p=$(command -v "$t" 2>/dev/null); then ln -s "$p" "$bin/$t"; fi
+  done
+  printf '%s' "$bin"
+}
+
+@test "list --status accepts only the loop.md status enum" {
+  bash "$TASKS" add demo --id T-001 --title a --verify-cmd true
+  run bash "$TASKS" list demo --status finished
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be open|in_progress|done|blocked"* ]]
+  # a jq fragment is rejected as a value, never spliced into the filter
+  run bash "$TASKS" list demo --status 'open") or true or ("'
+  [ "$status" -eq 2 ]
+  run bash "$TASKS" list demo --status
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--status needs a value"* ]]
+  run bash "$TASKS" list demo --status blocked --json
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "writes stage their temp file beside tasks.json without GNU mktemp -p" {
+  # A BSD-style mktemp rejects -p; the full-path template must carry the write.
+  local bin="$FAKE_REPO/bin-bsd-mktemp" real
+  mkdir -p "$bin"; real=$(command -v mktemp)
+  printf '#!/usr/bin/env bash\ncase " $* " in *" -p "*|*" --tmpdir"*) echo "mktemp: illegal option -- p" >&2; exit 1;; esac\nexec "%s" "$@"\n' "$real" > "$bin/mktemp"
+  chmod +x "$bin/mktemp"
+  run env PATH="$bin:$PATH" mktemp -p "$FAKE_REPO" x.XXXXXX
+  [ "$status" -ne 0 ]
+  run env PATH="$bin:$PATH" bash "$TASKS" add demo --id T-001 --title a --verify-cmd true
+  [ "$status" -eq 0 ]
+  run env PATH="$bin:$PATH" bash "$TASKS" set demo T-001 status=in_progress
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "in_progress" ]
+  [ -z "$(find "$BLITZ_PLANS_DIR/demo" -name '.tasks.*')" ]
+}
+
+@test "verify honors the per-check timeout without a timeout binary" {
+  bash "$TASKS" add demo --id T-001 --title slow --verify-cmd "sleep 5::1"
+  local bin; bin=$(path_without timeout)
+  run env PATH="$bin" bash -c 'command -v timeout'
+  [ "$status" -ne 0 ]
+  run env PATH="$bin" bash "$TASKS" verify demo T-001
+  [ "$status" -eq 1 ]
+  [ "$(jq -r '.tasks[0].last_verify.runs[0].exit' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "124" ]
+  [ "$(jq -r '.tasks[0].passes' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "false" ]
+}
+
+@test "verify without a timeout binary keeps the command's own exit code" {
+  bash "$TASKS" add demo --id T-001 --title ok --verify-cmd "true" --verify-cmd "echo fine"
+  bash "$TASKS" add demo --id T-002 --title bad --verify-cmd "exit 3"
+  local bin; bin=$(path_without timeout)
+  run env PATH="$bin" bash "$TASKS" verify demo T-001
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "done" ]
+  [ "$(jq -r '.tasks[0].last_verify.runs[1].tail' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "fine" ]
+  run env PATH="$bin" bash "$TASKS" verify demo T-002
+  [ "$status" -eq 1 ]
+  [ "$(jq -r '.tasks[1].last_verify.runs[0].exit' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "3" ]
 }

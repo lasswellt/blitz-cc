@@ -28,7 +28,7 @@ case "$FILE_PATH" in
   *) exit 0 ;;
 esac
 
-# Test files are exempt — `as any` in test fixtures and mocks is normal
+# Test files are exempt: `as any` in test fixtures and mocks is normal
 case "$FILE_PATH" in
   *.test.*|*.spec.*|*/__tests__/*|*/test/*|*/tests/*) exit 0 ;;
 esac
@@ -59,7 +59,7 @@ esac
 # excluding lines that carry the escape-hatch marker.
 count_escapes() {
   local text="$1"
-  # `|| true` on each grep — set -o pipefail otherwise propagates 'no match' (exit 1).
+  # `|| true` on each grep: set -o pipefail otherwise propagates 'no match' (exit 1).
   # `grep -c` always prints the count to stdout (even 0); only the exit code differs.
   echo "$text" \
     | { grep -vE '//\s*blitz:any-allowed:' || true; } \
@@ -107,12 +107,11 @@ the rationale must survive scrutiny.
 
 Override the entire hook (not recommended): BLITZ_DISABLE_AS_ANY_BLOCK=1
 EOF
-  TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  if [[ -d .cc-sessions ]]; then
-    printf '{"ts":"%s","session":"%s","skill":"hook","event":"verification","message":"as-any insertion blocked","detail":{"file":"%s","old":%d,"new":%d}}\n' \
-      "$TS" "${CLAUDE_SESSION_ID:-unknown}" "$FILE_PATH" "$OLD_COUNT" "$NEW_COUNT" \
-      >> .cc-sessions/activity-feed.jsonl 2>/dev/null || true
-  fi
+  # jq-built feed line (blitz_log_event): a quote or a backslash in the path cannot corrupt it.
+  SESSION_ID=$(blitz_extract session_id)
+  [[ -n "$SESSION_ID" ]] || SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
+  blitz_log_event "hook" "verification" "as-any insertion blocked" \
+    "$(jq -nc --arg f "$FILE_PATH" --argjson o "$OLD_COUNT" --argjson n "$NEW_COUNT" '{file:$f,old:$o,new:$n}')"
   exit 2
 fi
 

@@ -1,4 +1,4 @@
-# Documentation Generator — Reference Material
+# Documentation Generator: Reference Material
 
 Templates, parsing patterns, diagram examples for doc-gen skill.
 
@@ -35,7 +35,7 @@ Use this template for each module documented in `docs/generated/api.md`.
 |------|------|----------|---------|-------------|
 | {param_name} | `{param_type}` | {Yes/No} | {default_value} | {param_description} |
 
-**Returns:** `{return_type}` — {return_description}
+**Returns:** `{return_type}`, {return_description}
 
 **Throws:**
 

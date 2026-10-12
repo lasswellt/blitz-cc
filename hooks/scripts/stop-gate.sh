@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# stop-gate.sh — Conditional deterministic verification gate (Stop event, E-042 S1)
+# stop-gate.sh: conditional deterministic verification gate (Stop event, E-042 S1)
 #
 # Strict no-op unless build, check, or next --loop has written a gate file:
 #   .cc-sessions/sessions/<session_id>/gate.json
@@ -23,12 +23,16 @@
 #     again on the turn that follows their completion.
 #   - blocks >= max_blocks (logged as `gate_exhausted`; the platform ends the
 #     turn after 8 consecutive Stop-hook continuations, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP,
-#     and a user /goal shares that count — max_blocks is capped at 4 so the gate
+#     and a user /goal shares that count; max_blocks is capped at 4 so the gate
 #     always exhausts first)
 #
 # Never wire a prompt-type Stop hook alongside this one: a user `/goal` is
 # itself a prompt-based Stop hook and the two would fight. Owner of the
 # verification-stack contract: /_shared/quality.md §Verification stack.
+#
+# Running checks[].cmd is the TB-1 execution exception recorded in
+# /_shared/security.reference.md §Execution exceptions: gate.json is runtime state
+# this session armed with jq, never a tracked file.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 
@@ -77,7 +81,11 @@ if [ "$BLOCKS" -ge "$MAX" ]; then
   exit 0
 fi
 
-# Run checks in order; first failure blocks.
+# Run checks in order; first failure blocks. One scratch dir holds each check's
+# output; the EXIT trap removes it on every path (pass, block, or an abort under set -e).
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+OUT_FILE="$WORK/check.out"
 N=$(jq -r '.checks | length' "$GATE")
 i=0
 while [ "$i" -lt "$N" ]; do
@@ -87,17 +95,13 @@ while [ "$i" -lt "$N" ]; do
   case "$TMO" in *[!0-9]*|"") TMO=120 ;; esac
   i=$((i + 1))
   [ -n "$CMD" ] || continue
-  OUT_FILE=$(mktemp)
+  : > "$OUT_FILE"
   RC=0
-  if command -v timeout >/dev/null 2>&1; then
-    ( cd "$ROOT" && timeout "$TMO" bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
-  else
-    # No GNU timeout (stock macOS): run unbounded rather than failing every check with 127.
-    ( cd "$ROOT" && bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
-  fi
+  # blitz_timeout (common.sh): GNU timeout when the host has one, else a bash
+  # watchdog; either way an expired check reports rc 124, never 127.
+  ( cd "$ROOT" && blitz_timeout "$TMO" bash -c "$CMD" ) >"$OUT_FILE" 2>&1 || RC=$?
   if [ "$RC" -ne 0 ]; then
     TAIL=$(tail -c 200 "$OUT_FILE" | tr '\n' ' ')
-    rm -f "$OUT_FILE"
     NEXT=$((BLOCKS + 1))
     blitz_atomic_write "$GATE" "$(jq --argjson b "$NEXT" '.blocks = $b | .last_failed = $name' --arg name "$NAME" "$GATE")"
     blitz_log_event "hook" "gate_block" "Stop gate: $NAME failed (rc=$RC), block $NEXT/$MAX" \
@@ -106,7 +110,6 @@ while [ "$i" -lt "$N" ]; do
       "$NAME" "$RC" "$NEXT" "$MAX" "$TAIL" >&2
     exit 2
   fi
-  rm -f "$OUT_FILE"
 done
 
 if [ "$BLOCKS" -ne 0 ]; then

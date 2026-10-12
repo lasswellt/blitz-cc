@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UserPromptExpansion hook — injects activity-feed context into every blitz:* invocation.
+# UserPromptExpansion hook: injects activity-feed context into every blitz:* invocation.
 # Fires when a /blitz:<skill> slash command expands. Reads last 5 activity-feed lines
 # and appends them as context so skills have instant awareness of prior session state
 # without requiring Claude to read CLAUDE.md manually.
@@ -34,7 +34,7 @@ fi
 sanitize_line() {
   local s; s=$(tr -d '\r' | tr '\n' ' ' | cut -c1-200)
   if printf '%s' "$s" | grep -qiE "$BLITZ_INJECTION_RX"; then
-    printf '[quarantined: suspicious field — see startup-validate.sh]'
+    printf '[quarantined: suspicious field; see startup-validate.sh]'
   else
     printf '%s' "$s"
   fi
@@ -65,11 +65,11 @@ if [ -s "$SESSIONS_ROOT/inbox.jsonl" ]; then
 fi
 
 if [ -z "$RECENT_ACTIVITY" ] && [ -z "$PEERS" ] && [ -z "$INBOX_LINE" ]; then
-  # No context available — pass through without modification
+  # No context available: pass through without modification
   exit 0
 fi
 
-# Build additionalContext injection — use jq for safe JSON encoding
+# Build additionalContext injection; use jq for safe JSON encoding
 # (the prior sed/tr/sed sequence mangled backslashes from escaped quotes).
 CONTEXT=""
 [ -n "$RECENT_ACTIVITY" ] && CONTEXT=$(printf 'Recent blitz activity:\n%s' "$RECENT_ACTIVITY")

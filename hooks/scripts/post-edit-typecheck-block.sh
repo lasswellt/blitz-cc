@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# post-edit-typecheck-block.sh — PostToolUse on Write|Edit. BLOCKING (exit 2).
+# post-edit-typecheck-block.sh: PostToolUse on Write|Edit. BLOCKING (exit 2).
 #
 # Runs the project's typecheck command for the edited file's language and
 # refuses the edit when the diagnostic count INCREASED against the pre-edit
@@ -24,6 +24,12 @@
 # the row's scope probe.
 #
 # Exit 0 = allow, Exit 2 = block.
+#
+# No -e on purpose: the typechecker exits non-zero whenever it reports diagnostics,
+# and that output is what this hook counts (OUT=$(...) below). Every other failure
+# (no toolchain row, lock timeout, unreadable baseline) falls through to exit 0 so a
+# broken checker never blocks an edit; exit 2 is reserved for a measured regression,
+# and the EXIT trap releases the lock on every path.
 set -uo pipefail
 . "$(dirname "$0")/_lib/common.sh"
 

@@ -9,7 +9,7 @@ argument-hint: "<audit|upgrade|report>"
 
 ## Additional Resources
 - For package manager commands, license tables, and report templates, see [references/main.md](references/main.md)
-- For package install policy (canonical rule for `upgrade` mode resolution), see [/_shared/security.md](/_shared/security.md). dep-health is the periodic enforcer — every flagged outdated dep gets a recommended bump using the latest-resolution rule.
+- For package install policy (canonical rule for `upgrade` mode resolution), see [/_shared/security.md](/_shared/security.md). dep-health is the periodic enforcer: every flagged outdated dep gets a recommended bump using the latest-resolution rule.
 - For output style (terse-technical, preservation rules), see [/_shared/output.md](/_shared/output.md)
 
 ---
@@ -24,18 +24,18 @@ All code produced must satisfy the Definition of Done ([quality.reference.md](/_
 
 ## SAFETY RULES (NON-NEGOTIABLE)
 
-1. **NEVER auto-upgrade major versions** — major bumps require explicit user confirmation before proceeding.
-2. **NEVER edit lock files manually** — `package-lock.json`, `pnpm-lock.yaml`, and `yarn.lock` are managed by the package manager only.
-3. **NEVER install packages globally** — all installs use `--save-dev` or `--save` (local only).
-4. **ALWAYS run tests after any upgrade** — if tests fail, revert the upgrade immediately.
-5. **ALWAYS verify build passes after upgrades** — a green test suite with a broken build is still broken.
-6. **In `audit` mode, this skill is READ-ONLY** — no modifications to `package.json`, lock files, or source code.
-7. **NEVER remove dependencies** without explicit user instruction — even if they appear unused.
-8. **NEVER run `npm audit fix --force`** — it performs major upgrades without verification.
+1. **NEVER auto-upgrade major versions**: major bumps require explicit user confirmation before proceeding.
+2. **NEVER edit lock files manually**: `package-lock.json`, `pnpm-lock.yaml`, and `yarn.lock` are managed by the package manager only.
+3. **NEVER install packages globally**: all installs use `--save-dev` or `--save` (local only).
+4. **ALWAYS run tests after any upgrade**: if tests fail, revert the upgrade immediately.
+5. **ALWAYS verify build passes after upgrades**: a green test suite with a broken build is still broken.
+6. **In `audit` mode, this skill is READ-ONLY**: no modifications to `package.json`, lock files, or source code.
+7. **NEVER remove dependencies** without explicit user instruction, even if they appear unused.
+8. **NEVER run `npm audit fix --force`**: it performs major upgrades without verification.
 
 ---
 
-## Phase 0: PARSE — Determine Mode
+## Phase 0: PARSE (Determine Mode)
 
 ### 0.0 Register Session
 
@@ -89,7 +89,7 @@ Read `package.json` and extract:
 
 **Unattended forms.** Weekly cloud Routine (`/schedule`, fresh clone, no prompts) is the intended cadence for `audit`; `/loop 2h /blitz:dep-health audit` in a dedicated session for shorter windows (CronCreate, 7-day expiry). See [docs/guides/cloud-threads.md](../../docs/guides/cloud-threads.md).
 
-## Phase 1: AUDIT — Security Scan
+## Phase 1: AUDIT (Security Scan)
 
 ### 1.1 Run Security Audit
 
@@ -99,7 +99,7 @@ Execute the appropriate audit command (see [references/main.md](references/main.
 ${PM} audit --json 2>&1
 ```
 
-If the command exits with a non-zero code, it indicates vulnerabilities were found (this is expected — do not treat as a failure).
+If the command exits with a non-zero code, it indicates vulnerabilities were found (this is expected; do not treat as a failure).
 
 ### 1.2 Parse Audit Results
 
@@ -121,7 +121,7 @@ Extract from the JSON output:
 
 ---
 
-## Phase 2: OUTDATED — Version Check
+## Phase 2: OUTDATED (Version Check)
 
 ### 2.1 Check Outdated Packages
 
@@ -146,9 +146,9 @@ For each outdated package, determine the update type:
 
 | Type | Detection | Risk |
 |------|-----------|------|
-| **Major** | Latest major > current major | High — breaking changes likely |
-| **Minor** | Same major, latest minor > current minor | Medium — new features, possible behavior changes |
-| **Patch** | Same major+minor, latest patch > current patch | Low — bug fixes only |
+| **Major** | Latest major > current major | High: breaking changes likely |
+| **Minor** | Same major, latest minor > current minor | Medium: new features, possible behavior changes |
+| **Patch** | Same major+minor, latest patch > current patch | Low: bug fixes only |
 
 ### 2.4 Flag Critical Outdated
 
@@ -156,7 +156,7 @@ Cross-reference outdated packages with audit results. Packages that are BOTH out
 
 ---
 
-## Phase 3: LICENSE — Compliance Check
+## Phase 3: LICENSE (Compliance Check)
 
 ### 3.1 Scan Licenses
 
@@ -193,7 +193,7 @@ List all packages with non-permissive licenses. Group by classification.
 
 ---
 
-## Phase 4: UPGRADE — Patch and Minor Updates (mode=upgrade only)
+## Phase 4: UPGRADE (Patch and Minor Updates, mode=upgrade only)
 
 **Skip this phase entirely if mode is `audit` or `report`.**
 
@@ -284,15 +284,15 @@ List available major upgrades but do NOT perform them automatically:
 
 ```
 Major upgrades available (manual action required):
-  1. package-x: 2.5.0 -> 3.0.0 — See changelog: <url>
-  2. package-y: 1.8.0 -> 2.0.0 — See changelog: <url>
+  1. package-x: 2.5.0 -> 3.0.0 (see changelog: <url>)
+  2. package-y: 1.8.0 -> 2.0.0 (see changelog: <url>)
 
 Major upgrades may include breaking changes. Review changelogs before upgrading.
 ```
 
 ---
 
-## Phase 5: REPORT — Generate Health Report
+## Phase 5: REPORT (Generate Health Report)
 
 ### 5.1 Calculate Health Score
 
@@ -342,7 +342,7 @@ Dependency Health: <GRADE> (<score>/100)
   License issues: N flagged
 
 Top priorities:
-  1. [critical] package-name has CVE-XXXX-XXXXX — upgrade to vX.Y.Z
+  1. [critical] package-name has CVE-XXXX-XXXXX; upgrade to vX.Y.Z
   2. [high] package-name is 2 major versions behind
   3. [medium] package-name has GPL-3.0 license
 ```
@@ -375,7 +375,7 @@ Final phase per [sessions.md](/_shared/sessions.md) §2: `blitz_session_update "
 - **`npm audit` fails (no internet, registry down)**: Skip the security scan. Note `"Security audit skipped: registry unreachable"` in the report. Continue with outdated and license checks.
 - **`license-checker` not available**: Use the fallback grep-based license detection described in Phase 3.1. Note reduced accuracy in report.
 - **Upgrade breaks tests**: Automatically revert the specific package upgrade. Report which package caused the failure and what tests broke. Continue with remaining upgrades.
-- **Upgrade breaks type-check**: Same as test failure — revert and report.
+- **Upgrade breaks type-check**: Same as test failure; revert and report.
 - **No `package.json` found**: Abort with `"No package.json found in project root. This skill requires an npm-based project."`.
 - **`node_modules` not installed**: Abort with `"Dependencies not installed. Run '${PM} install' before running dep-health."`.
 - **Git working tree is dirty (mode=upgrade)**: Warn `"Uncommitted changes detected. Commit or stash before running upgrades."` and abort upgrade mode. Audit and report modes proceed normally.

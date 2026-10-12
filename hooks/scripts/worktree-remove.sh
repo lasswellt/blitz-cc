@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# worktree-remove.sh — Log worktree removal + opportunistic branch cleanup
+# worktree-remove.sh: log worktree removal + opportunistic branch cleanup
 # Fires after a worktree is removed. Non-blocking: always exits 0.
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"

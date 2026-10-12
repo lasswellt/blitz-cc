@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# kill-switch.sh — PreToolUse guard (matcher: every tool). While .cc-sessions/STOP
+# kill-switch.sh: PreToolUse guard (matcher: every tool). While .cc-sessions/STOP
 # exists, every tool call is refused (exit 2) so an unattended loop halts where it
 # stands. Remove the file to resume. The file's first line, if any, is echoed as the
 # operator's reason. Logged once per session via a marker file next to STOP.

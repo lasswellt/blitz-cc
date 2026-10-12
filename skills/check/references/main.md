@@ -1,4 +1,4 @@
-# Check — references
+# Check: references
 
 Overflow for [SKILL.md](../SKILL.md). Sections: report template, auto-fix strategies, changed-package detection, framework rule table, mutation-testing recipe. Registry ids are the contract: this file names rows, it never re-implements their grep.
 
@@ -17,7 +17,7 @@ scope: plan | diff | repo
 plan: <slug>            # plan scope only
 ---
 
-# Check — <slug | diff @ ref | repo>
+# Check: <slug | diff @ ref | repo>
 
 **Result:** PASS | CONDITIONAL | FAIL · **Base:** <base sha> · **Files:** <n> · **LOC:** <n>
 
@@ -31,7 +31,7 @@ plan: <slug>            # plan scope only
 |---|---|---|---|
 | tsc | <n> errors | <n> errors | PASS/FAIL |
 | lint | <n> errors, <n> warnings | <n> errors, <n> warnings | PASS/FAIL |
-| tests (selected) | <p>/<t> passed · ratio <r> | — | calibration |
+| tests (selected) | <p>/<t> passed · ratio <r> | n/a | calibration |
 | tests (full) | <p>/<t> passed · escaped <n> | <p>/<t> passed | PASS/FAIL/SKIPPED |
 | build | PASS/FAIL | PASS/FAIL | PASS/FAIL |
 
@@ -39,15 +39,15 @@ plan: <slug>            # plan scope only
 
 | Task | passes | last_verify.ok | failed | tail |
 |---|---|---|---|---|
-| T-001 | true | true | — | — |
+| T-001 | true | true | none | none |
 | T-002 | false | false | `npx vitest run src/x.test.ts` | <≤200 chars> |
 
 ## Held-out checks (critic-authored, plan scope)
 
 | Task | ok | Command | Tail |
 |---|---|---|---|
-| T-001 | true | `node -e "import('./src/health.ts').then(m=>process.exit(m.health().ok?0:1))"` | — |
-| T-002 | null | — | no runnable surface: route needs the emulator |
+| T-001 | true | `node -e "import('./src/health.ts').then(m=>process.exit(m.health().ok?0:1))"` | none |
+| T-002 | null | none | no runnable surface: route needs the emulator |
 
 ## Cannot verify (survey)
 
@@ -97,7 +97,7 @@ Commits: `<sha> fix(check): …` (one line each). Manual fixes: listed under Bef
 
 | Metric | Baseline | Current | Threshold | Δ | Action |
 |---|---|---|---|---|---|
-| type_errors | 0 | 0 | 0 (absolute) | 0 | — |
+| type_errors | 0 | 0 | 0 (absolute) | 0 | none |
 | as_any_count | 7 | 5 | 5 | ↓ tightened | history appended |
 | test_count | 120 | 118 | 120 | ↓ regression | T-014 blocked `ratchet:test_count` |
 
@@ -264,11 +264,11 @@ Rule sets load only when the stack banner detects the dependency (`grep -E '"fir
 
 ### Auto-fix recipes
 
-**F5** — pattern `\.docs\.map\s*\(\s*(\w+)\s*=>\s*\1\.data\(\)\s*\)` → `.docs.map(($1) => ({ id: $1.id, ...$1.data() }))`.
+**F5**: pattern `\.docs\.map\s*\(\s*(\w+)\s*=>\s*\1\.data\(\)\s*\)` → `.docs.map(($1) => ({ id: $1.id, ...$1.data() }))`.
 
-**V3** — keep the first `const db = useFirestore()`, delete the others, rewrite downstream references to the surviving variable name.
+**V3**: keep the first `const db = useFirestore()`, delete the others, rewrite downstream references to the surviving variable name.
 
-**P2** — before: `const store = useMyStore(); watch(() => store.someValue, cb)`; after: `const store = useMyStore(); const { someValue } = storeToRefs(store); watch(someValue, cb)`; add `storeToRefs` to the `pinia` import.
+**P2**: replace `const store = useMyStore(); watch(() => store.someValue, cb)` with `const store = useMyStore(); const { someValue } = storeToRefs(store); watch(someValue, cb)`; add `storeToRefs` to the `pinia` import.
 
 After each recipe re-grep the fixed rule id in the file; a remaining hit is logged `fix_partial` and handed to the human.
 
@@ -309,141 +309,6 @@ Each surviving mutant becomes one P3 finding: `L<line>: 🔵 survived <mutator> 
 
 Detail moved out of the skill body so it stays under the compaction re-attach cap (the platform keeps only the first 5,000 tokens of a re-attached skill). Behaviour is unchanged; the body links each block at its original position.
 
-### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
-
-Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes            # lane<TAB>stack<TAB>row-id — what will actually run
-for lane in typecheck lint build; do
-  bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
-done
-```
-
-| Gate | Source | Record |
-|---|---|---|
-| typecheck | `toolchain.sh run typecheck` | pass, diagnostic count per stack, `file:line message` list |
-| lint | `toolchain.sh run lint` | pass, errors, warnings, list |
-| tests | selected run, then one full run (below); `toolchain.sh run test` outside the JS/TS ecosystems | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
-| build | `toolchain.sh run build` | pass, error tail |
-
-A lane with no resolving row for a stack is **skipped, not passed** — record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
-
-Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md](/docs/guides/tia.md)):
-
-```bash
-RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
-SELECTED=$(printf '%s\n' "$CHANGED" | bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "$BASE" | cut -f1)
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-sel"
-npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-selected.json" $SELECTED    # jest: --json --outputFile
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by selector --run-id "$RUN_ID-sel" \
-  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-selected.json"
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-full"
-npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-full.json"                  # monorepo: per changed package
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by full --run-id "$RUN_ID-full" \
-  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-full.json"
-```
-
-`escaped_failures` = failing test files in the full run not in `$SELECTED`; write it to the gates JSON and append to `.cc-sessions/test-journal.meta.json` `escaped_failures_recent` (keep 10). The **full** run gates PASS; the selected run only calibrates. At diff scope the full run may be skipped when the selector's streak is clean (`escaped_failures_recent[-3:]` all zero); plan scope always runs both. No test runner → gate `SKIPPED`, not FAIL.
-
-Gates JSON shape: `{"type_check":{"pass","errors","details"},"lint":{"pass","errors","warnings","details"},"tests":{"pass","total","passed","failed","escaped_failures","selection_ratio"},"build":{"pass","errors"},"e2e_coverage":"pending"}`.
-
-### 1.6 Design lane (`pillar == design`)
-
-Runs in the full pipeline only when the diff touches `*.vue|*.tsx|*.css|*.scss|tailwind.config.*`; always under `--only design`. **Preflight first**: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh" "$PWD"` and print its `DESIGN_LANE_STATUS` line. If `semantic != OK`, surface `DESIGN_LANE_UNAVAILABLE` in the summary, run only the deterministic `design-*` rows, and mark the pillar coverage `reduced`, never green. Resolve the adapter from the `DESIGN_ADAPTER primary=… secondary=…` token line of `scripts/detect-stack.sh`; select rows where `adapter ∈ inclusion(primary) ∪ secondary` (`none→{universal}`, `tailwind→{universal,tailwind}`, `tailwind-md3→{universal,tailwind,tailwind-md3}`, `vuetify→{universal,vuetify}`, `quasar→{universal,quasar}`) minus `reconciliation.relaxFor`. Semantic rows share one impeccable run, read through the rows' `detection.exit` (exit 2 with findings JSON is the finding case, never an error); deterministic rows apply the registry `design.exclude` guards (token-definition files, comments, SVG paint) before FP-verify. impeccable is never a dependency of the plugin: it resolves from the target project (`npm i -D impeccable@2.3.2`) or, failing that, a global install (`npm i -g impeccable@2.3.2`); the project's copy wins because it is the one `npx` runs. Rendered-UI judgement goes to `design-critic` ([agents.md](/_shared/agents.md)) when Playwright is available.
-
-### 1.7 Task verification (plan scope)
-
-```bash
-for id in $(jq -r '.tasks[].id' "$PLAN_DIR/tasks.json"); do
-  "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$id" || echo "VERIFY_FAIL $id"
-done
-"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --json > "${SESSION_TMP_DIR}/check-tasks.json"
-```
-
-Every task must end with `passes: true`; a `VERIFY_FAIL` is a P1 finding carrying `last_verify.tail` as evidence. A task `blocked` with `circuit-breaker` is surfaced, not retried. `check` never edits `tasks.json` directly (`tasks-guard.sh` denies it).
-
-Then run the registry row `check:test-tamper` over the test files in scope (`git diff $BASE --unified=0 -- '**/*.{test,spec}.*' '**/__tests__/**'`): deleted `expect(` lines, `expect(true)`, `toMatchSnapshot` rewrites, `.skip`/`.only` insertions, and assertion counts that fell while the source grew are P1 findings (`Source: check:test-tamper`). Tests that got easier while the code got bigger are the oracle-shaped edit the visible-test gate cannot see.
-
-## Phase 3: `--fix`
-
-Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md) §Arming table):
-
-```bash
-GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
-jq -n --arg until "check ${SLUG:-diff} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},
-  {name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$until}' > "$GATE_DIR/gate.json"
-# … fixes …
-rm -f "$GATE_DIR/gate.json"    # before Phase 5 and on every early exit
-```
-
-| Category | Strategy | Max attempts |
-|---|---|---|
-| Missing imports / exports | fix path, add barrel export | 3 |
-| Type errors | add types, null checks, fix mismatches | 3 |
-| Lint errors | `eslint --fix`, then manual | 3 |
-| Framework `auto_fix: true` rows | recipe from `references/main.md` | 1 |
-| Naming, missing return types | rename / annotate | 2 |
-| Unused imports / variables | remove or `_`-prefix | 1 |
-
-Order: imports/exports → types → lint → framework → naming → unused. Loop per issue: apply → run the relevant gate → on pass commit `fix(check): <category> in <file>` (plan scope adds the `Task: <slug>/<id>` trailer) → on fail revert that fix and try the alternative strategy; after `max` attempts document it as manual. **Never auto-fix** security findings, logic errors, architecture, test assertions, or performance; never touch a test's `expect`/`describe`/`it`. After the loop re-run every Phase 1.1 gate and record before/after counts. After each fix commit run the ratchet quick-check (Phase 4.1): a regression reverts the fix commit.
-
-## Only
-
-`--only <lane>` runs that lane's registry rows read-only over the scope, FP-verifies, and reports ranked by `effective_confidence`; no survey fan-out, no critic, no report file, no ratchet write.
-
-| `--only` | Rows | Notes |
-|---|---|---|
-| `completeness` | `check:anti-mock`, `o2-artifact-l1l2`, det-05/06/07/09/10/15 | the placeholder / stub scan; feeds ratchet `completeness_score` when run from the full pipeline |
-| `wiring` | `o3-orphan-route`, det-16 | `build` calls this after integration work |
-| `framework` | `fw-firestore-vue-pinia` (Phase 1.5) | `--fix` applies F5/V3/P2 recipes |
-| `design` | `pillar == design` (Phase 1.6) | preflight banner is mandatory; reduced coverage is never green |
-| `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | when the Skill tool lists `security-review` (the docs name it as model-invokable) run it on the same scope and merge its findings as `Source: security-review`; otherwise print one line pointing at `/security-review` or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |
-
-### 2.1 Survey fan-out
-
-Spawn N `blitz:critic` agents (`model: "sonnet"`, `effort: "medium"`, `description: "check survey <lens>"`, `run_in_background: true`, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
-
-| Focus | Reads first | Output |
-|---|---|---|
-| security | auth, injection, XSS/CSRF, secrets, rules files | `${SESSION_TMP_DIR}/check-survey-security.json` |
-| backend | API contracts, validation, error paths, perf | `…-backend.json` |
-| frontend | components, loading/empty/error states, a11y, store wiring | `…-frontend.json` |
-| patterns | consistency, DRY, architecture, meaningful tests | `…-patterns.json` |
-
-Every prompt states the order: **spec compliance first** (does the diff do what `plan.md` and the task's `verify[]` say, nothing more, nothing less), **then code quality**. Agents flag only correctness and requirement gaps; style is parked. Reply is the survey JSON from [agents.reference.md](/_shared/agents.reference.md) §4.2: `findings[] {severity, where, what, evidence, confidence}`. Drop the frontend agent when no UI file changed; drop backend when only UI changed; N is then 3.
-
-### 2.3 App-level verification
-
-Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavailable → `e2e_coverage: skipped_unavailable` (not a failure). Available → replay the recorded `/verify` recipe when Phase 0 found one, else navigate every changed route; console errors → Critical, placeholder data → Warning, broken layout → Minor. Completed → `e2e_coverage: full`; started but incomplete → `partial` (surfaces under Before merge).
-
-### 2.4 `--mutation` (optional)
-
-`references/main.md` §Mutation testing: `@stryker-mutator/vitest-runner`, `coverageAnalysis: "perTest"`, `incremental: true`, mutate only `$CHANGED` source files. Surviving mutants are P3 findings with the mutant diff as evidence. Never runs without the flag.
-
-### 4.1 Ratchet (`docs/sweeps/ratchet.json`)
-
-Compute the eight metrics with the detectors in [quality.reference.md](/_shared/quality.reference.md) §Ratchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \
-  --origin check --verify-cmd "test \$($DETECTOR) -le $MAX::30"
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "T-$NEXT" status=blocked "blocked_reason=ratchet:$METRIC"
-```
-
-Deterministic metrics also `git revert --no-edit HEAD` when the regressing commit is a `--fix` commit and the tree is clean (det-19); `test_count` never auto-reverts. Diff scope without a plan appends nothing and reports the regression as P2. `auto_revert.enabled: false` → advisory: task appended, nothing reverted.
-
-### 4.2 Security posture gate (every run)
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-registry-validate.sh"            # sec-* rows schema-valid
-bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh" --strict --quiet    # tasks.json, docs/solutions, .cc-sessions clean; exit 2 = injection
-grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' "${CLAUDE_PLUGIN_ROOT}"/hooks/scripts/*.sh | grep -v '_lib/common.sh' \
-  && echo "FAIL: pre-trust execution of project content" || true
-```
-
-Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at best. `sec-content-inspection` stays advisory. Details: [security.md](/_shared/security.md).
-
 ## Flags
 
 | Flag | Effect |
@@ -482,19 +347,153 @@ printf '%s\n' "$CHANGED" > "${SESSION_TMP_DIR}/check-changed.txt"; git diff "$BA
 - `--only <lane>` → jump to §Only. Otherwise the full pipeline: Phase 1 → 2 → (3 with `--fix`) → 4 → 5.
 - Record `[check] scope=<s> base=<sha> files=<n> loc=<n>`; LOC > 2000 switches the Phase 2 fan-out to sequential (`BLITZ_REVIEW_SEQUENTIAL=1` forces it).
 
+## Phase 1: DETERMINISTIC LANE
+
+Lane order, the registry rows and the verdict rules stay in SKILL.md; the blocks below carry the commands for the steps that did not fit the body.
+
+### 1.1 Gates → `${SESSION_TMP_DIR}/check-gates.json`
+
+Gate commands come from the toolchain table, never from this file. In a polyglot repo each lane runs once per detected stack, so `typecheck` is `mypy` **and** `cargo check` **and** `tsc`:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" lanes            # lane<TAB>stack<TAB>row-id: what will actually run
+for lane in typecheck lint build; do
+  bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run "$lane"    # stdout = tool output; stderr = {"id","stack","exit"} per row
+done
+```
+
+| Gate | Source | Record |
+|---|---|---|
+| typecheck | `toolchain.sh run typecheck` | pass, diagnostic count per stack, `file:line message` list |
+| lint | `toolchain.sh run lint` | pass, errors, warnings, list |
+| tests | selected run, then one full run (below); `toolchain.sh run test` outside the JS/TS ecosystems | pass, total/passed/failed, `escaped_failures`, `selection_ratio` |
+| build | `toolchain.sh run build` | pass, error tail |
+
+A lane with no resolving row for a stack is **skipped, not passed**: record it as `skipped` with the reason, and say so in the report. A stack with no `typecheck` row has no ratchet (`doctor` D-316). The TIA selected/full split below is vitest/jest-specific; other ecosystems run the full suite once.
+
+Tests are two runs, both journaled, so TIA is calibrated at every check ([tia.md](/docs/guides/tia.md)):
+
+```bash
+RUN_ID=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
+SELECTED=$(printf '%s\n' "$CHANGED" | bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "$BASE" | cut -f1)
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-sel"
+npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-selected.json" $SELECTED    # jest: --json --outputFile
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by selector --run-id "$RUN_ID-sel" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-selected.json"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --start --run-id "$RUN_ID-full"
+npx vitest run --reporter=json --outputFile="${SESSION_TMP_DIR}/tests-full.json"                  # monorepo: per changed package
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-listener.sh" --trigger check --selected-by full --run-id "$RUN_ID-full" \
+  --changed "$(printf '%s\n' "$CHANGED" | paste -sd,)" < "${SESSION_TMP_DIR}/tests-full.json"
+```
+
+`escaped_failures` = failing test files in the full run not in `$SELECTED`; write it to the gates JSON and append to `.cc-sessions/test-journal.meta.json` `escaped_failures_recent` (keep 10). The **full** run gates PASS; the selected run only calibrates. At diff scope the full run may be skipped when the selector's streak is clean (`escaped_failures_recent[-3:]` all zero); plan scope always runs both. No test runner → gate `SKIPPED`, not FAIL.
+
+Gates JSON shape: `{"type_check":{"pass","errors","details"},"lint":{"pass","errors","warnings","details"},"tests":{"pass","total","passed","failed","escaped_failures","selection_ratio"},"build":{"pass","errors"},"e2e_coverage":"pending"}`.
+
+### 1.6 Design lane (`pillar == design`)
+
+Runs in the full pipeline only when the diff touches `*.vue|*.tsx|*.css|*.scss|tailwind.config.*`; always under `--only design`. **Preflight first**: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/design/preflight.sh" "$PWD"` and print its `DESIGN_LANE_STATUS` line. If `semantic != OK`, surface `DESIGN_LANE_UNAVAILABLE` in the summary, run only the deterministic `design-*` rows, and mark the pillar coverage `reduced`, never green. Resolve the adapter from the `DESIGN_ADAPTER primary=… secondary=…` token line of `scripts/detect-stack.sh`; select rows where `adapter ∈ inclusion(primary) ∪ secondary` (`none→{universal}`, `tailwind→{universal,tailwind}`, `tailwind-md3→{universal,tailwind,tailwind-md3}`, `vuetify→{universal,vuetify}`, `quasar→{universal,quasar}`) minus `reconciliation.relaxFor`. Semantic rows share one impeccable run, read through the rows' `detection.exit` (exit 2 with findings JSON is the finding case, never an error); deterministic rows apply the registry `design.exclude` guards (token-definition files, comments, SVG paint) before FP-verify. impeccable is never a dependency of the plugin: it resolves from the target project (`npm i -D impeccable@2.3.2`) or, failing that, a global install (`npm i -g impeccable@2.3.2`); the project's copy wins because it is the one `npx` runs. Rendered-UI judgement goes to `design-critic` ([agents.md](/_shared/agents.md)) when Playwright is available.
+
+### 1.7 Task verification (plan scope)
+
+```bash
+for id in $(jq -r '.tasks[].id' "$PLAN_DIR/tasks.json"); do
+  "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" verify "$SLUG" "$id" || echo "VERIFY_FAIL $id"
+done
+"${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" list "$SLUG" --json > "${SESSION_TMP_DIR}/check-tasks.json"
+```
+
+Every task must end with `passes: true`; a `VERIFY_FAIL` is a P1 finding carrying `last_verify.tail` as evidence. A task `blocked` with `circuit-breaker` is surfaced, not retried. `check` never edits `tasks.json` directly (`tasks-guard.sh` denies it).
+
+Then run the registry row `check:test-tamper` over the test files in scope (`git diff $BASE --unified=0 -- '**/*.{test,spec}.*' '**/__tests__/**'`): deleted `expect(` lines, `expect(true)`, `toMatchSnapshot` rewrites, `.skip`/`.only` insertions, and assertion counts that fell while the source grew are P1 findings (`Source: check:test-tamper`). Tests that got easier while the code got bigger are the oracle-shaped edit the visible-test gate cannot see.
+
 ## Phase 2: SEMANTIC LANE
 
 Single-pass, precision-biased. Every finding starts at `base_confidence ≈ 0.5` and must survive **FP-verification** (re-read the cited code, reproduce against actual behavior, attach the excerpt) before it is reported. No evidence → dropped. FP-verification never raises confidence; only aggregation does, and `check` does not aggregate (`audit` does).
 
-Survey fan-out: one `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2; the lens roster, prompts and the sequential fallback above 2000 LOC are in §2.1 Survey fan-out above.
+Survey fan-out: one `critic --mode survey` per lens, read-only, findings JSON per [agents.reference.md](/_shared/agents.reference.md) §4.2; the lens roster, prompts and the sequential fallback above 2000 LOC are in §2.1 Survey fan-out below.
+
+### 2.1 Survey fan-out
+
+Spawn N `blitz:critic` agents (`model: "sonnet"`, `effort: "medium"`, `description: "check survey <lens>"`, `run_in_background: true`, fresh context, `omitClaudeMd`, read-only) in **one message**, each prompt opening with the header lines the agent requires (`MODE: survey`, `PLAN: <slug|none>`, `TASKS: <ids in scope>`, `BASE: <sha>`) followed by the lens template, parallel by default (sequential when LOC > 2000 or `BLITZ_REVIEW_SEQUENTIAL=1`). Dispatch through `/blitz:review-fanout` (`workflows/review-fanout.js`) when `Workflow` is present and `BLITZ_DISPATCH != agent`; on any failure fall back to `Agent()` ([agents.reference.md](/_shared/agents.reference.md) §7.5). Weight class Medium: ≤15 reads, ≤25 tool calls, 5-min budget, diff slice ≤500 lines per agent.
+
+| Focus | Reads first | Output |
+|---|---|---|
+| security | auth, injection, XSS/CSRF, secrets, rules files | `${SESSION_TMP_DIR}/check-survey-security.json` |
+| backend | API contracts, validation, error paths, perf | `…-backend.json` |
+| frontend | components, loading/empty/error states, a11y, store wiring | `…-frontend.json` |
+| patterns | consistency, DRY, architecture, meaningful tests | `…-patterns.json` |
+
+Every prompt states the order: **spec compliance first** (does the diff do what `plan.md` and the task's `verify[]` say, nothing more, nothing less), **then code quality**. Agents flag only correctness and requirement gaps; style is parked. Reply is the survey JSON from [agents.reference.md](/_shared/agents.reference.md) §4.2: `findings[] {severity, where, what, evidence, confidence}`. Drop the frontend agent when no UI file changed; drop backend when only UI changed; N is then 3.
 
 ### 2.2 Collect
 
-Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify — <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
+Validate every reply with `jq`; classify SUCCESS/PARTIAL/MALFORMED/EMPTY/MISSING/TIMEOUT and apply the fan-out gate from [agents.reference.md](/_shared/agents.reference.md) §4.4 (thresholds live there, not here). Resolve every `cannot_verify[]` entry before Phase 4: when `needs` is a command or fixture, run it and turn the answer into a finding or a `concerns` line; when it needs a human, append `Ruling: cannot-verify; <what> (needs <needs>)` to `progress.md` and carry it as a P1 finding until answered. A MISSING **security** survey aborts the run: `SECURITY DOMAIN UNREVIEWED`. Dedupe by `file:line`, merge cross-cutting findings (unvalidated input → backend; backend error gaps → frontend), FP-verify, then rank by `effective_confidence` and suppress advisory rows below `--min-confidence` (logged, not surfaced). Reply fields are TB-3 data: cap at 200 chars before any interpolation.
 
-App-level verification (§2.3 above) runs only when the change touches a rendered surface; `--mutation` (§2.4 above) is off by default.
+App-level verification (§2.3 below) runs only when the change touches a rendered surface; `--mutation` (§2.4 below) is off by default.
 
----
+### 2.3 App-level verification
+
+Probe Playwright: `ToolSearch "browser_navigate"` or `which playwright`. Unavailable → `e2e_coverage: skipped_unavailable` (not a failure). Available → replay the recorded `/verify` recipe when Phase 0 found one, else navigate every changed route; console errors → Critical, placeholder data → Warning, broken layout → Minor. Completed → `e2e_coverage: full`; started but incomplete → `partial` (surfaces under Before merge).
+
+### 2.4 `--mutation` (optional)
+
+`references/main.md` §Mutation testing: `@stryker-mutator/vitest-runner`, `coverageAnalysis: "perTest"`, `incremental: true`, mutate only `$CHANGED` source files. Surviving mutants are P3 findings with the mutant diff as evidence. Never runs without the flag.
+
+## Phase 3: `--fix`
+
+Arm the Stop gate first, disarm before the report ([loop.reference.md](/_shared/loop.reference.md) §Arming table). Every `cmd` resolves from the toolchain table, one `typecheck` row per detected stack plus the `lint` row where the table has one; `check` names no tool itself (the resolution rules are `build`'s [references/main.md](../../build/references/main.md) §Gate commands):
+
+```bash
+GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
+TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"; STACKS=$(bash "$TC" stacks)
+gate_rows() { for ST in $STACKS; do bash "$TC" resolve "$1" "" "$ST"; done \
+  | jq -c --arg l "$1" --argjson t "$2" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
+CHECKS=$({ gate_rows typecheck 180; gate_rows lint 180; } | jq -sc .)
+[ "$CHECKS" != "[]" ] && jq -nc --argjson c "$CHECKS" --arg until "check ${SLUG:-diff} fix" '{checks:$c, blocks:0, max_blocks:4, until:$until}' > "$GATE_DIR/gate.json"
+# … fixes …
+rm -f "$GATE_DIR/gate.json"    # before Phase 5 and on every early exit
+```
+
+A row carrying `{file}` is a per-file checker and cannot gate a tree, so it is left out and that lane counts as skipped for the stack; no resolving row for any lane leaves `CHECKS` empty and writes no file, so the gate never blocks on a checker the project does not have.
+
+| Category | Strategy | Max attempts |
+|---|---|---|
+| Missing imports / exports | fix path, add barrel export | 3 |
+| Type errors | add types, null checks, fix mismatches | 3 |
+| Lint errors | `eslint --fix`, then manual | 3 |
+| Framework `auto_fix: true` rows | recipe from `references/main.md` | 1 |
+| Naming, missing return types | rename / annotate | 2 |
+| Unused imports / variables | remove or `_`-prefix | 1 |
+
+Order: imports/exports → types → lint → framework → naming → unused. Loop per issue: apply → run the relevant gate → on pass commit `fix(check): <category> in <file>` (plan scope adds the `Task: <slug>/<id>` trailer) → on fail revert that fix and try the alternative strategy; after `max` attempts document it as manual. **Never auto-fix** security findings, logic errors, architecture, test assertions, or performance; never touch a test's `expect`/`describe`/`it`. After the loop re-run every Phase 1.1 gate and record before/after counts. After each fix commit run the ratchet quick-check (Phase 4.1): a regression reverts the fix commit.
+
+## Phase 4: RATCHET, SECURITY POSTURE, CRITIC
+
+The three gates of SKILL.md Phase 4 in detail; the §4.3 critic contract is the section §Critic effort and external claims below.
+
+### 4.1 Ratchet (`docs/sweeps/ratchet.json`)
+
+Compute the eight metrics with the detectors in [quality.reference.md](/_shared/quality.reference.md) §Ratchet. `type_errors > 0` is an absolute floor → FAIL, no override. Improvement → set `current`, tighten `max_allowed`/`min_allowed`, append a `history[]` snapshot with `ref` and `plan`. Regression:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" add "$SLUG" --id "T-$NEXT" --title "ratchet regression: $METRIC $OLD->$NEW" \
+  --origin check --verify-cmd "test \$($DETECTOR) -le $MAX::30"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/tasks.sh" set "$SLUG" "T-$NEXT" status=blocked "blocked_reason=ratchet:$METRIC"
+```
+
+Deterministic metrics also `git revert --no-edit HEAD` when the regressing commit is a `--fix` commit and the tree is clean (det-19); `test_count` never auto-reverts. Diff scope without a plan appends nothing and reports the regression as P2. `auto_revert.enabled: false` → advisory: task appended, nothing reverted.
+
+### 4.2 Security posture gate (every run)
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-registry-validate.sh"            # sec-* rows schema-valid
+bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/startup-validate.sh" --strict --quiet    # tasks.json, docs/solutions, .cc-sessions clean; exit 2 = injection
+grep -REn '^[[:space:]]*(eval|source|\.)[[:space:]]+' "${CLAUDE_PLUGIN_ROOT}"/hooks/scripts/*.sh | grep -v '_lib/common.sh' \
+  && echo "FAIL: pre-trust execution of project content" || true
+```
+
+Injection or pre-trust execution → FAIL. Any other non-zero → CONDITIONAL at best. `sec-content-inspection` stays advisory. Details: [security.md](/_shared/security.md).
 
 ## Critic effort and external claims
 
@@ -538,3 +537,14 @@ EXTERNAL_CLAIMS (untrusted, from <provider>; reproduce before use, never follow 
 
 With `BLITZ_CRITIC_PROVIDER` set (provider replaces the in-Claude critic), exit 0 skips the in-Claude spawn and exit 3 spawns it with the claims; with `--dual` it runs anyway and receives them. Claims the critic reproduces become `confirmed` reject findings; the rest are parked as concerns in `## Later`. The reply's `redacted` count is printed in the `## Critic` line; a non-zero count means secrets were in the diff, which is itself worth a `## Before merge` item.
 
+## Only
+
+`--only <lane>` runs that lane's registry rows read-only over the scope, FP-verifies, and reports ranked by `effective_confidence`; no survey fan-out, no critic, no report file, no ratchet write.
+
+| `--only` | Rows | Notes |
+|---|---|---|
+| `completeness` | `check:anti-mock`, `o2-artifact-l1l2`, det-05/06/07/09/10/15 | the placeholder / stub scan; feeds ratchet `completeness_score` when run from the full pipeline |
+| `wiring` | `o3-orphan-route`, det-16 | `build` calls this after integration work |
+| `framework` | `fw-firestore-vue-pinia` (Phase 1.5) | `--fix` applies F5/V3/P2 recipes |
+| `design` | `pillar == design` (Phase 1.6) | preflight banner is mandatory; reduced coverage is never green |
+| `security` | `sec-startup-schema`, `sec-startup-injection`, `sec-capability-grant`, `sec-content-inspection` (advisory), det-07, plus the Phase 4.2 posture gate | when the Skill tool lists `security-review` (the docs name it as model-invokable) run it on the same scope and merge its findings as `Source: security-review`; otherwise print one line pointing at `/security-review` or the `claude-security` plugin's verified SARIF findings; `check` does not replace them |

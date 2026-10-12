@@ -1,4 +1,4 @@
-# Performance Profiler — Reference Material
+# Performance Profiler: Reference Material
 
 Analysis commands, anti-pattern catalogs, threshold tables for perf-profile skill.
 
@@ -102,7 +102,7 @@ du -sh node_modules/* 2>/dev/null | sort -rh | head -20
 
 **Pattern (bad):**
 ```typescript
-// At module top level — creates reactive overhead on import
+// At module top level: creates reactive overhead on import
 const state = reactive({ items: [], loading: false })
 export function useItems() { return state }
 ```

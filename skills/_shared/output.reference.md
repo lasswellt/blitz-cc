@@ -6,7 +6,7 @@ Detail split out of [output.md](output.md) so the contract every skill loads sta
 
 ## Canonical Exemptions List
 
-Authoritative — overrides any per-skill exemption declarations. Skills MUST NOT redefine the exemption set in their SKILL.md frontmatter; if a skill thinks it needs a new exemption category, propose it here first.
+Authoritative: overrides any per-skill exemption declarations. Skills MUST NOT redefine the exemption set in their SKILL.md frontmatter; if a skill thinks it needs a new exemption category, propose it here first.
 
 Sections in any agent or skill output that ALWAYS use full-prose (LITE intensity) regardless of the active intensity level:
 
@@ -14,7 +14,7 @@ Sections in any agent or skill output that ALWAYS use full-prose (LITE intensity
 |---|---|---|
 | **Safety rules** | "Never run X against prod", "Never bypass Y", security warnings, credential-handling guidance | Compressed safety language has caused real incidents (e.g., a "use --no-verify only when needed" terse line that dropped the only-when-needed condition). |
 | **Root cause analyses** | Bug post-mortems, "why did this break", architectural decision records | The reasoning chain is the value; compression loses it. |
-| **Risks and trade-offs** | Research doc §Risks, Open Questions, `plan.md` §Risks, ADR §Consequences | Same reason as root cause — the qualifier matters. |
+| **Risks and trade-offs** | Research doc §Risks, Open Questions, `plan.md` §Risks, ADR §Consequences | Same reason as root cause: the qualifier matters. |
 | **Destructive-op confirmations** | `rm -rf`, `git push --force`, `drop table`, `kubectl delete`, package uninstall | Irreversibility demands a full sentence + reasoning chain. The user's "yes" is binding. |
 | **First-time onboarding** | README quickstart sections, `onboard` output to a fresh user, error-message remediation | New users need full sentences; terse output fails the "reader picks up cold" test. |
 | **Migration notices** | Breaking-change descriptions in CHANGELOG, deprecation warnings, upgrade-required prompts | Users skim; full prose ensures the action is unmissable. |
@@ -45,9 +45,9 @@ No validator or registry row checks these markers; they are a convention for hum
 
 ## Integration points in blitz
 
-1. **Spawn prompts** — every Agent() prompt template carries the single `Output:` line from §Enforcement. See [agents.md](/_shared/agents.md).
-2. **SKILL.md Additional Resources** — skills that produce user-facing output should list this file alongside [sessions.md](/_shared/sessions.md).
-3. **Output style** — `output-styles/terse-technical.md` is the platform-level enforcement; this file is the reference spec it summarizes.
+1. **Spawn prompts**: every Agent() prompt template carries the single `Output:` line from §Enforcement. See [agents.md](/_shared/agents.md).
+2. **SKILL.md Additional Resources**: skills that produce user-facing output should list this file alongside [sessions.md](/_shared/sessions.md).
+3. **Output style**: `output-styles/terse-technical.md` is the platform-level enforcement; this file is the reference spec it summarizes.
 
 ## Credit
 
@@ -71,6 +71,6 @@ This protocol extends (not replaces) [sessions.md](/_shared/sessions.md): sessio
 
 ## Related protocols
 
-- [sessions.md](/_shared/sessions.md) — session registration, conflict matrix, activity feed / inbox / mailbox line schemas.
-- [agents.md](/_shared/agents.md) — spawn prompt contract that carries the `Output:` line.
-- `output-styles/terse-technical.md` — the forced output style that enforces this protocol.
+- [sessions.md](/_shared/sessions.md): session registration, conflict matrix, activity feed / inbox / mailbox line schemas.
+- [agents.md](/_shared/agents.md): spawn prompt contract that carries the `Output:` line.
+- `output-styles/terse-technical.md`: the forced output style that enforces this protocol.

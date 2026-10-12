@@ -14,8 +14,9 @@ validate_job() { awk '/^  validate:/{f=1; next} /^  [a-z-]+:$/{f=0} f' "$ROOT/.g
   [ "$missing" -eq 0 ]
 }
 
-@test "the non-script gates (bats, node --check, mod, Cisco scanner, CLAUDE.md size) are mirrored" {
-  for needle in 'bats' 'node --check' 'claude plugin validate mods/blitz-guard' 'claude plugin test mods/blitz-guard' 'skill-scanner scan-all skills' 'wc -l < .claude/CLAUDE.md'; do
+@test "the non-script gates (bats, node --check, mod, Cisco scanner, CLAUDE.md size, impeccable attribution) are mirrored" {
+  for needle in 'bats' 'node --check' 'claude plugin validate mods/blitz-guard' 'claude plugin test mods/blitz-guard' 'skill-scanner scan-all skills' 'wc -l < .claude/CLAUDE.md' \
+                'docs/integrations/impeccable/LICENSE-APACHE-2.0.txt' '"source": "impeccable@'; do
     validate_job | grep -qF -- "$needle" || { echo "CI no longer runs: $needle (update this test)"; return 1; }
     grep -qF -- "$needle" "$ROOT/scripts/ci-local.sh" || { echo "ci-local.sh does not run: $needle"; return 1; }
   done

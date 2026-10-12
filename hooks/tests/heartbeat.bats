@@ -13,9 +13,10 @@ teardown() { teardown_fake_repo; }
   [ -z "$output" ]
 }
 
-@test "logs post_tool_batch (feed contract preserved from post-tool-batch.sh)" {
+@test "writes no feed line per batch (the feed carries loop and skill events only)" {
   run_hook "heartbeat.sh" '{"session_id":"s1","hook_event_name":"PostToolBatch"}'
-  feed_events | grep -qx "post_tool_batch"
+  [ "$status" -eq 0 ]
+  [ ! -f .cc-sessions/activity-feed.jsonl ]
 }
 
 @test "marks record state working + last_activity" {
@@ -25,9 +26,10 @@ teardown() { teardown_fake_repo; }
   [ "$(jq -r .last_activity .cc-sessions/sessions/s1.json)" != "null" ]
 }
 
-@test "no record: no-op on disk besides the feed" {
+@test "no record: nothing written on disk" {
   run_hook "heartbeat.sh" '{"session_id":"s1"}'
   [ ! -f .cc-sessions/sessions/s1.json ]
+  [ ! -f .cc-sessions/activity-feed.jsonl ]
 }
 
 tia_fixture() {  # a vitest project with one changed source file and its sibling test

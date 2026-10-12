@@ -2,7 +2,7 @@
 name: ui-build
 description: "Use when the user says 'build a page', 'create UI', 'add a form', 'build UI for X', 'add a screen', or 'extract design system' / 'build DESIGN.md'. Discovers the project's components, tokens, and conventions (extracting DESIGN.md when absent), then builds production-grade Vue 3 UI native to it."
 argument-hint: "<feature description>"
-allowed-tools: Read, Glob, Grep, ToolSearch, AskUserQuestion, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(git diff *), Bash(git --no-pager diff *)
+allowed-tools: Read, Glob, Grep, ToolSearch, Skill(blitz:check), AskUserQuestion, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/detect-stack.sh), Bash(git diff *), Bash(git --no-pager diff *)
 model: inherit
 compatibility: ">=2.1.296"
 paths:
@@ -28,7 +28,7 @@ Build production-grade Vue 3 UI native to the project. Follow the 5-phase workfl
 
 ---
 
-## Phase 0: SESSION — Register and Check for Conflicts
+## Phase 0: SESSION (Register and Check for Conflicts)
 
 Follow [sessions.md](/_shared/sessions.md) §2 (claim the hook-created record, run the conflict matrix) and [output.md](/_shared/output.md). Print progress at every phase transition, decision point, and agent dispatch.
 
@@ -40,11 +40,11 @@ Follow [sessions.md](/_shared/sessions.md) §2 (claim the hook-created record, r
 
 **Rule: when no `DESIGN.md` exists at the repo root, run the extraction in [references/design-extract.md](references/design-extract.md) first** (also when the user asks to "extract design system"). It emits `DESIGN.md` from the project's tokens, fonts, and palette; steps 1–5 below then read it instead of re-discovering. With an existing `DESIGN.md`, read it and only note drift.
 
-1. **Design Tokens** — Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
-2. **Component Inventory** — Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
-3. **Page Anatomy** — Read 2-3 representative pages. Document: layout wrapper, section structure, spacing, data flow.
-4. **Data Patterns** — Find Pinia stores, composables, API clients. Document: TypeScript interfaces, loading/error conventions.
-5. **Output** — Write discovery summary: token map, reusable components + signatures, layout wrapper(s), data layer conventions, naming conventions (files, components, CSS).
+1. **Design Tokens.** Find theme/token source (CSS vars, Tailwind config, Quasar variables, Vuetify theme). Glob: `**/*.css`, `**/tailwind.config.*`, `**/quasar.config.*`, `**/vuetify.*`, `**/variables.scss`, `**/variables.sass`. Document: color palette, spacing scale, typography, border-radius, shadows, z-index.
+2. **Component Inventory.** Identify shared/base components. Search: `**/components/{base,shared,common,ui}/**`. Note: name, props, slots, emits.
+3. **Page Anatomy.** Read 2-3 representative pages. Document: layout wrapper, section structure, spacing, data flow.
+4. **Data Patterns.** Find Pinia stores, composables, API clients. Document: TypeScript interfaces, loading/error conventions.
+5. **Output.** Write discovery summary: token map, reusable components + signatures, layout wrapper(s), data layer conventions, naming conventions (files, components, CSS).
 
 ---
 
@@ -117,13 +117,13 @@ Document: owning store/composable, fetch trigger (route guard / onMounted / watc
 **Goal**: Build bottom-up, smallest pieces first.
 
 Build order (strict):
-1. TypeScript types — interfaces, enums, type guards
-2. Composable / Store — data fetching, state, actions
-3. Atom components — badges, chips, status indicators
-4. Composite components — cards, list items, form sections
-5. Page component — orchestrates composites, handles layout
-6. Router entry — add route definition
-7. Navigation entry — add menu/nav item
+1. TypeScript types: interfaces, enums, type guards
+2. Composable / Store: data fetching, state, actions
+3. Atom components: badges, chips, status indicators
+4. Composite components: cards, list items, form sections
+5. Page component: orchestrates composites, handles layout
+6. Router entry: add route definition
+7. Navigation entry: add menu/nav item
 
 ### Implementation Gate
 
@@ -135,10 +135,9 @@ Before entering Phase 5, verify:
 | Lint | 0 errors (warnings OK) | Fix before proceeding |
 | Component size | No file > 300 lines | Extract sub-components |
 | Three-state coverage | All data views have loading, error, and empty states | Add missing states |
-| Hardcoded colors | None — design tokens only | Replace with tokens |
-| **Banned fonts** | None of `Inter`, `Roboto`, `Arial`, `Space Grotesk` as primary in CSS/Tailwind | Replace with project DESIGN.md typography pair |
-| **`prefers-reduced-motion`** | Required if any `animate-`, `transition-`, or motion library used | Add `@media (prefers-reduced-motion: reduce) { ... }` override |
-| **`console.log`** | Zero in `.vue`/`.ts` source | Remove or replace with structured logger |
+| **Design lane** | `/blitz:check --only design` over the diff: no finding on `design-raw-color-literal` (design tokens only, no hardcoded colors) or on `design-overused-font-static` / `design-overused-font` (`Inter`, `Roboto`, `Arial`, `Space Grotesk` as primary), and no P0 to P2 finding on any other `design-*` row | Replace literals with tokens and fonts with the DESIGN.md typography pair; re-run the lane |
+| **`prefers-reduced-motion`** | Required if any `animate-`, `transition-`, or motion library used (no registry row: inline grep) | Add `@media (prefers-reduced-motion: reduce) { ... }` override |
+| **`console.log`** | Zero in `.vue`/`.ts` source (no registry row: inline grep) | Remove or replace with structured logger |
 | **Inline `style="..."`** | Forbidden except for dynamic dimensions (e.g., calc'd widths) | Move to scoped styles or design tokens |
 
 ```bash
@@ -146,26 +145,20 @@ npm run type-check 2>&1 | tail -20
 npx eslint <new-files> 2>&1 | tail -20
 wc -l <new-vue-files> | sort -n | tail -5
 
-# Aesthetic gates
+# Checks with no registry row stay inline; fonts and color literals are the design lane's job (below).
 CHANGED=$(git diff --name-only HEAD -- '*.vue' '*.css' '*.ts' '*.tsx')
 [ -z "$CHANGED" ] || {
-  # Banned-font check (allow as fallback after a custom font-family token, but not as primary)
-  grep -lE "font-family:\s*['\"]?(Inter|Roboto|Arial|Space Grotesk)" $CHANGED 2>/dev/null \
-    && echo "FAIL: banned font detected in primary position; use DESIGN.md typography pair"
-  # Hardcoded color check
-  grep -lE "#[0-9a-fA-F]{3,6}|rgb\(|hsl\(" $CHANGED 2>/dev/null \
-    && echo "WARN: hardcoded color detected; prefer CSS var / design token"
-  # prefers-reduced-motion required if animate-/transition- used
   for f in $CHANGED; do
     grep -qE "(animate-|transition-|@keyframes|motion\.|useMotion)" "$f" 2>/dev/null \
       && ! grep -qE "prefers-reduced-motion" "$f" "$(dirname "$f")"/*.css 2>/dev/null \
       && echo "FAIL: $f uses motion but no prefers-reduced-motion override"
   done
-  # console.log
   grep -lE "console\.(log|debug|info)\(" $CHANGED 2>/dev/null \
     && echo "FAIL: console.log present"
 }
 ```
+
+**Design lane.** Invoke `Skill({ skill: "blitz:check", args: "--only design" })` once (scope `diff`, read-only, no inline greps). It prints the `DESIGN_LANE_STATUS` preflight line first, then the `design-*` findings ranked by `effective_confidence`. The gate fails on any finding on `design-raw-color-literal`, `design-overused-font-static` or `design-overused-font`, and on any P0 to P2 finding on another `design-*` row; P3 findings on the remaining rows are advisory and go into the Phase 5.4 critique prompt. `DESIGN_LANE_UNAVAILABLE` means the semantic (impeccable) rows did not run: the deterministic rows still gate, and the reduced coverage is stated to the user and in the 5.4.2 prompt, never counted as a pass.
 
 Fix all failures before Phase 5. Maximum 3 fix iterations.
 
@@ -191,9 +184,9 @@ Every data-displaying component MUST handle four states, checked in this order (
 ```
 
 Code quality gates:
-- No component over 300 lines — extract sub-components
-- No `any` types — use proper interfaces
-- No hardcoded colors — use design tokens only
+- No component over 300 lines; extract sub-components
+- No `any` types; use proper interfaces
+- No hardcoded colors; use design tokens only
 - No new layout wrappers if project has existing ones
 - No `!important` overrides
 - All user-facing strings extractable (no buried literals in template logic)
@@ -251,14 +244,14 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 ## Critical Anti-Patterns (NEVER DO THESE)
 
-1. **Never hardcode hex/rgb colors** — use design tokens (CSS vars, Tailwind classes, framework theme).
-2. **Never ship fewer than three states on data views** — loading skeleton, empty, error, populated. No exceptions.
-3. **Never use `any` type** — use proper interfaces; `unknown` + type guards; `Record<string, unknown>` for truly dynamic objects.
-4. **Never invent new layout wrappers** — use `<AppLayout>`, `<PageContainer>`, `<q-page>`, or whatever the project provides.
-5. **Never ship a component over 300 lines** — extract sub-components.
-6. **Never fight the UI framework** — no `!important`, no CSS counteracting framework defaults. Use the correct prop, slot, or theme config.
-7. **Never skip the discovery phase** — building without understanding existing patterns guarantees inconsistency.
-8. **Never assume desktop-only** — every layout decision must account for mobile from the start.
+1. **Never hardcode hex/rgb colors**: use design tokens (CSS vars, Tailwind classes, framework theme).
+2. **Never ship fewer than three states on data views**: loading skeleton, empty, error, populated. No exceptions.
+3. **Never use `any` type**: use proper interfaces; `unknown` + type guards; `Record<string, unknown>` for truly dynamic objects.
+4. **Never invent new layout wrappers**: use `<AppLayout>`, `<PageContainer>`, `<q-page>`, or whatever the project provides.
+5. **Never ship a component over 300 lines**: extract sub-components.
+6. **Never fight the UI framework**: no `!important`, no CSS counteracting framework defaults. Use the correct prop, slot, or theme config.
+7. **Never skip the discovery phase**: building without understanding existing patterns guarantees inconsistency.
+8. **Never assume desktop-only**: every layout decision must account for mobile from the start.
 
 ---
 
@@ -266,7 +259,7 @@ Full framework-specific recipe detail (Tailwind / Quasar / Vuetify): [references
 
 Every component and function must be fully implemented. See [Definition of Done](/_shared/quality.md).
 
-**BANNED PATTERNS** — if any appear, the work is not done:
+**BANNED PATTERNS** (if any appear, the work is not done):
 
 - `return {}` / `return []` / `return null` as placeholder returns
 - `throw new Error('Not implemented')` / `throw new Error('TODO')`
