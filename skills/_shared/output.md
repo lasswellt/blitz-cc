@@ -42,7 +42,7 @@ Speak technical-first, filler-free. Format preferred: `[subject] [verb] [reason]
 | `full` | Fragments allowed; articles dropped; telegraphic | Agent-to-main-thread reports; verification summaries |
 | `ultra` | Maximum compression; symbol shorthand allowed | Internal checkpoint markers; bulk status lines |
 
-Skills SHOULD declare an intended level in their SKILL.md frontmatter (`output_intensity: lite|full|ultra`). Default when unspecified: `lite`.
+A skill that wants a level other than the default names it in its body (`audit` opens with a `Terse exemptions (LITE intensity)` line; a spawn template's `Output:` line names the level for the agent), or the operator sets `BLITZ_OUTPUT_INTENSITY` for a run. No frontmatter field carries it and the skill validator knows none. Default when nothing names a level: `lite`.
 
 ---
 
@@ -50,10 +50,9 @@ Skills SHOULD declare an intended level in their SKILL.md frontmatter (`output_i
 
 This is an **advisory convention the main thread follows when interpolating** the active intensity into a spawn prompt — NOT a deterministic resolver read by any hook or script. When assembling the `Output:` line for an Agent() spawn or skill invocation, consult these sources in order and use the first one present:
 
-1. **Environment variable:** `BLITZ_OUTPUT_INTENSITY=lite|full|ultra` — session-scoped override, typically set for one `/loop` or `next --loop` run.
-2. **Skill frontmatter:** `output_intensity: lite|full|ultra` in the SKILL.md frontmatter — per-skill declaration.
-3. **Output-style field:** the legacy `output_style:` frontmatter field (treated as an alias of `output_intensity`).
-4. **Default:** `lite`.
+1. **Environment variable:** `BLITZ_OUTPUT_INTENSITY=lite|full|ultra`, a session-scoped override, typically set for one `/loop` or `next --loop` run.
+2. **Skill body:** the level the invoking skill names in its body (a `Terse exemptions (<LEVEL> intensity)` line, or the level written into its spawn template's `Output:` line).
+3. **Default:** `lite`.
 
 The chosen intensity is what gets substituted into the spawn `Output:` line when agents spawn (see [agents.md](/_shared/agents.md)). Because resolution is model-followed rather than coded, treat the ordering as a strong recommendation, not a guaranteed runtime contract.
 

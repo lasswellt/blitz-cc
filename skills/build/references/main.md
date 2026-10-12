@@ -180,16 +180,30 @@ Commit `feat(<slug>/integration): wiring pass`.
 
 Used by SKILL.md §P.7 fix rounds (and by §T.4 when a task's `verify[]` is slow).
 
+Every command below resolves from the toolchain table (`bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run <lane> [file]`), one row per detected stack; the `{"id","stack","exit"}` line on stderr is the verdict, the script itself always exits 0.
+
 | Check | Re-run strategy |
 |---|---|
-| Type-check | always full — type errors cascade |
-| Build | always full — build errors cascade |
-| Tests | changed packages only: `scripts/test-selector.sh --base <base>` → `npx vitest run --reporter=dot <selected>` |
-| Lint | modified files only: `npx eslint <modified-files>` |
+| Type-check | always full: `toolchain.sh run typecheck` (type errors cascade) |
+| Build | always full: `toolchain.sh run build` (build errors cascade) |
+| Tests | `node`: `test-selector.sh --base <base>` → `npx vitest run --reporter=dot <selected>`; every other stack: `toolchain.sh run test` once (the selector knows vitest/jest only) |
+| Lint | modified files only: `toolchain.sh run lint <file>` per file (the lane's rows take `{file}`; a whole-tree row such as `cargo clippy` or `go vet` runs once) |
 
 Order inside a round: types → imports → logic → tests. Commit each round `fix(<slug>): integration round <n>` with a `Task: <slug>/integration` trailer. Round 5 (or the last round taken) always gets one full sweep to catch cross-package regressions. Print the saving when it exists (`full 45s → selective 12s`).
 
 Pre-existing tests that turn red are **Critical** and outrank new-test failures: round 1 decides whether the behavior change was intended (update the old test) or not (fix the new code); round 2 unresolved → `Ruling: defer — <test> regression needs a human` and `BLOCKED:`.
+
+---
+
+## Gate commands
+
+SKILL.md §Gate builds `gate.json` from the toolchain table so the Stop hook runs the checkers `check` runs, and `build` names no tool itself:
+
+- `toolchain.sh stacks` lists the detected stacks. `toolchain.sh resolve <lane> "" <stack>` prints the one row that resolves for that stack (table order, `.blitz-toolchain.json` `prefer`/`disable` honoured, probe run), or nothing.
+- The row's `cmd` argv is joined into the `cmd` string `stop-gate.sh` hands to `bash -c`. A row carrying `{file}` is a per-file checker (`deno check <file>`) and cannot gate a tree, so it is left out and the lane counts as skipped for that stack.
+- `typecheck` (180 s) and `test` (300 s) are the lanes armed; `lint` and `build` stay with `check` and the §P.7 sweep.
+- `node` is the one stack with a selector: `test-selector.sh` returns the impacted vitest/jest files and the check is `npx vitest run --reporter=dot <selected>`; an empty selection arms no test check for `node`. Every other stack runs its table `test` row in full.
+- No row for any lane → `CHECKS` is `[]` and nothing is written; the gate never blocks on a checker the project does not have.
 
 ---
 
@@ -218,9 +232,9 @@ No agents, no plan. Do the work on the main thread.
 
 1. Parse the request into exactly what changes.
 2. Locate the target files. More than 5 → stop, say so, suggest `/blitz:plan "<change>"`.
-3. Baseline type-check so pre-existing errors are known:
+3. Baseline type-check so pre-existing errors are known (one row per detected stack; the `{"id","stack","exit"}` line on stderr carries the status, the script itself always exits 0):
    ```bash
-   npm run type-check 2>&1 | tail -5
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" run typecheck 2>&1 | tail -5
    ```
 
 ### I.1 `--issue N` (prepended when present)
@@ -255,8 +269,9 @@ Edit the files directly, following existing patterns. Only what was asked: no ad
 ### I.3 Verify
 
 ```bash
-npm run type-check 2>&1 | tail -10
-npm run test -- --run <matching-test-file> 2>&1 | tail -15    # when a matching test exists
+TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"
+bash "$TC" run typecheck 2>&1 | tail -10
+bash "$TC" run test 2>&1 | tail -15     # when a matching test exists; on node, `npx vitest run <matching-test-file> --reporter=dot` scopes the run to that file
 ```
 
 On failure fix and re-run, **max 3 attempts**, then report the failure and stop (feed `verification {command, result}` each run). Commit when the change is complete or the user asked:
@@ -366,13 +381,14 @@ Fall back to sequential, with the reason printed, when any of these fails: `work
 
 ### T.1 Baseline and conventions (once per invocation)
 
-1. Inventory: `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -30`; read the root `package.json` and workspace config.
-2. Build health; catalog pre-existing errors so agents are not blamed for them:
+1. Inventory: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh" stacks` and `… lanes` (Project Context prints the same `lane:row-id` pairs); read each stack's root manifest (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, …) and any workspace config. On a JS/TS monorepo, `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -30` maps the packages.
+2. Build health; catalog pre-existing errors so agents are not blamed for them. Each lane runs once per detected stack; the `{"id","stack","exit"}` line on stderr is the verdict (the script itself always exits 0):
    ```bash
-   npm run type-check 2>&1 | tail -20
-   npm run build 2>&1 | tail -20
+   TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"
+   bash "$TC" run typecheck 2>&1 | tail -20
+   bash "$TC" run build 2>&1 | tail -20
    ```
-   **Gate:** build succeeds or pre-existing errors are cataloged before any spawn.
+   **Gate:** every resolving lane is green or its pre-existing errors are cataloged before any spawn. A stack with no row for a lane is recorded `skipped`, never green (the rule `check` applies in its §1.1 Gates).
 3. Conventions: read 2-3 representative files per layer the plan touches (backend, stores, components, tests). Note auth pattern, error format, response envelope, validation, component style, store pattern, loading UI, test structure, naming. List reusable assets (`composables/`, `utils/`, `shared/`, `components/base/`) as **REUSE THESE — do not recreate**. This block goes verbatim into every spawn prompt (item 3 of the spec; see this file §Spawn prompt template).
 4. Read `docs/plans/<slug>/plan.md` and the tail of `progress.md` (last 20 lines): they are the recovery map. Trust them and `git log --grep 'Task: <slug>/'` over any recollection, especially after compaction (`HANDOFF.json` names the plan, task, gate path, and never-edit list).
 
