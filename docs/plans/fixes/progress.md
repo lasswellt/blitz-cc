@@ -15,3 +15,6 @@ Ruling: loop.reference.md and next/SKILL.md row table updated on main (Tier-1 do
 ## 2026-10-12T22:10:43-04:00 verify T-005 ok=true
 ## 2026-10-12T22:10:43-04:00 build T-006 start (attempt 1)
 ## 2026-10-12T22:18:08-04:00 verify T-006 ok=true
+## 2026-10-12T22:18:08-04:00 build T-007 start (attempt 1)
+## 2026-10-12T22:19:46-04:00 verify T-007 ok=true
+Ruling: det-01 and check:test-tamper exit codes were inverted vs their contract (det-01 could never fire); rewritten and self-tested in scratch repos. CHANGED is not exported by check §1.2, rows fall back to git diff BASE...HEAD (T-007, round 1).

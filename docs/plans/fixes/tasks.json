@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:17:43Z",
+  "updated": "2026-10-13T02:19:46Z",
   "tasks": [
     {
       "id": "T-001",
@@ -363,11 +363,39 @@
           "timeout": 120
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:19:45Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "! jq -r '.checks[]|select(.id|IN(\"det-01\",\"det-05\",\"det-07\",\"det-09\",\"det-10\"))|.detection.command' skills/_shared/check-registry.json | grep -qE 'HEAD~N| src/'",
+            "exit": 0,
+            "duration_ms": 7,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:19:44Z"
+          },
+          {
+            "cmd": "jq -e . skills/_shared/check-registry.json >/dev/null",
+            "exit": 0,
+            "duration_ms": 9,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:19:44Z"
+          },
+          {
+            "cmd": "bash scripts/validate-plugin-structure.sh </dev/null",
+            "exit": 0,
+            "duration_ms": 1298,
+            "tail": "rses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/blocker-no-verify/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/blocker-no-verify/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/sessions-attention/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/sessions-attention/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/build-inline/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/build-inline/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/check-gate/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/check-gate/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/doctor-on-self/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/doctor-on-self/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/ contains 10 case(s)\n\n\u001b[0;32mPASS\u001b[0m: 281 checks passed, 0 errors, 0 warnings",
+            "recorded_at": "2026-10-13T02:19:45Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "det-01 has a literal HEAD~N; det-05/07/09/10 (stacks *) grep src/ and exit 2 without it; check:test-tamper ends in \"[ ] && echo\" so a clean run exits 1 (= finding). Use ${BLITZ_BASE:-origin/main}..HEAD, scan ${CHANGED} with a git ls-files fallback, make test-tamper exit 0 when clean per its exit contract."
     },
