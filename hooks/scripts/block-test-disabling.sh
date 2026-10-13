@@ -98,7 +98,7 @@ the escape hatch:
   it.skip('foo', () => { ... })   // blitz:skip-pinned: #1234
   @pytest.mark.skip(reason=...)   # blitz:skip-pinned: #1234
 
-The escape hatch is documented in skills/_shared/quality.md §4. Without
+The escape hatch is documented in skills/_shared/quality.reference.md §Escape hatches. Without
 the marker the edit is blocked.
 
 \`.only\` in a committed test file is almost always a debugging mistake; remove it

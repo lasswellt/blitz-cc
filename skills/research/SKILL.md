@@ -154,7 +154,7 @@ Cross-cutting findings synthesized on the main thread in Phase 2 (not peer-to-pe
 
 ### 1.6 Agent Prompt Templates
 
-The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates; paste from there into each Agent() spawn, byte-identical every time, so the subagent prompt cache hits ([agents.md](/_shared/agents.md) §1.3).
+The 4 templates share a canonical preamble (OUTPUT STYLE + BUDGET + WRITE-AS-YOU-GO + JSON reply contract). Full preamble + per-agent role text live in [`references/main.md`](references/main.md) §Agent Prompt Templates; paste from there into each Agent() spawn, byte-identical every time, so the subagent prompt cache hits ([agents.reference.md](/_shared/agents.reference.md) §11).
 
 **Templates by role** (all consume the canonical preamble):
 - `library-docs` (model: haiku). Official docs, API surface, version compat.

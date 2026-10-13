@@ -164,7 +164,7 @@
       ],
       "severity": "LOW",
       "description": "User rule prefers cheaper models than blitz defaults",
-      "fix": "Skills are model: inherit except the slash-only ship and migrate (opus), so the session model wins: prefer `claude --model sonnet`. Agents pin their own model (agents.md §1.3); CLAUDE_CODE_SUBAGENT_MODEL overrides every one of them, including the haiku collectors."
+      "fix": "Skills are model: inherit except the slash-only ship and migrate (opus), so the session model wins: prefer `claude --model sonnet`. Agents pin their own model (agents.reference.md §11); CLAUDE_CODE_SUBAGENT_MODEL overrides every one of them, including the haiku collectors."
     }
   ]
 }

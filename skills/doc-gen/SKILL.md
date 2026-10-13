@@ -164,7 +164,7 @@ mkdir -p docs/generated
 
 ### 3.2 Full Mode (Parallel Agents)
 
-If mode is `full`, spawn the three agents below in one message for parallel documentation generation (subagents, never an agent team; [agents.md](/_shared/agents.md) §1.5).
+If mode is `full`, spawn the three agents below in one message for parallel documentation generation (subagents, never an agent team; [agents.reference.md](/_shared/agents.reference.md) §12).
 
 Spawn 3 agents using `Agent(subagent_type: "general-purpose", model: "sonnet", effort: "medium", run_in_background: true, description: "doc-gen <agent-name>", prompt: <agent-prompt>)` in a **single assistant message** so they run concurrently. Substitute `<agent-name>` with the concrete name from the table below (`doc-api`, `doc-components`, `doc-architecture`).
 
@@ -207,7 +207,7 @@ Write to `docs/generated/<mode>.md`.
 
 ### 3.4 Gate after completion (Full Mode Only)
 
-Wait on the three background agents' completion notifications (never poll output files in a loop; [agents.md](/_shared/agents.md) §1.5), then check the output files once:
+Wait on the three background agents' completion notifications (never poll output files in a loop; [agents.reference.md](/_shared/agents.reference.md) §12), then check the output files once:
 
 ```bash
 MISSING_COUNT=0

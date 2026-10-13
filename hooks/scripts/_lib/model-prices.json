@@ -1,5 +1,5 @@
 {
-  "$comment": "USD per million tokens, Claude 5.5 list prices (Claude Code changelog 2.1.280 / 2.1.284 / 2.1.293 / 2.1.296; platform pricing page). Cache writes: 5-minute 1.25x input, 1-hour 2x input; cache reads 0.05x input (Opus/Sonnet 5.5 published; Haiku 5.5 read rate is not published and assumed at the same ratio). Haiku 5.5 bills a request whose input (incl. cached) exceeds long_context_threshold at long_context_multiplier on every rate. Matched by substring of the model id, first match wins. Update with skills/_shared/agents.md §1.3.",
+  "$comment": "USD per million tokens, Claude 5.5 list prices (Claude Code changelog 2.1.280 / 2.1.284 / 2.1.293 / 2.1.296; platform pricing page). Cache writes: 5-minute 1.25x input, 1-hour 2x input; cache reads 0.05x input (Opus/Sonnet 5.5 published; Haiku 5.5 read rate is not published and assumed at the same ratio). Haiku 5.5 bills a request whose input (incl. cached) exceeds long_context_threshold at long_context_multiplier on every rate. Matched by substring of the model id, first match wins. Update with skills/_shared/agents.reference.md §11.",
   "as_of": "2026-10-10",
   "models": [
     { "match": "opus",   "input": 4.00, "output": 20.00, "cache_read": 0.20,  "cache_write_5m": 5.00,  "cache_write_1h": 8.00 },

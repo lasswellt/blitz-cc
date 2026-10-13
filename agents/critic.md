@@ -27,10 +27,10 @@ tools: Read, Grep, Glob, Bash
 # role; no Write/Edit/Agent. Bash is exec+egress: keep read-only; do NOT add network/MCP egress.
 # Posture: /_shared/security.reference.md §5.
 maxTurns: 30
-# Opus per /_shared/agents.md §1.3: the adversarial verdict needs depth. check spawns
+# Opus per /_shared/agents.reference.md §11: the adversarial verdict needs depth. check spawns
 # MODE: survey with Agent({model: "sonnet"}) to override.
 model: opus
-# Effort per /_shared/agents.md §1.3; check passes effort: medium with MODE: survey.
+# Effort per /_shared/agents.reference.md §11; check passes effort: medium with MODE: survey.
 effort: high
 # Adversarial reviewers get their spec in the prompt; the consumer project CLAUDE.md must not steer
 # the verdict (Claude Code >=2.1.271). Managed policy CLAUDE.md still loads.

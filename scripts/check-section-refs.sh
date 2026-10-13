@@ -46,6 +46,15 @@ for fp in targets:
             if n not in HEAD[name] and n in REF[name]:
                 bad.append(f"{fp}:{i}: cites {name}.md §{n}, but §{n} is in {name}.reference.md")
 
+# 1b. A citation of <name>.md or <name>.reference.md whose numbered section
+# exists in neither file: a typo, a stale number, or a doubled retarget ("§44").
+for fp in targets:
+    for i, line in enumerate(open(fp).read().split("\n"), 1):
+        for m in re.finditer(r'_shared/(' + "|".join(NAMES) + r')(\.reference)?\.md\)?[^\n]{0,14}?§\s*(\d+)', line):
+            name, n = m.group(1), m.group(3)
+            if n not in HEAD[name] and n not in REF[name]:
+                bad.append(f"{fp}:{i}: cites {name}{m.group(2) or ''}.md §{n}, which exists in neither {name}.md nor {name}.reference.md")
+
 # 2. A bare "§N" inside a protocol head whose section moved to its reference.
 for n_ in NAMES:
     p = f"skills/_shared/{n_}.md"
@@ -105,13 +114,13 @@ for fp in glob.glob("skills/*/references/*.md"):
     if c > 1:
         bad.append(f"{fp}: {c} 'Moved from SKILL.md' headings; consolidate to one")
 
-# 4. A doubled or unspaced citation, the 3.2.0 retarget signature.
+# 4. An unspaced citation, the 3.2.0 retarget signature. A doubled number
+# ("§44" for "§4") is not pattern-matched: it cannot tell a retarget slip from a
+# real §11, and check 1b fails a §N that exists in neither file.
 for fp in glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md"):
     for i, line in enumerate(open(fp).read().split("\n"), 1):
         if re.search(r'\)§', line):
             bad.append(f"{fp}:{i}: ')§' needs a space before the section")
-        if re.search(r'§(\d+)\1(?![0-9])', line):
-            bad.append(f"{fp}:{i}: doubled section number")
 
 if bad:
     print(f"check-section-refs: {len(bad)} unresolved citation(s):", file=sys.stderr)

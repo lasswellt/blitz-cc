@@ -551,7 +551,7 @@ Spawn all 10 agents using the `Agent` tool, all in **a single assistant message*
 Per-spawn parameters:
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails)
 - `model: sonnet`, `effort: medium` (explicit: inheritance would run every pillar on the operator's model and effort)
-- `description: audit <agent-name>` (row label in `/tasks` and the agents view; [agents.md](/_shared/agents.md) §1.5)
+- `description: audit <agent-name>` (row label in `/tasks` and the agents view; [agents.reference.md](/_shared/agents.reference.md) §12)
 - `prompt`: the pillar prompt template from `references/main.md`, filled per the roster below
 - `run_in_background: true`
 

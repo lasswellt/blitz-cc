@@ -111,7 +111,7 @@ Compaction must not drop: the `gate` path (the Stop gate is still armed), the `n
 
 ### 8.1 Watching background work
 
-Blitz leaves progress display to Claude Code's own views; the spawn conventions that feed them are in [agents.md](/_shared/agents.md) §1.5.
+Blitz leaves progress display to Claude Code's own views; the spawn conventions that feed them are in [agents.reference.md](/_shared/agents.reference.md) §12.
 
 | Want | Use |
 |---|---|

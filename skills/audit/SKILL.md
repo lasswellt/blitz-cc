@@ -98,7 +98,7 @@ For each agent, construct the prompt using the template from `references/main.md
 
 ### 1.5 Wait for Completion
 
-Wait on the background completion notifications (never sleep or poll output files in a loop; [agents.md](/_shared/agents.md) §1.5), then run the fan-out gate ([agents.reference.md](/_shared/agents.reference.md) §4.4) once over the output files:
+Wait on the background completion notifications (never sleep or poll output files in a loop; [agents.reference.md](/_shared/agents.reference.md) §12), then run the fan-out gate ([agents.reference.md](/_shared/agents.reference.md) §4.4) once over the output files:
 ```bash
 for f in ${AUDIT_RUN}/findings/*.md; do
   [ -s "$f" ] && echo "DONE: $f" || echo "MISSING: $f"

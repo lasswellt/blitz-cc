@@ -254,7 +254,7 @@ If no specific stack detected, use generic Node.js/TypeScript patterns; note whe
 
 ## Agent Prompt Templates
 
-Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the subagent prompt cache hits on every spawn ([agents.md](/_shared/agents.md) §1.3 cost controls).
+Paste the canonical preamble at the top of every spawn prompt; append the per-agent role section. The preamble is **identical across templates** so the subagent prompt cache hits on every spawn ([agents.reference.md](/_shared/agents.reference.md) §11 cost controls).
 
 ### Canonical Preamble (paste verbatim)
 
@@ -511,7 +511,7 @@ const gapFills = await parallel(gaps.map(g => () =>
 return { found: found.map((f,i)=>({ name: args.roster[i].name, ok: f!==null, result: f })), gapFills: gapFills.filter(Boolean) }
 ```
 
-- Model and effort routing per [agents.md](/_shared/agents.md) §1.3: `codebase-analyst` → sonnet/medium, retrieval agents → haiku/medium (multi-step search; `low` skips searches), gap detection → haiku/low (single-shot classification). Labels match the Agent-path `description` units so `/workflows` and `/tasks` read the same (§1.5).
+- Model and effort routing per [agents.reference.md](/_shared/agents.reference.md) §11: `codebase-analyst` → sonnet/medium, retrieval agents → haiku/medium (multi-step search; `low` skips searches), gap detection → haiku/low (single-shot classification). Labels match the Agent-path `description` units so `/workflows` and `/tasks` read the same (§1.5).
 - `infra-analyst` included in `args.roster` only when §1.2.5 set `SPAWN_INFRA=true`.
 - Each prompt MUST embed the OUTPUT STYLE snippet (Invariant 5) + write-as-you-go rule (§1.3 step 5).
 - `null` entries = failed agents; `schema` replaces the §2.1 `classify_output()` gate. Apply the §2.1 abort threshold against the count of non-`null` results.
