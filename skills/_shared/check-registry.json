@@ -78,7 +78,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git diff --diff-filter=D --name-only HEAD~N..HEAD -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs' '*.test.tsx' '*.spec.tsx'",
+        "command": "out=$(git diff --diff-filter=D --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD -- '*.test.*' '*.spec.*' 'test_*.py' '*_test.py' '*_test.go' '*_test.rs' '*_spec.rb' '*Test.java' '*Tests.cs' '*.test.tsx' '*.spec.tsx') || exit 2; [ -z \"$out\" ] || { printf '%s\\n' \"$out\"; exit 1; }",
         "exit": {
           "pass": [
             0
@@ -208,7 +208,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rPzo '(?s)catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}' src/",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IPzo '(?s)catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}' \"$@\"",
         "exit": {
           "pass": [
             1
@@ -279,7 +279,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' src/",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' \"$@\"",
         "exit": {
           "pass": [
             1
@@ -351,7 +351,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" src/",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" \"$@\"",
         "exit": {
           "pass": [
             1
@@ -386,7 +386,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' src/",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' \"$@\"",
         "exit": {
           "pass": [
             1
@@ -901,7 +901,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\(' ; assertions_before=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); assertions_after=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$assertions_after\" -lt \"$assertions_before\" ] && echo \"assertions fell $assertions_before -> $assertions_after\"",
+        "command": "hits=$(git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\('; [ \"${PIPESTATUS[0]}\" -eq 0 ] || echo GITFAIL); [ \"$hits\" != GITFAIL ] || exit 2; b=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); a=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$a\" -lt \"$b\" ] && hits=\"$hits\"$'\\n'\"assertions fell $b -> $a\"; [ -z \"$hits\" ] || { printf '%s\\n' \"$hits\"; exit 1; }",
         "exit": {
           "pass": [
             0
