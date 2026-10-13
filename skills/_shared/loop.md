@@ -53,7 +53,7 @@ Top level: `"$schema": "blitz-tasks/1.0"`, `plan` (slug), `updated` (ISO-8601), 
 | Field | Notes |
 |---|---|
 | `files` | the only paths a `dev` may touch for this task; disjointness gates `build --parallel` |
-| `verify[]` | executable checks; `timeout` in seconds; `tasks.sh verify` runs them in order and stops at the first failure. `verify <plan> --changed <paths>` is the post-merge selective re-verify (reference §Scripts). |
+| `verify[]` | executable checks; `timeout` in seconds; `tasks.sh verify` runs them in order and stops at the first failure. `verify <plan> --changed <paths>` is the post-merge selective re-verify (reference §Scripts). `tasks.sh add-verify <plan> <id> 'cmd::timeout'` appends a check after `add`; it resets `passes` and reopens a `done` task; `tasks.sh set … depends_on=T-001,T-003` rewrites the edges (ids must exist, a cycle is refused). |
 | `passes` | written only by `tasks.sh verify`; mirrors `last_verify.ok` |
 | `last_verify.tail` | ≤200 chars of the failing command's output (evidence, not a summary) |
 | `last_verify.runs[]` | one entry per command that ran (`cmd`, `exit`, `duration_ms`, `tail` ≤2 KB, `recorded_at`); the critic adjudicates from it instead of re-running the suite (reference §`last_verify.runs[]`) |
