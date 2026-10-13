@@ -25,3 +25,7 @@ Ruling: pre-existing false negatives left for follow-up: git-clean dry-run exclu
 ## 2026-10-12T22:21:30-04:00 verify T-009 ok=true
 ## 2026-10-12T22:21:30-04:00 build T-010 start (attempt 1)
 ## 2026-10-12T22:22:54-04:00 verify T-010 ok=true
+## 2026-10-12T22:33:08-04:00 check --fix: registry det-03/06/07/09/10 fixes (6677627), research SKILL.md size (ccbc4bc)
+Ruling: reject critic over 10 tasks hit maxTurns 30 with no reply (MISSING). Re-spawned once, fresh, split into two critics (T-001..T-005, T-006..T-010) with the same inputs; both must LGTM. A 30-turn critic does not fit a 10-task plan (check, round 1).
+Ruling: check critics A and B REJECT (confirmed): heartbeat inbox rewrite loses concurrent appends (T-005); check-filed task cycle has no real bound (T-004); T-008 bound not quote-aware, force-push with a quoted ;&| before the flag allowed (regression). Fix round 4: three fresh opus devs on disjoint files.
+## 2026-10-12T22:58:31-04:00 fix round 4 merged: 4e8919b (T-008 quote-aware), b0bdeb5 (T-004 tasks.sh cap+dedupe), 3ea12e7 (T-005 inbox lock), b7831b3 (size, quotePath, pipefail)
