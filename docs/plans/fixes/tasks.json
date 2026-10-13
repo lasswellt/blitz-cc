@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:07:08Z",
+  "updated": "2026-10-13T02:08:15Z",
   "tasks": [
     {
       "id": "T-001",
@@ -144,11 +144,32 @@
           "timeout": 300
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:08:15Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'CONDITIONAL needs a ruling' scripts/next-state.sh",
+            "exit": 0,
+            "duration_ms": 4,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:08:12Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/next-state.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 2686,
+            "tail": "1..18\nok 1 row 5 when no plans exist\nok 2 row 2 with the next ready task\nok 3 row 3 when all tasks done and no check report\nok 4 row 4 when check report is a fresh PASS\nok 5 row 1 when a task is blocked on a human-only reason\nok 6 row 0 when the inbox has a pending item or the kill switch is set\nok 7 paused plans are reported and never selected; priority orders active plans\nok 8 active plans order by priority, then created, then slug; plan_priority is null off rows 2-4\nok 9 plans larger than one argv string (128 KiB) still produce state\nok 10 loop breaker: three build ticks without progress open it (row 1, before open work)\nok 11 loop breaker: a progress tick resets the no-progress run\nok 12 loop breaker: the same error five ticks running opens it even with progress\nok 13 loop breaker: a reset line discards earlier ticks; rows 0/4/5 never count\nok 14 loop breaker: a corrupt ledger line is skipped, not fatal\nok 15 row 1 when all done and the fresh check report is CONDITIONAL\nok 16 row 3 when all done and the fresh check report is FAIL\nok 17 row 3 when the CONDITIONAL report is older than the last tasks.json change\nok 18 row 0 with an inbox item still names the plan and next task",
+            "recorded_at": "2026-10-13T02:08:15Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "A CONDITIONAL report kept row 3 forever (owed-cleanups 2026-10-12). Fresh CONDITIONAL + all tasks done -> row 1, reason \"check CONDITIONAL needs a ruling: <slug>\". Row 0 keeps its decision but still fills active_plan/next_task for the report. User ruling 2026-10-12: advisories become tasks (T-004); this row is the fallback when none were fileable."
     },

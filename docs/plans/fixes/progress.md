@@ -6,3 +6,6 @@ Ruling: ship REPORT_TS keeps the old split-on-colon behaviour (ISO ts truncated 
 ## 2026-10-12T22:05:32-04:00 build T-002 start (attempt 1)
 ## 2026-10-12T22:07:08-04:00 verify T-002 ok=true
 Ruling: T-002 dev BLOCKED scope-expansion-needed: rule flagged $ARGUMENTS, used deliberately in 9 skill bodies. Spec defect: narrowed rule 13 to $<digit>; $ARGUMENTS allowed and tested as passing (T-002, round 1).
+## 2026-10-12T22:07:08-04:00 build T-003 start (attempt 1)
+## 2026-10-12T22:08:33-04:00 verify T-003 ok=true
+Ruling: loop.reference.md and next/SKILL.md row table updated on main (Tier-1 doc sync, outside T-003 files) (T-003, round 1).
