@@ -901,7 +901,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "git",
-        "command": "hits=$(git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '**/*.test.*' '**/*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\('; [ \"${PIPESTATUS[0]}\" -eq 0 ] || echo GITFAIL); [ \"$hits\" != GITFAIL ] || exit 2; b=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); a=$(git grep -c 'expect(' -- '**/*.test.*' '**/*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$a\" -lt \"$b\" ] && hits=\"$hits\"$'\\n'\"assertions fell $b -> $a\"; [ -z \"$hits\" ] || { printf '%s\\n' \"$hits\"; exit 1; }",
+        "command": "hits=$(git diff \"${BLITZ_BASE:-origin/main}\" --unified=0 -- '*.test.*' '*.spec.*' '**/__tests__/**' | grep -nE '^-.*expect\\(|^\\+.*expect\\((true|1)\\)|^\\+.*toMatchSnapshot|^\\+.*\\.(skip|only)\\(|^\\+.*xit\\('; [ \"${PIPESTATUS[0]}\" -eq 0 ] || echo GITFAIL); [ \"$hits\" != GITFAIL ] || exit 2; b=$(git grep -c 'expect(' \"${BLITZ_BASE:-origin/main}\" -- '*.test.*' '*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); a=$(git grep -c 'expect(' -- '*.test.*' '*.spec.*' | awk -F: '{s+=$NF} END {print s+0}'); [ \"$a\" -lt \"$b\" ] && hits=\"$hits\"$'\\n'\"assertions fell $b -> $a\"; [ -z \"$hits\" ] || { printf '%s\\n' \"$hits\"; exit 1; }",
         "exit": {
           "pass": [
             0
