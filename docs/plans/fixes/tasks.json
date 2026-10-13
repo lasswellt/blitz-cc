@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T03:16:53Z",
+  "updated": "2026-10-13T03:22:57Z",
   "tasks": [
     {
       "id": "T-001",
@@ -310,7 +310,7 @@
       "blocked_reason": null,
       "attempts": 0,
       "last_verify": {
-        "ts": "2026-10-13T03:16:47Z",
+        "ts": "2026-10-13T03:19:44Z",
         "ok": true,
         "failed": "",
         "tail": "",
@@ -318,23 +318,23 @@
           {
             "cmd": "grep -qE 'add-verify' scripts/tasks.sh",
             "exit": 0,
-            "duration_ms": 4,
+            "duration_ms": 5,
             "tail": "",
-            "recorded_at": "2026-10-13T03:14:40Z"
+            "recorded_at": "2026-10-13T03:17:37Z"
           },
           {
             "cmd": "grep -qE 'depends_on\\)' scripts/tasks.sh",
             "exit": 0,
             "duration_ms": 5,
             "tail": "",
-            "recorded_at": "2026-10-13T03:14:40Z"
+            "recorded_at": "2026-10-13T03:17:37Z"
           },
           {
             "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/tasks.bats </dev/null",
             "exit": 0,
-            "duration_ms": 126983,
+            "duration_ms": 126899,
             "tail": "ircuit breaker\nok 11 next returns the first open task whose dependencies are done\nok 12 set rejects passes/last_verify and unknown keys\nok 13 set status=open attempts=0 unblocks a circuit-breaker task (breaker skipped on explicit status)\nok 14 list --status and --json filter and emit an array\nok 15 add rejects an unknown origin and accepts learn and issue:N\nok 16 add --origin check refuses a duplicate title (case and whitespace insensitive)\nok 17 add --origin check refuses a title an origin plan task already carries\nok 18 add --origin plan still accepts a duplicate title\nok 19 add --origin check refuses the 9th check task by default, any status\nok 20 add --origin check honours BLITZ_CHECK_TASK_CAP\nok 21 verify records per-command evidence on success\nok 22 verify records the failing command's evidence and stops there\nok 23 verify evidence tail is capped\nok 24 every deterministic registry row carries an exit contract or is prose\nok 25 a grep-tailed detector passes on exit 1, not exit 0\nok 26 counter rows take their verdict from stdout, not the exit code\nok 27 verify --changed re-verifies only tasks whose files the paths touch\nok 28 verify --changed catches a break that survived a clean merge\nok 29 verify --changed matches by directory prefix in both directions\nok 30 verify --changed is a no-op when no done task owns the paths\nok 31 verify --changed with no paths is a usage error\nok 32 list --status accepts only the loop.md status enum\nok 33 writes stage their temp file beside tasks.json without GNU mktemp -p\nok 34 verify honors the per-check timeout without a timeout binary\nok 35 verify without a timeout binary keeps the command's own exit code\nok 36 set depends_on sets and clears\nok 37 set depends_on rejects an unknown id and a self-dependency\nok 38 set depends_on rejects a cycle and leaves the file unchanged\nok 39 add-verify appends entries and resets passes\nok 40 add-verify on a done task reopens it\nok 41 add-verify rejects missing and empty commands, unknown task",
-            "recorded_at": "2026-10-13T03:16:47Z"
+            "recorded_at": "2026-10-13T03:19:44Z"
           }
         ]
       },
@@ -368,7 +368,7 @@
       "blocked_reason": null,
       "attempts": 0,
       "last_verify": {
-        "ts": "2026-10-13T03:16:49Z",
+        "ts": "2026-10-13T03:19:45Z",
         "ok": true,
         "failed": "",
         "tail": "",
@@ -376,23 +376,23 @@
           {
             "cmd": "! jq -r '.checks[]|select(.id|IN(\"det-01\",\"det-05\",\"det-07\",\"det-09\",\"det-10\"))|.detection.command' skills/_shared/check-registry.json | grep -qE 'HEAD~N| src/'",
             "exit": 0,
-            "duration_ms": 7,
+            "duration_ms": 8,
             "tail": "",
-            "recorded_at": "2026-10-13T03:16:47Z"
+            "recorded_at": "2026-10-13T03:19:44Z"
           },
           {
             "cmd": "jq -e . skills/_shared/check-registry.json >/dev/null",
             "exit": 0,
-            "duration_ms": 8,
+            "duration_ms": 9,
             "tail": "",
-            "recorded_at": "2026-10-13T03:16:47Z"
+            "recorded_at": "2026-10-13T03:19:44Z"
           },
           {
             "cmd": "bash scripts/validate-plugin-structure.sh </dev/null",
             "exit": 0,
-            "duration_ms": 1323,
+            "duration_ms": 1297,
             "tail": "rses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/case.yaml parses (schema_version + name present)\n  \u001b[0;32mPASS\u001b[0m: evals/blocker-no-verify/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/blocker-no-verify/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/sessions-attention/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/sessions-attention/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/build-inline/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/build-inline/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/check-gate/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/check-gate/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/doctor-on-self/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/doctor-on-self/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/next-suggests-build/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/polyglot-ratchet/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/tasks-guard/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/critic-false-block/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/prompt.md has a prompt body\n  \u001b[0;32mPASS\u001b[0m: evals/spec-conflict-canary/prompt.md frontmatter parses\n  \u001b[0;32mPASS\u001b[0m: evals/ contains 10 case(s)\n\n\u001b[0;32mPASS\u001b[0m: 281 checks passed, 0 errors, 0 warnings",
-            "recorded_at": "2026-10-13T03:16:49Z"
+            "recorded_at": "2026-10-13T03:19:45Z"
           }
         ]
       },
@@ -416,6 +416,10 @@
         {
           "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git.bats </dev/null",
           "timeout": 300
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git-parity.bats </dev/null",
+          "timeout": 600
         }
       ],
       "passes": true,
@@ -423,7 +427,7 @@
       "blocked_reason": null,
       "attempts": 0,
       "last_verify": {
-        "ts": "2026-10-13T03:16:52Z",
+        "ts": "2026-10-13T03:22:57Z",
         "ok": true,
         "failed": "",
         "tail": "",
@@ -431,16 +435,23 @@
           {
             "cmd": "grep -qF '[^;&|]' hooks/scripts/block-destructive-git.sh",
             "exit": 0,
-            "duration_ms": 4,
+            "duration_ms": 5,
             "tail": "",
-            "recorded_at": "2026-10-13T03:16:49Z"
+            "recorded_at": "2026-10-13T03:22:50Z"
           },
           {
             "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git.bats </dev/null",
             "exit": 0,
-            "duration_ms": 3414,
+            "duration_ms": 3425,
             "tail": "dirty)\nok 9 blocks git clean with --no-pager global flag (dirty)\nok 10 blocks git checkout . without -- (dirty)\nok 11 blocks git restore . (dirty)\nok 12 allows git clean -fdn (dry-run) even when dirty\nok 13 allows git restore --staged . (unstage, not discard)\nok 14 allows git branch -D on a different branch while on main\nok 15 allows push piped to tail followed by rm -f (flag is in another command)\nok 16 allows push to main followed by git clean -fd on a clean tree\nok 17 blocks git push -f origin main (same command)\nok 18 blocks git push origin main --force (flag after branch)\nok 19 blocks git push --force-with-lease origin main\nok 20 allows push origin HEAD && rm -f tmp\nok 21 allows git -c x=y status (global flag, benign verb)\nok 22 blocks push with ';' inside a quoted push-option, then force\nok 23 blocks push with '|' inside a quoted -o, force after branch\nok 24 blocks push with quoted '--force' flag\nok 25 blocks push with '&' inside a double-quoted -o, then -f\nok 26 blocks force-push in a command longer than the 8 KiB scan cap\nok 27 blocks push: redirection 2>&1 before trailing force\nok 28 blocks push: redirection 2>&1 before force and refspec\nok 29 blocks push: redirection 1>&2 before -f\nok 30 blocks push: clobber redirection >| before force\nok 31 blocks push: ANSI-C quoted option holding ;\nok 32 blocks push: quoted command substitution holding ;\nok 33 blocks push: bare command substitution holding ;\nok 34 blocks push: backtick substitution holding ;\nok 35 blocks push: parameter expansion holding ;\nok 36 blocks push: arithmetic expansion holding |\nok 37 blocks push: second push in an && chain is itself forced\nok 38 blocks push: newline inside a quoted option\nok 39 blocks push: backslash-newline continuation before force\nok 40 blocks reset: redirection 2>&1 before --hard (dirty)\nok 41 blocks reset: command substitution holding ; before --hard (dirty)\nok 42 allows push to main piped to cat -f (pipe is a break)\nok 43 allows push to main then rm -f on the next line",
-            "recorded_at": "2026-10-13T03:16:52Z"
+            "recorded_at": "2026-10-13T03:22:54Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git-parity.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 2724,
+            "tail": "1..26\nok 1 parity: function wrapper defined in the same line\nok 2 parity: function keyword wrapper\nok 3 parity: alias wrapper\nok 4 parity: git -C . push --force\nok 5 parity: command git push --force\nok 6 parity: exec git push --force\nok 7 parity: eval git push --force\nok 8 parity: xargs supplies the flag\nok 9 parity: env prefix\nok 10 parity: +refspec force\nok 11 parity: |& after the flag\nok 12 parity: &> redirection after the flag\nok 13 parity: &> redirection before the flag\nok 14 parity: quoted ; adjacent to the flag\nok 15 parity: tab before the flag\nok 16 parity: repeated spaces\nok 17 parity: --force-with-lease=ref\nok 18 parity: double-quoted break then flag\nok 19 parity: break inside a subshell group\nok 20 parity: brace group\nok 21 parity: semicolon inside an assignment value\nok 22 parity: 2>&1 then pipe then flag in the same push\nok 23 parity: reset --hard via git -C\nok 24 parity: reset --hard via command\nok 25 parity: reset with redirection before --hard\nok 26 parity: reset --hard after a quoted ;",
+            "recorded_at": "2026-10-13T03:22:57Z"
           }
         ]
       },
@@ -470,7 +481,7 @@
       "blocked_reason": null,
       "attempts": 0,
       "last_verify": {
-        "ts": "2026-10-13T03:16:52Z",
+        "ts": "2026-10-13T03:19:49Z",
         "ok": true,
         "failed": "",
         "tail": "",
@@ -480,14 +491,14 @@
             "exit": 0,
             "duration_ms": 105,
             "tail": "check-section-refs: OK",
-            "recorded_at": "2026-10-13T03:16:52Z"
+            "recorded_at": "2026-10-13T03:19:49Z"
           },
           {
             "cmd": "grep -qE 'references/main' scripts/check-section-refs.sh",
             "exit": 0,
-            "duration_ms": 6,
+            "duration_ms": 5,
             "tail": "",
-            "recorded_at": "2026-10-13T03:16:52Z"
+            "recorded_at": "2026-10-13T03:19:49Z"
           }
         ]
       },
@@ -520,7 +531,7 @@
       "blocked_reason": null,
       "attempts": 0,
       "last_verify": {
-        "ts": "2026-10-13T03:16:53Z",
+        "ts": "2026-10-13T03:19:49Z",
         "ok": true,
         "failed": "",
         "tail": "",
@@ -528,16 +539,16 @@
           {
             "cmd": "grep -qE 'name-only' skills/next/references/main.md",
             "exit": 0,
-            "duration_ms": 4,
+            "duration_ms": 5,
             "tail": "",
-            "recorded_at": "2026-10-13T03:16:52Z"
+            "recorded_at": "2026-10-13T03:19:49Z"
           },
           {
             "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
             "exit": 0,
-            "duration_ms": 60,
+            "duration_ms": 65,
             "tail": "markdown-link-validate: OK (498 link(s) checked)",
-            "recorded_at": "2026-10-13T03:16:52Z"
+            "recorded_at": "2026-10-13T03:19:49Z"
           }
         ]
       },
