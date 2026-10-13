@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:05:23Z",
+  "updated": "2026-10-13T02:07:08Z",
   "tasks": [
     {
       "id": "T-001",
@@ -89,11 +89,39 @@
           "timeout": 300
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:07:08Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'substitut' hooks/scripts/skill-frontmatter-validate.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:07:06Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 805,
+            "tail": "[skill-frontmatter-validate.sh] cumulative skill descriptions = 6152 chars (<= 8000 budget guard)\n[skill-frontmatter-validate.sh] OK: 21 SKILL.md files conform",
+            "recorded_at": "2026-10-13T02:07:07Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/skill-frontmatter-validate.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 1064,
+            "tail": "1..6\nok 1 a clean fixture skill passes\nok 2 awk print $2 in the body fails naming the line\nok 3 a price like $0.10 in the body fails\nok 4 $ARGUMENTS in the body passes (deliberate prose substitution)\nok 5 $1 in the frontmatter only passes\nok 6 ${VAR} and $VAR pass",
+            "recorded_at": "2026-10-13T02:07:08Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "New rule: a SKILL.md body (after frontmatter) containing $[0-9] or $ARGUMENTS fails --all with file:line and the reason (load-time argument substitution). Bats: a fixture with awk {print $2} fails; one without passes."
     },
