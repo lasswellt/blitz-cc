@@ -5,14 +5,18 @@
 #   {
 #     "row": 0..5,                 // decision row per loop.md; tie-break 0 > 1 > 2 > 3 > 4 > 5
 #     "reason": "<one line>",
-#     "active_plan": "<slug>|null", "plan_priority": N|null (rows 2-4 only),
+#     "active_plan": "<slug>|null", "plan_priority": N|null (rows 2-4; row 0 fills both, and next_task,
+#                                   with what rows 2-4 would pick, informational; kill switch keeps null),
 #     "next_task": {id,title,role,files,verify,attempts} | null,
 #     "in_progress": [id...], "blocked": [{plan,id,reason}], "escalate": [{plan,id,reason}],
 #     "paused_plans": [slug...], "done_plans_unarchived": [slug...],
-#     "check_stale": bool, "check_result": "PASS|CONDITIONAL|FAIL|none",
+#     "check_stale": bool (report older than last tasks.json change; independent of result), "check_result": "PASS|CONDITIONAL|FAIL|none",
 #     "inbox_pending": N, "sessions_waiting": N, "kill_switch": bool,
 #     "loop_breaker": {open, reason, no_progress, same_error}
 #   }
+#
+# Row 1 also fires for a fresh CONDITIONAL check report with every task done (needs a human ruling);
+# a fresh FAIL stays row 3 so check --fix retries (the breaker caps it).
 #
 # Loop circuit breaker (row 1): reads .cc-sessions/loop-ticks.jsonl, one line per
 # `next --loop` tick ({row, plan, task, progress, error}), written by next Phase 4.
@@ -100,7 +104,9 @@ if [ -d "$PLANS_DIR" ]; then
     updated=$(jq -r '.updated // ""' "$d/tasks.json" 2>/dev/null)
     rts=$(fm_field "$d/check-report.md" ts)
     stale=true
-    if [ "$result" = "PASS" ] && [ -n "$rts" ] && [ ! "$rts" \< "$updated" ]; then stale=false; fi
+    # stale = freshness only (report older than the last tasks.json change, or no ts);
+    # the result (PASS|CONDITIONAL|FAIL) is judged separately in the decision block.
+    if [ -n "$rts" ] && [ ! "$rts" \< "$updated" ]; then stale=false; fi
     row=$(jq -c --arg slug "$slug" --arg status "$status" --argjson prio "$prio" --arg created "$created" --arg result "$result" --argjson stale "$stale" '
       {slug:$slug, status:$status, priority:$prio, created:$created, check_result:$result, check_stale:$stale,
        tasks:.tasks,
@@ -120,8 +126,13 @@ printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson wa
   | ([$active[] | .blocked[] as $b | {plan:.slug, id:$b.id, reason:$b.reason}]) as $blocked
   | ([$blocked[] | select(.reason | IN("hard_spec","oracle-underivable","test-assertion-suspect"))]) as $escalate
   | ([$active[] | select((.in_progress | length) > 0 or (.open_ready | length) > 0)] | .[0]) as $work
-  | ([$active[] | select(.all_done and .check_stale)] | .[0]) as $needs_check
+  | ([$active[] | select(.all_done and (.check_stale | not) and .check_result == "CONDITIONAL")] | .[0]) as $ruling
+  | ([$active[] | select(.all_done and (.check_stale or (.check_result | IN("PASS","CONDITIONAL") | not)))] | .[0]) as $needs_check
   | ([$active[] | select(.all_done and (.check_stale | not) and .check_result == "PASS")] | .[0]) as $verified
+  | ($work // $needs_check // $verified // $ruling) as $pick
+  | (if $work == null then null
+     elif ($work.in_progress | length) > 0 then ($work.tasks[] | select(.id == $work.in_progress[0]) | {id,title,role,files,verify,attempts})
+     else $work.open_ready[0] end) as $work_task
   | {
       kill_switch: $kill, inbox_pending: $inbox, sessions_waiting: $waiting,
       paused_plans: [$plans[] | select(.status=="paused") | .slug],
@@ -129,11 +140,13 @@ printf '%s' "$plans_rows" | jq -sc --argjson inbox "$inbox_pending" --argjson wa
       blocked: $blocked, escalate: $escalate, loop_breaker: $breaker
     }
   | if $kill then . + {plan_priority:null, row:0, reason:"kill switch .cc-sessions/STOP present", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
-    elif ($inbox > 0 or $waiting > 0) then . + {plan_priority:null, row:0, reason:"inbox pending or a session is waiting for input", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
+    elif ($inbox > 0 or $waiting > 0) then . + {plan_priority:null, row:0, reason:"inbox pending or a session is waiting for input",
+          active_plan:($pick.slug // null), plan_priority:($pick.priority // null), next_task:$work_task, in_progress:[], check_stale:false, check_result:"none"}
     elif ($escalate | length) > 0 then . + {plan_priority:null, row:1, reason:"blocked task needs a human: \($escalate[0].plan)/\($escalate[0].id) (\($escalate[0].reason))", active_plan:$escalate[0].plan, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
     elif $breaker.open then . + {plan_priority:null, row:1, reason:"loop circuit breaker: \($breaker.reason)", active_plan:null, next_task:null, in_progress:[], check_stale:false, check_result:"none"}
+    elif $ruling != null then . + {plan_priority:$ruling.priority, row:1, reason:"check CONDITIONAL needs a ruling: \($ruling.slug)", active_plan:$ruling.slug, next_task:null, in_progress:[], check_stale:false, check_result:"CONDITIONAL"}
     elif $work != null then . + {row:2, reason:"open work in \($work.slug)", active_plan:$work.slug, plan_priority:$work.priority,
-          next_task:(if ($work.in_progress | length) > 0 then ($work.tasks[] | select(.id == $work.in_progress[0]) | {id,title,role,files,verify,attempts}) else $work.open_ready[0] end),
+          next_task:$work_task,
           in_progress:$work.in_progress, check_stale:$work.check_stale, check_result:$work.check_result}
     elif $needs_check != null then . + {row:3, reason:"all tasks done in \($needs_check.slug); check report missing, stale, or not PASS", active_plan:$needs_check.slug, plan_priority:$needs_check.priority, next_task:null, in_progress:[], check_stale:true, check_result:$needs_check.check_result}
     elif $verified != null then . + {row:4, reason:"\($verified.slug) verified PASS; mark done, learn, archive; ship is slash-only", active_plan:$verified.slug, plan_priority:$verified.priority, next_task:null, in_progress:[], check_stale:false, check_result:"PASS"}

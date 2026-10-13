@@ -131,3 +131,34 @@ tick() {  # tick <row> <progress> <error>
   ns; [ "$status" -eq 0 ]
   printf '%s' "$output" | jq -e '.loop_breaker.no_progress == 1'
 }
+
+done_plan() { spec demo active; bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" >/dev/null; bash "$TASKS" verify demo T-001 >/dev/null; }
+
+@test "row 1 when all done and the fresh check report is CONDITIONAL" {
+  done_plan
+  printf -- '---\nresult: CONDITIONAL\nts: 2999-01-01T00:00:00Z\n---\n' > "$BLITZ_PLANS_DIR/demo/check-report.md"
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "1" ]
+  [ "$(printf '%s' "$output" | jq -r .reason)" = "check CONDITIONAL needs a ruling: demo" ]
+  [ "$(printf '%s' "$output" | jq -r .active_plan)" = "demo" ]
+}
+
+@test "row 3 when all done and the fresh check report is FAIL" {
+  done_plan
+  printf -- '---\nresult: FAIL\nts: 2999-01-01T00:00:00Z\n---\n' > "$BLITZ_PLANS_DIR/demo/check-report.md"
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "3" ]
+}
+
+@test "row 3 when the CONDITIONAL report is older than the last tasks.json change" {
+  done_plan
+  printf -- '---\nresult: CONDITIONAL\nts: 2000-01-01T00:00:00Z\n---\n' > "$BLITZ_PLANS_DIR/demo/check-report.md"
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "3" ]
+}
+
+@test "row 0 with an inbox item still names the plan and next task" {
+  spec demo active
+  bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" >/dev/null
+  echo '{"ts":"t","id":"inb-1","kind":"needs_input","status":"pending","text":"x"}' > "$FAKE_REPO/.cc-sessions/inbox.jsonl"
+  ns; [ "$(printf '%s' "$output" | jq -r .row)" = "0" ]
+  [ "$(printf '%s' "$output" | jq -r .active_plan)" = "demo" ]
+  [ "$(printf '%s' "$output" | jq -r .next_task.id)" = "T-001" ]
+}
