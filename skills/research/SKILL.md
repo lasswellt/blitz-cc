@@ -105,7 +105,7 @@ fi
 [ "$SPAWN_INFRA" = false ] && echo "[research] infra-analyst skipped (no cloud/infra detected; set BLITZ_RESEARCH_FORCE_INFRA=1 to override)" >&2
 ```
 
-Saves roughly USD 0.10 per run on about 40% of runs.
+Saves about USD 0.10 per run on ~40% of runs.
 
 ### 1.2.6 Select Dispatch Mode (capability gate)
 
@@ -184,7 +184,7 @@ Every agent reply is classified before it enters synthesis; an unclassified repl
 
 ### 2.2 Summarize Each Agent File (Haiku, token saving)
 
-Compress via Haiku summarization-on-read before synthesis (saves roughly USD 0.26 per run on ~100K tokens):
+Compress via Haiku summarization-on-read before synthesis (saves ~USD 0.26 per run on ~100K tokens):
 
 ```bash
 for f in "${EXPECTED_OUTPUTS[@]}"; do
