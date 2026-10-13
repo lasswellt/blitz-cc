@@ -1,0 +1,50 @@
+{
+  "$schema": "blitz-check-report/1.0",
+  "result": "CONDITIONAL",
+  "ts": "2026-10-12T21:52:08-04:00",
+  "ref": "030d69cc2442505e4013d363fa3176226c8691c1",
+  "scope": "plan",
+  "plan": "owed-cleanups",
+  "stacks": [],
+  "lanes": {
+    "deterministic": {
+      "selected": 19,
+      "ran": 17,
+      "pass": 17,
+      "finding": 0,
+      "error": 0
+    },
+    "semantic": {
+      "selected": 0,
+      "ran": 0,
+      "pass": 0,
+      "finding": 0,
+      "error": 0
+    }
+  },
+  "findings": [
+    {
+      "id": "critic-advisory",
+      "severity": "P3",
+      "where": "scripts/check-section-refs.sh",
+      "what": "check 1b covers only _shared/<NAME> forms"
+    },
+    {
+      "id": "critic-advisory",
+      "severity": "P3",
+      "where": "skills/next/references/main.md",
+      "what": "row 3 gate arms no lint: node/python lint rows are per-file {file}"
+    }
+  ],
+  "cannot_verify": [
+    "mods/blitz-guard bun tests (harness-only module)"
+  ],
+  "critic": {
+    "mode": "reject",
+    "verdict": "LGTM"
+  },
+  "tasks": {
+    "verified": 4,
+    "failed": 0
+  }
+}

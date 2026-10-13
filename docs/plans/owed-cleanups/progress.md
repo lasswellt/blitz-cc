@@ -13,3 +13,6 @@ Ruling: bats mise shim has no version on this host; verify ran with a PATH shim 
 Ruling: T-002 dev BLOCKED scope-expansion-needed on scripts/check-section-refs.sh (same §11 false positive as T-003). Valid: main thread replaced the doubled-number arm with check 1b (numbered §N must exist in head or reference); 1b surfaced 3 stale quality.md §4 citations in two hooks, fixed (T-002, round 1).
 ## 2026-10-12T21:16:49-04:00 build T-004 start (attempt 1)
 ## 2026-10-12T21:17:44-04:00 verify T-004 ok=true
+## 2026-10-12T21:38:30-04:00 check REJECT (critic held-out T-002: stale agents.md §1.3/§1.5 cites in README, mods/blitz-guard, evals); fixed in b07d244 under --fix
+## 2026-10-12T21:44:55-04:00 check REJECT round 2 (research/references/main.md:514 short-form §1.5); fixed in 030d69c
+## 2026-10-12T21:52:08-04:00 check CONDITIONAL check-report.md
