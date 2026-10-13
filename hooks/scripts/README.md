@@ -30,7 +30,7 @@ Hooks require bash on the host (Git Bash or WSL on native Windows). Without it n
 | `post-edit-format.sh` | `PostToolUse` `Write\|Edit` | prettier/biome format, then eslint/biome lint on code files; remaining lint output returned as context |
 | `post-edit-test.sh` | `PostToolUse` `Write\|Edit` | records the edited path in `sessions/<sid>/touched.txt` for the heartbeat's test selection |
 | `skill-frontmatter-validate.sh --all`, `agent-frontmatter-validate.sh --all` | `PostToolUse` `Write\|Edit` (async) | authoring-contract lint for `skills/**/SKILL.md` and `agents/*.md` |
-| `heartbeat.sh` | `PostToolBatch` | `state: working`; runs the selected tests for touched files (`scripts/test-selector.sh` → `test-listener.sh`); ≤10-line failure digest (`BLITZ_TIA_DISABLE=1`) |
+| `heartbeat.sh` | `PostToolBatch` | `state: working`; dismisses this session's own pending `needs_input`/`permission` inbox lines; runs the selected tests for touched files (`scripts/test-selector.sh` → `test-listener.sh`); ≤10-line failure digest (`BLITZ_TIA_DISABLE=1`) |
 | `stop-turn.sh` | `Stop` | `state: idle`; drains `mailbox/<sid>.jsonl` to the messaging socket (auth line from `CLAUDE_CODE_MESSAGING_TOKEN`) |
 | `stop-failure.sh` | `StopFailure` | inbox `hook_failure` line when a turn dies on an API error |
 | `session-end.sh` | `SessionEnd` | closes the record, releases owned locks |
