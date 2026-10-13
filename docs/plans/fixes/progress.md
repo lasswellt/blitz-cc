@@ -13,3 +13,5 @@ Ruling: loop.reference.md and next/SKILL.md row table updated on main (Tier-1 do
 ## 2026-10-12T22:09:29-04:00 verify T-004 ok=true
 ## 2026-10-12T22:09:29-04:00 build T-005 start (attempt 1)
 ## 2026-10-12T22:10:43-04:00 verify T-005 ok=true
+## 2026-10-12T22:10:43-04:00 build T-006 start (attempt 1)
+## 2026-10-12T22:18:08-04:00 verify T-006 ok=true

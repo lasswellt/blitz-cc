@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:10:34Z",
+  "updated": "2026-10-13T02:17:43Z",
   "tasks": [
     {
       "id": "T-001",
@@ -305,11 +305,39 @@
           "timeout": 300
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:17:43Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'add-verify' scripts/tasks.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:15:36Z"
+          },
+          {
+            "cmd": "grep -qE 'depends_on\\)' scripts/tasks.sh",
+            "exit": 0,
+            "duration_ms": 4,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:15:36Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/tasks.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 126232,
+            "tail": "st-only\nok 5 add stores verify commands with timeouts and defaults\nok 6 set status=done is refused until verify passes\nok 7 verify runs checks in order, records evidence, flips passes and status\nok 8 verify failure keeps passes false and stores the failing command tail\nok 9 verify respects per-check timeout\nok 10 three failed attempts trip the circuit breaker\nok 11 next returns the first open task whose dependencies are done\nok 12 set rejects passes/last_verify and unknown keys\nok 13 set status=open attempts=0 unblocks a circuit-breaker task (breaker skipped on explicit status)\nok 14 list --status and --json filter and emit an array\nok 15 add rejects an unknown origin and accepts learn and issue:N\nok 16 verify records per-command evidence on success\nok 17 verify records the failing command's evidence and stops there\nok 18 verify evidence tail is capped\nok 19 every deterministic registry row carries an exit contract or is prose\nok 20 a grep-tailed detector passes on exit 1, not exit 0\nok 21 counter rows take their verdict from stdout, not the exit code\nok 22 verify --changed re-verifies only tasks whose files the paths touch\nok 23 verify --changed catches a break that survived a clean merge\nok 24 verify --changed matches by directory prefix in both directions\nok 25 verify --changed is a no-op when no done task owns the paths\nok 26 verify --changed with no paths is a usage error\nok 27 list --status accepts only the loop.md status enum\nok 28 writes stage their temp file beside tasks.json without GNU mktemp -p\nok 29 verify honors the per-check timeout without a timeout binary\nok 30 verify without a timeout binary keeps the command's own exit code\nok 31 set depends_on sets and clears\nok 32 set depends_on rejects an unknown id and a self-dependency\nok 33 set depends_on rejects a cycle and leaves the file unchanged\nok 34 add-verify appends entries and resets passes\nok 35 add-verify on a done task reopens it\nok 36 add-verify rejects missing and empty commands, unknown task",
+            "recorded_at": "2026-10-13T02:17:43Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "No way to add a dependency or a verify command post-add (owed-cleanups T-002/T-003 ordering). \"set <slug> <id> depends_on=T-1,T-3\" (ids must exist, reject cycles) and \"add-verify <slug> <id> cmd::timeout\" (resets passes=false)."
     },
