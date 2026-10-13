@@ -186,14 +186,29 @@ Write a row-specific gate so the turn cannot end red ([loop.reference.md](/_shar
 
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
+TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"; STACKS=$(bash "$TC" stacks)
+rows() { for ST in $STACKS; do bash "$TC" resolve "$LANE" "" "$ST"; done \
+  | jq -c --arg l "$LANE" --argjson t "$TMO" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
+CHECKS="[]"; UNTIL=""
 case "$ROW" in
-  2)  # build: tsc + selected tests
-    SELECTED=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
-    jq -n --arg sel "$SELECTED" --arg u "build ${SLUG} ${TASK}" '{checks:([{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180}] + (if ($sel|gsub(" ";"")) == "" then [] else [{name:"tests",cmd:("npx vitest run --reporter=dot "+$sel),timeout:300}] end)),blocks:0,max_blocks:4,until:$u}' > "$GATE_DIR/gate.json" ;;   # no selected tests: tsc only
-  3)  # check --fix: tsc + lint
-    jq -n --arg u "check ${SLUG} fix" '{checks:[{name:"tsc",cmd:"npx tsc --noEmit --pretty false",timeout:180},{name:"lint",cmd:"npx eslint . --max-warnings=0",timeout:180}],blocks:0,max_blocks:4,until:$u}' > "$GATE_DIR/gate.json" ;;
-  *) rm -f "$GATE_DIR/gate.json" ;;   # rows 0/1/4/5: learn, archive, defer, escalate; no gate
+  2)  # build: typecheck + tests (same lanes as build's gate)
+    UNTIL="build ${SLUG} ${TASK}"
+    CHECKS=$({ LANE=typecheck TMO=180 rows
+      if grep -qx node <<<"$STACKS"; then
+        SEL=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
+        [ -n "${SEL// }" ] && jq -nc --arg sel "$SEL" '{name:"tests:node", cmd:("npx vitest run --reporter=dot "+$sel), timeout:300}'
+        STACKS=$(grep -vx node <<<"$STACKS")
+      fi
+      LANE=test TMO=300 rows; } | jq -sc .) ;;
+  3)  # check --fix: typecheck + lint
+    UNTIL="check ${SLUG} fix"
+    CHECKS=$({ LANE=typecheck TMO=180 rows; LANE=lint TMO=180 rows; } | jq -sc .) ;;
 esac
+if [ "$CHECKS" != "[]" ]; then
+  jq -nc --argjson c "$CHECKS" --arg u "$UNTIL" '{checks:$c, blocks:0, max_blocks:4, until:$u}' > "$GATE_DIR/gate.json"
+else
+  rm -f "$GATE_DIR/gate.json"   # rows 0/1/4/5, or no resolving row: no gate, never an empty one
+fi
 ```
 
-Drop the `tests` check when the selector returns nothing (no runner, cold start with no matches); substitute the stack's lint command when it is not eslint (`detect-stack.sh`). The dispatched skill re-arms its own gate with the same label; that is expected. `rm -f` the file before every marker (§4).
+Each lane resolves through the toolchain table, one row per detected stack; selection and skip rules are build's ([build/references/main.md](../../build/references/main.md) §Gate commands). No resolving row for a lane → no check for it; empty `checks` → no file. The dispatched skill re-arms its own gate with the same label; that is expected. `rm -f` the file before every marker (§4).
