@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "owed-cleanups",
-  "updated": "2026-10-13T01:16:43Z",
+  "updated": "2026-10-13T01:17:44Z",
   "tasks": [
     {
       "id": "T-001",
@@ -280,11 +280,46 @@
           "timeout": 60
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T01:17:44Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "! grep -qE 'npx (tsc|eslint)' skills/next/references/main.md",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T01:17:43Z"
+          },
+          {
+            "cmd": "grep -qE 'toolchain\\.sh' skills/next/references/main.md",
+            "exit": 0,
+            "duration_ms": 4,
+            "tail": "",
+            "recorded_at": "2026-10-13T01:17:43Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 57,
+            "tail": "markdown-link-validate: OK (494 link(s) checked)",
+            "recorded_at": "2026-10-13T01:17:43Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 767,
+            "tail": "[skill-frontmatter-validate.sh] cumulative skill descriptions = 6152 chars (<= 8000 budget guard)\n[skill-frontmatter-validate.sh] OK: 21 SKILL.md files conform",
+            "recorded_at": "2026-10-13T01:17:44Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "Dogfood finding 2026-10-12: next/references/main.md §3.2 hard-codes npx tsc / npx eslint for rows 2-3, so in a non-TS repo every --loop tick blocks until max_blocks. build already resolves via toolchain.sh (build/references/main.md §Gate commands); next should reuse that, emitting no check for a lane with no resolving row."
     }
