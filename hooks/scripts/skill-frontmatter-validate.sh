@@ -25,6 +25,8 @@
 #      WebSearch or WebFetch, and no Bash rule that wildcards a shell,
 #      interpreter, package runner or network tool (plugin directory holds
 #      ALLOWED_TOOLS_BROAD, _UNSCOPED_WRITE, _UNSCOPED_FETCH)
+#  13. no "$" followed by a digit in the body (the frontmatter is exempt;
+#      $ARGUMENTS is allowed: skills use its substitution deliberately in prose)
 
 set -euo pipefail
 . "$(dirname "$0")/_lib/common.sh"
@@ -208,6 +210,18 @@ validate_one() {
   if printf '%s\n' "$allowed" | grep -qE "Bash\\((\\*|(${runners})( \\*|:\\*|\\*))\\)"; then
     fail "$rel" "allowed-tools has a Bash rule that wildcards a shell, interpreter, package runner or network tool; name the exact script or command"
   fi
+
+  # 13. Claude Code substitutes the invocation arguments for $1..$9, $0 and
+  # $ARGUMENTS in a SKILL.md body at load time, including inside code fences
+  # (observed: `resolve "$1"` arrived as `resolve "--autonomous"`, and an awk
+  # `{print $2}` printed an argument). references/*.md is not substituted, so
+  # only the body is checked. $ARGUMENTS is not flagged: nine skills write
+  # "Extract mode from `$ARGUMENTS`" on purpose. Line numbers are file lines; frontmatter is skipped.
+  local pos_hits pos_line
+  pos_hits=$(awk '/^---$/ && c<2 {c++; next} c>=2 && /\$[0-9]/ {print NR}' "$f")
+  for pos_line in $pos_hits; do
+    fail "$rel:$pos_line" "positional \$N in a SKILL.md body is replaced by the invocation arguments at load; use a named variable or move the bash to references/main.md"
+  done
   return 0
 }
 
