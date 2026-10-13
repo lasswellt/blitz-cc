@@ -49,6 +49,9 @@ RUNTIME = ("docs/generated/", "findings/", "tmp/")
 def is_runtime(link):
     return any(seg in link for seg in RUNTIME) or re.search(r"docs/plans/[^/]+/", link) is not None or link.startswith("docs/solutions/")
 files = list(pathlib.Path("skills").rglob("*.md")) + list(pathlib.Path("agents").rglob("*.md"))
+files += list(pathlib.Path("docs").rglob("*.md"))
+# Changelogs are optional: a tree without them must not crash the scan.
+files += [pathlib.Path(n) for n in ("CHANGELOG.md", "CHANGELOG-ARCHIVE.md") if pathlib.Path(n).is_file()]
 
 # Heading anchors, GitHub-style: lowercase, drop everything but word characters,
 # spaces and hyphens, spaces to hyphens. Code fences are stripped first so a
@@ -105,13 +108,18 @@ sys.exit(0)
 PY
 
 # --- Malformed section citations ---
-# ")§44.1" (should be ") §4.1") and ")§RatchetRatchet" (should be
+# ")§4.1" (should be ") §4.1") and ")§RatchetRatchet" (should be
 # ") §Ratchet") are what a mechanical link retarget leaves behind when its
 # replacement repeats a capture group and drops the preceding space. The LINK
 # still resolves, so link checking alone never sees it; 37 such lines shipped
 # across 12 files in 3.2.0 before this guard existed.
-CITE_BAD=$(grep -rnE '\)§|§([0-9]+)\1([^0-9.]|$)|§([A-Z][a-zA-Z.]*( [a-z]+)*)\3' \
-  --include='*.md' skills agents 2>/dev/null || true)
+# No numeric doubled-section arm ("§44"): it false-positives on every
+# legitimate §11/§22, and scripts/check-section-refs.sh already catches a bad
+# §N because it resolves each citation against the file it names.
+# docs/ is scanned; changelogs are not, since historical lines quote the old
+# malformed forms verbatim.
+CITE_BAD=$(grep -rnE '\)§|§([A-Z][a-zA-Z.]*( [a-z]+)*)\1' \
+  --include='*.md' skills agents docs 2>/dev/null || true)
 if [[ -n "$CITE_BAD" ]]; then
   echo "markdown-link-validate: malformed section citation(s):" >&2
   printf '%s\n' "$CITE_BAD" | head -20 >&2
