@@ -189,6 +189,25 @@ GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
 TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"; STACKS=$(bash "$TC" stacks)
 rows() { for ST in $STACKS; do bash "$TC" resolve "$LANE" "" "$ST"; done \
   | jq -c --arg l "$LANE" --argjson t "$TMO" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
+# Lint lane for row 3. A {file} row is per-file, so it runs once per changed path that
+# the row's `match` accepts (row 3 is check --fix, so a --fix row is fine); a tree-wide
+# row is added as-is. No matching changed file -> no check for that stack.
+lint_rows() {
+  CHANGED=$(git diff --name-only --diff-filter=AM "${BLITZ_BASE:-origin/main}"...HEAD 2>/dev/null)
+  for ST in $STACKS; do
+    LR=$(bash "$TC" resolve lint "" "$ST"); [ -n "$LR" ] || continue
+    if jq -e '(.cmd|index("{file}"))==null' <<<"$LR" >/dev/null; then
+      jq -c --argjson t "$TMO" '{name:("lint:"+.stack), cmd:(.cmd|join(" ")), timeout:$t}' <<<"$LR"; continue
+    fi
+    RE=$(jq -r '.match // empty' <<<"$LR"); LIST=""
+    while IFS= read -r f; do
+      [ -f "$f" ] && grep -qE "${RE:-.}" <<<"$f" && LIST="$LIST $(printf '%q' "$f")"
+    done <<<"$CHANGED"
+    [ -n "$LIST" ] || continue
+    jq -c --argjson t "$TMO" --arg list "$LIST" \
+      '{name:("lint:"+.stack), cmd:("rc=0; for f in"+$list+"; do "+(.cmd|map(if .=="{file}" then "\"$f\"" else . end)|join(" "))+" || rc=1; done; exit $rc"), timeout:$t}' <<<"$LR"
+  done
+}
 CHECKS="[]"; UNTIL=""
 case "$ROW" in
   2)  # build: typecheck + tests (same lanes as build's gate)
@@ -202,7 +221,7 @@ case "$ROW" in
       LANE=test TMO=300 rows; } | jq -sc .) ;;
   3)  # check --fix: typecheck + lint
     UNTIL="check ${SLUG} fix"
-    CHECKS=$({ LANE=typecheck TMO=180 rows; LANE=lint TMO=180 rows; } | jq -sc .) ;;
+    CHECKS=$({ LANE=typecheck TMO=180 rows; TMO=180 lint_rows; } | jq -sc .) ;;
 esac
 if [ "$CHECKS" != "[]" ]; then
   jq -nc --argjson c "$CHECKS" --arg u "$UNTIL" '{checks:$c, blocks:0, max_blocks:4, until:$u}' > "$GATE_DIR/gate.json"
@@ -211,4 +230,4 @@ else
 fi
 ```
 
-Each lane resolves through the toolchain table, one row per detected stack; selection and skip rules are build's ([build/references/main.md](../../build/references/main.md) §Gate commands). No resolving row for a lane → no check for it; empty `checks` → no file. The dispatched skill re-arms its own gate with the same label; that is expected. `rm -f` the file before every marker (§4).
+Each lane resolves through the toolchain table, one row per detected stack; row 3's lint lane also runs `{file}` rows once per changed file matching the row's `match` (`git diff --name-only --diff-filter=AM`); otherwise selection and skip rules are build's ([build/references/main.md](../../build/references/main.md) §Gate commands). No resolving row for a lane → no check for it; empty `checks` → no file. The dispatched skill re-arms its own gate with the same label; that is expected. `rm -f` the file before every marker (§4).

@@ -200,7 +200,7 @@ Pre-existing tests that turn red are **Critical** and outrank new-test failures:
 SKILL.md §Gate builds `gate.json` from the toolchain table so the Stop hook runs the checkers `check` runs, and `build` names no tool itself:
 
 - `toolchain.sh stacks` lists the detected stacks. `toolchain.sh resolve <lane> "" <stack>` prints the one row that resolves for that stack (table order, `.blitz-toolchain.json` `prefer`/`disable` honoured, probe run), or nothing.
-- The row's `cmd` argv is joined into the `cmd` string `stop-gate.sh` hands to `bash -c`. A row carrying `{file}` is a per-file checker (`deno check <file>`) and cannot gate a tree, so it is left out and the lane counts as skipped for that stack.
+- The row's `cmd` argv is joined into the `cmd` string `stop-gate.sh` hands to `bash -c`. A row carrying `{file}` is a per-file checker (`deno check <file>`) and cannot gate a tree, so it is left out and the lane counts as skipped for that stack. Exception: `next` row 3 (check --fix) arms the lint lane by running a `{file}` row once per changed file matching the row's `match`, as one `lint:<stack>` check.
 - `typecheck` (180 s) and `test` (300 s) are the lanes armed; `lint` and `build` stay with `check` and the §P.7 sweep.
 - `node` is the one stack with a selector: `test-selector.sh` returns the impacted vitest/jest files and the check is `npx vitest run --reporter=dot <selected>`; an empty selection arms no test check for `node`. Every other stack runs its table `test` row in full.
 - No row for any lane → `CHECKS` is `[]` and nothing is written; the gate never blocks on a checker the project does not have.
