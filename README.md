@@ -178,7 +178,7 @@ Each agent runs on the cheapest model that can do its job, at an explicit effort
 | `dev`, `test-writer`, survey critics, codebase analysis | `sonnet` (Sonnet 5.5) · medium | $2 · $10 · $0.10 |
 | `critic --mode reject` (`medium` on small all-green diffs), fix rounds 4–5 | `opus` (Opus 5.5) · high | $4 · $20 · $0.20 |
 
-Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. Each `dev` is named `dev-T-004` (always in a wave; on the sequential path unless agent teams are on, when the agent id addresses it instead), so a `SendMessage` resumes it with its context; that needs no agent teams, and blitz keeps its agents as subagents even when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set. Detail: `skills/_shared/agents.md` §1.3 and §1.5.
+Fan-outs run as labelled background agents (`research web-researcher`, `build T-004`, `audit security`), so `/tasks`, `claude agents` (filter with `n:blitz`), the VS Code agent map and the `/workflows` progress row show them without any blitz dashboard. Each `dev` is named `dev-T-004` (always in a wave; on the sequential path unless agent teams are on, when the agent id addresses it instead), so a `SendMessage` resumes it with its context; that needs no agent teams, and blitz keeps its agents as subagents even when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set. Detail: `skills/_shared/agents.reference.md` §11 and §12.
 
 ### One registry, two lanes
 

@@ -8,7 +8,7 @@ export const READ_ONLY_AGENTS = new Set([
   'blitz:design-critic',
 ])
 
-/** The model each blitz agent falls back to when a spawn names a disallowed one (agents.md §1.3). */
+/** The model each blitz agent falls back to when a spawn names a disallowed one (agents.reference.md §11). */
 export const DEFAULT_MODEL: Record<string, string> = {
   'blitz:dev': 'sonnet',
   'blitz:test-writer': 'sonnet',
@@ -43,12 +43,12 @@ export function spawnVerdict(f: SpawnFacts): SpawnVerdict {
   if (f.isTeammate) {
     return {
       kind: 'deny',
-      reason: `blitz-guard: ${f.subagentType} runs as a subagent, not a teammate. With agent teams on, drop \`name\` or pass \`isolation\` (agents.md §1.5).`,
+      reason: `blitz-guard: ${f.subagentType} runs as a subagent, not a teammate. With agent teams on, drop \`name\` or pass \`isolation\` (agents.reference.md §12).`,
     }
   }
   if (f.model !== undefined && family(f.model) === 'haiku') {
     const fallback = DEFAULT_MODEL[f.subagentType] ?? 'sonnet'
-    const reason = `blitz-guard: ${f.subagentType} does not run on haiku (agents.md §1.3)`
+    const reason = `blitz-guard: ${f.subagentType} does not run on haiku (agents.reference.md §11)`
     return f.isWorkflow
       ? { kind: 'deny', reason: `${reason}; the workflow agent is refused and the skill falls back to the Agent path.` }
       : { kind: 'model', model: fallback, reason: `${reason}; running it on ${fallback}.` }

@@ -1107,7 +1107,7 @@ else:
   wait for each worker's output file, then merge
 ```
 
-**Canonical spawn snippet (>30-page runs)**: copy verbatim. `model: "sonnet"` and `effort: "medium"` are explicit per [agents.reference.md](/_shared/agents.reference.md) §11: inheritance would run every worker on the operator's model and effort. The `description` is the row label in `/tasks` and the agents view (§1.5).
+**Canonical spawn snippet (>30-page runs)**: copy verbatim. `model: "sonnet"` and `effort: "medium"` are explicit per [agents.reference.md](/_shared/agents.reference.md) §11: inheritance would run every worker on the operator's model and effort. The `description` is the row label in `/tasks` and the agents view ([agents.reference.md](/_shared/agents.reference.md) §12).
 
 ```
 Agent(

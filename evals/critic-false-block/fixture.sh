@@ -2,7 +2,7 @@
 # Scaffold: a known-good plan. One small task, implemented correctly in a commit carrying
 # the Task: trailer, verify[] passing, tests intact, no shortcuts. `check --scope plan demo`
 # should end PASS: a REJECT or FAIL here is a critic false block. Run with --runs 5 or more
-# and read the pass rate, not one run (agents.md §1.3 effort scaling is tuned on this).
+# and read the pass rate, not one run (agents.reference.md §11 effort scaling is tuned on this).
 set -euo pipefail
 git init -q .
 git config user.email eval@example.com

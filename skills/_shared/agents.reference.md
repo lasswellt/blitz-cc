@@ -267,7 +267,7 @@ On any dispatch failure (tool absent, script error, abort, `CLAUDE_CODE_DISABLE_
 
 ### 7.6 Prompt invariants carried into `agent()`
 
-Identical to `Agent()`: the 11-item spec for dev/test-writer, the OUTPUT STYLE line, the JSON reply block (prefer `schema:` over `jq`), explicit `opts.model` per the routing matrix (§11.), a `budget` ceiling and an explicit round limit on any loop, `isolation: "worktree"` only under §5.2 preconditions.
+Identical to `Agent()`: the 11-item spec for dev/test-writer, the OUTPUT STYLE line, the JSON reply block (prefer `schema:` over `jq`), explicit `opts.model` per the routing matrix (§11), a `budget` ceiling and an explicit round limit on any loop, `isolation: "worktree"` only under §5.2 preconditions.
 
 ### 7.7 Escape hatches
 

@@ -135,7 +135,7 @@ Spawn each agent in **a single assistant message** (so they run concurrently) us
 
 - `subagent_type: general-purpose` (agents must Write findings files; `Explore` is read-only and silently fails the write)
 - `model:`/`effort:` per §1.2, always explicit
-- `description: research <agent-name>` (row label in `/tasks` and the agents view, §1.5)
+- `description: research <agent-name>` (row label in `/tasks` and the agents view, [agents.reference.md](/_shared/agents.reference.md) §12)
 - `prompt`: the agent prompt template from §1.6 below, filled with topic, questions, output path, and stack profile
 - `run_in_background: true` (Phase 1.7 waits on notifications)
 
