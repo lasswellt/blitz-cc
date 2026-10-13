@@ -193,7 +193,7 @@ rows() { for ST in $STACKS; do bash "$TC" resolve "$LANE" "" "$ST"; done \
 # the row's `match` accepts (row 3 is check --fix, so a --fix row is fine); a tree-wide
 # row is added as-is. No matching changed file -> no check for that stack.
 lint_rows() {
-  CHANGED=$(git diff --name-only --diff-filter=AM "${BLITZ_BASE:-origin/main}"...HEAD 2>/dev/null)
+  CHANGED=$(git -c core.quotePath=false diff --name-only --diff-filter=AM "${BLITZ_BASE:-origin/main}"...HEAD 2>/dev/null)
   for ST in $STACKS; do
     LR=$(bash "$TC" resolve lint "" "$ST"); [ -n "$LR" ] || continue
     if jq -e '(.cmd|index("{file}"))==null' <<<"$LR" >/dev/null; then

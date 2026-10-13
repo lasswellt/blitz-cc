@@ -243,7 +243,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IPn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' \"$@\" | grep -iE 'password|secret|key|token|host|port'",
+        "command": "set -o pipefail; files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IPn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' \"$@\" | grep -iE 'password|secret|key|token|host|port'",
         "exit": {
           "pass": [
             1
