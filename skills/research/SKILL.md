@@ -28,7 +28,7 @@ All research output must satisfy the Definition of Done ([quality.reference.md](
 Investigate a topic by spawning parallel research agents, collecting findings, and synthesizing a structured research document at `docs/research/<date>_<topic>.md` (tracked; never write to the legacy `docs/_research/`). Its `## Recommendation` is what `/blitz:plan --from-research <doc>` reads. Execute every phase in order. Do NOT skip phases.
 
 Two modes:
-- **Topic research** (default, `$1` = topic): Phases 0–4 below.
+- **Topic research** (default, first argument = topic): Phases 0–4 below.
 - **`--codebase <question>`**: read-only investigation of this repository ("where is X", "how does Y work", "what calls Z"). No agents by default, no writes, answer in chat with `file:line` evidence. See §Codebase mode; Phases 0–4 do not apply.
 
 ## Codebase mode (`--codebase`)
@@ -105,7 +105,7 @@ fi
 [ "$SPAWN_INFRA" = false ] && echo "[research] infra-analyst skipped (no cloud/infra detected; set BLITZ_RESEARCH_FORCE_INFRA=1 to override)" >&2
 ```
 
-Saves roughly $0.10 per run on about 40% of runs.
+Saves roughly USD 0.10 per run on about 40% of runs.
 
 ### 1.2.6 Select Dispatch Mode (capability gate)
 
@@ -184,7 +184,7 @@ Every agent reply is classified before it enters synthesis; an unclassified repl
 
 ### 2.2 Summarize Each Agent File (Haiku, token saving)
 
-Compress via Haiku summarization-on-read before synthesis (saves roughly $0.26 per run on ~100K tokens):
+Compress via Haiku summarization-on-read before synthesis (saves roughly USD 0.26 per run on ~100K tokens):
 
 ```bash
 for f in "${EXPECTED_OUTPUTS[@]}"; do

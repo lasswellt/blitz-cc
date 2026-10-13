@@ -68,7 +68,7 @@ if [ ! -f "${PLAN_DIR}/spec.md" ]; then   # next --loop row 4 archives the plan 
   [ -n "$PLAN_DIR" ] && [ -f "${PLAN_DIR}/spec.md" ] || { echo "ship: no plan at docs/plans/${SLUG} or docs/plans/archive/*-${SLUG}"; exit 1; }
   export BLITZ_PLANS_DIR=docs/plans/archive; TASKS_PLAN=$(basename "$PLAN_DIR")   # tasks.sh reads the archived copy
 fi
-SHIP_MODE=$(awk '/^ship:/{print $2; exit}' "${PLAN_DIR}/spec.md")   # auto | manual
+SHIP_MODE=$(sed -nE 's/^ship:[[:space:]]*([^[:space:]]*).*/\1/p' "${PLAN_DIR}/spec.md" | head -1)   # auto | manual
 ```
 
 Print `[ship] plan=<slug> version=<explicit|computed> dry-run=<y/n> publish=<y/n>`.
@@ -98,7 +98,7 @@ UPDATED=$(jq -r '.updated' "${PLAN_DIR}/tasks.json")
 REPORT="${PLAN_DIR}/check-report.md"
 FRESH=0
 if [ -f "$REPORT" ] && grep -qE '^result: PASS' "$REPORT"; then
-  REPORT_TS=$(awk -F': *' '/^(date|ts|generated):/{print $2; exit}' "$REPORT")
+  REPORT_TS=$(sed -nE 's/^(date|ts|generated):[[:space:]]*([^:]*).*/\2/p' "$REPORT" | head -1)
   [ -n "$REPORT_TS" ] && [ "$REPORT_TS" \> "$UPDATED" ] && FRESH=1
 fi
 ```

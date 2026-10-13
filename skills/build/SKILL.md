@@ -151,15 +151,15 @@ Armed only under `--autonomous` or when `next --loop` dispatched this skill (`BL
 ```bash
 GATE_DIR=".cc-sessions/sessions/${CLAUDE_SESSION_ID}"; mkdir -p "$GATE_DIR"
 TC="${CLAUDE_PLUGIN_ROOT}/scripts/toolchain.sh"; STACKS=$(bash "$TC" stacks)
-gate_rows() { for ST in $STACKS; do bash "$TC" resolve "$1" "" "$ST"; done \
-  | jq -c --arg l "$1" --argjson t "$2" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
-CHECKS=$({ gate_rows typecheck 180
+gate_rows() { for ST in $STACKS; do bash "$TC" resolve "$LANE" "" "$ST"; done \
+  | jq -c --arg l "$LANE" --argjson t "$SECS" 'select((.cmd|index("{file}"))==null) | {name:($l+":"+.stack), cmd:(.cmd|join(" ")), timeout:$t}'; }
+CHECKS=$({ LANE=typecheck SECS=180 gate_rows
   if grep -qx node <<<"$STACKS"; then       # vitest/jest selector; other stacks run their table row
     SEL=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/test-selector.sh" --base "${BLITZ_BASE:-origin/main}" 2>/dev/null | cut -f1 | tr '\n' ' ')
     [ -n "${SEL// }" ] && jq -nc --arg sel "$SEL" '{name:"tests:node", cmd:("npx vitest run --reporter=dot "+$sel), timeout:300}'
     STACKS=$(grep -vx node <<<"$STACKS")
   fi
-  gate_rows test 300; } | jq -sc .)
+  LANE=test SECS=300 gate_rows; } | jq -sc .)
 [ "$CHECKS" != "[]" ] && jq -nc --argjson c "$CHECKS" --arg until "build ${SLUG} ${ID}" '{checks:$c, blocks:0, max_blocks:4, until:$until}' > "$GATE_DIR/gate.json"
 ```
 

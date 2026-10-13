@@ -24,7 +24,7 @@ compatibility: ">=2.1.296"
 
 Turn one goal into a plan directory the loop can execute without you: `docs/plans/<slug>/{spec.md, plan.md, tasks.json, progress.md}`. Every task carries executable `verify[]` checks, and `tasks.json` is written only through `scripts/tasks.sh` (a PreToolUse hook denies `Edit`/`Write` on it).
 
-Arguments: `$1` is a slug (`kebab-case`, becomes the directory name) or a free-text goal (derive the slug from it, ≤4 words). Flags: `--autonomous` (no questions; assumptions go in `spec.md` §Assumptions), `--from-research <doc>` (ingest an existing `docs/research/*.md` instead of spawning agents), `--issues` (one GitHub issue per task, off by default).
+Arguments: the first argument is a slug (`kebab-case`, becomes the directory name) or a free-text goal (derive the slug from it, ≤4 words). Flags: `--autonomous` (no questions; assumptions go in `spec.md` §Assumptions), `--from-research <doc>` (ingest an existing `docs/research/*.md` instead of spawning agents), `--issues` (one GitHub issue per task, off by default).
 
 Never arm `gate.json` here; `rm -f .cc-sessions/sessions/${CLAUDE_SESSION_ID}/gate.json` if one is left over. Append `task_start` to the activity feed with `skill: plan`.
 
