@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:08:15Z",
+  "updated": "2026-10-13T02:09:29Z",
   "tasks": [
     {
       "id": "T-001",
@@ -198,11 +198,39 @@
           "timeout": 60
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:09:29Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'origin check' skills/check/SKILL.md",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:09:28Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 810,
+            "tail": "[skill-frontmatter-validate.sh] cumulative skill descriptions = 6152 chars (<= 8000 budget guard)\n[skill-frontmatter-validate.sh] OK: 21 SKILL.md files conform",
+            "recorded_at": "2026-10-13T02:09:29Z"
+          },
+          {
+            "cmd": "bash scripts/check-section-refs.sh </dev/null",
+            "exit": 0,
+            "duration_ms": 91,
+            "tail": "check-section-refs: OK",
+            "recorded_at": "2026-10-13T02:09:29Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "Phase 5 CONDITIONAL at plan scope: each unresolved advisory with a concrete file becomes tasks.sh add <slug> --origin check with a grep_present/grep_absent verify; the plan reopens (row 2) and the next tick re-checks. Advisories with no fileable fix are listed in check-report.md and the T-003 row 1 applies."
     },
