@@ -11,3 +11,5 @@ Ruling: T-002 dev BLOCKED scope-expansion-needed: rule flagged $ARGUMENTS, used 
 Ruling: loop.reference.md and next/SKILL.md row table updated on main (Tier-1 doc sync, outside T-003 files) (T-003, round 1).
 ## 2026-10-12T22:08:33-04:00 build T-004 start (attempt 1)
 ## 2026-10-12T22:09:29-04:00 verify T-004 ok=true
+## 2026-10-12T22:09:29-04:00 build T-005 start (attempt 1)
+## 2026-10-12T22:10:43-04:00 verify T-005 ok=true

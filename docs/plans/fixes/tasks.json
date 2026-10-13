@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:09:29Z",
+  "updated": "2026-10-13T02:10:34Z",
   "tasks": [
     {
       "id": "T-001",
@@ -253,11 +253,32 @@
           "timeout": 300
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:10:34Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'dismissed' hooks/scripts/heartbeat.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:10:32Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/heartbeat.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 1400,
+            "tail": "1..11\nok 1 exits 0 on empty stdin and prints nothing\nok 2 writes no feed line per batch (the feed carries loop and skill events only)\nok 3 marks record state working + last_activity\nok 4 no record: nothing written on disk\nok 5 TIA runs the project's own node_modules/.bin runner, never npx\nok 6 TIA skips (no download) when the runner is not installed locally\nok 7 dismisses own pending needs_input\nok 8 dismisses own pending permission\nok 9 leaves other session's pending needs_input and own escalation untouched, keeps order\nok 10 no inbox file: exit 0 and none created\nok 11 malformed inbox line: exit 0 and file unchanged",
+            "recorded_at": "2026-10-13T02:10:34Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "notification-log.sh writes needs_input on idle_prompt; nothing clears it when the user answers, so next --loop defers on its own session (dismissed by hand 3x on 2026-10-12). On PostToolBatch rewrite this session pending needs_input/permission lines to dismissed (atomic tmp+mv). Other sessions lines untouched."
     },
