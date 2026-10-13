@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:21:30Z",
+  "updated": "2026-10-13T02:22:54Z",
   "tasks": [
     {
       "id": "T-001",
@@ -515,11 +515,32 @@
           "timeout": 120
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:22:54Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'name-only' skills/next/references/main.md",
+            "exit": 0,
+            "duration_ms": 4,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:22:54Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 61,
+            "tail": "markdown-link-validate: OK (500 link(s) checked)",
+            "recorded_at": "2026-10-13T02:22:54Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "Critic advisory: every node/python lint row carries {file}, so row 3 arms typecheck only. Expand {file} over the changed files (git diff --name-only BASE...HEAD) filtered to the row extensions; empty set -> no lint check. Document in build §Gate commands."
     }
