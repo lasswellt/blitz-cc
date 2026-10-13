@@ -1,0 +1,303 @@
+{
+  "$schema": "blitz-tasks/1.0",
+  "plan": "fixes",
+  "updated": "2026-10-13T02:02:39Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Remove positional $N from SKILL.md bodies",
+      "role": "infra",
+      "files": [
+        "skills/build/SKILL.md",
+        "skills/ship/SKILL.md",
+        "skills/plan/SKILL.md",
+        "skills/research/SKILL.md"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "! grep -nE '\\$[0-9]' skills/build/SKILL.md skills/ship/SKILL.md skills/plan/SKILL.md skills/research/SKILL.md",
+          "timeout": 10
+        },
+        {
+          "cmd": "grep -qE 'toolchain\\.sh' skills/build/SKILL.md",
+          "timeout": 10
+        },
+        {
+          "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+          "timeout": 60
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "Claude Code substitutes skill args for $1/$2 at load, so build gate_rows becomes resolve \"--autonomous\" and ship awk {print $2} prints an arg. Use named vars, awk without $N, or move the bash to references/main.md (not substituted). Reword prose \"`$1` is a slug\" to \"the first argument\"."
+    },
+    {
+      "id": "T-002",
+      "title": "Skill validator rejects positional $N in SKILL.md bodies",
+      "role": "infra",
+      "files": [
+        "hooks/scripts/skill-frontmatter-validate.sh",
+        "hooks/tests/skill-frontmatter-validate.bats"
+      ],
+      "depends_on": [
+        "T-001"
+      ],
+      "verify": [
+        {
+          "cmd": "grep -qE 'substitut' hooks/scripts/skill-frontmatter-validate.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+          "timeout": 60
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/skill-frontmatter-validate.bats </dev/null",
+          "timeout": 300
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "New rule: a SKILL.md body (after frontmatter) containing $[0-9] or $ARGUMENTS fails --all with file:line and the reason (load-time argument substitution). Bats: a fixture with awk {print $2} fails; one without passes."
+    },
+    {
+      "id": "T-003",
+      "title": "next-state: fresh CONDITIONAL with nothing open escalates; active_plan reported at row 0",
+      "role": "infra",
+      "files": [
+        "scripts/next-state.sh",
+        "hooks/tests/next-state.bats"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "grep -qE 'CONDITIONAL needs a ruling' scripts/next-state.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/next-state.bats </dev/null",
+          "timeout": 300
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "A CONDITIONAL report kept row 3 forever (owed-cleanups 2026-10-12). Fresh CONDITIONAL + all tasks done -> row 1, reason \"check CONDITIONAL needs a ruling: <slug>\". Row 0 keeps its decision but still fills active_plan/next_task for the report. User ruling 2026-10-12: advisories become tasks (T-004); this row is the fallback when none were fileable."
+    },
+    {
+      "id": "T-004",
+      "title": "check files unresolved advisories as origin:check tasks at plan scope",
+      "role": "infra",
+      "files": [
+        "skills/check/SKILL.md",
+        "skills/check/references/main.md"
+      ],
+      "depends_on": [
+        "T-003"
+      ],
+      "verify": [
+        {
+          "cmd": "grep -qE 'origin check' skills/check/SKILL.md",
+          "timeout": 10
+        },
+        {
+          "cmd": "bash hooks/scripts/skill-frontmatter-validate.sh --all </dev/null",
+          "timeout": 60
+        },
+        {
+          "cmd": "bash scripts/check-section-refs.sh </dev/null",
+          "timeout": 60
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "Phase 5 CONDITIONAL at plan scope: each unresolved advisory with a concrete file becomes tasks.sh add <slug> --origin check with a grep_present/grep_absent verify; the plan reopens (row 2) and the next tick re-checks. Advisories with no fileable fix are listed in check-report.md and the T-003 row 1 applies."
+    },
+    {
+      "id": "T-005",
+      "title": "heartbeat dismisses this session's own pending needs_input lines",
+      "role": "infra",
+      "files": [
+        "hooks/scripts/heartbeat.sh",
+        "hooks/tests/heartbeat.bats"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "grep -qE 'dismissed' hooks/scripts/heartbeat.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/heartbeat.bats </dev/null",
+          "timeout": 300
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "notification-log.sh writes needs_input on idle_prompt; nothing clears it when the user answers, so next --loop defers on its own session (dismissed by hand 3x on 2026-10-12). On PostToolBatch rewrite this session pending needs_input/permission lines to dismissed (atomic tmp+mv). Other sessions lines untouched."
+    },
+    {
+      "id": "T-006",
+      "title": "tasks.sh: set depends_on and add-verify after add",
+      "role": "infra",
+      "files": [
+        "scripts/tasks.sh",
+        "hooks/tests/tasks.bats"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "grep -qE 'add-verify' scripts/tasks.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "grep -qE 'depends_on\\)' scripts/tasks.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/tasks.bats </dev/null",
+          "timeout": 300
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "No way to add a dependency or a verify command post-add (owed-cleanups T-002/T-003 ordering). \"set <slug> <id> depends_on=T-1,T-3\" (ids must exist, reject cycles) and \"add-verify <slug> <id> cmd::timeout\" (resets passes=false)."
+    },
+    {
+      "id": "T-007",
+      "title": "Registry rows run in any repo layout",
+      "role": "infra",
+      "files": [
+        "skills/_shared/check-registry.json"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "! jq -r '.checks[]|select(.id|IN(\"det-01\",\"det-05\",\"det-07\",\"det-09\",\"det-10\"))|.detection.command' skills/_shared/check-registry.json | grep -qE 'HEAD~N| src/'",
+          "timeout": 10
+        },
+        {
+          "cmd": "jq -e . skills/_shared/check-registry.json >/dev/null",
+          "timeout": 10
+        },
+        {
+          "cmd": "bash scripts/validate-plugin-structure.sh </dev/null",
+          "timeout": 120
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "det-01 has a literal HEAD~N; det-05/07/09/10 (stacks *) grep src/ and exit 2 without it; check:test-tamper ends in \"[ ] && echo\" so a clean run exits 1 (= finding). Use ${BLITZ_BASE:-origin/main}..HEAD, scan ${CHANGED} with a git ls-files fallback, make test-tamper exit 0 when clean per its exit contract."
+    },
+    {
+      "id": "T-008",
+      "title": "block-destructive-git force-push match stays inside one command",
+      "role": "infra",
+      "files": [
+        "hooks/scripts/block-destructive-git.sh",
+        "hooks/tests/block-destructive-git.bats"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "grep -qF '[^;&|]' hooks/scripts/block-destructive-git.sh",
+          "timeout": 10
+        },
+        {
+          "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git.bats </dev/null",
+          "timeout": 300
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "The force-push pattern allows any gap between \"push\" and the flag, so a later \"rm -f\" after a semicolon trips it (2026-10-12, twice; also blocked a tasks.sh call whose notes quoted that shape). Bound the gap to a class without ; & |. Bats: push-then-semicolon-rm passes; push with -f or --force to main still blocks."
+    },
+    {
+      "id": "T-009",
+      "title": "check-section-refs 1b resolves relative and skill-local citations",
+      "role": "infra",
+      "files": [
+        "scripts/check-section-refs.sh"
+      ],
+      "depends_on": [],
+      "verify": [
+        {
+          "cmd": "bash scripts/check-section-refs.sh </dev/null",
+          "timeout": 60
+        },
+        {
+          "cmd": "grep -qE 'references/main' scripts/check-section-refs.sh",
+          "timeout": 10
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "Critic advisory (owed-cleanups): 1b only matches _shared/<NAME> paths. Also resolve [x.md](x.md) §N inside skills/_shared/ and [references/main.md](references/main.md) §N / [SKILL.md](../SKILL.md) §N within a skill, numbered sections only."
+    },
+    {
+      "id": "T-010",
+      "title": "next row-3 gate runs per-file lint rows over changed files",
+      "role": "infra",
+      "files": [
+        "skills/next/references/main.md",
+        "skills/build/references/main.md"
+      ],
+      "depends_on": [
+        "T-001"
+      ],
+      "verify": [
+        {
+          "cmd": "grep -qE 'name-only' skills/next/references/main.md",
+          "timeout": 10
+        },
+        {
+          "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
+          "timeout": 120
+        }
+      ],
+      "passes": false,
+      "status": "open",
+      "blocked_reason": null,
+      "attempts": 0,
+      "last_verify": null,
+      "origin": "plan",
+      "notes": "Critic advisory: every node/python lint row carries {file}, so row 3 arms typecheck only. Expand {file} over the changed files (git diff --name-only BASE...HEAD) filtered to the row extensions; empty set -> no lint check. Document in build §Gate commands."
+    }
+  ]
+}
