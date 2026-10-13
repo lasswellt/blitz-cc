@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "owed-cleanups",
-  "updated": "2026-10-13T01:12:30Z",
+  "updated": "2026-10-13T01:16:43Z",
   "tasks": [
     {
       "id": "T-001",
@@ -129,13 +129,48 @@
           "timeout": 60
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T01:16:43Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "! grep -rqE 'agents\\.md\\)? ?§1\\.(3|5)' skills agents hooks scripts",
+            "exit": 0,
+            "duration_ms": 7,
+            "tail": "",
+            "recorded_at": "2026-10-13T01:16:42Z"
+          },
+          {
+            "cmd": "bash scripts/check-section-refs.sh </dev/null",
+            "exit": 0,
+            "duration_ms": 94,
+            "tail": "check-section-refs: OK",
+            "recorded_at": "2026-10-13T01:16:43Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 59,
+            "tail": "markdown-link-validate: OK (493 link(s) checked)",
+            "recorded_at": "2026-10-13T01:16:43Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/agent-frontmatter-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 248,
+            "tail": "[agent-frontmatter-validate.sh] OK: 5 agent .md files conform",
+            "recorded_at": "2026-10-13T01:16:43Z"
+          }
+        ]
+      },
       "origin": "plan",
-      "notes": "Mechanical retarget across 18 files (exceeds 1-3 file sizing; one pattern, so not split). Link target agents.md -> agents.reference.md, §1.3 -> §11, §1.5 -> §12. CHANGELOG history lines stay as written."
+      "notes": "scope+scripts/check-section-refs.sh (doubled-number arm replaced by check 1b: §N must exist in head or reference); scope+hooks/scripts/block-as-any-insertion.sh,block-test-disabling.sh (stale quality.md §4 found by 1b)"
     },
     {
       "id": "T-003",
