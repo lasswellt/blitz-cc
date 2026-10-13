@@ -405,6 +405,62 @@ blitz_session_update() {
   return 0
 }
 
+# _blitz_inbox_locked inbox cmd [args...]
+# Run cmd while holding an exclusive lock on "<inbox>.lock", so a rewrite
+# (read, jq, mv) never races an append from another session: without it a line
+# appended between the read and the mv is silently lost. flock when installed;
+# else an atomic mkdir of "<inbox>.lock.d" with a bounded retry. Waits ~2s at
+# most (a hook must never stall the tool batch); returns 75 without running cmd
+# when the lock is not taken in time, otherwise cmd's status.
+_blitz_inbox_locked() {
+  local inbox="$1"; shift
+  if command -v flock >/dev/null 2>&1; then
+    # fd 9 on the sibling lock file; the subshell exit releases it on every path.
+    ( flock -w 2 9 || exit 75; "$@" ) 9>>"$inbox.lock"
+    return $?
+  fi
+  local lockd="$inbox.lock.d" i=0 rc
+  until mkdir "$lockd" 2>/dev/null; do
+    i=$((i + 1))
+    [ "$i" -ge 20 ] && return 75
+    sleep 0.1
+  done
+  rc=0; "$@" || rc=$?
+  rmdir "$lockd" 2>/dev/null || true
+  return "$rc"
+}
+
+# _blitz_inbox_rewrite_unlocked inbox filter [jq-args...]
+# jq the inbox to a same-dir tmp (so mv is an atomic rename), copy the original
+# mode onto the tmp (mktemp creates 0600; the inbox is shared and must keep
+# 0644), mv only when the content changed. Any failure leaves the inbox as is.
+_blitz_inbox_rewrite_unlocked() {
+  local inbox="$1" filter="$2" tmp mode; shift 2
+  tmp=$(mktemp "$inbox.XXXXXX" 2>/dev/null) || return 1
+  if jq -c "$@" "$filter" "$inbox" > "$tmp" 2>/dev/null && ! cmp -s "$inbox" "$tmp"; then
+    if ! chmod --reference="$inbox" "$tmp" 2>/dev/null; then
+      # BSD chmod has no --reference: read the mode with GNU or BSD stat.
+      mode=$(stat -c %a "$inbox" 2>/dev/null || stat -f %Lp "$inbox" 2>/dev/null) && chmod "$mode" "$tmp" 2>/dev/null
+    fi
+    mv "$tmp" "$inbox" 2>/dev/null && return 0
+  fi
+  rm -f "$tmp" 2>/dev/null
+  return 1
+}
+
+# blitz_inbox_rewrite filter [jq-args...]
+# Rewrite .cc-sessions/inbox.jsonl line by line through `jq -c [jq-args] filter`
+# under the inbox lock. Skips (returns 0) when there is no inbox, the lock is
+# busy past ~2s, or jq fails (e.g. a malformed line): a skipped rewrite is
+# retried by the next caller, a lost append is not recoverable.
+blitz_inbox_rewrite() {
+  local inbox
+  inbox="$(_blitz_sessions_dir)/inbox.jsonl"
+  [ -f "$inbox" ] || return 0
+  _blitz_inbox_locked "$inbox" _blitz_inbox_rewrite_unlocked "$inbox" "$@" || true
+  return 0
+}
+
 # blitz_inbox_append kind text [session]
 # Append one pending item to .cc-sessions/inbox.jsonl:
 #   {ts,id:"inb-<8hex>",source:"hook",kind,session,text,status:"pending"}
@@ -422,10 +478,20 @@ blitz_inbox_append() {
   if printf '%s' "$text" | grep -qiE "$BLITZ_INJECTION_RX"; then
     text='[quarantined: suspicious field; see startup-validate.sh]'
   fi
-  jq -nc --arg ts "$ts" --arg id "inb-$id" --arg kind "$kind" \
+  local line
+  line=$(jq -nc --arg ts "$ts" --arg id "inb-$id" --arg kind "$kind" \
     --arg session "$session" --arg text "$text" \
-    '{ts:$ts,id:$id,source:"hook",kind:$kind,session:$session,text:$text,status:"pending"}' \
-    >> "$dir/inbox.jsonl" 2>/dev/null || true
+    '{ts:$ts,id:$id,source:"hook",kind:$kind,session:$session,text:$text,status:"pending"}' 2>/dev/null) || return 0
+  # Lock so the line cannot land inside a concurrent rewrite's read→mv window.
+  # Lock busy past ~2s: append anyway; an O_APPEND write of one short line is
+  # atomic on its own, and dropping an escalation is worse than the race.
+  _blitz_inbox_locked "$dir/inbox.jsonl" _blitz_inbox_append_line "$dir/inbox.jsonl" "$line" \
+    || _blitz_inbox_append_line "$dir/inbox.jsonl" "$line" || true
+}
+
+# _blitz_inbox_append_line inbox line: one >> append (the locked unit above).
+_blitz_inbox_append_line() {
+  printf '%s\n' "$2" >> "$1" 2>/dev/null
 }
 
 # blitz_inbox_post text

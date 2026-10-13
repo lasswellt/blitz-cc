@@ -104,3 +104,60 @@ inbox_line() {  # id kind session status
   [ "$status" -eq 0 ]
   cmp .cc-sessions/inbox.jsonl before.jsonl
 }
+
+@test "inbox rewrite keeps the file mode (0644 stays 0644)" {
+  mkdir -p .cc-sessions
+  inbox_line a needs_input s1 pending > .cc-sessions/inbox.jsonl
+  chmod 644 .cc-sessions/inbox.jsonl
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .status .cc-sessions/inbox.jsonl)" = "dismissed" ]
+  mode=$(stat -c %a .cc-sessions/inbox.jsonl 2>/dev/null || stat -f %Lp .cc-sessions/inbox.jsonl)
+  [ "$mode" = "644" ]
+}
+
+@test "append racing the rewrite is not lost (lock held across read->mv)" {
+  mkdir -p .cc-sessions shim
+  inbox_line a needs_input s1 pending > .cc-sessions/inbox.jsonl
+  real_jq=$(command -v jq)
+  # jq shim: on the heartbeat's dismiss filter, read the inbox first, then start a
+  # blitz_inbox_append from another "session" in the background and give it time
+  # to land before the rewrite's mv (the read->mv window the lock must cover).
+  cat > shim/jq <<SH
+#!/usr/bin/env bash
+case "\$*" in *dismissed_by*)
+  out=\$("$real_jq" "\$@"); rc=\$?
+  ( cd "$PWD" && bash -c '. "\$1/_lib/common.sh"; blitz_inbox_append escalation late s2' _ "$HOOKS_DIR" ) </dev/null >/dev/null 2>&1 3>&- &
+  sleep 0.5
+  printf '%s\n' "\$out"; exit "\$rc" ;;
+esac
+exec "$real_jq" "\$@"
+SH
+  chmod +x shim/jq
+  PATH="$PWD/shim:$PATH" run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  for _ in $(seq 50); do [ "$(grep -c . .cc-sessions/inbox.jsonl)" -ge 2 ] && break; sleep 0.1; done
+  [ "$(jq -r .kind .cc-sessions/inbox.jsonl | paste -sd,)" = "needs_input,escalation" ]
+  [ "$(jq -r .status .cc-sessions/inbox.jsonl | paste -sd,)" = "dismissed,pending" ]
+}
+
+@test "inbox lock held elsewhere: exit 0 within ~3s, inbox unchanged" {
+  mkdir -p .cc-sessions
+  inbox_line a needs_input s1 pending > .cc-sessions/inbox.jsonl
+  cp .cc-sessions/inbox.jsonl before.jsonl
+  if command -v flock >/dev/null 2>&1; then
+    ( flock 9; touch held; sleep 8 ) 9>>.cc-sessions/inbox.jsonl.lock </dev/null >/dev/null 2>&1 3>&- &
+    holder=$!
+    for _ in $(seq 50); do [ -f held ] && break; sleep 0.1; done
+    [ -f held ]
+  else
+    mkdir .cc-sessions/inbox.jsonl.lock.d; holder=""
+  fi
+  start=$(date +%s)
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  elapsed=$(( $(date +%s) - start ))
+  [ -n "$holder" ] && { pkill -P "$holder" 2>/dev/null || true; kill "$holder" 2>/dev/null || true; }
+  [ "$status" -eq 0 ]
+  [ "$elapsed" -le 3 ]
+  cmp .cc-sessions/inbox.jsonl before.jsonl
+}
