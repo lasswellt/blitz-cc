@@ -111,6 +111,10 @@ case "$CMD_N" in
   *) BREAKS_OK=1 ;;
 esac
 (( $(LC_ALL=C; printf '%s' "$CMD_N" | wc -c) > 8192 )) && BREAKS_OK=0
+# A function or alias defined earlier in the line can forward a flag that
+# appears after a break into the git call (`f(){ git push "$@"; }; f --force
+# origin main`), so a break no longer separates verb from flag. Fail closed.
+printf '%s' "$CMD_N" | grep -qE '\(\)|(^|[;&|({[:space:]])(function|alias)[[:space:]]' && BREAKS_OK=0
 if (( BREAKS_OK )); then
   CMD_B="$(mark_command_breaks "$CMD_N")"; GAP='[^;]*'
 else
