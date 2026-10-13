@@ -191,3 +191,65 @@ make_clean_repo() {
   assert_blocks "block-destructive-git.sh" \
     "$(fake_tool_input "git push -o '${pad}' --force origin main")"
 }
+
+# Fail-closed bound (fix round 5): the push/reset gap is unbounded unless a
+# certain command break (outside quotes) sits between verb and flag. A
+# redirection or an expansion holding `;&|` is not a break, so these block.
+push_blocks() { make_clean_repo; assert_blocks "block-destructive-git.sh" "$(fake_tool_input "$1")"; }
+push_allows() { make_clean_repo; assert_allows "block-destructive-git.sh" "$(fake_tool_input "$1")"; }
+reset_blocks() { make_dirty_repo; assert_blocks "block-destructive-git.sh" "$(fake_tool_input "$1")"; }
+
+@test "blocks push: redirection 2>&1 before trailing force" {
+  push_blocks 'git push origin main 2>&1 --force'
+}
+@test "blocks push: redirection 2>&1 before force and refspec" {
+  push_blocks 'git push 2>&1 --force origin main'
+}
+@test "blocks push: redirection 1>&2 before -f" {
+  push_blocks 'git push origin 1>&2 -f main'
+}
+@test "blocks push: clobber redirection >| before force" {
+  push_blocks 'git push origin main >| log --force'
+}
+@test "blocks push: ANSI-C quoted option holding ;" {
+  push_blocks "git push -o \$'a\\';b' --force origin main"
+}
+@test "blocks push: quoted command substitution holding ;" {
+  push_blocks 'git push -o "$(echo "a;b")" --force origin main'
+}
+@test "blocks push: bare command substitution holding ;" {
+  push_blocks 'git push -o $(echo a;echo b) --force origin main'
+}
+@test "blocks push: backtick substitution holding ;" {
+  push_blocks 'git push -o `echo a;echo b` --force origin main'
+}
+@test "blocks push: parameter expansion holding ;" {
+  push_blocks 'git push -o ${U:-a;b} --force origin main'
+}
+@test "blocks push: arithmetic expansion holding |" {
+  push_blocks 'git push -o $((1|2)) --force origin main'
+}
+@test "blocks push: second push in an && chain is itself forced" {
+  push_blocks 'git push origin main && git push -f origin main'
+}
+@test "blocks push: newline inside a quoted option" {
+  push_blocks "git push -o 'a
+b' --force origin main"
+}
+@test "blocks push: backslash-newline continuation before force" {
+  push_blocks 'git push origin main \
+--force'
+}
+@test "blocks reset: redirection 2>&1 before --hard (dirty)" {
+  reset_blocks 'git reset 2>&1 --hard HEAD~1'
+}
+@test "blocks reset: command substitution holding ; before --hard (dirty)" {
+  reset_blocks 'git reset $(echo a;echo b) --hard'
+}
+@test "allows push to main piped to cat -f (pipe is a break)" {
+  push_allows 'git push origin main | cat -f'
+}
+@test "allows push to main then rm -f on the next line" {
+  push_allows 'git push origin main
+rm -f x'
+}

@@ -44,45 +44,77 @@ normalize_git_globals() {
 }
 CMD_N="$(normalize_git_globals "$CMD")"
 
-# The push and reset --hard rules bound their flag gap with [^;&|] so a flag in
-# a LATER command (`git push origin main; rm -f x`) is not attributed to git.
-# A separator inside quotes (`-o 'a;b'`) is argument text, not a command break,
-# so mask it to `_` before matching; otherwise a quoted `;` would hide a real
-# --force. Quote characters stay, so a quoted '--force' still reads as --force.
-# Backslash-escaped chars are copied verbatim and an escaped separator is masked
-# too. An unterminated quote masks to end of string: masking only widens the
-# bound, so every ambiguity here resolves toward blocking.
-mask_quoted_separators() {
-  local LC_ALL=C s="$1" out="" q="" c i n
+# Push-force and reset-hard are fail-closed: the base rule is the BASE
+# behaviour, an unbounded `.*` gap between the verb and the flag on the whole
+# command. Narrowing it once (gap `[^;&|]*`) let redirections (`2>&1 --force`,
+# `>| log -f`) and expansions holding a separator (`$(echo a;b) --force`) cut
+# the gap and hide a real flag. So the only exception is the reverse: allow
+# when a CLEAR command break, outside quotes, sits between verb and flag. That
+# lets `git push origin HEAD && rm -f tmp` through without trusting `;&|`
+# characters whose meaning a char scan cannot be sure of.
+#
+# mark_command_breaks rewrites every certain break outside quotes to `;` and
+# every other `;`, `&`, `|` to `_`, so the rules can use gap `[^;]*`:
+#   `;`, newline, `&&`, `||`, a bare `|`, a lone background `&` -> `;`
+#   quoted or backslash-escaped `;&|`, `>&` `<&` `&>` (incl. `2>&1`), `>|`,
+#   `|&`, and `|` after a digit or `>` -> `_` (not a break: keeps blocking)
+# A newline inside quotes is argument text (space), outside it ends the command.
+# Quote characters stay, so a quoted '--force' still reads as --force. An
+# unterminated quote masks to end of string: masking only widens the gap, so
+# every ambiguity resolves toward blocking.
+mark_command_breaks() {
+  local LC_ALL=C s="$1" out="" q="" c p="" nx i n
   n=${#s}
   for (( i = 0; i < n; i++ )); do
-    c="${s:i:1}"
-    if [[ "$q" == "'" ]]; then
-      [[ "$c" == "'" ]] && q=""
-    elif [[ "$c" == '\' && "$q" != "'" ]]; then
-      # Escape: copy the backslash, then mask/copy the escaped char.
+    c="${s:i:1}"; nx="${s:i+1:1}"
+    if [[ "$c" == '\' && "$q" != "'" ]]; then
+      # Escape: copy the backslash, then mask the escaped char if it could
+      # read as a break.
       out+="$c"; (( i++ )) || true
       c="${s:i:1}"
-      [[ "$c" == [\;\&\|] ]] && c="_"
-      out+="$c"; continue
-    elif [[ "$q" == '"' ]]; then
-      [[ "$c" == '"' ]] && q=""
-    elif [[ "$c" == "'" || "$c" == '"' ]]; then
-      q="$c"; out+="$c"; continue
+      [[ "$c" == [\;\&\|] || "$c" == $'\n' ]] && c="_"
+      out+="$c"; p="_"; continue
     fi
-    [[ -n "$q" && "$c" == [\;\&\|] ]] && c="_"
-    out+="$c"
+    if [[ -n "$q" ]]; then
+      [[ "$c" == "$q" ]] && q=""
+      [[ "$c" == [\;\&\|] ]] && c="_"
+      [[ "$c" == $'\n' ]] && c=" "
+      out+="$c"; p="_"; continue
+    fi
+    case "$c" in
+      "'"|'"') q="$c" ;;
+      ';'|$'\n') c=";" ;;
+      '&')
+        if [[ "$p" == [\<\>] || "$nx" == '>' ]]; then c="_"
+        elif [[ "$nx" == '&' ]]; then c=";;"; (( i++ )) || true
+        else c=";"; fi ;;
+      '|')
+        if [[ "$p" == [\>0-9] ]]; then c="_"
+        elif [[ "$nx" == '|' ]]; then c=";;"; (( i++ )) || true
+        elif [[ "$nx" == '&' ]]; then c="__"; (( i++ )) || true
+        else c=";"; fi ;;
+    esac
+    p="${s:i:1}"; out+="$c"
   done
   printf '%s' "$out"
 }
 
-# Scan cap 8 KiB keeps the per-call cost bounded. Past it, skip masking and use
-# the unbounded gap (pre-T-008 behaviour): fail closed rather than trust a
-# partial scan.
-if (( $(LC_ALL=C; printf '%s' "$CMD_N" | wc -c) > 8192 )); then
-  CMD_Q="$CMD_N"; GAP='.*'
+# The exception is disabled (BASE behaviour, block) when the command holds a
+# construct whose separators a char scan cannot attribute: command/arithmetic
+# substitution, backticks, ANSI-C quoting, parameter expansion, process
+# substitution, here-docs, or a backslash-newline continuation. Also past the
+# 8 KiB scan cap, which keeps the per-call cost bounded: fail closed rather
+# than trust a partial scan. Newlines join to spaces so the line-based grep
+# sees the whole command.
+case "$CMD_N" in
+  *'$('*|*'`'*|*"\$'"*|*'${'*|*'<('*|*'>('*|*'<<'*|*$'\\\n'*) BREAKS_OK=0 ;;
+  *) BREAKS_OK=1 ;;
+esac
+(( $(LC_ALL=C; printf '%s' "$CMD_N" | wc -c) > 8192 )) && BREAKS_OK=0
+if (( BREAKS_OK )); then
+  CMD_B="$(mark_command_breaks "$CMD_N")"; GAP='[^;]*'
 else
-  CMD_Q="$(mask_quoted_separators "$CMD_N")"; GAP='[^;&|]*'
+  CMD_B="${CMD_N//$'\n'/ }"; GAP='.*'
 fi
 
 is_dirty() {
@@ -105,9 +137,9 @@ EOF
 }
 
 # git reset --hard (any form). Matched on the global-flag-normalized command.
-# The gap is $GAP on CMD_Q (quote-masked), so the flag must belong to the same
-# simple command; see mask_quoted_separators.
-if echo "$CMD_Q" | grep -qE "git[[:space:]]+reset[[:space:]]+(${GAP}[[:space:]])?[\"']?--hard"; then
+# The gap is $GAP on CMD_B: unbounded unless a certain command break separates
+# verb and flag; see mark_command_breaks.
+if printf '%s\n' "$CMD_B" | grep -qE "git[[:space:]]+reset[[:space:]]+(${GAP}[[:space:]])?[\"']?--hard"; then
   is_dirty && block "git reset --hard" "Working tree has uncommitted changes; --hard would destroy them."
 fi
 
@@ -124,9 +156,9 @@ fi
 
 # git push --force / -f / --force-with-lease to a protected branch.
 # audit-20260517: --force-with-lease was missing, leaving a history-rewrite bypass.
-# The gap is $GAP on CMD_Q: a flag in a later command is not ours, but a
-# separator inside quotes was masked and does not end the push command.
-if echo "$CMD_Q" | grep -qE "git[[:space:]]+push[[:space:]]+(${GAP}[[:space:]])?[\"']?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|[\"']|\$)" \
+# The gap is $GAP on CMD_B: a flag after a certain command break is not ours;
+# any other separator (quoted, redirection, expansion) does not end the push.
+if printf '%s\n' "$CMD_B" | grep -qE "git[[:space:]]+push[[:space:]]+(${GAP}[[:space:]])?[\"']?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|[\"']|\$)" \
     && echo "$CMD" | grep -qE '(main|master|production|release)'; then
   block "git push --force to protected branch" "Force-pushing main/master rewrites shared history."
 fi
