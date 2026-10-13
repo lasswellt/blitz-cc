@@ -105,7 +105,7 @@ Skipped at `repo` scope and under `--only`. Spawn one `blitz:critic` (`descripti
 
 Automation coverage: `DETERMINISTIC_PASSED/TOTAL` from the gates JSON plus ratchet and critic; `e2e_coverage`; recommendation `auto-merge-safe` (all gates, `e2e_coverage: full`, zero Critical/Major) or `needs-human-review`. Architectural fit, UX sense, business intent and untested regressions are never auto-verified; say so in the report.
 
-**CONDITIONAL at `--scope plan <slug>`:** file each fileable advisory as an `origin check` task (`tasks.sh add`, max 5, deduped by title); unfileable ones go under `## Advisory (not filed)`, and with nothing filed `next` row 1 asks a human. Record `filed: [T-0nn]`. Cycle bound: [loop.reference.md](/_shared/loop.reference.md) §Loop circuit breaker. Detail: [references/main.md](references/main.md) §CONDITIONAL at plan scope: file the advisories.
+**CONDITIONAL at `--scope plan <slug>`:** file each fileable advisory as an `origin check` task (`tasks.sh add`, max 5 per run); unfileable or refused ones go under `## Advisory (not filed)`, and with nothing filed `next` row 1 asks a human. Record `filed: [T-0nn]`. Bound: `tasks.sh` refuses a duplicate title and caps them per plan (`BLITZ_CHECK_TASK_CAP`). Detail: [references/main.md](references/main.md) §CONDITIONAL at plan scope: file the advisories.
 
 **Plan scope** writes `docs/plans/<slug>/check-report.md` from `references/main.md` §Report template with frontmatter:
 

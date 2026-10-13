@@ -130,6 +130,20 @@ cmd_add() {
   fi
   local f; f=$(cmd_init "$plan")
   if jq -e --arg id "$id" '.tasks[] | select(.id == $id)' "$f" >/dev/null; then die "task $id already exists in $plan"; fi
+  # check files its advisories as tasks; building them triggers a re-check, and the
+  # loop breaker resets on every build tick, so the check->build->check bound lives here:
+  # an exact-title dedupe (case-insensitive, whitespace-collapsed) and a per-plan cap.
+  if [ "$origin" = "check" ]; then
+    local cap="${BLITZ_CHECK_TASK_CAP:-8}"
+    case "$cap" in *[!0-9]*|"") die "BLITZ_CHECK_TASK_CAP '$cap' must be a number";; esac
+    if jq -e --arg t "$title" '
+        def norm: ascii_downcase | gsub("\\s+"; " ") | gsub("^ | $"; "");
+        ($t | norm) as $n | any(.tasks[]; (.title // "" | norm) == $n)' "$f" >/dev/null; then
+      die "origin check: plan $plan already has a task titled '$title'; list it under '## Advisory (not filed)'"
+    fi
+    local n_check; n_check=$(jq '[.tasks[] | select(.origin == "check")] | length' "$f")
+    [ "$n_check" -lt "$cap" ] || die "origin check: plan $plan already holds $n_check check-filed task(s) (cap BLITZ_CHECK_TASK_CAP=$cap); list it under '## Advisory (not filed)'"
+  fi
   local vjson; vjson=$(verify_entries_json "${verify[@]}")
   local task
   task=$(jq -nc --arg id "$id" --arg title "$title" --arg role "$role" --arg files "$files" --arg dep "$depends" \

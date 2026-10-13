@@ -139,6 +139,51 @@ teardown() { teardown_fake_repo; }
   [ "$status" -eq 0 ]
 }
 
+# --- origin check bounds (check->build->check cycle) -----------------------
+
+@test "add --origin check refuses a duplicate title (case and whitespace insensitive)" {
+  bash "$TASKS" add demo --id T-001 --title "Fix the  README link" --verify-cmd "true" --origin check >/dev/null
+  run bash "$TASKS" add demo --id T-002 --title "  fix the readme   LINK " --verify-cmd "true" --origin check
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Advisory (not filed)"* ]]
+  [ "$(jq '.tasks | length' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "1" ]
+}
+
+@test "add --origin check refuses a title an origin plan task already carries" {
+  bash "$TASKS" add demo --id T-001 --title "Same title" --verify-cmd "true" --origin plan >/dev/null
+  run bash "$TASKS" add demo --id T-002 --title "same title" --verify-cmd "true" --origin check
+  [ "$status" -eq 2 ]
+}
+
+@test "add --origin plan still accepts a duplicate title" {
+  bash "$TASKS" add demo --id T-001 --title "Same title" --verify-cmd "true" --origin plan >/dev/null
+  run bash "$TASKS" add demo --id T-002 --title "Same title" --verify-cmd "true" --origin plan
+  [ "$status" -eq 0 ]
+  [ "$(jq '.tasks | length' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "2" ]
+}
+
+@test "add --origin check refuses the 9th check task by default, any status" {
+  local i
+  for i in 1 2 3 4 5 6 7 8; do
+    bash "$TASKS" add demo --id "T-00$i" --title "advisory $i" --verify-cmd "true" --origin check >/dev/null
+  done
+  bash "$TASKS" verify demo T-001 >/dev/null
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "done" ]
+  run bash "$TASKS" add demo --id T-009 --title "advisory 9" --verify-cmd "true" --origin check
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLITZ_CHECK_TASK_CAP=8"* ]]
+  run bash "$TASKS" add demo --id T-009 --title "planned 9" --verify-cmd "true" --origin plan
+  [ "$status" -eq 0 ]
+}
+
+@test "add --origin check honours BLITZ_CHECK_TASK_CAP" {
+  BLITZ_CHECK_TASK_CAP=2 bash "$TASKS" add demo --id T-001 --title "a" --verify-cmd "true" --origin check >/dev/null
+  BLITZ_CHECK_TASK_CAP=2 bash "$TASKS" add demo --id T-002 --title "b" --verify-cmd "true" --origin check >/dev/null
+  BLITZ_CHECK_TASK_CAP=2 run bash "$TASKS" add demo --id T-003 --title "c" --verify-cmd "true" --origin check
+  [ "$status" -eq 2 ]
+  [ "$(jq '[.tasks[] | select(.origin == "check")] | length' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "2" ]
+}
+
 # --- per-command verify evidence (3.3.0) -----------------------------------
 
 @test "verify records per-command evidence on success" {
