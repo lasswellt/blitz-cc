@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "owed-cleanups",
-  "updated": "2026-10-13T01:00:50Z",
+  "updated": "2026-10-13T01:12:30Z",
   "tasks": [
     {
       "id": "T-001",
@@ -168,11 +168,53 @@
           "timeout": 600
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T01:12:30Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qE 'Path\\(\"docs\"\\)\\.rglob' hooks/scripts/markdown-link-validate.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T01:09:46Z"
+          },
+          {
+            "cmd": "grep -qE 'CHANGELOG' hooks/scripts/markdown-link-validate.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T01:09:46Z"
+          },
+          {
+            "cmd": "bash hooks/scripts/markdown-link-validate.sh --all </dev/null",
+            "exit": 0,
+            "duration_ms": 71,
+            "tail": "markdown-link-validate: OK (493 link(s) checked)",
+            "recorded_at": "2026-10-13T01:09:46Z"
+          },
+          {
+            "cmd": "bats hooks/tests/markdown-link-validate.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 1178,
+            "tail": "1..6\nok 1 clean fixture tree passes --all\nok 2 broken relative link in docs/ fails\nok 3 broken link in CHANGELOG.md fails\nok 4 link followed by spaced section citation passes\nok 5 link glued to section citation fails\nok 6 tree with no CHANGELOG files passes",
+            "recorded_at": "2026-10-13T01:09:47Z"
+          },
+          {
+            "cmd": "bats hooks/tests/ </dev/null",
+            "exit": 0,
+            "duration_ms": 162996,
+            "tail": " ratchet: BLITZ_DISABLE_TYPECHECK_BLOCK=1 opts out\nok 487 test-disabling guard blocks a Python skip marker\nok 488 test-disabling guard blocks a Go t.Skip\nok 489 test-disabling guard blocks a Rust #[ignore]\nok 490 test-disabling guard honours the pinned escape hatch with a # comment\nok 491 spawn invariant: injected for blitz:dev\nok 492 spawn invariant: injected for blitz:test-writer\nok 493 spawn invariant: not injected for other agent types\nok 494 spawn invariant: the injected block is byte-identical across spawns\nok 495 spawn invariant: BLITZ_DISABLE_SPAWN_INVARIANT=1 opts out\nok 496 spawn invariant: hooks.json registers it with an anchored plugin-scoped matcher\nok 497 every blitz agent sets experimental.cacheTtl\nok 498 lanes: attributes each row to its own stack\nok 499 resolve: a stack filter restricts to that stack's rows\nok 500 run: with no file runs the lane once per detected stack\nok 501 no registry row references an undefined variable\nok 502 every SKILL.md body is under the compaction re-attach cap\nok 503 no skill relies on a favourable tokenizer ratio\nok 504 no local BPE tokenizer is used or vendored\nok 505 count-tokens.sh exits 3 and says so when no credential is available\nok 506 terminal phases sit inside the 5,000-token cut point\nok 507 build-wave accepts {plan, wave, tasks, replySchema} and keys results by id\nok 508 build-wave rejects the old {agents, storySchema} shape with a clear message\nok 509 review-fanout accepts {lenses, criticPrompt, surveySchema, criticSchema}\nok 510 audit-sweep accepts {roster, findingsSchema} and types its agents\nok 511 hooks.json does not register WorktreeCreate\nok 512 no worktree-create.sh handler exists\nok 513 hooks.json still registers WorktreeRemove\nok 514 worktree-remove.sh exits 0 on a well-formed event\nok 515 worktree-remove.sh exits 0 on empty input (non-zero would fail removal)\nok 516 worktree-remove.sh logs a worktree_remove feed event\nok 517 no hook script reads worktree_path or branch from a WorktreeCreate payload",
+            "recorded_at": "2026-10-13T01:12:30Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "Trial widening (2026-10-12) checked 490 links, 0 broken. Widen both the python file list and the CITE_BAD grep to docs/ + CHANGELOG*.md. ALSO drop the numeric doubled-section arm §([0-9]+)\\1 from CITE_BAD: it flags legit §11/§22 (T-001 concern), and scripts/check-section-refs.sh already resolves every §N. Keep the ')§' and §WordWord arms. Bats: broken link in a docs/ fixture fails --all; '§11.' citation passes; ')§4' fails."
     },

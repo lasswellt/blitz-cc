@@ -5,3 +5,6 @@ Ruling: added T-004 after a suggest-mode dry run showed the row 2/3 gate is not 
 ## 2026-10-12T21:00:50-04:00 verify T-001 ok=true
 Ruling: T-001 DONE_WITH_CONCERNS: CITE_BAD numeric arm §([0-9]+)\1 false-positives on §11; fix folded into T-003, T-002 now depends on T-003 (T-001 concern, round 1).
 Ruling: tasks.sh has no way to add a depends_on edge or a verify cmd post-add; T-003 is run before T-002 by id instead (T-002, round 0).
+## 2026-10-12T21:00:57-04:00 build T-003 start (attempt 1)
+## 2026-10-12T21:12:36-04:00 verify T-003 ok=true
+Ruling: bats mise shim has no version on this host; verify ran with a PATH shim to npx bats@1.11.1 (517/517 ok). CHANGELOG.md excluded from CITE_BAD only: it quotes the malformed forms as history (T-003, round 1).
