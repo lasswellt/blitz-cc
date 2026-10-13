@@ -142,10 +142,10 @@ Interactive runs never write the file. Never wire a prompt-type Stop hook in the
 
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
-| 0 | `kill_switch`, or `inbox_pending > 0` after triage, or `sessions_waiting > 0` | the pending items | `LOOP_DEFER` |
-| 1 | a task is `blocked` with reason ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`} | the escalation | notify, then `LOOP_ESCALATE` |
+| 0 | `kill_switch`, or `inbox_pending > 0` after triage, or `sessions_waiting > 0` | the pending items, plus the plan and task rows 2–4 would pick (null under the kill switch) | `LOOP_DEFER` |
+| 1 | a task is `blocked` with reason ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}; the loop breaker is open; or all tasks `done` with a fresh `CONDITIONAL` report (`check` filed nothing more to build) | the escalation | notify, then `LOOP_ESCALATE` |
 | 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | dispatch `build <slug>` for `next_task` |
-| 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | dispatch `check` |
+| 3 | all tasks `done` and the report is missing, stale, or `FAIL` | `/blitz:check --scope plan <slug> --fix` | dispatch `check` |
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`, dispatch `learn <slug>`, archive the plan, print `Ready: /blitz:ship --plan <slug>` |
 | 5 | nothing open | `LOOP_DONE` | `ScheduleWakeup stop:true` (self-paced only) + `LOOP_DONE` |
 

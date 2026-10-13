@@ -66,9 +66,9 @@ Pick the lowest matching row; `next-state.sh` already computed it, this phase on
 | # | Condition | Default prints | `--loop` does |
 |---|---|---|---|
 | 0 | `inbox_pending > 0` after triage, or `sessions_waiting > 0`, or `kill_switch` | the pending items | `LOOP_DEFER` |
-| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}), or `loop_breaker.open` | the escalation (plan, id, reason, `last_verify.tail`) | notify (Phase 4 order), then `LOOP_ESCALATE` |
+| 1 | `escalate[]` non-empty (`blocked_reason` ∈ {`hard_spec`, `oracle-underivable`, `test-assertion-suspect`}), `loop_breaker.open`, or all tasks `done` with a fresh `CONDITIONAL` report | the escalation (plan, id, reason, `last_verify.tail`) | notify (Phase 4 order), then `LOOP_ESCALATE` |
 | 2 | active plan has an `in_progress` task or an `open` task whose deps are `done` | `/blitz:build <slug>` | `Skill({ skill: "blitz:build", args: "<slug> --autonomous" })` for `next_task` |
-| 3 | all tasks `done` and `check_stale` | `/blitz:check --scope plan <slug> --fix` | `Skill({ skill: "blitz:check", args: "--scope plan <slug> --fix" })` |
+| 3 | all tasks `done`; report missing, stale, or `FAIL` | `/blitz:check --scope plan <slug> --fix` | `Skill({ skill: "blitz:check", args: "--scope plan <slug> --fix" })` |
 | 4 | `check-report.md` PASS and fresh | `Ready: /blitz:ship --plan <slug>` | set spec `status: done`; `Skill({ skill: "blitz:learn", args: "<slug>" })`; move to `docs/plans/archive/<date>-<slug>/`; print `Ready: /blitz:ship --plan <slug>` |
 | 5 | nothing open | `LOOP_DONE` | `ScheduleWakeup stop:true` (self-paced only) + `LOOP_DONE` |
 
