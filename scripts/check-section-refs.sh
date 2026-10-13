@@ -55,6 +55,49 @@ for fp in targets:
             if n not in HEAD[name] and n not in REF[name]:
                 bad.append(f"{fp}:{i}: cites {name}{m.group(2) or ''}.md §{n}, which exists in neither {name}.md nor {name}.reference.md")
 
+# 1c. 1b only sees "_shared/<NAME>" path forms. A relative link ("agents.reference.md",
+# "references/main.md", "../SKILL.md") followed by a numeric "§N" escapes it, so a
+# stale or doubled number in that form passed every gate. Resolve the link against
+# the citing file's directory and require a numbered heading in the target.
+# Skipped on purpose: missing targets (markdown-link-validate owns those), anchored
+# links, non-numeric sections (§Phase 2), and history/ledger paths.
+import os
+SKIP = ("docs/research/", "docs/reviews/", "docs/plans/")
+c_targets = (glob.glob("skills/**/*.md", recursive=True) + glob.glob("agents/*.md")
+             + ["README.md", "SECURITY.md"] + glob.glob("docs/*.md"))
+NUM_CACHE = {}
+
+def numbered(path):
+    if path not in NUM_CACHE:
+        found = set()
+        with open(path) as fh:
+            for l in fh:
+                m = re.match(r'^#{2,4} (\d+(?:\.\d+)*(?:-[A-Z]+)?)(?:\.|\s|$)', l)
+                if m:
+                    found.add(m.group(1))
+        NUM_CACHE[path] = found
+    return NUM_CACHE[path]
+
+for fp in c_targets:
+    if fp.startswith(SKIP) or os.path.basename(fp).startswith("CHANGELOG"):
+        continue
+    here = os.path.dirname(fp)
+    for i, line in enumerate(open(fp).read().split("\n"), 1):
+        for m in re.finditer(r'\[[^\]]*\]\(([^)#\s]+\.md)\)[^\n]{0,14}?§\s*(\d+(?:\.\d+)*(?:-[A-Z]+)?)', line):
+            tgt, n = m.group(1), m.group(2)
+            if "://" in tgt or os.path.basename(tgt).startswith("CHANGELOG"):
+                continue
+            if tgt.startswith("/_shared/"):
+                resolved = "skills" + tgt
+            elif tgt.startswith("/"):
+                continue
+            else:
+                resolved = os.path.normpath(os.path.join(here, tgt))
+            if resolved.startswith(SKIP) or not os.path.isfile(resolved):
+                continue
+            if n not in numbered(resolved):
+                bad.append(f"{fp}:{i}: cites {tgt} §{n}, but {resolved} has no heading numbered {n}")
+
 # 2. A bare "§N" inside a protocol head whose section moved to its reference.
 for n_ in NAMES:
     p = f"skills/_shared/{n_}.md"
