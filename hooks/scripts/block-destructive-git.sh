@@ -64,7 +64,8 @@ EOF
 }
 
 # git reset --hard (any form). Matched on the global-flag-normalized command.
-if echo "$CMD_N" | grep -qE 'git[[:space:]]+reset[[:space:]]+(.*[[:space:]])?--hard'; then
+# The gap is bounded by [^;&|] so the flag must belong to the same simple command.
+if echo "$CMD_N" | grep -qE 'git[[:space:]]+reset[[:space:]]+([^;&|]*[[:space:]])?--hard'; then
   is_dirty && block "git reset --hard" "Working tree has uncommitted changes; --hard would destroy them."
 fi
 
@@ -81,7 +82,8 @@ fi
 
 # git push --force / -f / --force-with-lease to a protected branch.
 # audit-20260517: --force-with-lease was missing, leaving a history-rewrite bypass.
-if echo "$CMD_N" | grep -qE 'git[[:space:]]+push[[:space:]]+(.*[[:space:]])?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|$)' \
+# The gap is bounded by [^;&|]: a flag in a later command or quoted text is not ours.
+if echo "$CMD_N" | grep -qE 'git[[:space:]]+push[[:space:]]+([^;&|]*[[:space:]])?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|$)' \
     && echo "$CMD" | grep -qE '(main|master|production|release)'; then
   block "git push --force to protected branch" "Force-pushing main/master rewrites shared history."
 fi

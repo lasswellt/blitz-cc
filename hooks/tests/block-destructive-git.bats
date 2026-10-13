@@ -110,6 +110,48 @@ teardown() {
     "$(fake_tool_input "git branch -D feature-mainline")"
 }
 
+# Clean repo on main: only the push rule can fire (clean/reset need a dirty tree).
+make_clean_repo() {
+  make_dirty_repo
+  git checkout -q -- f.txt
+}
+
+@test "allows push piped to tail followed by rm -f (flag is in another command)" {
+  make_clean_repo
+  assert_allows "block-destructive-git.sh" \
+    "$(fake_tool_input "git push -q origin HEAD 2>&1 | tail -1; rm -f x")"
+}
+
+@test "allows push to main followed by git clean -fd on a clean tree" {
+  make_clean_repo
+  assert_allows "block-destructive-git.sh" \
+    "$(fake_tool_input "git push origin main; git clean -fd")"
+}
+
+@test "blocks git push -f origin main (same command)" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push -f origin main")"
+}
+
+@test "blocks git push origin main --force (flag after branch)" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push origin main --force")"
+}
+
+@test "blocks git push --force-with-lease origin main" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push --force-with-lease origin main")"
+}
+
+@test "allows push origin HEAD && rm -f tmp" {
+  make_clean_repo
+  assert_allows "block-destructive-git.sh" \
+    "$(fake_tool_input "git push origin HEAD && rm -f tmp")"
+}
+
 @test "allows git -c x=y status (global flag, benign verb)" {
   make_dirty_repo
   assert_allows "block-destructive-git.sh" \
