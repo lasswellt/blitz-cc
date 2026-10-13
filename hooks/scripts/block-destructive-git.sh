@@ -44,6 +44,47 @@ normalize_git_globals() {
 }
 CMD_N="$(normalize_git_globals "$CMD")"
 
+# The push and reset --hard rules bound their flag gap with [^;&|] so a flag in
+# a LATER command (`git push origin main; rm -f x`) is not attributed to git.
+# A separator inside quotes (`-o 'a;b'`) is argument text, not a command break,
+# so mask it to `_` before matching; otherwise a quoted `;` would hide a real
+# --force. Quote characters stay, so a quoted '--force' still reads as --force.
+# Backslash-escaped chars are copied verbatim and an escaped separator is masked
+# too. An unterminated quote masks to end of string: masking only widens the
+# bound, so every ambiguity here resolves toward blocking.
+mask_quoted_separators() {
+  local LC_ALL=C s="$1" out="" q="" c i n
+  n=${#s}
+  for (( i = 0; i < n; i++ )); do
+    c="${s:i:1}"
+    if [[ "$q" == "'" ]]; then
+      [[ "$c" == "'" ]] && q=""
+    elif [[ "$c" == '\' && "$q" != "'" ]]; then
+      # Escape: copy the backslash, then mask/copy the escaped char.
+      out+="$c"; (( i++ )) || true
+      c="${s:i:1}"
+      [[ "$c" == [\;\&\|] ]] && c="_"
+      out+="$c"; continue
+    elif [[ "$q" == '"' ]]; then
+      [[ "$c" == '"' ]] && q=""
+    elif [[ "$c" == "'" || "$c" == '"' ]]; then
+      q="$c"; out+="$c"; continue
+    fi
+    [[ -n "$q" && "$c" == [\;\&\|] ]] && c="_"
+    out+="$c"
+  done
+  printf '%s' "$out"
+}
+
+# Scan cap 8 KiB keeps the per-call cost bounded. Past it, skip masking and use
+# the unbounded gap (pre-T-008 behaviour): fail closed rather than trust a
+# partial scan.
+if (( $(LC_ALL=C; printf '%s' "$CMD_N" | wc -c) > 8192 )); then
+  CMD_Q="$CMD_N"; GAP='.*'
+else
+  CMD_Q="$(mask_quoted_separators "$CMD_N")"; GAP='[^;&|]*'
+fi
+
 is_dirty() {
   [[ -n "$(git status --porcelain 2>/dev/null || true)" ]]
 }
@@ -64,8 +105,9 @@ EOF
 }
 
 # git reset --hard (any form). Matched on the global-flag-normalized command.
-# The gap is bounded by [^;&|] so the flag must belong to the same simple command.
-if echo "$CMD_N" | grep -qE 'git[[:space:]]+reset[[:space:]]+([^;&|]*[[:space:]])?--hard'; then
+# The gap is $GAP on CMD_Q (quote-masked), so the flag must belong to the same
+# simple command; see mask_quoted_separators.
+if echo "$CMD_Q" | grep -qE "git[[:space:]]+reset[[:space:]]+(${GAP}[[:space:]])?[\"']?--hard"; then
   is_dirty && block "git reset --hard" "Working tree has uncommitted changes; --hard would destroy them."
 fi
 
@@ -82,8 +124,9 @@ fi
 
 # git push --force / -f / --force-with-lease to a protected branch.
 # audit-20260517: --force-with-lease was missing, leaving a history-rewrite bypass.
-# The gap is bounded by [^;&|]: a flag in a later command or quoted text is not ours.
-if echo "$CMD_N" | grep -qE 'git[[:space:]]+push[[:space:]]+([^;&|]*[[:space:]])?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|$)' \
+# The gap is $GAP on CMD_Q: a flag in a later command is not ours, but a
+# separator inside quotes was masked and does not end the push command.
+if echo "$CMD_Q" | grep -qE "git[[:space:]]+push[[:space:]]+(${GAP}[[:space:]])?[\"']?(--force|--force-with-lease(=[^[:space:]]*)?|-f)([[:space:]]|=|[\"']|\$)" \
     && echo "$CMD" | grep -qE '(main|master|production|release)'; then
   block "git push --force to protected branch" "Force-pushing main/master rewrites shared history."
 fi

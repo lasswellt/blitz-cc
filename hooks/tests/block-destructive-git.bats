@@ -157,3 +157,37 @@ make_clean_repo() {
   assert_allows "block-destructive-git.sh" \
     "$(fake_tool_input "git -c x=y status")"
 }
+
+# Quote-aware separator bound: a `;`, `&` or `|` inside quotes is argument text
+# and must not end the push command, or a later --force slips through.
+@test "blocks push with ';' inside a quoted push-option, then force" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push --push-option='a;b' --force origin main")"
+}
+
+@test "blocks push with '|' inside a quoted -o, force after branch" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push -o 'x|y' origin main --force")"
+}
+
+@test "blocks push with quoted '--force' flag" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push origin main '--force'")"
+}
+
+@test "blocks push with '&' inside a double-quoted -o, then -f" {
+  make_clean_repo
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input 'git push -o "a&b" -f origin main')"
+}
+
+@test "blocks force-push in a command longer than the 8 KiB scan cap" {
+  make_clean_repo
+  local pad
+  pad="$(printf 'a;%.0s' {1..4200})"
+  assert_blocks "block-destructive-git.sh" \
+    "$(fake_tool_input "git push -o '${pad}' --force origin main")"
+}
