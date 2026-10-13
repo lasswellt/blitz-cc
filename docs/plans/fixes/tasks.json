@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:20:43Z",
+  "updated": "2026-10-13T02:21:30Z",
   "tasks": [
     {
       "id": "T-001",
@@ -465,11 +465,32 @@
           "timeout": 10
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:21:30Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "bash scripts/check-section-refs.sh </dev/null",
+            "exit": 0,
+            "duration_ms": 113,
+            "tail": "check-section-refs: OK",
+            "recorded_at": "2026-10-13T02:21:30Z"
+          },
+          {
+            "cmd": "grep -qE 'references/main' scripts/check-section-refs.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:21:30Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "Critic advisory (owed-cleanups): 1b only matches _shared/<NAME> paths. Also resolve [x.md](x.md) §N inside skills/_shared/ and [references/main.md](references/main.md) §N / [SKILL.md](../SKILL.md) §N within a skill, numbered sections only."
     },

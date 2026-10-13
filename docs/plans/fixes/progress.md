@@ -21,3 +21,5 @@ Ruling: det-01 and check:test-tamper exit codes were inverted vs their contract 
 ## 2026-10-12T22:19:46-04:00 build T-008 start (attempt 1)
 ## 2026-10-12T22:20:43-04:00 verify T-008 ok=true
 Ruling: pre-existing false negatives left for follow-up: git-clean dry-run exclusion and the protected-branch test grep the whole command, so a "-n"/"main" in a later command changes the verdict (T-008, round 1).
+## 2026-10-12T22:20:43-04:00 build T-009 start (attempt 1)
+## 2026-10-12T22:21:30-04:00 verify T-009 ok=true
