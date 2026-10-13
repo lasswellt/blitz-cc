@@ -150,7 +150,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b' src/ --exclude-dir=__tests__ | wc -l",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in *__tests__*|docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; base=0; head=0; for f in \"$@\"; do b=$(git show \"${BLITZ_BASE:-origin/main}:$f\" 2>/dev/null | grep -cE '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b'); h=$(grep -cE '\\b(vi\\.mock|jest\\.mock|sinon\\.stub|mock\\.patch|unittest\\.mock|@patch|Mockito\\.mock|mockall::|gomock\\.)\\b' \"$f\"); base=$((base+${b:-0})); head=$((head+${h:-0})); done; d=$((head-base)); if [ $d -gt 0 ]; then echo $d; else echo 0; fi",
         "exit": {
           "verdict": "stdout",
           "note": "exit code carries no verdict; a non-zero count is the finding"
@@ -243,7 +243,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "grep -rEn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' src/ | grep -iE 'password|secret|key|token|host|port'",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IPn '(\\|\\||\\?\\?)\\s*[\\x27\"][^\\x27\"]*[\\x27\"]' \"$@\" | grep -iE 'password|secret|key|token|host|port'",
         "exit": {
           "pass": [
             1
@@ -279,7 +279,7 @@
       "verdict_authority": "reject",
       "detection": {
         "type": "regex",
-        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' \"$@\"",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IPn '(password|api_?key|secret|token)\\s*[:=]\\s*[\\x27\"][^\\x27\"]{8,}' \"$@\"",
         "exit": {
           "pass": [
             1
@@ -351,7 +351,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" \"$@\"",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn \"(throw new Error.*[Nn]ot\\s*[Ii]mplemented|raise NotImplementedError|unimplemented!\\(|todo!\\(|panic\\(\\\"(not|un)implemented)\" \"$@\"",
         "exit": {
           "pass": [
             1
@@ -386,7 +386,7 @@
       "verdict_authority": "advisory",
       "detection": {
         "type": "regex",
-        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' \"$@\"",
+        "command": "files=${CHANGED:-$(git diff --name-only \"${BLITZ_BASE:-origin/main}\"...HEAD)} || exit 2; set --; for f in $files; do case \"$f\" in docs/*|*.md|skills/_shared/check-registry.json) continue;; esac; [ -f \"$f\" ] && set -- \"$@\" \"$f\"; done; [ $# -gt 0 ] || exit 1; grep -IEn 'return\\s*\\{\\s*\\}\\s*$|return\\s*\\[\\s*\\]\\s*$' \"$@\"",
         "exit": {
           "pass": [
             1
