@@ -1,7 +1,7 @@
 {
   "$schema": "blitz-tasks/1.0",
   "plan": "fixes",
-  "updated": "2026-10-13T02:19:46Z",
+  "updated": "2026-10-13T02:20:43Z",
   "tasks": [
     {
       "id": "T-001",
@@ -418,11 +418,32 @@
           "timeout": 300
         }
       ],
-      "passes": false,
-      "status": "open",
+      "passes": true,
+      "status": "done",
       "blocked_reason": null,
       "attempts": 0,
-      "last_verify": null,
+      "last_verify": {
+        "ts": "2026-10-13T02:20:43Z",
+        "ok": true,
+        "failed": "",
+        "tail": "",
+        "runs": [
+          {
+            "cmd": "grep -qF '[^;&|]' hooks/scripts/block-destructive-git.sh",
+            "exit": 0,
+            "duration_ms": 5,
+            "tail": "",
+            "recorded_at": "2026-10-13T02:20:41Z"
+          },
+          {
+            "cmd": "PATH=/tmp/claude-1000/-home-lasswellt-Projects-blitz-cc/b57de3f4-da65-4a2c-b068-b33361c9721f/scratchpad/bin:$PATH bats hooks/tests/block-destructive-git.bats </dev/null",
+            "exit": 0,
+            "duration_ms": 1791,
+            "tail": "1..21\nok 1 blocks git push --force to main\nok 2 blocks git push -f to master\nok 3 blocks git push --force-with-lease to main\nok 4 allows git push origin HEAD (normal push)\nok 5 allows git push to feature branch\nok 6 branch name with regex metachar does not falsely block\nok 7 allows non-git commands\nok 8 blocks git reset --hard with a global flag before the verb (dirty)\nok 9 blocks git clean with --no-pager global flag (dirty)\nok 10 blocks git checkout . without -- (dirty)\nok 11 blocks git restore . (dirty)\nok 12 allows git clean -fdn (dry-run) even when dirty\nok 13 allows git restore --staged . (unstage, not discard)\nok 14 allows git branch -D on a different branch while on main\nok 15 allows push piped to tail followed by rm -f (flag is in another command)\nok 16 allows push to main followed by git clean -fd on a clean tree\nok 17 blocks git push -f origin main (same command)\nok 18 blocks git push origin main --force (flag after branch)\nok 19 blocks git push --force-with-lease origin main\nok 20 allows push origin HEAD && rm -f tmp\nok 21 allows git -c x=y status (global flag, benign verb)",
+            "recorded_at": "2026-10-13T02:20:43Z"
+          }
+        ]
+      },
       "origin": "plan",
       "notes": "The force-push pattern allows any gap between \"push\" and the flag, so a later \"rm -f\" after a semicolon trips it (2026-10-12, twice; also blocked a tasks.sh call whose notes quoted that shape). Bound the gap to a class without ; & |. Bats: push-then-semicolon-rm passes; push with -f or --force to main still blocks."
     },
