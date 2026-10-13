@@ -225,7 +225,7 @@ Blitz manages no worktree lifecycle of its own. What the platform does:
 |---|---|
 | Concurrency | `min(16, cores-2)`; override `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS=<1..256>`; excess `parallel()` items queue |
 | Lifetime cap | ≤1000 agents per run; ≤4096 items per `parallel()`/`pipeline()` call |
-| Per-agent routing | `agent(prompt, {label, phase, model, effort, agentType, isolation, schema})`; blitz scripts set `model` and `effort` on every call ([agents.md](agents.md) §1.3). `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (≥2.1.296) overrides every `model` in the run |
+| Per-agent routing | `agent(prompt, {label, phase, model, effort, agentType, isolation, schema})`; blitz scripts set `model` and `effort` on every call; matrix at [agents.reference.md](agents.reference.md) §11. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (≥2.1.296) overrides every `model` in the run |
 | Display | `meta.phases[].title` must match each `phase()` exactly or the agents get their own unnamed group; `label` is the row name in `/workflows` and the background workflow row (≥2.1.281) |
 | Budget | `{ total, spent(), remaining() }`; `spent()` shared with the main loop |
 | Nesting | `workflow(name | {scriptPath}, args)` one level only |
@@ -267,7 +267,7 @@ On any dispatch failure (tool absent, script error, abort, `CLAUDE_CODE_DISABLE_
 
 ### 7.6 Prompt invariants carried into `agent()`
 
-Identical to `Agent()`: the 11-item spec for dev/test-writer, the OUTPUT STYLE line, the JSON reply block (prefer `schema:` over `jq`), explicit `opts.model` per §1.3, a `budget` ceiling and an explicit round limit on any loop, `isolation: "worktree"` only under §5.2 preconditions.
+Identical to `Agent()`: the 11-item spec for dev/test-writer, the OUTPUT STYLE line, the JSON reply block (prefer `schema:` over `jq`), explicit `opts.model` per the routing matrix (§11.), a `budget` ceiling and an explicit round limit on any loop, `isolation: "worktree"` only under §5.2 preconditions.
 
 ### 7.7 Escape hatches
 
@@ -344,3 +344,61 @@ A dev agent that meets something the task did not cover acts by tier; the tier m
 | Mocking the dependency under test to make `verify[]` pass | Green tests, broken behavior | Anti-mock rows in [quality.md](/_shared/quality.md); non-test check in `verify[]` |
 | Infinite fix loop on one task | Unbounded spend | §8: 3 rounds same agent, 2 on opus, then a ruling |
 | Fan-out because it looks thorough | ~7× tokens vs one session | §2: spawn when the table says so |
+
+## 11. Model routing matrix
+
+Every `agents/*.md` and every dynamic `Agent({model})` sets `model:` explicitly, so routing and cost stay deterministic whatever the main thread runs. Resolution order: `CLAUDE_CODE_SUBAGENT_MODEL` env > per-invocation `model` > agent frontmatter `model:` > main-conversation model. Workflow agents read `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` first (≥2.1.296); blitz never sets it, and an operator who does overrides every per-agent choice below.
+
+Family aliases resolve to the newest model in the family:
+
+| Alias | Resolves to | Context | $/Mtok in · out · cache read | Since |
+|---|---|---|---|---|
+| `haiku` | Claude Haiku 5.5 (`claude-haiku-5-5`) | 1M | 0.10 · 0.50 · n/a (prompts over 100K: 0.50 · 2.50) | 2.1.293 |
+| `sonnet` | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | 1M | 2 · 10 · 0.10 | 2.1.284; cache-read price cut in 2.1.296 |
+| `opus` | Claude Opus 5.5 (`claude-opus-5-5`) | 1M | 4 · 20 · 0.20 | 2.1.280 |
+
+Sonnet 5.5 is half the price of Opus 5.5 on input and output and half again on cache reads. That is why every implementation and survey lane is sonnet, and opus is kept for the one call whose cost of being wrong is a shipped defect. All three default to a 1M window, so the old `[1m]`-inheritance load failure no longer bites on the 5.5 family; the explicit `model:` rule stays because inheritance would put every spawn on the operator's (usually opus) model and at the operator's effort.
+
+| Work | Model | Effort | Why |
+|---|---|---|---|
+| Triage, classification, one-line summaries, `next` row selection | haiku | low | Single-shot pattern-following; cheapest lane |
+| Deterministic check-lane collection (`det-*`, `check:*`) | haiku | low | Running a registry row's `detection.command` and reporting `{id, exit_code, stderr_head}` is bookkeeping, not judgement. Keep the semantic lane and the verdict on the session model. |
+| Retrieval research (`library-docs`, `web-researcher`, `infra-analyst`), gap-fill | haiku | medium | Multi-step search. Anthropic documents Haiku 5.5 at `low` skipping searches and stopping early in long agent prompts; `medium` roughly halves early stopping. Put today's date in the prompt and keep it under 100K tokens (the price steps up 5×). |
+| Build (`dev`), test-writer, `critic --mode survey`, research-critic, design-critic, `codebase-analyst` | sonnet | medium | Sufficient for implementation and survey-grade review |
+| `critic --mode reject`, fix rounds 4–5 | opus | high; reject critic `medium` on a diff ≤200 lines with every deterministic gate green and no risky path (`check` references §Critic effort) | Adversarial verdict and stuck-loop recovery need depth. Escalate a stuck Sonnet to Opus rather than raising Sonnet to `xhigh`/`max`: Sonnet 5.5 at max used ~60% more output tokens than Opus 5.5 and cost more per task |
+| Main thread running `build` / `check` / `next --loop` | operator's choice (`claude --model opus --effort high` recommended; `--model sonnet` for cost-bound loops) | operator's | Heavy reasoning is delegated; the main thread routes |
+
+Effort is set per spawn: agent frontmatter `effort:`, the Agent tool's `effort` parameter (≥2.1.292), or `agent(..., {effort})` in a Workflow script. A spawn that omits it inherits the session effort, so an `--effort high` main thread would run every haiku collector at high. Fix rounds 4–5 pass `model: "opus", effort: "high"` together.
+
+Cost controls that apply to every spawn:
+
+- `subagentPromptCacheTtl: 1h` in project settings; `experimental.cacheTtl: 1h` on every blitz agent (≥2.1.248; the platform ignores `1h` while a subscription is on usage credits). The critics need it most: each re-spawns once per fix round, and the 5-minute subagent default guarantees a cold prefix from round 2 on.
+- The invariant half of the `dev`/`test-writer` spawn spec (never-edit list, reply contract, commit format, output style, stop conditions, mock policy) is injected by `hooks/scripts/subagent-context.sh` through `SubagentStart.additionalContext`, not pasted into the prompt. It is byte-identical per spawn and the platform leaves the subagent's cache intact when it re-injects after auto-compaction. Anything that varies per call stays in the prompt: [spawn-invariant.md](spawn-invariant.md).
+- Agent bodies ≥1024 tokens are static-prefix-first (role, protocol, output style) with dynamic content (task, files, feed slice) last, so the cached prefix survives across tasks.
+- Lazy tool loading: `ToolSearch` on demand, never bulk-enable MCP servers in an agent.
+- Effort: routing skills run `effort: low`; multi-phase orchestrators (`build --parallel`) keep the session effort; every spawn names its own (table above).
+- `autoCompactWindow` (agent frontmatter, ≥2.1.296) lets a subagent compact earlier than the main thread. Blitz agents leave it unset: their budgets ([agents.reference.md](agents.reference.md) §3.3) keep them far below 1M, and an early compaction only buys a cache rewrite mid-task.
+- `skills:` preload is capped at 32 per subagent (≥2.1.295); blitz preloads none.
+- Usage: `hooks/scripts/subagent-usage.sh` (SubagentStop, async) reads each finished subagent's transcript and appends its exact input, cache-read, 5m/1h cache-write and output tokens and their cost to `.cc-sessions/agent-usage.jsonl`, attributed by the prompt's `PLAN:` line and first task id; `/blitz:sessions dashboard` sums them per task. Transcript output counts are streaming snapshots, so a row without a final line is a lower bound (`output_final: false`); the optional `blitz-guard` mod records the final counts from `turn.complete` and the dashboard prefers them. `/usage` and the status line cover the main conversation only.
+
+## 12. Visibility: background agents, workflows, teams
+
+Blitz fan-outs run where the operator can watch them in Claude Code's own views instead of in blitz-specific polling. Every multi-agent dispatch follows this:
+
+| Surface | What the operator sees | What blitz does to feed it |
+|---|---|---|
+| `/tasks`, VS Code agent map, agents view (`claude agents`) | One row per background agent: status icon, label, live token count, transcript on Enter | Every spawn passes a `description` of the form `<skill> <unit>` (`research web-researcher`, `build T-004`, `audit security`), ≤5 words, unique within the fan-out. With agent teams on, also `name: <skill>-<unit>` (lowercase, hyphens) so the row is addressable. |
+| Background agents | Spawns return immediately and notify on completion; the main thread is free to talk | Fan-outs set `run_in_background: true` (the interactive default since 2.1.232; stated so `-p` and SDK runs behave the same). The main thread waits on completion notifications, then applies the fan-out gate ([agents.reference.md](agents.reference.md) §4.4). It never sleeps or polls output files in a loop. |
+| `/workflows` and the background workflow row (≥2.1.281) | Run name, progress bar, phase boxes, agent count, elapsed time, tokens | Workflow scripts name every `phase()` in `meta.phases`, give each `agent()` a `label` matching the Agent-path `description` unit, and `log()` one line per dropped or failed agent. |
+| Monitor rows (≥2.1.284) | What each event printed | `build --parallel` greps the wave log for `DONE`/`BLOCKED`/`NEEDS_CONTEXT` lines that start with the task id, so each row reads `T-004 DONE`. |
+| Phase one-liner | One status line per boundary in the transcript and the agents-view preview | Orchestrators print `<skill> <phase> N/M · k/n done` at each boundary (`build wave 2/3 · 3/4 done`). |
+
+**Names are for resume and visibility, not teams.** `SendMessage(to: "<name>")` resumes a completed named subagent in the background with its context intact, and it does not need agent teams. `build` names every `dev` `dev-<ID>` so fix rounds 1–3 and `NEEDS_CONTEXT` answers go back to the same agent.
+
+**Agent teams (opt-in, and a trap for named spawns).** With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` an `Agent()` call that passes `name` launches a *teammate* instead of a subagent, unless it is a fork or passes `isolation`. A teammate does not get the agent definition's `skills` preload and an in-process teammate cannot be resumed. So:
+
+- `build --parallel` passes `isolation: "worktree"` with `name`, which keeps every wave `dev` a subagent whether or not teams are on.
+- Every other named spawn (sequential `build`, fix rounds) checks the flag: when it is `1`, omit `name` and address the agent by the agent id the `Agent()` result returns. `session-start.sh` prints a one-line notice when the flag is set.
+- `research`, `audit`, `check` and `doc-gen` do not pass `name`; their `description` label carries the row.
+
+Teams stay off by default and blitz never turns them on: the platform puts a team at about 7× the tokens of one session in plan mode and recommends subagents for sequential, dependency-heavy work like a task DAG ([agents.md](agents.md) §2 rule 4).
