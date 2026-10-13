@@ -321,3 +321,75 @@ path_without() {
   [ "$status" -eq 1 ]
   [ "$(jq -r '.tasks[1].last_verify.runs[0].exit' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "3" ]
 }
+
+seed_dep_plan() {
+  bash "$TASKS" add demo --id T-001 --title a --verify-cmd "true"
+  bash "$TASKS" add demo --id T-002 --title b --verify-cmd "true"
+  bash "$TASKS" add demo --id T-003 --title c --verify-cmd "true"
+}
+
+@test "set depends_on sets and clears" {
+  seed_dep_plan
+  run bash "$TASKS" set demo T-002 depends_on=T-001,T-003
+  [ "$status" -eq 0 ]
+  [ "$(jq -c '.tasks[1].depends_on' "$BLITZ_PLANS_DIR/demo/tasks.json")" = '["T-001","T-003"]' ]
+  run bash "$TASKS" set demo T-002 depends_on=
+  [ "$status" -eq 0 ]
+  [ "$(jq -c '.tasks[1].depends_on' "$BLITZ_PLANS_DIR/demo/tasks.json")" = '[]' ]
+}
+
+@test "set depends_on rejects an unknown id and a self-dependency" {
+  seed_dep_plan
+  run bash "$TASKS" set demo T-002 depends_on=T-009
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unknown task 'T-009'"* ]]
+  run bash "$TASKS" set demo T-002 depends_on=T-002
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"itself"* ]]
+}
+
+@test "set depends_on rejects a cycle and leaves the file unchanged" {
+  seed_dep_plan
+  bash "$TASKS" set demo T-002 depends_on=T-003
+  bash "$TASKS" set demo T-003 depends_on=T-001
+  before=$(cat "$BLITZ_PLANS_DIR/demo/tasks.json")
+  run bash "$TASKS" set demo T-001 depends_on=T-002
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"depends_on would create a cycle"* ]]
+  [ "$(cat "$BLITZ_PLANS_DIR/demo/tasks.json")" = "$before" ]
+}
+
+@test "add-verify appends entries and resets passes" {
+  bash "$TASKS" add demo --id T-001 --title a --verify-cmd "true"
+  bash "$TASKS" verify demo T-001
+  run bash "$TASKS" add-verify demo T-001 "echo hi::30" "true"
+  [ "$status" -eq 0 ]
+  f="$BLITZ_PLANS_DIR/demo/tasks.json"
+  [ "$(jq '.tasks[0].verify | length' "$f")" = "3" ]
+  [ "$(jq -r '.tasks[0].verify[1].timeout' "$f")" = "30" ]
+  [ "$(jq -r '.tasks[0].verify[2].timeout' "$f")" = "120" ]
+  [ "$(jq -r '.tasks[0].passes' "$f")" = "false" ]
+  [ "$(jq -r '.tasks[0].last_verify' "$f")" = "null" ]
+}
+
+@test "add-verify on a done task reopens it" {
+  bash "$TASKS" add demo --id T-001 --title a --verify-cmd "true"
+  bash "$TASKS" verify demo T-001
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "done" ]
+  run bash "$TASKS" add-verify demo T-001 "true::5"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"reopened"* ]]
+  [ "$(jq -r '.tasks[0].status' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "open" ]
+}
+
+@test "add-verify rejects missing and empty commands, unknown task" {
+  bash "$TASKS" add demo --id T-001 --title a --verify-cmd "true"
+  run bash "$TASKS" add-verify demo T-001 ""
+  [ "$status" -eq 2 ]
+  run bash "$TASKS" add-verify demo T-001 "::30"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"empty command"* ]]
+  [ "$(jq '.tasks[0].verify | length' "$BLITZ_PLANS_DIR/demo/tasks.json")" = "1" ]
+  run bash "$TASKS" add-verify demo T-009 "true"
+  [ "$status" -eq 3 ]
+}

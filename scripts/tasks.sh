@@ -8,6 +8,9 @@
 #                   [--files a,b] [--depends T-000,T-002] [--origin plan|audit|check|learn|issue:N]
 #                   --verify-cmd "cmd"[::timeout] (repeatable) [--test-only-ok] [--notes "..."]
 #   tasks.sh set    <plan> <id> key=value ...   keys: status blocked_reason notes role title attempts (N or +1)
+#                                               depends_on (T-001,T-003; empty clears; unknown id, self, cycle rejected)
+#   tasks.sh add-verify <plan> <id> 'cmd[::timeout]' ...   append verify entries; resets passes/last_verify,
+#                                               reopens a done task
 #   tasks.sh verify <plan> <id> [--dry]         runs verify[] in order; writes passes + last_verify
 #   tasks.sh verify <plan> --changed <paths>    re-verifies only the done tasks whose files[] the
 #                                               paths touch (post-merge selective re-verify)
@@ -46,7 +49,7 @@ NOW_MS() {
   printf '%s' "$ms"
 }
 die() { echo "tasks.sh: $*" >&2; exit 2; }
-usage() { sed -n '2,21p' "$0"; exit 2; }
+usage() { sed -n '2,24p' "$0"; exit 2; }
 
 plan_file() {
   local plan="$1"
@@ -89,6 +92,20 @@ cmd_list() {
   jq -r --arg s "$status" "$filter | .[] | \"\(.id)\t\(.status)\t\(if .passes then \"pass\" else \"fail\" end)\t\(.attempts // 0)\t\(.title)\"" "$f" | column -t -s $'\t' 2>/dev/null || jq -r --arg s "$status" "$filter | .[] | \"\(.id) \(.status) \(.title)\"" "$f"
 }
 
+# verify_entries_json 'cmd[::timeout]'... -> JSON array of {cmd,timeout}. Shared by add and
+# add-verify so both parse and validate identically (missing/non-numeric timeout -> 120).
+verify_entries_json() {
+  local vjson='[]' v cmd tmo
+  for v in "$@"; do
+    cmd="${v%%::*}"; tmo=120
+    [ "$v" != "$cmd" ] && tmo="${v##*::}"
+    case "$tmo" in *[!0-9]*|"") tmo=120;; esac
+    [ -n "$cmd" ] || die "verify entry '$v' has an empty command"
+    vjson=$(printf '%s' "$vjson" | jq -c --arg c "$cmd" --argjson t "$tmo" '. + [{cmd:$c,timeout:$t}]')
+  done
+  printf '%s' "$vjson"
+}
+
 cmd_add() {
   local plan="$1"; shift
   local id="" title="" role="backend" files="" depends="" origin="plan" notes="" test_only_ok=0
@@ -113,13 +130,7 @@ cmd_add() {
   fi
   local f; f=$(cmd_init "$plan")
   if jq -e --arg id "$id" '.tasks[] | select(.id == $id)' "$f" >/dev/null; then die "task $id already exists in $plan"; fi
-  local vjson='[]' v cmd tmo
-  for v in "${verify[@]}"; do
-    cmd="${v%%::*}"; tmo=120
-    [ "$v" != "$cmd" ] && tmo="${v##*::}"
-    case "$tmo" in *[!0-9]*|"") tmo=120;; esac
-    vjson=$(printf '%s' "$vjson" | jq -c --arg c "$cmd" --argjson t "$tmo" '. + [{cmd:$c,timeout:$t}]')
-  done
+  local vjson; vjson=$(verify_entries_json "${verify[@]}")
   local task
   task=$(jq -nc --arg id "$id" --arg title "$title" --arg role "$role" --arg files "$files" --arg dep "$depends" \
     --arg origin "$origin" --arg notes "$notes" --argjson verify "$vjson" '
@@ -158,6 +169,25 @@ cmd_set() {
       notes|title) json=$(printf '%s' "$json" | jq --arg id "$id" --arg k "$key" --arg v "$val" '(.tasks[] | select(.id==$id) | .[$k]) = $v');;
       role) case "$val" in backend|frontend|infra|test) ;; *) die "bad role";; esac
         json=$(printf '%s' "$json" | jq --arg id "$id" --arg v "$val" '(.tasks[] | select(.id==$id) | .role) = $v');;
+      depends_on)
+        local dep_json
+        dep_json=$(jq -nc --arg v "$val" '$v | split(",") | map(gsub("^\\s+|\\s+$";"") | select(length>0))')
+        local d
+        for d in $(printf '%s' "$dep_json" | jq -r '.[]'); do
+          [ "$d" != "$id" ] || die "depends_on: $id cannot depend on itself"
+          printf '%s' "$json" | jq -e --arg d "$d" '.tasks[] | select(.id == $d)' >/dev/null || die "depends_on: unknown task '$d' in $plan"
+        done
+        json=$(printf '%s' "$json" | jq --arg id "$id" --argjson d "$dep_json" '(.tasks[] | select(.id==$id) | .depends_on) = $d')
+        # Walk the graph from the new deps; reaching $id again means a cycle.
+        if printf '%s' "$json" | jq -e --arg id "$id" '
+            ([.tasks[] | {(.id): (.depends_on // [])}] | add) as $g
+            | {seen: [], q: $g[$id]}
+            | until(.q | length == 0;
+                .q[0] as $n | .q = .q[1:]
+                | if (.seen | index($n)) then . else .seen += [$n] | .q += ($g[$n] // []) end)
+            | .seen | index($id) != null' >/dev/null; then
+          die "depends_on would create a cycle: $id -> $val ... -> $id"
+        fi;;
       passes|last_verify) die "'$key' is written only by 'tasks.sh verify'";;
       *) die "unknown key '$key'";;
     esac
@@ -167,6 +197,20 @@ cmd_set() {
   [ "$explicit" -eq 1 ] || json=$(printf '%s' "$json" | jq --arg id "$id" '(.tasks[] | select(.id==$id)) |= (if ((.attempts // 0) >= 3 and .passes == false and .status != "blocked" and .status != "done") then .status = "blocked" | .blocked_reason = (.blocked_reason // "circuit-breaker") else . end)')
   atomic_write "$f" "$(printf '%s' "$json" | bump)"
   jq -r --arg id "$id" '.tasks[] | select(.id==$id) | "\(.id) status=\(.status) attempts=\(.attempts) blocked_reason=\(.blocked_reason // "-")"' "$f"
+}
+
+cmd_add_verify() {
+  local plan="$1" id="$2"; shift 2
+  local f; f=$(plan_file "$plan"); require_file "$f"
+  jq -e --arg id "$id" '.tasks[] | select(.id == $id)' "$f" >/dev/null || { echo "tasks.sh: no task $id in $plan" >&2; exit 3; }
+  [ "$#" -gt 0 ] || die "add-verify needs at least one 'cmd[::timeout]'"
+  local vjson; vjson=$(verify_entries_json "$@")
+  local was; was=$(jq -r --arg id "$id" '.tasks[] | select(.id == $id) | .status' "$f")
+  # A new check invalidates any earlier pass, so the task must be re-verified.
+  atomic_write "$f" "$(jq --arg id "$id" --argjson v "$vjson" '
+    (.tasks[] | select(.id == $id)) |= (.verify += $v | .passes = false | .last_verify = null | .status = (if .status == "done" then "open" else .status end))' "$f" | bump)"
+  echo "added $(printf '%s' "$vjson" | jq 'length') verify check(s) to $id; passes reset"
+  if [ "$was" = "done" ]; then echo "$id was done; reopened (status=open)"; fi
 }
 
 cmd_verify() {
@@ -285,6 +329,7 @@ case "$cmd" in
   list)   [ $# -ge 1 ] || usage; cmd_list "$@";;
   add)    [ $# -ge 1 ] || usage; cmd_add "$@";;
   set)    [ $# -ge 3 ] || usage; cmd_set "$@";;
+  add-verify) [ $# -ge 3 ] || usage; cmd_add_verify "$@";;
   verify)
     [ $# -ge 2 ] || usage
     if [ "${2:-}" = "--changed" ]; then
@@ -294,6 +339,6 @@ case "$cmd" in
     fi
     ;;
   next)   [ $# -ge 1 ] || usage; cmd_next "$@";;
-  -h|--help|help) sed -n '2,21p' "$0"; exit 0;;
+  -h|--help|help) sed -n '2,24p' "$0"; exit 0;;
   *) die "unknown command '$cmd'";;
 esac
