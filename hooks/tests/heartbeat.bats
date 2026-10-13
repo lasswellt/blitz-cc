@@ -59,3 +59,48 @@ tia_fixture() {  # a vitest project with one changed source file and its sibling
   [ "$status" -eq 0 ]
   [ ! -f npx.calls ]
 }
+
+inbox_line() {  # id kind session status
+  jq -nc --arg id "$1" --arg k "$2" --arg s "$3" --arg st "$4" '{id:$id,ts:"2026-10-12T00:00:00Z",kind:$k,session:$s,status:$st}'
+}
+
+@test "dismisses own pending needs_input" {
+  mkdir -p .cc-sessions
+  inbox_line a needs_input s1 pending > .cc-sessions/inbox.jsonl
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .status .cc-sessions/inbox.jsonl)" = "dismissed" ]
+  [ "$(jq -r .dismissed_by .cc-sessions/inbox.jsonl)" = "heartbeat" ]
+}
+
+@test "dismisses own pending permission" {
+  mkdir -p .cc-sessions
+  inbox_line a permission s1 pending > .cc-sessions/inbox.jsonl
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .status .cc-sessions/inbox.jsonl)" = "dismissed" ]
+}
+
+@test "leaves other session's pending needs_input and own escalation untouched, keeps order" {
+  mkdir -p .cc-sessions
+  { inbox_line a needs_input s2 pending; inbox_line b escalation s1 pending; inbox_line c needs_input s1 pending; } > .cc-sessions/inbox.jsonl
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .id .cc-sessions/inbox.jsonl | paste -sd,)" = "a,b,c" ]
+  [ "$(jq -r .status .cc-sessions/inbox.jsonl | paste -sd,)" = "pending,pending,dismissed" ]
+}
+
+@test "no inbox file: exit 0 and none created" {
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  [ ! -f .cc-sessions/inbox.jsonl ]
+}
+
+@test "malformed inbox line: exit 0 and file unchanged" {
+  mkdir -p .cc-sessions
+  { inbox_line a needs_input s1 pending; echo 'not json {'; } > .cc-sessions/inbox.jsonl
+  cp .cc-sessions/inbox.jsonl before.jsonl
+  run_hook "heartbeat.sh" '{"session_id":"s1"}'
+  [ "$status" -eq 0 ]
+  cmp .cc-sessions/inbox.jsonl before.jsonl
+}

@@ -18,6 +18,27 @@ SESSION_ID=$(blitz_extract session_id)
 
 blitz_session_update "$SESSION_ID" '.state = "working" | .last_activity = $now'
 
+# A tool batch running proves this session is no longer waiting on the user, so
+# its own pending needs_input/permission notices (written by notification-log.sh)
+# are stale; left pending they make `next --loop` defer on its own idle prompt.
+# Cheap grep first (no rewrite when nothing matches); jq to a same-dir tmp then
+# mv (atomic). Any failure (e.g. a malformed line) leaves the inbox untouched.
+INBOX="$SESSIONS_DIR/inbox.jsonl"
+if [ -n "$SESSION_ID" ] && [ -f "$INBOX" ] && grep -q 'pending' "$INBOX" 2>/dev/null \
+   && grep -qF -- "$SESSION_ID" "$INBOX" 2>/dev/null; then
+  INBOX_TMP=$(mktemp "$INBOX.XXXXXX" 2>/dev/null) || INBOX_TMP=""
+  if [ -n "$INBOX_TMP" ]; then
+    if jq -c --arg sid "$SESSION_ID" '
+         if .status == "pending" and .session == $sid and (.kind == "needs_input" or .kind == "permission")
+         then .status = "dismissed" | .dismissed_by = "heartbeat" else . end' \
+         "$INBOX" > "$INBOX_TMP" 2>/dev/null && ! cmp -s "$INBOX" "$INBOX_TMP"; then
+      mv "$INBOX_TMP" "$INBOX" 2>/dev/null || rm -f "$INBOX_TMP"
+    else
+      rm -f "$INBOX_TMP"
+    fi
+  fi
+fi
+
 # ---------------------------------------------------------------------------
 # E-043 S3: test-impact run, once per batch.
 # post-edit-test.sh appends every edited file to
